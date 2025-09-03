@@ -7,6 +7,9 @@ import Anniversary from '../components/Anniversary';
 import Birthday from '../components/Birthday';
 import SkeletonCard from '../components/SkeletonCard';
 import { useCategoryStore } from '@/GlobalState/CategoryStore';
+import HeroSection from '@/components/ui/HeroSection';
+import HowItWorksSection from '@/components/ui/HowItWorks';
+import Banner1 from '@/components/ui/Banner1';
 
 export default function Home() {
   const activeCategory = useCategoryStore((state) => state.activeCategory);
@@ -68,67 +71,72 @@ export default function Home() {
   const currentTheme = categoryThemes[activeCategory];
 
   return (
-    <div className="relative overflow-hidden transition-all duration-1000 ease-out">
-      <div 
-        className={`fixed inset-0 bg-gradient-to-br ${currentTheme.primary} transition-all duration-1000 ease-out`}
-      />
-      
-      <div 
-        className={`fixed inset-0 bg-gradient-radial ${currentTheme.accent} transition-all duration-1000 ease-out`}
-      />
-      
-      <div 
-        className={`fixed top-20 right-20 w-96 h-96 ${currentTheme.glow} rounded-full blur-3xl opacity-50 transition-all duration-1000 ease-out animate-pulse`}
-      />
-      
-      <div 
-        className={`fixed bottom-20 left-20 w-80 h-80 ${currentTheme.glow} rounded-full blur-2xl opacity-40 transition-all duration-1000 ease-out animate-bounce`}
-        style={{ animationDuration: '3s' }}
-      />
-      
-      <div 
-        className={`fixed top-1/2 left-1/2 w-64 h-64 ${currentTheme.glow} rounded-full blur-3xl opacity-30 transition-all duration-1000 ease-out animate-spin`}
-        style={{ 
-          transform: 'translate(-50%, -50%)',
-          animationDuration: '8s'
-        }}
-      />
+    <>
+      <div className="relative overflow-hidden transition-all duration-1000 ease-out">
+        <div
+          className={`fixed inset-0 bg-gradient-to-br ${currentTheme.primary} transition-all duration-1000 ease-out`}
+        />
 
-      <div className="fixed inset-0 pointer-events-none z-5">
-        <div 
-          className={`absolute top-32 left-1/4 w-3 h-3 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-ping`}
-          style={{ animationDuration: '2s' }}
+        <div
+          className={`fixed inset-0 bg-gradient-radial ${currentTheme.accent} transition-all duration-1000 ease-out`}
         />
-        <div 
-          className={`absolute top-48 right-1/3 w-2 h-2 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-pulse`}
-          style={{ animationDuration: '1.5s' }}
+
+        <div
+          className={`fixed top-20 right-20 w-96 h-96 ${currentTheme.glow} rounded-full blur-3xl opacity-50 transition-all duration-1000 ease-out animate-pulse`}
         />
-        <div 
-          className={`absolute bottom-1/3 left-1/3 w-4 h-4 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-bounce`}
-          style={{ animationDuration: '2.5s' }}
-        />
-        <div 
-          className={`absolute bottom-48 right-1/4 w-2 h-2 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-ping`}
+
+        <div
+          className={`fixed bottom-20 left-20 w-80 h-80 ${currentTheme.glow} rounded-full blur-2xl opacity-40 transition-all duration-1000 ease-out animate-bounce`}
           style={{ animationDuration: '3s' }}
         />
-        <div 
-          className={`absolute top-2/3 right-20 w-3 h-3 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-pulse`}
-          style={{ animationDuration: '2s' }}
+
+        <div
+          className={`fixed top-1/2 left-1/2 w-64 h-64 ${currentTheme.glow} rounded-full blur-3xl opacity-30 transition-all duration-1000 ease-out animate-spin`}
+          style={{
+            transform: 'translate(-50%, -50%)',
+            animationDuration: '8s'
+          }}
         />
-        <div 
-          className={`absolute top-1/4 right-1/2 w-1 h-1 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-bounce`}
-          style={{ animationDuration: '4s' }}
-        />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="px-4 md:px-8 lg:px-12">
+
+        <div className="fixed inset-0 pointer-events-none z-5">
+          <div
+            className={`absolute top-32 left-1/4 w-3 h-3 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-ping`}
+            style={{ animationDuration: '2s' }}
+          />
+          <div
+            className={`absolute top-48 right-1/3 w-2 h-2 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-pulse`}
+            style={{ animationDuration: '1.5s' }}
+          />
+          <div
+            className={`absolute bottom-1/3 left-1/3 w-4 h-4 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-bounce`}
+            style={{ animationDuration: '2.5s' }}
+          />
+          <div
+            className={`absolute bottom-48 right-1/4 w-2 h-2 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-ping`}
+            style={{ animationDuration: '3s' }}
+          />
+          <div
+            className={`absolute top-2/3 right-20 w-3 h-3 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-pulse`}
+            style={{ animationDuration: '2s' }}
+          />
+          <div
+            className={`absolute top-1/4 right-1/2 w-1 h-1 ${currentTheme.particles} rounded-full transition-all duration-1000 animate-bounce`}
+            style={{ animationDuration: '4s' }}
+          />
+        </div>
+
+        <div className="relative z-10">
+          <HeroSection />
+          <Banner1 />
+          <HowItWorksSection />
+          <div className="px-4 md:px-8 lg:px-12">
             <SearchSection />
             <div className="py-12">
-                {renderContent()}
+              {renderContent()}
             </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
