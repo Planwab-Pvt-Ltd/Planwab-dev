@@ -680,7 +680,7 @@ const StepSuccess = ({ category }) => {
                     {config.successMessage}
                 </p>
                 <p className="text-base text-gray-500">
-                    We'll be in touch within 24 hours with your custom {config.title.toLowerCase()} plan.
+                    We&apos;ll be in touch within 24 hours with your custom {config.title.toLowerCase()} plan.
                 </p>
             </div>
 
