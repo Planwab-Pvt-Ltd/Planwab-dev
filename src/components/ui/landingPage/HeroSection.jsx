@@ -1,0 +1,198 @@
+'use client';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { useCategoryStore } from '@/GlobalState/CategoryStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, MapPin, Users, Plus, Minus, Building2, Gift, Cake, PartyPopper, Briefcase } from 'lucide-react';
+
+const allLocations = [
+    { name: 'Goa', state: 'Goa' },
+    { name: 'Udaipur', state: 'Rajasthan' },
+    { name: 'Jaipur', state: 'Rajasthan' },
+    { name: 'Mumbai', state: 'Maharashtra' },
+    { name: 'Delhi NCR', state: 'Delhi' },
+    { name: 'Bangalore', state: 'Karnataka' },
+    { name: 'Chennai', state: 'Tamil Nadu' },
+    { name: 'Hyderabad', state: 'Telangana' },
+    { name: 'Pune', state: 'Maharashtra' },
+    { name: 'Ahmedabad', state: 'Gujarat' },
+    { name: 'Kolkata', state: 'West Bengal' },
+    { name: 'Lonavla', state: 'Maharashtra' },
+];
+
+const eventTypeSuggestions = [
+    { name: 'Wedding', icon: <Users size={20} className="text-rose-500" /> },
+    { name: 'Anniversary', icon: <Gift size={20} className="text-amber-500" /> },
+    { name: 'Birthday', icon: <Cake size={20} className="text-blue-500" /> },
+    { name: 'Engagement', icon: <PartyPopper size={20} className="text-teal-500" /> },
+    { name: 'Corporate Event', icon: <Briefcase size={20} className="text-slate-500" /> },
+];
+
+export default function HeroSection() {
+    const { activeCategory, setActiveCategory } = useCategoryStore();
+    const [activeField, setActiveField] = useState(null);
+    const [eventTypeInput, setEventTypeInput] = useState('');
+    const [locationInput, setLocationInput] = useState('');
+    const [guestCount, setGuestCount] = useState({ adults: 2, children: 0 });
+    const searchRef = useRef(null);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        setEventTypeInput(activeCategory);
+    }, [activeCategory]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setActiveField(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleFieldClick = (field) => {
+        setActiveField(prev => prev === field ? null : field);
+        if (field === 'event' || field === 'location') {
+            setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 100);
+        }
+    };
+
+    const totalGuests = guestCount.adults + guestCount.children;
+
+    const handleGuestChange = (type, amount) => {
+        setGuestCount(prev => ({
+            ...prev,
+            [type]: Math.max(type === 'adults' ? 1 : 0, prev[type] + amount)
+        }));
+    };
+
+    const handleSearch = () => {
+        console.log("Searching for:", {
+            category: eventTypeInput,
+            location: locationInput,
+            guests: totalGuests,
+        });
+    };
+
+    const filteredEventTypes = eventTypeInput
+        ? eventTypeSuggestions.filter(type => type.name.toLowerCase().includes(eventTypeInput.toLowerCase()))
+        : eventTypeSuggestions;
+
+    const filteredLocations = locationInput
+        ? allLocations.filter(loc => loc.name.toLowerCase().includes(locationInput.toLowerCase()))
+        : allLocations;
+
+    const dropdownClasses = `absolute w-full bg-white rounded-xl shadow-lg border p-2 z-50 max-h-80 overflow-y-auto bottom-full mb-2`;
+
+    const heroVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+        },
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    };
+
+    const renderDropdown = () => {
+        switch (activeField) {
+            case 'event':
+                return (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className={dropdownClasses}>
+                        {filteredEventTypes.map(type => (
+                            <button key={type.name} onClick={() => { setActiveCategory(type.name); setEventTypeInput(type.name); setActiveField(null); }} className="w-full text-left p-3 hover:bg-gray-100 rounded-lg flex items-center gap-3">
+                                {type.icon}
+                                <span>{type.name}</span>
+                            </button>
+                        ))}
+                    </motion.div>
+                );
+            case 'location':
+                return (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className={dropdownClasses}>
+                        {filteredLocations.map(loc => (
+                            <button key={loc.name} onClick={() => { setLocationInput(loc.name); setActiveField(null); }} className="w-full text-left p-3 hover:bg-gray-100 rounded-lg flex items-center gap-3 transition-colors">
+                                <div className="p-2 bg-gray-100 rounded-md"><Building2 size={18} className="text-gray-600" /></div>
+                                <div>
+                                    <p className="font-semibold">{loc.name}</p>
+                                    <p className="text-sm text-gray-500">{loc.state}</p>
+                                </div>
+                            </button>
+                        ))}
+                    </motion.div>
+                );
+            case 'guests':
+                return (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className={`${dropdownClasses} sm:w-80 sm:right-0`}>
+                        <div className="p-3 space-y-4">
+                            <div className="flex justify-between items-center"><p className="font-semibold">Adults</p><div className="flex items-center gap-3"><button onClick={() => handleGuestChange('adults', -1)} disabled={guestCount.adults <= 1} className="w-8 h-8 flex items-center justify-center rounded-full border disabled:opacity-50 hover:border-gray-400 transition-colors"><Minus size={16} /></button><span className="w-8 text-center font-medium">{guestCount.adults}</span><button onClick={() => handleGuestChange('adults', 1)} className="w-8 h-8 flex items-center justify-center rounded-full border hover:border-gray-400 transition-colors"><Plus size={16} /></button></div></div>
+                            <div className="flex justify-between items-center"><p className="font-semibold">Children</p><div className="flex items-center gap-3"><button onClick={() => handleGuestChange('children', -1)} disabled={guestCount.children <= 0} className="w-8 h-8 flex items-center justify-center rounded-full border disabled:opacity-50 hover:border-gray-400 transition-colors"><Minus size={16} /></button><span className="w-8 text-center font-medium">{guestCount.children}</span><button onClick={() => handleGuestChange('children', 1)} className="w-8 h-8 flex items-center justify-center rounded-full border hover:border-gray-400 transition-colors"><Plus size={16} /></button></div></div>
+                            <button onClick={() => setActiveField(null)} className="w-full bg-rose-500 text-white font-semibold py-2 rounded-lg mt-2 hover:bg-rose-600 transition-colors">Done</button>
+                        </div>
+                    </motion.div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-4 pt-24 pb-12 sm:pt-32 sm:pb-16 w-full">
+            <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)" }} />
+            <motion.div className='relative' variants={heroVariants} initial="hidden" animate="visible">
+                <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-gray-900">
+                        Moments that Matter, <span className="text-rose-500">Made Simple.</span>
+                    </h1>
+                    <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
+                        From intimate anniversaries to grand weddings, planWAB is your trusted partner in crafting unforgettable celebrations. Find venues, book vendors, and bring your vision to life, effortlessly.
+                    </p>
+                </motion.div>
+
+                <motion.div ref={searchRef} variants={itemVariants} className="relative w-full max-w-4xl mt-10">
+                    <div className={`bg-white/70 backdrop-blur-md p-2 rounded-full shadow-lg border border-gray-200 flex flex-col sm:flex-row items-center gap-2 sm:gap-0 transition-all duration-300 ${activeField ? 'shadow-2xl' : ''}`}>
+                        <div className="w-full sm:w-auto flex-1 relative">
+                            <div onClick={() => handleFieldClick('event')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-800">Event</p>
+                                    <input ref={activeField === 'event' ? inputRef : null} type="text" placeholder="What are you planning?" className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500" value={eventTypeInput} onChange={(e) => setEventTypeInput(e.target.value)} />
+                                </div>
+                            </div>
+                            <AnimatePresence>{activeField === 'event' && renderDropdown()}</AnimatePresence>
+                        </div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
+                        <div className="w-full sm:w-auto flex-1 relative">
+                            <div onClick={() => handleFieldClick('location')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer">
+                                <MapPin className="text-rose-500 mr-3 hidden lg:block" size={20} />
+                                <div>
+                                    <p className="text-xs font-bold text-gray-800">Location</p>
+                                    <input ref={activeField === 'location' ? inputRef : null} type="text" placeholder="Search destinations" className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500" value={locationInput} onChange={(e) => setLocationInput(e.target.value)} />
+                                </div>
+                            </div>
+                            <AnimatePresence>{activeField === 'location' && renderDropdown()}</AnimatePresence>
+                        </div>
+                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
+                        <div className="w-full sm:w-auto flex-1 relative">
+                            <button onClick={() => handleFieldClick('guests')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors">
+                                <Users className="text-rose-500 mr-3 hidden lg:block" size={20} />
+                                <div>
+                                    <p className="text-xs font-bold text-gray-800">Guests</p>
+                                    <p className="text-base text-gray-600">{totalGuests} guest{totalGuests !== 1 && 's'}</p>
+                                </div>
+                            </button>
+                            <AnimatePresence>{activeField === 'guests' && renderDropdown()}</AnimatePresence>
+                        </div>
+                        <button onClick={handleSearch} className="w-full bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center p-3 sm:p-0 sm:w-14 sm:h-14 transition-all duration-300 transform hover:scale-105 shadow-md">
+                            <Search size={24} />
+                            <span className="sm:hidden ml-2">Search</span>
+                        </button>
+                    </div> 
+                </motion.div>
+            </motion.div>
+        </section>
+    );
+}

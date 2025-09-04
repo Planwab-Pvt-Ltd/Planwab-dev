@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Globe, Menu, UserCircle, ChevronDown, Search, MapPin, User, Settings, LogOut, CreditCard, Heart, Star } from 'lucide-react';
 import { useCategoryStore } from '@/GlobalState/CategoryStore';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const CategoryButton = ({ category, imageSrc, active, onClick, buttonRef }) => (
     <button
@@ -139,8 +141,8 @@ const LocationDropdown = ({ isOpen, onClose }) => {
                         key={index}
                         onClick={() => handleCitySelect(city)}
                         className={`w-full px-4 py-3 text-left transition-all duration-200 flex items-center ${currentCity === city
-                                ? 'bg-blue-50 border-r-2 border-blue-500'
-                                : 'hover:bg-gray-50'
+                            ? 'bg-blue-50 border-r-2 border-blue-500'
+                            : 'hover:bg-gray-50'
                             }`}
                     >
                         <MapPin className={`w-4 h-4 mr-3 ${currentCity === city ? 'text-blue-500' : 'text-gray-400'
@@ -214,6 +216,7 @@ const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(null);
+    const router = useRouter();
 
     const plannerRef = useRef(null);
     const locationRef = useRef(null);
@@ -265,6 +268,11 @@ const Header = () => {
         setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
     };
 
+    const handleCategoryClick = (category) => {
+        setActiveCategory(category);
+        router.push(`/events/${category.toLowerCase()}`);
+    }
+
     return (
         <header className={`
             fixed top-0 left-0 right-0 z-50 
@@ -276,8 +284,8 @@ const Header = () => {
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
                     <div className="flex-shrink-0">
-                        <div
-                            className="flex items-center space-x-3 cursor-pointer group transition-all duration-400 ease-out hover:scale-110"
+                        <Link href="/"
+                            className="flex items-center space-x-2 cursor-pointer group transition-all duration-400 ease-out hover:scale-110"
                             onClick={() => window.location.reload()}
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
@@ -300,12 +308,12 @@ const Header = () => {
                             </div>
                             <span className={`
                                 text-2xl font-bold tracking-tight transition-all duration-400 ease-out
-                                bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent
+                                bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-[#f59e0b]
                                 ${isHovered ? 'scale-105' : ''}
                             `}>
                                 planWAB
                             </span>
-                        </div>
+                        </Link>
                     </div>
 
                     <div ref={tabsContainerRef} className="relative flex-1 flex justify-center items-center h-full max-w-lg">
@@ -319,7 +327,7 @@ const Header = () => {
                                     category={cat.name}
                                     imageSrc={cat.image}
                                     active={activeCategory === cat.name}
-                                    onClick={() => setActiveCategory(cat.name)}
+                                    onClick={() => handleCategoryClick(cat.name)}
                                 />
                             ))}
                         </div>
