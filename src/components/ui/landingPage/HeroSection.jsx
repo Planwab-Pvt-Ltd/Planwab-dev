@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useCategoryStore } from '@/GlobalState/CategoryStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Users, Plus, Minus, Building2, Gift, Cake, PartyPopper, Briefcase } from 'lucide-react';
+import { Search, MapPin, Users, Plus, Minus, Building2, Gift, Cake, PartyPopper, Briefcase, Camera, Paintbrush2, UtensilsCrossed, Gem, Mail, Music, UserCheck, Shirt, Scissors, Hand, CakeSlice } from 'lucide-react';
+import Link from 'next/link';
 
 const allLocations = [
     { name: 'Goa', state: 'Goa' },
@@ -27,6 +28,22 @@ const eventTypeSuggestions = [
     { name: 'Engagement', icon: <PartyPopper size={20} className="text-teal-500" /> },
     { name: 'Corporate Event', icon: <Briefcase size={20} className="text-slate-500" /> },
 ];
+
+const vendorCategories = [
+    { name: 'Venues', icon: <Building2 size={20} /> },
+    { name: 'Photographers', icon: <Camera size={20} /> },
+    { name: 'Makeup', icon: <Paintbrush2 size={20} /> },
+    { name: 'Planners', icon: <UserCheck size={20} /> },
+    { name: 'Catering', icon: <UtensilsCrossed size={20} /> },
+    { name: 'Bridal Wear', icon: <Shirt size={20} /> },
+    { name: 'Mehendi', icon: <Hand size={20} /> },
+    { name: 'Cakes', icon: <CakeSlice size={20} /> },
+    { name: 'Jewellery', icon: <Gem size={20} /> },
+    { name: 'Invitations', icon: <Mail size={20} /> },
+    { name: 'DJs', icon: <Music size={20} /> },
+    { name: 'Hairstyling', icon: <Scissors size={20} /> },
+];
+
 
 export default function HeroSection() {
     const { activeCategory, setActiveCategory } = useCategoryStore();
@@ -141,56 +158,73 @@ export default function HeroSection() {
     };
 
     return (
-        <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-4 pt-24 pb-12 sm:pt-32 sm:pb-16 w-full">
+        <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-4 py-12 w-full pt-32">
             <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)" }} />
             <motion.div className='relative' variants={heroVariants} initial="hidden" animate="visible">
-                <motion.div variants={itemVariants} className="max-w-4xl mx-auto">
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-gray-900">
+                <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-10">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-gray-900">
                         Moments that Matter, <span className="text-rose-500">Made Simple.</span>
                     </h1>
-                    <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
-                        From intimate anniversaries to grand weddings, planWAB is your trusted partner in crafting unforgettable celebrations. Find venues, book vendors, and bring your vision to life, effortlessly.
+                    <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg text-gray-600">
+                        From intimate anniversaries to grand weddings, planWAB is your trusted partner in crafting unforgettable celebrations.
                     </p>
                 </motion.div>
 
-                <motion.div ref={searchRef} variants={itemVariants} className="relative w-full max-w-4xl mt-10">
-                    <div className={`bg-white/70 backdrop-blur-md p-2 rounded-full shadow-lg border border-gray-200 flex flex-col sm:flex-row items-center gap-2 sm:gap-0 transition-all duration-300 ${activeField ? 'shadow-2xl' : ''}`}>
-                        <div className="w-full sm:w-auto flex-1 relative">
-                            <div onClick={() => handleFieldClick('event')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-800">Event</p>
-                                    <input ref={activeField === 'event' ? inputRef : null} type="text" placeholder="What are you planning?" className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500" value={eventTypeInput} onChange={(e) => setEventTypeInput(e.target.value)} />
+                <motion.div ref={searchRef} variants={itemVariants} className="relative w-full max-w-4xl mt-8">
+                    <div className={`bg-white/50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/30 transition-all duration-300 ${activeField ? 'shadow-2xl' : ''}`}>
+                        <div className="bg-white/50 p-2 rounded-full flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
+                            <div className="w-full sm:w-auto flex-1 relative">
+                                <div onClick={() => handleFieldClick('event')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer">
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-800">Event</p>
+                                        <input ref={activeField === 'event' ? inputRef : null} type="text" placeholder="What are you planning?" className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500" value={eventTypeInput} onChange={(e) => setEventTypeInput(e.target.value)} />
+                                    </div>
                                 </div>
+                                <AnimatePresence>{activeField === 'event' && renderDropdown()}</AnimatePresence>
                             </div>
-                            <AnimatePresence>{activeField === 'event' && renderDropdown()}</AnimatePresence>
-                        </div>
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-                        <div className="w-full sm:w-auto flex-1 relative">
-                            <div onClick={() => handleFieldClick('location')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer">
-                                <MapPin className="text-rose-500 mr-3 hidden lg:block" size={20} />
-                                <div>
-                                    <p className="text-xs font-bold text-gray-800">Location</p>
-                                    <input ref={activeField === 'location' ? inputRef : null} type="text" placeholder="Search destinations" className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500" value={locationInput} onChange={(e) => setLocationInput(e.target.value)} />
+                            <div className="hidden sm:block h-8 w-px bg-white/50"></div>
+                            <div className="w-full sm:w-auto flex-1 relative">
+                                <div onClick={() => handleFieldClick('location')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer">
+                                    <MapPin className="text-rose-500 mr-3 hidden lg:block" size={20} />
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-800">Location</p>
+                                        <input ref={activeField === 'location' ? inputRef : null} type="text" placeholder="Search destinations" className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500" value={locationInput} onChange={(e) => setLocationInput(e.target.value)} />
+                                    </div>
                                 </div>
+                                <AnimatePresence>{activeField === 'location' && renderDropdown()}</AnimatePresence>
                             </div>
-                            <AnimatePresence>{activeField === 'location' && renderDropdown()}</AnimatePresence>
-                        </div>
-                        <div className="hidden sm:block h-8 w-px bg-gray-200"></div>
-                        <div className="w-full sm:w-auto flex-1 relative">
-                            <button onClick={() => handleFieldClick('guests')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors">
-                                <Users className="text-rose-500 mr-3 hidden lg:block" size={20} />
-                                <div>
-                                    <p className="text-xs font-bold text-gray-800">Guests</p>
-                                    <p className="text-base text-gray-600">{totalGuests} guest{totalGuests !== 1 && 's'}</p>
-                                </div>
+                            <div className="hidden sm:block h-8 w-px bg-white/50"></div>
+                            <div className="w-full sm:w-auto flex-1 relative">
+                                <button onClick={() => handleFieldClick('guests')} className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors">
+                                    <Users className="text-rose-500 mr-3 hidden lg:block" size={20} />
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-800">Guests</p>
+                                        <p className="text-base text-gray-600">{totalGuests} guest{totalGuests !== 1 && 's'}</p>
+                                    </div>
+                                </button>
+                                <AnimatePresence>{activeField === 'guests' && renderDropdown()}</AnimatePresence>
+                            </div>
+                            <button onClick={handleSearch} className="w-full bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center p-3 sm:p-0 sm:w-14 sm:h-14 transition-all duration-300 transform hover:scale-105 shadow-md">
+                                <Search size={24} />
+                                <span className="sm:hidden ml-2">Search</span>
                             </button>
-                            <AnimatePresence>{activeField === 'guests' && renderDropdown()}</AnimatePresence>
                         </div>
-                        <button onClick={handleSearch} className="w-full bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center p-3 sm:p-0 sm:w-14 sm:h-14 transition-all duration-300 transform hover:scale-105 shadow-md">
-                            <Search size={24} />
-                            <span className="sm:hidden ml-2">Search</span>
-                        </button>
-                    </div> 
+                        <div className="border-t border-white/30 mx-6 my-4"></div>
+                        <div className="px-2 pb-1">
+                            <div className="flex justify-center items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-2">
+                                {vendorCategories.map((vendor, index) => (
+                                    <Link key={index} className="relative group" href={`/vendors/marketplace?category=${vendor.name.toLowerCase()}`}>
+                                        <div className="w-12 h-12 flex items-center justify-center bg-white/30 backdrop-blur-sm border border-white/20 rounded-full shadow-sm text-gray-600 cursor-pointer transition-all duration-300 group-hover:bg-white group-hover:shadow-lg group-hover:-translate-y-1 group-hover:text-rose-500">
+                                            {vendor.icon}
+                                        </div>
+                                        <span className="absolute top-full mt-2 w-max left-1/2 -translate-x-1/2 text-xs font-semibold bg-amber-300/70 text-black px-2 py-1 rounded-md shadow-lg opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none">
+                                            {vendor.name}
+                                        </span>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </motion.div>
             </motion.div>
         </section>

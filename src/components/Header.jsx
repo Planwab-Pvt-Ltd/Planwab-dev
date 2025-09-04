@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Globe, Menu, UserCircle, ChevronDown, Search, MapPin, User, Settings, LogOut, CreditCard, Heart, Star } from 'lucide-react';
 import { useCategoryStore } from '@/GlobalState/CategoryStore';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const CategoryButton = ({ category, imageSrc, active, onClick, buttonRef }) => (
@@ -212,29 +212,20 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
 };
 
 const Header = () => {
-    const { activeCategory, setActiveCategory } = useCategoryStore();
+    const { setActiveCategory } = useCategoryStore();
+    const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(null);
-    const router = useRouter();
 
     const plannerRef = useRef(null);
     const locationRef = useRef(null);
     const profileRef = useRef(null);
 
     const categories = [
-        {
-            name: 'Wedding',
-            image: 'https://cdn-icons-png.flaticon.com/512/3176/3176366.png'
-        },
-        {
-            name: 'Anniversary',
-            image: 'https://cdn-icons-png.flaticon.com/512/1077/1077035.png'
-        },
-        {
-            name: 'Birthday',
-            image: 'https://cdn-icons-png.flaticon.com/512/857/857681.png'
-        },
+        { name: 'Wedding', image: 'https://cdn-icons-png.flaticon.com/512/3176/3176366.png' },
+        { name: 'Anniversary', image: 'https://cdn-icons-png.flaticon.com/512/1077/1077035.png' },
+        { name: 'Birthday', image: 'https://cdn-icons-png.flaticon.com/512/857/857681.png' },
     ];
 
     const tabsContainerRef = useRef(null);
@@ -244,10 +235,16 @@ const Header = () => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 100);
         };
-
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    useEffect(() => {
+        const currentCategory = categories.find(cat => pathname === `/events/${cat.name.toLowerCase()}`);
+        if (currentCategory) {
+            setActiveCategory(currentCategory.name);
+        }
+    }, [pathname, setActiveCategory]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -259,7 +256,6 @@ const Header = () => {
                 setOpenDropdown(null);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -268,10 +264,7 @@ const Header = () => {
         setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
     };
 
-    const handleCategoryClick = (category) => {
-        setActiveCategory(category);
-        router.push(`/events/${category.toLowerCase()}`);
-    }
+    console.log(pathname)
 
     return (
         <header className={`
@@ -286,7 +279,6 @@ const Header = () => {
                     <div className="flex-shrink-0">
                         <Link href="/"
                             className="flex items-center space-x-2 cursor-pointer group transition-all duration-400 ease-out hover:scale-110"
-                            onClick={() => window.location.reload()}
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
                         >
@@ -320,16 +312,20 @@ const Header = () => {
                         <div className={`flex items-center ${isScrolled
                             ? 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-1.5 shadow-inner border border-gray-200/50'
                             : 'bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-1.5 shadow-inner border border-gray-200/50'}`}>
-                            {categories.map((cat) => (
-                                <CategoryButton
-                                    key={cat.name}
-                                    buttonRef={(el) => (tabRefs.current[cat.name] = el)}
-                                    category={cat.name}
-                                    imageSrc={cat.image}
-                                    active={activeCategory === cat.name}
-                                    onClick={() => handleCategoryClick(cat.name)}
-                                />
-                            ))}
+                            {categories.map((cat) => {
+                                const categoryPath = `/events/${cat.name.toLowerCase()}`;
+                                const isActive = pathname === categoryPath || pathname === `/plan-my-event/${cat.name.toLowerCase()}`;
+                                return (
+                                    <Link href={categoryPath} key={cat.name} passHref>
+                                        <CategoryButton
+                                            buttonRef={(el) => (tabRefs.current[cat.name] = el)}
+                                            category={cat.name}
+                                            imageSrc={cat.image}
+                                            active={isActive}
+                                        />
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
 

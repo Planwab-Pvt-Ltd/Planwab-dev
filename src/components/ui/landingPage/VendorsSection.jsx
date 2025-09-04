@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Star, Users, Palette, UserCheck, Heart, Camera, Brush, ArrowRight, Award, Clock, CheckCircle, Sparkles, Phone, Mail, Calendar } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Link } from 'next/link';
 
 const vendorsData = [
     { id: 1, type: 'Venue', name: 'The Marble Palace', location: 'Udaipur, Rajasthan', image: 'https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80', capacity: 500, price: '5,00,000', rating: 4.9, verified: true, bookings: 150 },
@@ -33,19 +35,19 @@ export const VenueCard = ({ vendor }) => (
         className="group relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 h-[480px] flex flex-col"
     >
         <div className="relative overflow-hidden h-56 flex-shrink-0">
-            <img 
-                src={vendor?.image} 
-                alt={vendor?.name} 
-                className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
+            <img
+                src={vendor?.image}
+                alt={vendor?.name}
+                className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                 onError={(e) => {
                     e.target.src = 'https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80';
                 }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            
+
             <div className="absolute top-4 right-4 flex gap-2">
                 {vendor?.verified && (
-                    <motion.div 
+                    <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.3 }}
@@ -82,7 +84,7 @@ export const VenueCard = ({ vendor }) => (
                         <p className="text-xs text-gray-600">Up to {vendor?.capacity} guests</p>
                     </div>
                 </div>
-                
+
                 <div className="text-right">
                     <p className="text-xs text-gray-500 mb-1">Starting from</p>
                     <p className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
@@ -90,7 +92,7 @@ export const VenueCard = ({ vendor }) => (
                     </p>
                 </div>
             </div>
-            
+
             <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
                 <div className="flex items-center gap-1">
                     <Calendar size={12} />
@@ -100,8 +102,8 @@ export const VenueCard = ({ vendor }) => (
                     Available
                 </div>
             </div>
-            
-            <motion.button 
+
+            <motion.button
                 className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 mt-auto"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
@@ -122,19 +124,19 @@ export const PhotographerCard = ({ vendor }) => (
         className="group relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 h-[480px] flex flex-col"
     >
         <div className="relative h-64 flex-shrink-0">
-            <img 
-                src={vendor?.image} 
-                alt={vendor?.name} 
-                className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
+            <img
+                src={vendor?.image}
+                alt={vendor?.name}
+                className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                 onError={(e) => {
                     e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80';
                 }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            
+
             <div className="absolute top-4 right-4">
                 {vendor?.verified && (
-                    <motion.div 
+                    <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.3 }}
@@ -148,13 +150,13 @@ export const PhotographerCard = ({ vendor }) => (
             <div className="absolute bottom-0 left-0 right-0 p-5">
                 <h3 className="text-2xl font-bold text-white mb-1">{vendor?.name}</h3>
                 <p className="text-white/80 text-sm mb-3">{vendor?.specialty}</p>
-                
+
                 <div className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-2xl p-3">
                     <div className="flex items-center gap-2">
                         <Star size={16} className="text-amber-400 fill-amber-400" />
                         <span className="font-bold text-white">{vendor?.rating}</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
                         <Clock size={14} className="text-white" />
                         <span className="text-sm font-medium text-white">{vendor?.experience}Y Exp</span>
@@ -173,8 +175,8 @@ export const PhotographerCard = ({ vendor }) => (
                     Portfolio Ready
                 </div>
             </div>
-            
-            <motion.button 
+
+            <motion.button
                 className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 mt-auto"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
@@ -196,18 +198,18 @@ export const DecoratorCard = ({ vendor }) => (
     >
         <div className="p-6 flex-1 flex flex-col">
             <div className="relative w-full h-48 rounded-2xl overflow-hidden mb-6 flex-shrink-0">
-                <img 
-                    src={vendor?.image} 
-                    alt={vendor?.name} 
-                    className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
+                <img
+                    src={vendor?.image}
+                    alt={vendor?.name}
+                    className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                     onError={(e) => {
                         e.target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80';
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                
+
                 {vendor?.verified && (
-                    <motion.div 
+                    <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.3 }}
@@ -217,16 +219,16 @@ export const DecoratorCard = ({ vendor }) => (
                     </motion.div>
                 )}
             </div>
-            
+
             <div className="flex-1 flex flex-col">
                 <div className="mb-4">
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{vendor?.name}</h3>
                     <p className="text-gray-600 text-sm">{vendor?.style}</p>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4 flex-1">
                     {vendor?.services?.slice(0, 3).map((service, index) => (
-                        <motion.span 
+                        <motion.span
                             key={service}
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -237,7 +239,7 @@ export const DecoratorCard = ({ vendor }) => (
                         </motion.span>
                     ))}
                 </div>
-                
+
                 <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
                     <div className="flex items-center gap-1">
                         <Brush size={12} />
@@ -247,8 +249,8 @@ export const DecoratorCard = ({ vendor }) => (
                         Available
                     </div>
                 </div>
-                
-                <motion.button 
+
+                <motion.button
                     className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 mt-auto"
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
@@ -272,16 +274,16 @@ export const PlannerCard = ({ vendor }) => (
         <div className="p-6 flex-1 flex flex-col">
             <div className="flex items-start gap-4 mb-6">
                 <div className="relative flex-shrink-0">
-                    <img 
-                        src={vendor?.image} 
-                        alt={vendor?.name} 
-                        className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg transition-all duration-300 group-hover:scale-105" 
+                    <img
+                        src={vendor?.image}
+                        alt={vendor?.name}
+                        className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg transition-all duration-300 group-hover:scale-105"
                         onError={(e) => {
                             e.target.src = 'https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80';
                         }}
                     />
                     {vendor?.verified && (
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: 0.3 }}
@@ -291,7 +293,7 @@ export const PlannerCard = ({ vendor }) => (
                         </motion.div>
                     )}
                 </div>
-                
+
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
@@ -306,13 +308,13 @@ export const PlannerCard = ({ vendor }) => (
                     </p>
                 </div>
             </div>
-            
+
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 mb-4 flex-1 flex items-center">
                 <p className="text-gray-700 italic text-center leading-relaxed text-sm">
                     "{vendor?.tagline}"
                 </p>
             </div>
-            
+
             <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
                 <div className="flex items-center gap-1">
                     <Calendar size={12} />
@@ -322,9 +324,9 @@ export const PlannerCard = ({ vendor }) => (
                     Taking Bookings
                 </div>
             </div>
-            
+
             <div className="flex gap-2">
-                <motion.button 
+                <motion.button
                     className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300"
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
@@ -332,8 +334,8 @@ export const PlannerCard = ({ vendor }) => (
                     <Phone size={14} />
                     Contact
                 </motion.button>
-                
-                <motion.button 
+
+                <motion.button
                     className="px-4 py-3 bg-white border-2 border-amber-200 text-amber-600 rounded-2xl font-semibold hover:bg-amber-50 transition-all duration-300"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -348,17 +350,19 @@ export const PlannerCard = ({ vendor }) => (
 export default function VendorsSection() {
     const [activeFilter, setActiveFilter] = useState('All');
 
+    const router = useRouter();
+
     const filteredVendors = activeFilter === 'All'
         ? vendorsData
         : vendorsData.filter(vendor => vendor.type === activeFilter.slice(0, -1));
 
     const getCardComponent = (vendor) => {
-        const cardProps = { key: vendor.id, vendor };
+        const cardProps = { vendor };
         switch (vendor.type) {
-            case 'Venue': return <VenueCard {...cardProps} />;
-            case 'Photographer': return <PhotographerCard {...cardProps} />;
-            case 'Decorator': return <DecoratorCard {...cardProps} />;
-            case 'Planner': return <PlannerCard {...cardProps} />;
+            case 'Venue': return <VenueCard {...cardProps} key={vendor.id} />;
+            case 'Photographer': return <PhotographerCard {...cardProps} key={vendor.id} />;
+            case 'Decorator': return <DecoratorCard {...cardProps} key={vendor.id} />;
+            case 'Planner': return <PlannerCard {...cardProps} key={vendor.id} />;
             default: return null;
         }
     };
@@ -385,7 +389,7 @@ export default function VendorsSection() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.1),transparent_50%)] pointer-events-none" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.08),transparent_50%)] pointer-events-none" />
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500" />
-            
+
             <motion.div
                 className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
                 initial="hidden"
@@ -394,7 +398,7 @@ export default function VendorsSection() {
                 variants={containerVariants}
             >
                 <motion.div variants={itemVariants} className="text-center max-w-4xl mx-auto mb-16">
-                    <motion.div 
+                    <motion.div
                         className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100/80 to-yellow-100/80 backdrop-blur-sm text-amber-700 px-6 py-3 rounded-full text-sm font-bold mb-6 border border-amber-200/50"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -403,8 +407,8 @@ export default function VendorsSection() {
                         <Sparkles size={16} className="animate-pulse" />
                         Premium Event Partners
                     </motion.div>
-                    
-                    <motion.h2 
+
+                    <motion.h2
                         className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-amber-800 to-gray-900 bg-clip-text text-transparent tracking-tight mb-6"
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -415,8 +419,8 @@ export default function VendorsSection() {
                             Event Professionals
                         </span>
                     </motion.h2>
-                    
-                    <motion.p 
+
+                    <motion.p
                         className="text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -426,8 +430,8 @@ export default function VendorsSection() {
                     </motion.p>
                 </motion.div>
 
-                <motion.div 
-                    variants={itemVariants} 
+                <motion.div
+                    variants={itemVariants}
                     className="flex justify-center mb-16"
                 >
                     <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-2 shadow-xl border border-amber-100/50">
@@ -436,17 +440,16 @@ export default function VendorsSection() {
                                 <motion.button
                                     key={filter.label}
                                     onClick={() => setActiveFilter(filter.label)}
-                                    className={`relative px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${
-                                        activeFilter === filter.label 
-                                            ? 'text-white shadow-lg scale-105' 
+                                    className={`relative px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${activeFilter === filter.label
+                                            ? 'text-white shadow-lg scale-105'
                                             : 'text-gray-700 hover:text-gray-900 hover:bg-amber-50/50'
-                                    }`}
+                                        }`}
                                     whileHover={{ scale: activeFilter !== filter.label ? 1.05 : 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                 >
                                     {activeFilter === filter.label && (
-                                        <motion.div 
-                                            layoutId="activeFilter" 
+                                        <motion.div
+                                            layoutId="activeFilter"
                                             className={`absolute inset-0 bg-gradient-to-r ${filter.gradient} rounded-2xl shadow-lg`}
                                             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                                         />
@@ -461,7 +464,7 @@ export default function VendorsSection() {
                     </div>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr"
                     layout
                     variants={containerVariants}
@@ -471,20 +474,21 @@ export default function VendorsSection() {
                     </AnimatePresence>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                     variants={itemVariants}
                     className="text-center mt-16"
                 >
-                    <motion.button 
+                    <motion.button
                         className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white px-10 py-4 rounded-3xl font-bold text-lg flex items-center gap-3 mx-auto hover:shadow-2xl transition-all duration-400 border-2 border-amber-300/50"
                         whileHover={{ scale: 1.05, y: -3 }}
                         whileTap={{ scale: 0.95 }}
+                        onClick={() => router.push('/vendors/marketplace')}
                     >
                         <Sparkles size={20} className="animate-pulse" />
                         Explore All Premium Vendors
                         <ArrowRight size={20} />
                     </motion.button>
-                    
+
                     <p className="text-gray-600 text-sm mt-4">
                         Join 10,000+ satisfied customers who found their perfect vendors
                     </p>

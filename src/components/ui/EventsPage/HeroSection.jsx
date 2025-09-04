@@ -93,7 +93,7 @@ const HeroSection = () => {
                                 <div className="text-xs md:text-sm text-white font-plus-jakarata-sans tracking-wide">venue partners</div>
                             </div>
                         </div>
-                        <a className="z-10 w-full bg-[linear-gradient(to_right,#9A2157,#A1285E,#BC2D6D,#A1285E,#9A2157)] font-plus-jakarata-sans text-lg font-semibold text-white transition-colors duration-200 hover:bg-[#7D2049] rounded-2xl py-4" id="desktop-go-to-planning-section" href="/plan-my-wedding/initiate">
+                        <a className="z-10 w-full bg-[linear-gradient(to_right,#9A2157,#A1285E,#BC2D6D,#A1285E,#9A2157)] font-plus-jakarata-sans text-lg font-semibold text-white transition-colors duration-200 hover:bg-[#7D2049] rounded-2xl py-4" id="desktop-go-to-planning-section" href={`/plan-my-event/${activeCategory.toLowerCase()}`}>
                             <div className="flex items-center justify-center gap-2">
                                 <span>Start my {activeCategory} planning</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right">
@@ -101,7 +101,7 @@ const HeroSection = () => {
                                 </svg>
                             </div>
                         </a>
-                    </div>
+                    </div> 
                 </div>
                 <div className="flex w-full justify-center mt-8">
                     <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

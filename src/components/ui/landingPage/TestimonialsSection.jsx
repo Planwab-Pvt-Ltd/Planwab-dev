@@ -131,7 +131,7 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center mt-16 z-50 p-4"
         >
             <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -139,7 +139,7 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative bg-white/95 backdrop-blur-sm rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl border border-amber-200/20"
+                className="relative bg-white/95 backdrop-blur-sm rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl border border-amber-200/20 overflow-y-scroll max-h-[80vh]"
             >
                 <div className="grid md:grid-cols-5">
                     <div className="md:col-span-2 bg-gradient-to-br from-amber-50 to-yellow-50 p-8 flex flex-col items-center justify-center text-center border-r border-amber-200/30">
