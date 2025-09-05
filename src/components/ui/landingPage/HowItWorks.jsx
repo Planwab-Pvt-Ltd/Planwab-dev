@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Feather, Award, CheckCircle, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Feather, Award, CheckCircle, Check } from "lucide-react";
+import { useCategoryStore } from "@/GlobalState/CategoryStore";
 
 const STEPS = [
   {
-    title: '1. Share Your Vision',
-    description: 'Tell us about your dream event. Our intuitive platform makes it easy to specify every detail, from guest count to aesthetic.',
+    title: "1. Share Your Vision",
+    description:
+      "Tell us about your dream event. Our intuitive platform makes it easy to specify every detail, from guest count to aesthetic.",
     icon: Feather,
     content: (
       <div className="p-6 h-full flex flex-col bg-white">
@@ -22,7 +24,9 @@ const STEPS = [
           </div>
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-gray-500">Location & Guests</p>
-            <p className="font-semibold text-gray-700">Goa, India ・ Approx. 200</p>
+            <p className="font-semibold text-gray-700">
+              Goa, India ・ Approx. 200
+            </p>
           </div>
         </div>
         <button className="w-full mt-auto bg-cyan-500 text-white py-2.5 rounded-lg font-semibold hover:bg-cyan-600 transition-colors">
@@ -32,8 +36,9 @@ const STEPS = [
     ),
   },
   {
-    title: '2. Receive Curated Proposals',
-    description: 'Forget endless searching. We match you with vetted, world-class vendors who are perfect for your event.',
+    title: "2. Receive Curated Proposals",
+    description:
+      "Forget endless searching. We match you with vetted, world-class vendors who are perfect for your event.",
     icon: Award,
     content: (
       <div className="p-6 h-full flex flex-col bg-white">
@@ -43,11 +48,15 @@ const STEPS = [
         </h3>
         <div className="space-y-3 text-sm flex-grow">
           <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
-            <p className="font-semibold text-gray-800">Taj Exotica Resort & Spa</p>
+            <p className="font-semibold text-gray-800">
+              Taj Exotica Resort & Spa
+            </p>
             <p className="text-xs text-gray-500">Venue & Catering - ★ 4.9</p>
           </div>
           <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
-            <p className="font-semibold text-gray-800">Shutterdown Photography</p>
+            <p className="font-semibold text-gray-800">
+              Shutterdown Photography
+            </p>
             <p className="text-xs text-gray-500">Photography - ★ 5.0</p>
           </div>
         </div>
@@ -55,8 +64,9 @@ const STEPS = [
     ),
   },
   {
-    title: '3. Book with Confidence',
-    description: 'Finalize your choices with transparent pricing and contracts. We secure your dream team, stress-free.',
+    title: "3. Book with Confidence",
+    description:
+      "Finalize your choices with transparent pricing and contracts. We secure your dream team, stress-free.",
     icon: CheckCircle,
     content: (
       <div className="p-6 h-full flex flex-col items-center justify-center text-center bg-white">
@@ -64,15 +74,26 @@ const STEPS = [
           <Check className="w-12 h-12 text-green-500" />
         </div>
         <h3 className="text-2xl font-bold text-gray-800">Booking Confirmed!</h3>
-        <p className="text-gray-500 mt-2 text-sm max-w-xs">Your perfect day is officially planned. Let the countdown begin!</p>
+        <p className="text-gray-500 mt-2 text-sm max-w-xs">
+          Your perfect day is officially planned. Let the countdown begin!
+        </p>
       </div>
     ),
   },
 ];
 
+const themeColors = {
+  Wedding: "#BE185D",
+  Anniversary: "#D97706",
+  Birthday: "#2563EB",
+  Default: "#4B5563",
+};
+
 export default function HowItWorksSection() {
+  const { activeCategory } = useCategoryStore();
   const [activeStep, setActiveStep] = useState(0);
   const stepRefs = useRef([]);
+  const color = themeColors[activeCategory] || themeColors.Default;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -83,15 +104,14 @@ export default function HowItWorksSection() {
           }
         });
       },
-      { rootMargin: '-50% 0px -50% 0px', threshold: 0 }
+      { rootMargin: "-50% 0px -50% 0px", threshold: 0 },
     );
-
-    stepRefs.current.forEach((ref) => {
+    const refs = stepRefs.current;
+    refs.forEach((ref) => {
       if (ref) observer.observe(ref);
     });
-
     return () => {
-      stepRefs.current.forEach((ref) => {
+      refs.forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
@@ -100,12 +120,13 @@ export default function HowItWorksSection() {
   return (
     <section className="py-16 sm:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 max-w-3xl mx-auto !z-50">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 tracking-tight z-50">
+        <div className="text-center mb-12 max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 tracking-tight">
             Your Dream Event, Simplified
           </h2>
-          <p className="mt-4 text-lg text-gray-600">
-            From vision to reality in three seamless steps. We handle the details so you can cherish the moments.
+          <p className="mt-4 text-base sm:text-lg text-gray-600">
+            From vision to reality in three seamless steps. We handle the
+            details so you can cherish the moments.
           </p>
         </div>
 
@@ -119,16 +140,16 @@ export default function HowItWorksSection() {
                     key={step.title}
                     ref={(el) => (stepRefs.current[i] = el)}
                     data-step={i}
-                    className="opacity-50 transition-opacity duration-500"
+                    className="transition-opacity duration-500"
                     style={{ opacity: isActive ? 1 : 0.4 }}
                   >
                     <div className="flex items-start gap-4 sm:gap-6">
                       <motion.div
                         className="relative z-10 flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg border-4"
                         animate={{
-                          borderColor: isActive ? '#EC4899' : '#F3F4F6',
-                          backgroundColor: isActive ? '#BE185D' : '#FFFFFF',
-                          color: isActive ? '#FFFFFF' : '#6B7280',
+                          borderColor: isActive ? color : "#F3F4F6",
+                          backgroundColor: isActive ? color : "#FFFFFF",
+                          color: isActive ? "#FFFFFF" : "#6B7280",
                           scale: isActive ? 1.1 : 1,
                         }}
                         transition={{ duration: 0.3 }}
@@ -144,21 +165,32 @@ export default function HowItWorksSection() {
                         </p>
                       </div>
                     </div>
+                    <div className="lg:hidden mt-6 w-full aspect-square max-h-[400px] rounded-2xl bg-white border border-gray-200/60 shadow-xl overflow-hidden">
+                      {step.content}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
-          
-          <div className="w-full lg:w-1/2 lg:sticky top-24 h-[500px]">
+
+          <div className="hidden lg:block w-full lg:w-1/2 lg:sticky top-24 h-[500px]">
             <div className="w-full h-full rounded-2xl bg-white border border-gray-200/60 shadow-xl overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeStep}
                   className="absolute inset-0 w-full h-full"
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
-                  exit={{ opacity: 0, y: -20, transition: { duration: 0.3, ease: 'easeIn' } }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.5, ease: "easeOut" },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -20,
+                    transition: { duration: 0.3, ease: "easeIn" },
+                  }}
                 >
                   {STEPS[activeStep].content}
                 </motion.div>

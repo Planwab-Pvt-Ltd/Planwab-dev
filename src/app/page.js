@@ -30,11 +30,11 @@ export default function Home() {
           }}
         />
         <div
-          className={`fixed -top-1/4 -left-1/4 w-1/2 h-1/2 ${currentTheme?.glow} rounded-full blur-3xl opacity-80 animate-pulse transition-colors duration-1000 ease-in-out`}
+          className={`fixed -top-1/4 -left-1/2 w-full h-1/2 lg:w-1/2 lg:h-1/2 ${currentTheme?.glow} rounded-full blur-3xl opacity-60 animate-pulse transition-colors duration-1000 ease-in-out`}
           style={{ animationDuration: '8s' }}
         />
         <div
-          className={`fixed -bottom-1/4 -right-1/4 w-1/2 h-1/2 ${currentTheme?.glow} rounded-full blur-3xl opacity-80 animate-pulse transition-colors duration-1000 ease-in-out`}
+          className={`fixed -bottom-1/4 -right-1/2 w-full h-1/2 lg:w-1/2 lg:h-1/2 ${currentTheme?.glow} rounded-full blur-3xl opacity-60 animate-pulse transition-colors duration-1000 ease-in-out`}
           style={{ animationDuration: '10s', animationDelay: '2s' }}
         />
 

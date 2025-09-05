@@ -48,7 +48,7 @@ export default function Home() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
           {[...Array(8)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -57,74 +57,24 @@ export default function Home() {
     }
 
     switch (activeCategory) {
-      case 'Wedding':
-        return <Wedding />;
-      case 'Anniversary':
-        return <Anniversary />;
-      case 'Birthday':
-        return <Birthday />;
-      default:
-        return <Wedding />;
+      case 'Wedding': return <Wedding />;
+      case 'Anniversary': return <Anniversary />;
+      case 'Birthday': return <Birthday />;
+      default: return <Wedding />;
     }
   };
 
-  const currentTheme = categoryThemes[activeCategory];
+  const currentTheme = categoryThemes[activeCategory] || categoryThemes.Wedding;
 
   return (
     <>
-      <div className="relative overflow-hidden transition-all duration-1000 ease-out">
-        <div
-          className={`fixed inset-0 bg-gradient-to-br ${currentTheme?.primary} transition-all duration-1000 ease-out`}
-        />
-
-        <div
-          className={`fixed inset-0 bg-gradient-radial ${currentTheme?.accent} transition-all duration-1000 ease-out`}
-        />
-
-        <div
-          className={`fixed top-20 right-20 w-96 h-96 ${currentTheme?.glow} rounded-full blur-3xl opacity-50 transition-all duration-1000 ease-out animate-pulse`}
-        />
-
-        <div
-          className={`fixed bottom-20 left-20 w-80 h-80 ${currentTheme?.glow} rounded-full blur-2xl opacity-40 transition-all duration-1000 ease-out animate-bounce`}
-          style={{ animationDuration: '3s' }}
-        />
-
-        <div
-          className={`fixed top-1/2 left-1/2 w-64 h-64 ${currentTheme?.glow} rounded-full blur-3xl opacity-30 transition-all duration-1000 ease-out animate-spin`}
-          style={{
-            transform: 'translate(-50%, -50%)',
-            animationDuration: '8s'
-          }}
-        />
-
-        <div className="fixed inset-0 pointer-events-none z-5">
-          <div
-            className={`absolute top-32 left-1/4 w-3 h-3 ${currentTheme?.particles} rounded-full transition-all duration-1000 animate-ping`}
-            style={{ animationDuration: '2s' }}
-          />
-          <div
-            className={`absolute top-48 right-1/3 w-2 h-2 ${currentTheme?.particles} rounded-full transition-all duration-1000 animate-pulse`}
-            style={{ animationDuration: '1.5s' }}
-          />
-          <div
-            className={`absolute bottom-1/3 left-1/3 w-4 h-4 ${currentTheme?.particles} rounded-full transition-all duration-1000 animate-bounce`}
-            style={{ animationDuration: '2.5s' }}
-          />
-          <div
-            className={`absolute bottom-48 right-1/4 w-2 h-2 ${currentTheme?.particles} rounded-full transition-all duration-1000 animate-ping`}
-            style={{ animationDuration: '3s' }}
-          />
-          <div
-            className={`absolute top-2/3 right-20 w-3 h-3 ${currentTheme?.particles} rounded-full transition-all duration-1000 animate-pulse`}
-            style={{ animationDuration: '2s' }}
-          />
-          <div
-            className={`absolute top-1/4 right-1/2 w-1 h-1 ${currentTheme?.particles} rounded-full transition-all duration-1000 animate-bounce`}
-            style={{ animationDuration: '4s' }}
-          />
-        </div>
-
+      <div className="relative overflow-x-hidden transition-all duration-1000 ease-out">
+        <div className={`fixed inset-0 bg-gradient-to-br ${currentTheme?.primary} transition-all duration-1000 ease-out`} />
+        <div className={`fixed inset-0 bg-gradient-radial ${currentTheme?.accent} transition-all duration-1000 ease-out`} />
+        <div className={`fixed top-10 right-0 w-64 h-64 md:w-96 md:h-96 md:top-20 md:right-20 ${currentTheme?.glow} rounded-full blur-3xl opacity-50 transition-all duration-1000 ease-out animate-pulse`} />
+        <div className={`fixed bottom-10 left-0 w-64 h-64 md:w-80 md:h-80 md:bottom-20 md:left-20 ${currentTheme?.glow} rounded-full blur-2xl opacity-40 transition-all duration-1000 ease-out animate-bounce`} style={{ animationDuration: '3s' }} />
+        <div className={`fixed top-1/2 left-1/2 w-48 h-48 md:w-64 md:h-64 ${currentTheme?.glow} rounded-full blur-3xl opacity-30 transition-all duration-1000 ease-out animate-spin`} style={{ transform: 'translate(-50%, -50%)', animationDuration: '8s' }} />
+        
         <div className="relative z-10">
           <HeroSection />
           <Banner1 />
