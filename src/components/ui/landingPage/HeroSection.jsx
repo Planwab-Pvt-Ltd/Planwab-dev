@@ -42,7 +42,6 @@ const allLocations = [
   { name: "Kolkata", state: "West Bengal" },
   { name: "Lonavla", state: "Maharashtra" },
 ];
-
 const eventTypeSuggestions = [
   { name: "Wedding", icon: <Users size={20} className="text-rose-500" /> },
   { name: "Anniversary", icon: <Gift size={20} className="text-amber-500" /> },
@@ -56,7 +55,6 @@ const eventTypeSuggestions = [
     icon: <Briefcase size={20} className="text-slate-500" />,
   },
 ];
-
 const vendorCategories = [
   { name: "Venues", icon: <Building2 size={20} /> },
   { name: "Photographers", icon: <Camera size={20} /> },
@@ -84,7 +82,6 @@ export default function HeroSection() {
   useEffect(() => {
     setEventTypeInput(activeCategory);
   }, [activeCategory]);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -101,16 +98,13 @@ export default function HeroSection() {
       setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 100);
     }
   };
-
   const totalGuests = guestCount.adults + guestCount.children;
-
   const handleGuestChange = (type, amount) => {
     setGuestCount((prev) => ({
       ...prev,
       [type]: Math.max(type === "adults" ? 1 : 0, prev[type] + amount),
     }));
   };
-
   const handleSearch = () => {
     console.log("Searching for:", {
       category: eventTypeInput,
@@ -118,7 +112,6 @@ export default function HeroSection() {
       guests: totalGuests,
     });
   };
-
   const filteredEventTypes = eventTypeInput
     ? eventTypeSuggestions.filter((type) =>
         type.name.toLowerCase().includes(eventTypeInput.toLowerCase()),
@@ -129,7 +122,7 @@ export default function HeroSection() {
         loc.name.toLowerCase().includes(locationInput.toLowerCase()),
       )
     : allLocations;
-  const dropdownClasses = `absolute w-full bg-white rounded-xl shadow-lg border p-2 z-50 max-h-80 overflow-y-auto bottom-full mb-2`;
+  const dropdownClasses = `absolute w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 z-50 max-h-80 overflow-y-auto bottom-full mb-2`;
 
   const heroVariants = {
     hidden: { opacity: 0 },
@@ -138,7 +131,6 @@ export default function HeroSection() {
       transition: { staggerChildren: 0.15, delayChildren: 0.2 },
     },
   };
-
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -167,7 +159,7 @@ export default function HeroSection() {
                   setEventTypeInput(type.name);
                   setActiveField(null);
                 }}
-                className="w-full text-left p-3 hover:bg-gray-100 rounded-lg flex items-center gap-3"
+                className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 text-gray-800 dark:text-gray-200"
               >
                 {type.icon}
                 <span>{type.name}</span>
@@ -191,14 +183,21 @@ export default function HeroSection() {
                   setLocationInput(loc.name);
                   setActiveField(null);
                 }}
-                className="w-full text-left p-3 hover:bg-gray-100 rounded-lg flex items-center gap-3 transition-colors"
+                className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 transition-colors"
               >
-                <div className="p-2 bg-gray-100 rounded-md">
-                  <Building2 size={18} className="text-gray-600" />
+                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+                  <Building2
+                    size={18}
+                    className="text-gray-600 dark:text-gray-300"
+                  />
                 </div>
                 <div>
-                  <p className="font-semibold">{loc.name}</p>
-                  <p className="text-sm text-gray-500">{loc.state}</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-200">
+                    {loc.name}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {loc.state}
+                  </p>
                 </div>
               </button>
             ))}
@@ -215,42 +214,46 @@ export default function HeroSection() {
           >
             <div className="p-3 space-y-4">
               <div className="flex justify-between items-center">
-                <p className="font-semibold">Adults</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  Adults
+                </p>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleGuestChange("adults", -1)}
                     disabled={guestCount.adults <= 1}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border disabled:opacity-50 hover:border-gray-400 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 disabled:opacity-50 hover:border-gray-400 dark:hover:border-gray-500 transition-colors text-gray-800 dark:text-gray-200"
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="w-8 text-center font-medium">
+                  <span className="w-8 text-center font-medium text-gray-800 dark:text-gray-200">
                     {guestCount.adults}
                   </span>
                   <button
                     onClick={() => handleGuestChange("adults", 1)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border hover:border-gray-400 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors text-gray-800 dark:text-gray-200"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <p className="font-semibold">Children</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  Children
+                </p>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleGuestChange("children", -1)}
                     disabled={guestCount.children <= 0}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border disabled:opacity-50 hover:border-gray-400 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 disabled:opacity-50 hover:border-gray-400 dark:hover:border-gray-500 transition-colors text-gray-800 dark:text-gray-200"
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="w-8 text-center font-medium">
+                  <span className="w-8 text-center font-medium text-gray-800 dark:text-gray-200">
                     {guestCount.children}
                   </span>
                   <button
                     onClick={() => handleGuestChange("children", 1)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border hover:border-gray-400 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors text-gray-800 dark:text-gray-200"
                   >
                     <Plus size={16} />
                   </button>
@@ -273,10 +276,17 @@ export default function HeroSection() {
   return (
     <section className="relative flex flex-col items-center justify-center min-h-screen text-center px-4 py-12 w-full pt-32">
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 -z-20 dark:hidden"
         style={{
           background:
             "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 -z-20 hidden dark:block"
+        style={{
+          background:
+            "radial-gradient(125% 125% at 50% 10%, #0d1117 40%, #451a03 100%)",
         }}
       />
       <motion.div
@@ -286,37 +296,40 @@ export default function HeroSection() {
         animate="visible"
       >
         <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-10">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-gray-900">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-gray-900 dark:text-gray-100">
             Moments that Matter,{" "}
-            <span className="text-rose-500">Made Simple.</span>
+            <span className="text-rose-500 dark:text-rose-400">
+              Made Simple.
+            </span>
           </h1>
-          <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg text-gray-600">
+          <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg text-gray-600 dark:text-gray-400">
             From intimate anniversaries to grand weddings, planWAB is your
             trusted partner in crafting unforgettable celebrations.
           </p>
         </motion.div>
-
         <motion.div
           ref={searchRef}
           variants={itemVariants}
           className="relative w-full max-w-4xl"
         >
           <div
-            className={`bg-white/50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/30 transition-all duration-300 ${activeField ? "shadow-2xl" : ""}`}
+            className={`bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 ${activeField ? "shadow-2xl" : ""}`}
           >
-            <div className="bg-white/50 p-2 rounded-full flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
+            <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-full flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
               <div className="w-full sm:w-auto flex-1 relative">
                 <div
                   onClick={() => handleFieldClick("event")}
-                  className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer"
+                  className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                 >
                   <div>
-                    <p className="text-xs font-bold text-gray-800">Event</p>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
+                      Event
+                    </p>
                     <input
                       ref={activeField === "event" ? inputRef : null}
                       type="text"
                       placeholder="What are you planning?"
-                      className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500"
+                      className="text-base text-gray-700 dark:text-gray-200 bg-transparent focus:outline-none w-full placeholder:text-gray-500 dark:placeholder:text-gray-400"
                       value={eventTypeInput}
                       onChange={(e) => setEventTypeInput(e.target.value)}
                     />
@@ -326,23 +339,25 @@ export default function HeroSection() {
                   {activeField === "event" && renderDropdown()}
                 </AnimatePresence>
               </div>
-              <div className="hidden sm:block h-8 w-px bg-white/50"></div>
+              <div className="hidden sm:block h-8 w-px bg-gray-200/50 dark:bg-gray-700/50"></div>
               <div className="w-full sm:w-auto flex-1 relative">
                 <div
                   onClick={() => handleFieldClick("location")}
-                  className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors cursor-pointer"
+                  className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                 >
                   <MapPin
-                    className="text-rose-500 mr-3 hidden lg:block"
+                    className="text-rose-500 dark:text-rose-400 mr-3 hidden lg:block"
                     size={20}
                   />
                   <div>
-                    <p className="text-xs font-bold text-gray-800">Location</p>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
+                      Location
+                    </p>
                     <input
                       ref={activeField === "location" ? inputRef : null}
                       type="text"
                       placeholder="Search destinations"
-                      className="text-base text-gray-700 bg-transparent focus:outline-none w-full placeholder:text-gray-500"
+                      className="text-base text-gray-700 dark:text-gray-200 bg-transparent focus:outline-none w-full placeholder:text-gray-500 dark:placeholder:text-gray-400"
                       value={locationInput}
                       onChange={(e) => setLocationInput(e.target.value)}
                     />
@@ -352,19 +367,21 @@ export default function HeroSection() {
                   {activeField === "location" && renderDropdown()}
                 </AnimatePresence>
               </div>
-              <div className="hidden sm:block h-8 w-px bg-white/50"></div>
+              <div className="hidden sm:block h-8 w-px bg-gray-200/50 dark:bg-gray-700/50"></div>
               <div className="w-full sm:w-auto flex-1 relative">
                 <button
                   onClick={() => handleFieldClick("guests")}
-                  className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 transition-colors"
+                  className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <Users
-                    className="text-rose-500 mr-3 hidden lg:block"
+                    className="text-rose-500 dark:text-rose-400 mr-3 hidden lg:block"
                     size={20}
                   />
                   <div>
-                    <p className="text-xs font-bold text-gray-800">Guests</p>
-                    <p className="text-base text-gray-600">
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
+                      Guests
+                    </p>
+                    <p className="text-base text-gray-600 dark:text-gray-300">
                       {totalGuests} guest{totalGuests !== 1 && "s"}
                     </p>
                   </div>
@@ -381,7 +398,7 @@ export default function HeroSection() {
                 <span className="sm:hidden ml-2">Search</span>
               </button>
             </div>
-            <div className="border-t border-white/30 mx-6 my-4"></div>
+            <div className="border-t border-white/30 dark:border-gray-700/50 mx-6 my-4"></div>
             <div className="px-2 pb-1">
               <div className="flex justify-center items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-2">
                 {vendorCategories.map((vendor, index) => (
@@ -390,10 +407,10 @@ export default function HeroSection() {
                     className="relative group"
                     href={`/vendors/marketplace?category=${vendor.name.toLowerCase()}`}
                   >
-                    <div className="w-12 h-12 flex items-center justify-center bg-white/30 backdrop-blur-sm border border-white/20 rounded-full shadow-sm text-gray-600 cursor-pointer transition-all duration-300 group-hover:bg-white group-hover:shadow-lg group-hover:-translate-y-1 group-hover:text-rose-500">
+                    <div className="w-12 h-12 flex items-center justify-center bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm border border-white/20 dark:border-gray-700/30 rounded-full shadow-sm text-gray-600 dark:text-gray-300 cursor-pointer transition-all duration-300 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-lg group-hover:-translate-y-1 group-hover:text-rose-500 dark:group-hover:text-rose-400">
                       {vendor.icon}
                     </div>
-                    <span className="absolute top-full mt-2 w-max left-1/2 -translate-x-1/2 text-xs font-semibold bg-amber-300/70 text-black px-2 py-1 rounded-md shadow-lg opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none">
+                    <span className="absolute top-full mt-2 w-max left-1/2 -translate-x-1/2 text-xs font-semibold bg-amber-300/70 dark:bg-amber-400/80 text-black dark:text-gray-900 px-2 py-1 rounded-md shadow-lg opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none">
                       {vendor.name}
                     </span>
                   </Link>

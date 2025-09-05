@@ -117,7 +117,6 @@ const vendorsData = [
     events: 450,
   },
 ];
-
 const filters = [
   {
     label: "All",
@@ -153,7 +152,7 @@ export const VenueCard = ({ vendor }) => (
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: -30, scale: 0.95 }}
     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 min-h-[480px] flex flex-col"
+    className="group relative bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
   >
     <div className="relative overflow-hidden h-56 flex-shrink-0">
       <img
@@ -194,30 +193,32 @@ export const VenueCard = ({ vendor }) => (
     </div>
     <div className="p-6 flex-1 flex flex-col">
       <div className="flex items-center justify-between mb-4 flex-1">
-        <div className="flex items-center gap-3 text-gray-700">
-          <div className="bg-amber-50 p-2.5 rounded-xl">
-            <Users size={18} className="text-amber-600" />
+        <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+          <div className="bg-amber-50 dark:bg-amber-900/50 p-2.5 rounded-xl">
+            <Users size={18} className="text-amber-600 dark:text-amber-400" />
           </div>
           <div>
             <p className="font-semibold text-sm">Capacity</p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               Up to {vendor?.capacity} guests
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500 mb-1">Starting from</p>
-          <p className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            Starting from
+          </p>
+          <p className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
             ₹{vendor?.price}
           </p>
         </div>
       </div>
-      <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
+      <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
         <div className="flex items-center gap-1">
           <Calendar size={12} />
           <span>{vendor?.bookings} bookings</span>
         </div>
-        <div className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-medium">
+        <div className="bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full font-medium">
           Available
         </div>
       </div>
@@ -239,7 +240,7 @@ export const PhotographerCard = ({ vendor }) => (
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: -30, scale: 0.95 }}
     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 min-h-[480px] flex flex-col"
+    className="group relative bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
   >
     <div className="relative h-64 flex-shrink-0">
       <img
@@ -267,12 +268,12 @@ export const PhotographerCard = ({ vendor }) => (
       <div className="absolute bottom-0 left-0 right-0 p-5">
         <h3 className="text-2xl font-bold text-white mb-1">{vendor?.name}</h3>
         <p className="text-white/80 text-sm mb-3">{vendor?.specialty}</p>
-        <div className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-2xl p-3">
+        <div className="flex items-center justify-between bg-white/15 dark:bg-black/30 backdrop-blur-sm rounded-2xl p-3">
           <div className="flex items-center gap-2">
             <Star size={16} className="text-amber-400 fill-amber-400" />
             <span className="font-bold text-white">{vendor?.rating}</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2 bg-white/20 dark:bg-black/20 px-3 py-1.5 rounded-full">
             <Clock size={14} className="text-white" />
             <span className="text-sm font-medium text-white">
               {vendor?.experience}Y Exp
@@ -282,12 +283,12 @@ export const PhotographerCard = ({ vendor }) => (
       </div>
     </div>
     <div className="p-6 flex-1 flex flex-col">
-      <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
+      <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
         <div className="flex items-center gap-1">
           <Camera size={12} />
           <span>{vendor?.portfolio} photos</span>
         </div>
-        <div className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+        <div className="bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full font-medium">
           Portfolio Ready
         </div>
       </div>
@@ -309,7 +310,7 @@ export const DecoratorCard = ({ vendor }) => (
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: -30, scale: 0.95 }}
     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 min-h-[480px] flex flex-col"
+    className="group bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
   >
     <div className="p-6 flex-1 flex flex-col">
       <div className="relative w-full h-48 rounded-2xl overflow-hidden mb-6 flex-shrink-0">
@@ -336,10 +337,12 @@ export const DecoratorCard = ({ vendor }) => (
       </div>
       <div className="flex-1 flex flex-col">
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
             {vendor?.name}
           </h3>
-          <p className="text-gray-600 text-sm">{vendor?.style}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            {vendor?.style}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2 mb-4 flex-1">
           {vendor?.services?.slice(0, 3).map((service, index) => (
@@ -348,18 +351,18 @@ export const DecoratorCard = ({ vendor }) => (
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 + index * 0.1 }}
-              className="bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-rose-200"
+              className="bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/50 dark:to-pink-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-rose-200 dark:border-rose-800/60"
             >
               {service}
             </motion.span>
           ))}
         </div>
-        <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
+        <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-1">
             <Brush size={12} />
             <span>{vendor?.projects} projects</span>
           </div>
-          <div className="bg-rose-50 text-rose-700 px-2 py-1 rounded-full font-medium">
+          <div className="bg-rose-50 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 px-2 py-1 rounded-full font-medium">
             Available
           </div>
         </div>
@@ -382,7 +385,7 @@ export const PlannerCard = ({ vendor }) => (
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: -30, scale: 0.95 }}
     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 min-h-[480px] flex flex-col"
+    className="group bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
   >
     <div className="p-6 flex-1 flex flex-col">
       <div className="flex items-start gap-4 mb-6">
@@ -390,7 +393,7 @@ export const PlannerCard = ({ vendor }) => (
           <img
             src={vendor?.image}
             alt={vendor?.name}
-            className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-lg transition-all duration-300 group-hover:scale-105"
+            className="w-20 h-20 rounded-2xl object-cover border-4 border-white dark:border-gray-700 shadow-lg transition-all duration-300 group-hover:scale-105"
             onError={(e) => {
               e.target.src =
                 "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
@@ -414,26 +417,26 @@ export const PlannerCard = ({ vendor }) => (
               VERIFIED PLANNER
             </div>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-1">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
             {vendor?.name}
           </h3>
-          <p className="text-gray-600 text-sm flex items-center gap-1">
+          <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-1">
             <Clock size={14} />
             {vendor?.experience} Experience
           </p>
         </div>
       </div>
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 mb-4 flex-1 flex items-center">
-        <p className="text-gray-700 italic text-center leading-relaxed text-sm">
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-2xl p-4 mb-4 flex-1 flex items-center">
+        <p className="text-gray-700 dark:text-gray-300 italic text-center leading-relaxed text-sm">
           "{vendor?.tagline}"
         </p>
       </div>
-      <div className="flex items-center justify-between mb-4 text-xs text-gray-600">
+      <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
         <div className="flex items-center gap-1">
           <Calendar size={12} />
           <span>{vendor?.events} events</span>
         </div>
-        <div className="bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-medium">
+        <div className="bg-amber-50 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full font-medium">
           Taking Bookings
         </div>
       </div>
@@ -447,7 +450,7 @@ export const PlannerCard = ({ vendor }) => (
           Contact
         </motion.button>
         <motion.button
-          className="px-4 py-3 bg-white border-2 border-amber-200 text-amber-600 rounded-2xl font-semibold hover:bg-amber-50 transition-all duration-300"
+          className="px-4 py-3 bg-white dark:bg-gray-700 border-2 border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-300 rounded-2xl font-semibold hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-all duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -501,9 +504,9 @@ export default function VendorsSection() {
   };
 
   return (
-    <section className="py-20 sm:py-24 bg-gradient-to-br from-amber-50/30 via-white to-yellow-50/20 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.1),transparent_50%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.08),transparent_50%)] pointer-events-none" />
+    <section className="py-20 sm:py-24 bg-gradient-to-br from-amber-50/30 via-white to-yellow-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-amber-900/20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.1),transparent_50%)] dark:bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.15),transparent_50%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.08),transparent_50%)] dark:bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.12),transparent_50%)] pointer-events-none" />
       <motion.div
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
         initial="hidden"
@@ -516,7 +519,7 @@ export default function VendorsSection() {
           className="text-center max-w-4xl mx-auto mb-12 sm:mb-16"
         >
           <motion.div
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100/80 to-yellow-100/80 backdrop-blur-sm text-amber-700 px-6 py-3 rounded-full text-sm font-bold mb-6 border border-amber-200/50"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100/80 to-yellow-100/80 dark:from-amber-900/50 dark:to-yellow-900/50 backdrop-blur-sm text-amber-700 dark:text-amber-300 px-6 py-3 rounded-full text-sm font-bold mb-6 border border-amber-200/50 dark:border-amber-800/60"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -525,18 +528,18 @@ export default function VendorsSection() {
             Premium Event Partners
           </motion.div>
           <motion.h2
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-amber-800 to-gray-900 bg-clip-text text-transparent tracking-tight mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-amber-800 to-gray-900 dark:from-gray-100 dark:via-amber-300 dark:to-gray-100 bg-clip-text text-transparent tracking-tight mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             Discover Elite{" "}
-            <span className="block bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 dark:from-amber-500 dark:via-yellow-400 dark:to-amber-500 bg-clip-text text-transparent">
               Event Professionals
             </span>
           </motion.h2>
           <motion.p
-            className="text-base sm:text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto"
+            className="text-base sm:text-lg text-gray-700 dark:text-gray-400 leading-relaxed max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -546,18 +549,17 @@ export default function VendorsSection() {
             creativity.
           </motion.p>
         </motion.div>
-
         <motion.div
           variants={itemVariants}
           className="flex justify-center mb-12 sm:mb-16"
         >
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-2 shadow-xl border border-amber-100/50">
+          <div className="bg-white/90 dark:bg-gray-800/50 backdrop-blur-lg rounded-3xl p-2 shadow-xl border border-amber-100/50 dark:border-gray-700/50">
             <div className="flex flex-wrap justify-center gap-2">
               {filters.map((filter) => (
                 <motion.button
                   key={filter.label}
                   onClick={() => setActiveFilter(filter.label)}
-                  className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${activeFilter === filter.label ? "text-white shadow-lg scale-105" : "text-gray-700 hover:text-gray-900 hover:bg-amber-50/50"}`}
+                  className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${activeFilter === filter.label ? "text-white shadow-lg scale-105" : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-amber-50/50 dark:hover:bg-gray-700/50"}`}
                   whileHover={{
                     scale: activeFilter !== filter.label ? 1.05 : 1.05,
                   }}
@@ -582,7 +584,6 @@ export default function VendorsSection() {
             </div>
           </div>
         </motion.div>
-
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr"
           layout
@@ -592,7 +593,6 @@ export default function VendorsSection() {
             {filteredVendors.map((vendor) => getCardComponent(vendor))}
           </AnimatePresence>
         </motion.div>
-
         <motion.div variants={itemVariants} className="text-center mt-16">
           <motion.button
             className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white px-8 sm:px-10 py-4 rounded-3xl font-bold text-base sm:text-lg flex items-center gap-3 mx-auto hover:shadow-2xl transition-all duration-400 border-2 border-amber-300/50"
@@ -604,7 +604,7 @@ export default function VendorsSection() {
             Explore All Premium Vendors
             <ArrowRight size={20} />
           </motion.button>
-          <p className="text-gray-600 text-sm mt-4">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
             Join 10,000+ satisfied customers who found their perfect vendors
           </p>
         </motion.div>

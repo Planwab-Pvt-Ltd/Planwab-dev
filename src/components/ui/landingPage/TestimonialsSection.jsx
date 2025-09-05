@@ -125,7 +125,6 @@ const testimonialsData = [
     featured: false,
   },
 ];
-
 const eventTypeIcons = {
   Wedding: <Heart size={14} className="text-rose-500" />,
   Anniversary: <Calendar size={14} className="text-amber-500" />,
@@ -136,7 +135,6 @@ const eventTypeIcons = {
 
 const ViewTestimonialModal = ({ testimonial, onClose }) => {
   if (!testimonial) return null;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -151,72 +149,70 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white/95 backdrop-blur-sm rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl border border-amber-200/20 overflow-y-scroll max-h-[80vh]"
+        className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl border border-amber-200/20 dark:border-amber-800/20 overflow-y-scroll max-h-[80vh]"
       >
         <div className="grid md:grid-cols-5">
-          <div className="md:col-span-2 bg-gradient-to-br from-amber-50 to-yellow-50 p-8 flex flex-col items-center justify-center text-center border-r border-amber-200/30">
+          <div className="md:col-span-2 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-800 dark:to-amber-900/30 p-8 flex flex-col items-center justify-center text-center border-r border-amber-200/30 dark:border-amber-800/30">
             <img
               src={testimonial.avatar}
               alt={testimonial.name}
-              className="w-28 h-28 mb-6 rounded-full object-cover border-4 border-white shadow-lg"
+              className="w-28 h-28 mb-6 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
               onError={(e) => {
                 e.target.src =
                   "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=150&q=80";
               }}
             />
-
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-2xl font-bold text-gray-900">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {testimonial.name}
               </h3>
               {testimonial.verified && (
-                <CheckCircle size={20} className="text-emerald-500" />
+                <CheckCircle
+                  size={20}
+                  className="text-emerald-500 dark:text-emerald-400"
+                />
               )}
             </div>
-
-            <p className="text-gray-600 text-sm mb-4">{testimonial.email}</p>
-
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+              {testimonial.email}
+            </p>
             {testimonial.featured && (
               <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full mb-4 flex items-center gap-1">
                 <Award size={12} />
                 Featured Review
               </div>
             )}
-
             <div className="space-y-3 text-left w-full text-sm">
-              <div className="flex items-center gap-3 text-gray-700 bg-white/50 rounded-xl p-3">
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 rounded-xl p-3">
                 {eventTypeIcons[testimonial.eventType] || (
                   <Calendar size={14} />
                 )}
                 <div>
                   <p className="font-semibold">{testimonial.eventType}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(testimonial.eventDate).toLocaleDateString()}
                   </p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3 text-gray-700 bg-white/50 rounded-xl p-3">
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300 bg-white/50 dark:bg-gray-700/50 rounded-xl p-3">
                 <MapPin size={14} className="text-emerald-500" />
                 <div>
                   <p className="font-semibold">{testimonial.location}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {testimonial.guests} guests
                   </p>
                 </div>
               </div>
-
-              <div className="bg-white/50 rounded-xl p-3">
-                <p className="font-semibold text-gray-700 mb-1">
+              <div className="bg-white/50 dark:bg-gray-700/50 rounded-xl p-3">
+                <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Vendors Used:
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   {testimonial.vendorUsed}
                 </p>
               </div>
             </div>
           </div>
-
           <div className="md:col-span-3 p-8 flex flex-col">
             <div className="flex items-center gap-2 mb-6">
               <div className="flex">
@@ -224,24 +220,22 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
                   <Star
                     key={i}
                     size={20}
-                    className={`${i < testimonial.rating ? "text-amber-500 fill-amber-500" : "text-gray-300"}`}
+                    className={`${i < testimonial.rating ? "text-amber-500 fill-amber-500" : "text-gray-300 dark:text-gray-600"}`}
                   />
                 ))}
               </div>
-              <span className="text-2xl font-bold text-amber-600">
+              <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {testimonial.rating}.0
               </span>
             </div>
-
             <div className="relative flex-grow">
-              <Quote className="absolute -top-2 -left-2 w-12 h-12 text-amber-200" />
-              <p className="relative text-gray-800 text-lg leading-relaxed pl-6">
+              <Quote className="absolute -top-2 -left-2 w-12 h-12 text-amber-200 dark:text-amber-900/50" />
+              <p className="relative text-gray-800 dark:text-gray-300 text-lg leading-relaxed pl-6">
                 {testimonial.testimonial}
               </p>
             </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Event Date:{" "}
                 {new Date(testimonial.eventDate).toLocaleDateString("en-US", {
                   year: "numeric",
@@ -252,10 +246,9 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
             </div>
           </div>
         </div>
-
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all duration-200 shadow-lg"
+          className="absolute top-4 right-4 w-10 h-10 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-gray-700 transition-all duration-200 shadow-lg"
         >
           <X size={18} />
         </button>
@@ -279,7 +272,6 @@ const Testimonials = () => {
     };
     loadTestimonials();
   }, []);
-
   useEffect(() => {
     if (viewModalData) {
       document.body.style.overflow = "hidden";
@@ -297,21 +289,17 @@ const Testimonials = () => {
 
   const containerRef = useRef(null);
   const contentRef = useRef(null);
-
   const duplicatedTestimonials = useMemo(
     () => (isMarqueeActive ? [...testimonials, ...testimonials] : testimonials),
     [testimonials, isMarqueeActive],
   );
-
   const CARD_WIDTH = 400;
   const GAP = 24;
   const TOTAL_CARD_WIDTH = CARD_WIDTH + GAP;
   const MARQUEE_DURATION = 45;
-
   const controls = useAnimationControls();
   const x = useMotionValue(0);
   const hoverRef = useRef(false);
-
   const totalWidth = TOTAL_CARD_WIDTH * testimonials.length;
 
   const startMarquee = () => {
@@ -326,10 +314,8 @@ const Testimonials = () => {
       },
     });
   };
-
   useEffect(() => {
     if (isLoading || testimonials.length === 0) return;
-
     const checkWidth = () => {
       if (containerRef.current && contentRef.current) {
         const contentWidth = contentRef.current.scrollWidth;
@@ -337,12 +323,10 @@ const Testimonials = () => {
         setIsMarqueeActive(contentWidth > containerWidth);
       }
     };
-
     checkWidth();
     window.addEventListener("resize", checkWidth);
     return () => window.removeEventListener("resize", checkWidth);
   }, [isLoading, testimonials]);
-
   useEffect(() => {
     if (isMarqueeActive && !viewModalData) {
       startMarquee();
@@ -351,19 +335,16 @@ const Testimonials = () => {
       x.set(0);
     }
   }, [isMarqueeActive, viewModalData]);
-
   const handleMouseEnter = () => {
     if (!isMarqueeActive) return;
     hoverRef.current = true;
     controls.stop();
   };
-
   const handleMouseLeave = () => {
     if (!isMarqueeActive) return;
     hoverRef.current = false;
     startMarquee();
   };
-
   const handleNavigation = (direction) => {
     if (!isMarqueeActive) return;
     controls.stop();
@@ -373,7 +354,6 @@ const Testimonials = () => {
         ? currentX - TOTAL_CARD_WIDTH
         : currentX + TOTAL_CARD_WIDTH;
     targetX = Math.min(0, targetX);
-
     controls
       .start({
         x: targetX,
@@ -394,10 +374,9 @@ const Testimonials = () => {
   };
 
   return (
-    <section className="py-24 bg-gradient-to-br from-amber-50/30 via-white to-yellow-50/20 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.08),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.06),transparent_50%)]" />
-
+    <section className="py-24 bg-gradient-to-br from-amber-50/30 via-white to-yellow-50/20 dark:from-gray-900 dark:via-gray-900 dark:to-amber-900/20 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.08),transparent_50%)] dark:bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.12),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.06),transparent_50%)] dark:bg-[radial-gradient(circle_at_70%_80%,rgba(245,158,11,0.1),transparent_50%)]" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -408,20 +387,18 @@ const Testimonials = () => {
         >
           <div className="text-center lg:text-left">
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-gray-900 via-amber-800 to-gray-900 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-gray-900 via-amber-800 to-gray-900 dark:from-gray-100 dark:via-amber-300 dark:to-gray-100 bg-clip-text text-transparent">
                 What Our Clients
               </span>
-              <span className="block bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 dark:from-amber-500 dark:via-yellow-400 dark:to-amber-500 bg-clip-text text-transparent">
                 Are Saying
               </span>
             </h2>
-
-            <p className="text-gray-700 text-lg max-w-2xl leading-relaxed">
+            <p className="text-gray-700 dark:text-gray-400 text-lg max-w-2xl leading-relaxed">
               Real stories from couples and event hosts who trusted EventCraft
               to make their special moments unforgettable.
             </p>
           </div>
-
           <div className="flex-shrink-0 flex items-center justify-center lg:justify-start gap-3">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -433,23 +410,21 @@ const Testimonials = () => {
                 Share Your Story
               </span>
             </motion.button>
-
             {isMarqueeActive && (
               <div className="flex gap-2">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleNavigation("prev")}
-                  className="w-12 h-12 flex items-center justify-center bg-white/80 backdrop-blur-sm border border-amber-200 rounded-2xl text-amber-600 hover:bg-white hover:text-amber-700 transition-all duration-300 shadow-lg"
+                  className="w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm border border-amber-200 dark:border-gray-700 rounded-2xl text-amber-600 dark:text-amber-400 hover:bg-white dark:hover:bg-gray-700 hover:text-amber-700 transition-all duration-300 shadow-lg"
                 >
                   <ChevronLeft size={20} />
                 </motion.button>
-
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleNavigation("next")}
-                  className="w-12 h-12 flex items-center justify-center bg-white/80 backdrop-blur-sm border border-amber-200 rounded-2xl text-amber-600 hover:bg-white hover:text-amber-700 transition-all duration-300 shadow-lg"
+                  className="w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm border border-amber-200 dark:border-gray-700 rounded-2xl text-amber-600 dark:text-amber-400 hover:bg-white dark:hover:bg-gray-700 hover:text-amber-700 transition-all duration-300 shadow-lg"
                 >
                   <ChevronRight size={20} />
                 </motion.button>
@@ -457,7 +432,6 @@ const Testimonials = () => {
             )}
           </div>
         </motion.div>
-
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -467,27 +441,29 @@ const Testimonials = () => {
         >
           {isMarqueeActive && (
             <>
-              <div className="absolute -inset-y-4 left-0 w-24 z-10 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent pointer-events-none" />
-              <div className="absolute -inset-y-4 right-0 w-24 z-10 bg-gradient-to-l from-amber-50/80 via-amber-50/40 to-transparent pointer-events-none" />
+              <div className="absolute -inset-y-4 left-0 w-24 z-10 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent dark:from-gray-900 dark:via-gray-900/50 dark:to-transparent pointer-events-none" />
+              <div className="absolute -inset-y-4 right-0 w-24 z-10 bg-gradient-to-l from-amber-50/80 via-amber-50/40 to-transparent dark:from-gray-900 dark:via-gray-900/50 dark:to-transparent pointer-events-none" />
             </>
           )}
-
           {isLoading ? (
             <div className="text-center py-20">
-              <div className="inline-flex items-center gap-3 text-amber-600">
-                <div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="inline-flex items-center gap-3 text-amber-600 dark:text-amber-400">
+                <div className="w-6 h-6 border-2 border-amber-600 dark:border-amber-400 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-lg font-medium">
                   Loading testimonials...
                 </span>
               </div>
             </div>
           ) : testimonials.length === 0 ? (
-            <div className="text-center bg-white/60 backdrop-blur-sm rounded-3xl p-16 border border-amber-200/50">
-              <Quote size={48} className="mx-auto mb-6 text-amber-300" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <div className="text-center bg-white/60 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl p-16 border border-amber-200/50 dark:border-gray-700/50">
+              <Quote
+                size={48}
+                className="mx-auto mb-6 text-amber-300 dark:text-amber-700"
+              />
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 No Reviews Yet
               </h3>
-              <p className="text-gray-600 max-w-md mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
                 Be the first to share your amazing event experience with
                 EventCraft.
               </p>
@@ -509,7 +485,7 @@ const Testimonials = () => {
                   <motion.div
                     key={`${testimonial.id}-${index}`}
                     onClick={() => setViewModalData(testimonial)}
-                    className="w-[350px] sm:w-[400px] shrink-0 bg-white/90 backdrop-blur-sm rounded-3xl border border-amber-200/50 p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:border-amber-300 hover:bg-white group"
+                    className="w-[350px] sm:w-[400px] shrink-0 bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl border border-amber-200/50 dark:border-gray-700/50 p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:border-amber-300 dark:hover:border-amber-600 hover:bg-white dark:hover:bg-gray-800 group"
                     whileHover={{ y: -5, scale: 1.02 }}
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -517,7 +493,7 @@ const Testimonials = () => {
                         <img
                           src={testimonial.avatar}
                           alt={testimonial.name}
-                          className="w-14 h-14 rounded-full object-cover border-2 border-amber-200 shadow-md group-hover:border-amber-300 transition-all duration-300"
+                          className="w-14 h-14 rounded-full object-cover border-2 border-amber-200 dark:border-amber-700 shadow-md group-hover:border-amber-300 dark:group-hover:border-amber-600 transition-all duration-300"
                           onError={(e) => {
                             e.target.src =
                               "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=150&q=80";
@@ -525,57 +501,54 @@ const Testimonials = () => {
                         />
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-gray-900 text-lg">
+                            <h4 className="font-bold text-gray-900 dark:text-gray-100 text-lg">
                               {testimonial.name}
                             </h4>
                             {testimonial.verified && (
                               <CheckCircle
                                 size={16}
-                                className="text-emerald-500"
+                                className="text-emerald-500 dark:text-emerald-400"
                               />
                             )}
                           </div>
-                          <p className="text-gray-600 text-sm">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">
                             {testimonial.email}
                           </p>
                         </div>
                       </div>
-
                       {testimonial.featured && (
                         <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                           Featured
                         </div>
                       )}
                     </div>
-
                     <div className="flex items-center gap-1 mb-4">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
                           size={16}
-                          className={`${i < testimonial.rating ? "text-amber-500 fill-amber-500" : "text-gray-300"}`}
+                          className={`${i < testimonial.rating ? "text-amber-500 fill-amber-500" : "text-gray-300 dark:text-gray-600"}`}
                         />
                       ))}
-                      <span className="text-sm font-semibold text-amber-600 ml-1">
+                      <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 ml-1">
                         {testimonial.rating}.0
                       </span>
                     </div>
-
-                    <p className="text-gray-700 leading-relaxed mb-4 text-sm line-clamp-3">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 text-sm line-clamp-3">
                       "{testimonial.testimonial.substr(0, 120)}..."
                     </p>
-
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         {eventTypeIcons[testimonial.eventType]}
                         <span className="font-medium">
                           {testimonial.eventType}
                         </span>
-                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-400 dark:text-gray-600">
+                          •
+                        </span>
                         <span>{testimonial.location}</span>
                       </div>
-
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
                         <div className="flex items-center gap-1">
                           <Users size={12} />
                           <span>{testimonial.guests} guests</span>
@@ -592,7 +565,6 @@ const Testimonials = () => {
           )}
         </motion.div>
       </div>
-
       {viewModalData && (
         <ViewTestimonialModal
           testimonial={viewModalData}

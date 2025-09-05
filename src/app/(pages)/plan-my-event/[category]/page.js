@@ -773,7 +773,8 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
           {config.successMessage}
         </p>
         <p className="text-sm sm:text-base text-gray-500">
-          We'll be in touch within 24 hours. A summary of your request is below.
+          We&apos;ll be in touch within 24 hours. A summary of your request is
+          below.
         </p>
       </div>
       <div className="text-left bg-white border border-gray-200 rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">

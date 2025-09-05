@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ClientWrapper from "@/components/ClientWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,18 +14,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'PlanWAB - Events Planning Made Easy',
-  description: 'Your one-stop solution for planning Weddings, Anniversaries, and Birthdays.',
+  title: "PlanWAB - Events Planning Made Easy",
+  description:
+    "Your one-stop solution for planning Weddings, Anniversaries, and Birthdays.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}>
-        <Header />
-        <main>
-          {children}
-        </main>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}
+      >
+        <ThemeProvider>
+          <ClientWrapper>{children}</ClientWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );
