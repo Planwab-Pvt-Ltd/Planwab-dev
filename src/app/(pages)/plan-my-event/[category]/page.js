@@ -15,6 +15,8 @@ import {
   User,
   Check,
   Clock,
+  Star,
+  Gift,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";

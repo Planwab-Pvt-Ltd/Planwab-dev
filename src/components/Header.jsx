@@ -29,7 +29,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, useClerk, UserButton, useUser } from "@clerk/nextjs";
 
 const CategoryButton = ({ category, imageSrc, active }) => (
-  <button
+  <div
     role="tab"
     aria-selected={active}
     className={`
@@ -65,7 +65,7 @@ const CategoryButton = ({ category, imageSrc, active }) => (
             ${active ? "w-[70%] opacity-100" : "w-0 opacity-0 group-hover:w-[50%] group-hover:opacity-50"}
         `}
     ></div>
-  </button>
+  </div>
 );
 
 const PlannerDropdown = ({ isOpen }) => {
