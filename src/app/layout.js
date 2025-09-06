@@ -1,7 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import ClientWrapper from "@/components/ClientWrapper";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ThemeClerkProvider from "../lib/ThemeClerkProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,14 +22,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}
-      >
-        <ThemeProvider>
-          <ClientWrapper>{children}</ClientWrapper>
-        </ThemeProvider>
-      </body>
-    </html>
+    <ThemeProvider>
+      <ThemeClerkProvider>
+        <html lang="en">
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}
+          >
+            <ClientWrapper>{children}</ClientWrapper>
+          </body>
+        </html>
+      </ThemeClerkProvider>
+    </ThemeProvider>
+
   );
 }

@@ -15,10 +15,6 @@ import {
   User,
   Check,
   Clock,
-  Gift,
-  Cake,
-  Heart,
-  Star,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -145,9 +141,7 @@ const months = [
   "November",
   "December",
 ];
-
 const dateRanges = ["1st - 7th", "8th - 15th", "16th - 23rd", "24th - 31st"];
-
 const timeSlots = [
   "Morning (8 AM - 12 PM)",
   "Afternoon (12 PM - 4 PM)",
@@ -157,53 +151,52 @@ const timeSlots = [
 
 const LeftPanel = ({ category }) => {
   const config = categoryConfig[category] || categoryConfig.wedding;
-
   return (
-    <div className="hidden lg:flex fixed top-0 left-0 w-[40%] h-screen flex-col items-center justify-between py-8 px-8 bg-white shadow-xl rounded-r-3xl overflow-hidden z-10">
+    <div className="hidden lg:flex fixed top-0 left-0 w-[40%] h-screen flex-col items-center justify-between py-8 px-8 bg-white dark:bg-gray-800/50 dark:backdrop-blur-sm shadow-xl rounded-r-3xl overflow-hidden z-10 border-r border-gray-200 dark:border-gray-700/50">
       <div className="w-full flex-shrink-0">
         <div className="mx-auto w-32 h-11 bg-gradient-to-r from-amber-600 to-amber-800 rounded-xl flex items-center justify-center shadow-lg">
           <span className="text-white font-bold text-lg">PlanWab</span>
         </div>
       </div>
-
       <div className="flex flex-col items-center gap-8 text-center">
-        <div className="relative p-3 bg-gradient-to-br from-amber-50 to-amber-200 rounded-3xl shadow-lg">
-          <div className="relative w-64 h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+        <div className="relative p-3 bg-gradient-to-br from-amber-50 to-amber-200 dark:from-gray-700 dark:to-gray-600 rounded-3xl shadow-lg">
+          <div className="relative w-64 h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/30 dark:to-rose-800/30 flex items-center justify-center">
             <div className="text-5xl">{config.icon}</div>
           </div>
-          <div className="absolute -top-2 -right-2 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center text-2xl">
+          <div className="absolute -top-2 -right-2 w-14 h-14 bg-white dark:bg-gray-700 rounded-full shadow-lg flex items-center justify-center text-2xl">
             {config.primaryIcon}
           </div>
         </div>
         <div className="space-y-6">
           <div className="flex items-center justify-center gap-3">
             <span className="relative block h-1.5 w-10">
-              <span className="absolute top-1/2 block h-0.5 w-full -translate-y-1/2 bg-amber-200"></span>
-              <span className="absolute left-0 top-0 block aspect-square h-1.5 rounded-full bg-amber-300"></span>
+              <span className="absolute top-1/2 block h-0.5 w-full -translate-y-1/2 bg-amber-200 dark:bg-amber-800"></span>
+              <span className="absolute left-0 top-0 block aspect-square h-1.5 rounded-full bg-amber-300 dark:bg-amber-600"></span>
             </span>
-            <h4 className="font-serif text-xl font-semibold text-gray-800">
+            <h4 className="font-serif text-xl font-semibold text-gray-800 dark:text-gray-100">
               {config.tagline}
             </h4>
             <span className="relative block h-1.5 w-10 rotate-180">
-              <span className="absolute top-1/2 block h-0.5 w-full -translate-y-1/2 bg-amber-200"></span>
-              <span className="absolute left-0 top-0 block aspect-square h-1.5 rounded-full bg-amber-300"></span>
+              <span className="absolute top-1/2 block h-0.5 w-full -translate-y-1/2 bg-amber-200 dark:bg-amber-800"></span>
+              <span className="absolute left-0 top-0 block aspect-square h-1.5 rounded-full bg-amber-300 dark:bg-amber-600"></span>
             </span>
           </div>
-          <p className="font-sans text-sm text-gray-600 max-w-sm px-4 leading-relaxed">
+          <p className="font-sans text-sm text-gray-600 dark:text-gray-400 max-w-sm px-4 leading-relaxed">
             {config.description}
           </p>
         </div>
       </div>
-
       <div className="flex items-center justify-center gap-8">
         {config.features.map((item, index) => (
           <div key={item} className="flex flex-col items-center gap-3">
-            <div className="rounded-full bg-gradient-to-b from-amber-50 to-amber-200 p-2 shadow-lg">
-              <div className="relative aspect-square w-14 overflow-hidden rounded-full border-2 border-white bg-white flex items-center justify-center">
+            <div className="rounded-full bg-gradient-to-b from-amber-50 to-amber-200 dark:from-gray-700 dark:to-gray-600 p-2 shadow-lg">
+              <div className="relative aspect-square w-14 overflow-hidden rounded-full border-2 border-white dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center">
                 <span className="text-2xl">{config.featureIcons[index]}</span>
               </div>
             </div>
-            <span className="text-sm font-semibold text-amber-800">{item}</span>
+            <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              {item}
+            </span>
           </div>
         ))}
       </div>
@@ -214,10 +207,12 @@ const LeftPanel = ({ category }) => {
 const MobileHeader = ({ category }) => {
   const config = categoryConfig[category] || categoryConfig.wedding;
   return (
-    <div className="lg:hidden w-full p-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm fixed top-0 left-0 z-20">
+    <div className="lg:hidden w-full p-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm fixed top-0 left-0 z-20">
       <div className="flex items-center justify-between">
-        <span className="text-amber-700 font-bold text-lg">PlanWab</span>
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <span className="text-amber-700 dark:text-amber-400 font-bold text-lg">
+          PlanWab
+        </span>
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
           <span>{config.icon}</span>
           <span>{config.title}</span>
         </div>
@@ -228,16 +223,18 @@ const MobileHeader = ({ category }) => {
 
 const ExitModal = ({ onConfirm, onCancel }) => (
   <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
       <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-      <h2 className="text-xl font-bold text-gray-800 mb-2">Are you sure?</h2>
-      <p className="text-gray-600 mb-6">
+      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+        Are you sure?
+      </h2>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">
         Your progress will be lost if you exit now.
       </p>
       <div className="flex justify-center gap-4">
         <button
           onClick={onCancel}
-          className="px-6 py-2 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="px-6 py-2 rounded-xl font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           Stay
         </button>
@@ -255,25 +252,28 @@ const ExitModal = ({ onConfirm, onCancel }) => (
 const StepHeader = ({ number, title, totalSteps = 5 }) => (
   <div className="mb-8">
     <div className="flex items-center gap-3 mb-3">
-      <span className="text-sm font-semibold text-gray-500">
+      <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
         Step {number} of {totalSteps}
       </span>
-      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500"
           style={{ width: `${(number / totalSteps) * 100}%` }}
         />
       </div>
     </div>
-    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-semibold text-gray-800 tracking-tight leading-tight max-w-4xl">
+    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-semibold text-gray-800 dark:text-gray-100 tracking-tight leading-tight max-w-4xl">
       {title}
     </h2>
   </div>
 );
 
 const InfoBox = ({ text, icon: Icon = Lightbulb }) => (
-  <div className="mt-8 flex items-start gap-3 p-4 bg-gradient-to-r from-amber-50 to-amber-100 rounded-xl border border-amber-200 text-amber-700">
-    <Icon size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+  <div className="mt-8 flex items-start gap-3 p-4 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30 rounded-xl border border-amber-200 dark:border-amber-800/50 text-amber-700 dark:text-amber-300">
+    <Icon
+      size={16}
+      className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+    />
     <span className="leading-relaxed text-sm">{text}</span>
   </div>
 );
@@ -289,11 +289,9 @@ const CustomDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
-
   const filteredOptions = (options || []).filter((option) =>
     String(option).toLowerCase().includes(searchTerm.toLowerCase()),
   );
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -306,17 +304,19 @@ const CustomDropdown = ({
 
   return (
     <div ref={dropdownRef} className="relative">
-      <label className="block font-serif font-medium text-gray-700 mb-3 text-base">
+      <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">
         {label}
       </label>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-4 bg-white border-2 border-gray-300 rounded-xl text-left focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 flex items-center justify-between hover:border-amber-400 shadow-sm hover:shadow-md"
+        className="w-full p-4 bg-white dark:bg-gray-700/50 border-2 border-gray-300 dark:border-gray-600 rounded-xl text-left focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 flex items-center justify-between hover:border-amber-400 shadow-sm hover:shadow-md"
       >
         <div className="flex items-center gap-3">
-          {Icon && <Icon className="w-5 h-5 text-gray-500" />}
+          {Icon && (
+            <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          )}
           <span
-            className={`text-base ${value ? "text-gray-800" : "text-gray-400"}`}
+            className={`text-base ${value ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}
           >
             {value || placeholder}
           </span>
@@ -325,17 +325,16 @@ const CustomDropdown = ({
           className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
-
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl z-30 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden">
           {(options || []).length > 5 && (
-            <div className="p-2 border-b">
+            <div className="p-2 border-b dark:border-gray-700">
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
               />
             </div>
           )}
@@ -348,15 +347,11 @@ const CustomDropdown = ({
                   setIsOpen(false);
                   setSearchTerm("");
                 }}
-                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 transition-colors flex items-center justify-between group ${
-                  value === option
-                    ? "bg-amber-100 text-amber-800 font-medium"
-                    : "text-gray-700"
-                }`}
+                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-between group ${value === option ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-medium" : "text-gray-700 dark:text-gray-300"}`}
               >
-                <span>{String(option)}</span>
+                {String(option)}
                 {value === option && (
-                  <Check className="w-4 h-4 text-amber-600" />
+                  <Check className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 )}
               </button>
             ))}
@@ -370,7 +365,6 @@ const CustomDropdown = ({
 const StepCity = ({ onNext, formData, category }) => {
   const [selectedCity, setSelectedCity] = useState(formData.city || null);
   const config = categoryConfig[category] || categoryConfig.wedding;
-
   useEffect(() => {
     if (selectedCity) {
       const timer = setTimeout(() => {
@@ -388,11 +382,7 @@ const StepCity = ({ onNext, formData, category }) => {
           <button
             key={city.name}
             onClick={() => setSelectedCity(city.name)}
-            className={`p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-center hover:shadow-xl transform hover:-translate-y-1 ${
-              selectedCity === city.name
-                ? "bg-gradient-to-br from-amber-600 to-amber-800 border-amber-800 shadow-xl text-white scale-105"
-                : "bg-white border-gray-200 hover:border-amber-400"
-            }`}
+            className={`p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-center hover:shadow-xl transform hover:-translate-y-1 ${selectedCity === city.name ? "bg-gradient-to-br from-amber-600 to-amber-800 border-amber-800 shadow-xl text-white scale-105" : "bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 text-gray-800 dark:text-gray-200"}`}
           >
             <div
               className={`text-3xl mb-3 ${selectedCity === city.name ? "filter brightness-0 invert" : ""}`}
@@ -424,7 +414,6 @@ const StepDate = ({ onNext, onPrev, formData, category }) => {
   const [dateRange, setDateRange] = useState(formData.dateRange || "");
   const [timeSlot, setTimeSlot] = useState(formData.timeSlot || "");
   const config = categoryConfig[category] || categoryConfig.wedding;
-
   const years = [2025, 2026, 2027];
 
   return (
@@ -465,7 +454,7 @@ const StepDate = ({ onNext, onPrev, formData, category }) => {
             icon={Clock}
           />
         </div>
-        <div className="text-sm text-gray-500 text-center bg-gray-50 rounded-xl p-3">
+        <div className="text-sm text-gray-500 dark:text-gray-400 text-center bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
           *We will confirm the exact date and time within 48 hours
         </div>
       </div>
@@ -478,14 +467,14 @@ const StepDate = ({ onNext, onPrev, formData, category }) => {
       <div className="flex justify-between items-center pt-4">
         <button
           onClick={onPrev}
-          className="w-12 h-12 bg-gray-200 rounded-full text-gray-600 flex items-center justify-center shadow-xl hover:bg-gray-300 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
+          className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300 flex items-center justify-center shadow-xl hover:bg-gray-300 dark:hover:bg-gray-600 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
         >
           <ChevronLeft size={20} />
         </button>
         <button
           disabled={!year || !month}
           onClick={() => onNext({ year, month, dateRange, timeSlot })}
-          className="px-8 py-3 bg-rose-500 rounded-xl text-white font-semibold shadow-xl hover:bg-rose-600 hover:shadow-2xl disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center gap-2"
+          className="px-8 py-3 bg-rose-500 rounded-xl text-white font-semibold shadow-xl hover:bg-rose-600 hover:shadow-2xl disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center gap-2"
         >
           Next
           <ChevronRight size={20} />
@@ -499,7 +488,6 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
   const [guests, setGuests] = useState(formData.guests?.toString() || "");
   const [ageGroup, setAgeGroup] = useState(formData.ageGroup || "");
   const config = categoryConfig[category] || categoryConfig.wedding;
-
   const ageGroups =
     category === "birthday"
       ? ["Kids (Under 12)", "Teens (13-19)", "Adults (20+)", "Mixed Ages"]
@@ -511,7 +499,7 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block font-serif font-medium text-gray-700 mb-3 text-base">
+            <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">
               Number of Guests
             </label>
             <div className="relative">
@@ -521,9 +509,9 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
                 onChange={(e) => setGuests(e.target.value)}
                 placeholder="Enter number"
                 min="1"
-                className="w-full p-4 pl-12 bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
+                className="w-full p-4 pl-12 bg-white dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
               />
-              <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400" />
             </div>
           </div>
           <CustomDropdown
@@ -535,30 +523,29 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
             icon={Users}
           />
         </div>
-
         {guests && parseInt(guests) > 0 && (
-          <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
+          <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-amber-600">
+              <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {guests}
               </p>
-              <p className="text-[10px] sm:text-xs text-gray-600 mt-1">
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">
                 Total Guests
               </p>
             </div>
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-amber-600">
+              <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {Math.ceil(parseInt(guests) / 8)}
               </p>
-              <p className="text-[10px] sm:text-xs text-gray-600 mt-1">
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">
                 Tables Needed
               </p>
             </div>
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-amber-600">
+              <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {Math.ceil(parseInt(guests) * 15)}
               </p>
-              <p className="text-[10px] sm:text-xs text-gray-600 mt-1">
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">
                 Sq.ft. Required
               </p>
             </div>
@@ -569,14 +556,14 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
       <div className="flex justify-between items-center pt-4">
         <button
           onClick={onPrev}
-          className="w-12 h-12 bg-gray-200 rounded-full text-gray-600 flex items-center justify-center shadow-xl hover:bg-gray-300 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
+          className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300 flex items-center justify-center shadow-xl hover:bg-gray-300 dark:hover:bg-gray-600 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
         >
           <ChevronLeft size={20} />
         </button>
         <button
           disabled={!guests || parseInt(guests) <= 0}
           onClick={() => onNext({ guests: parseInt(guests), ageGroup })}
-          className="px-8 py-3 bg-rose-500 rounded-xl text-white font-semibold shadow-xl hover:bg-rose-600 hover:shadow-2xl disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center gap-2"
+          className="px-8 py-3 bg-rose-500 rounded-xl text-white font-semibold shadow-xl hover:bg-rose-600 hover:shadow-2xl disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center gap-2"
         >
           Next
           <ChevronRight size={20} />
@@ -592,22 +579,20 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
     formData.paymentPreference || "",
   );
   const config = categoryConfig[category] || categoryConfig.wedding;
-
   const budgetValue = React.useMemo(() => {
     if (budget <= 50) return `${budget * 2} Lakhs`;
     if (budget <= 75)
       return `${(((budget - 50) / 25) * 4 + 1).toFixed(1)} Crores`;
     return `${(((budget - 75) / 25) * 4 + 5).toFixed(1)} Crores`;
   }, [budget]);
-
   const paymentOptions = ["Full Payment", "Installments", "Part Payment"];
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8 animate-slide-in">
       <StepHeader number={4} title={config.questions.budget} />
       <div className="space-y-8">
-        <div className="p-6 sm:p-8 bg-gradient-to-br from-white to-amber-50 rounded-2xl shadow-lg border border-amber-100">
-          <p className="text-center text-3xl sm:text-4xl font-bold text-amber-800 mb-8">
+        <div className="p-6 sm:p-8 bg-gradient-to-br from-white to-amber-50 dark:from-gray-700/50 dark:to-amber-900/20 rounded-2xl shadow-lg border border-amber-100 dark:border-amber-900/50">
+          <p className="text-center text-3xl sm:text-4xl font-bold text-amber-800 dark:text-amber-300 mb-8">
             ₹{budgetValue}
           </p>
           <input
@@ -616,9 +601,9 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
             max="100"
             value={budget}
             onChange={(e) => setBudget(parseInt(e.target.value))}
-            className="w-full h-2 bg-amber-100 rounded-lg appearance-none cursor-pointer slider"
+            className="w-full h-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg appearance-none cursor-pointer slider"
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-4">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-4">
             <span>₹10 Lakhs</span>
             <span>₹9 Crores+</span>
           </div>
@@ -638,7 +623,7 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
       <div className="flex justify-between items-center pt-4">
         <button
           onClick={onPrev}
-          className="w-12 h-12 bg-gray-200 rounded-full text-gray-600 flex items-center justify-center shadow-xl hover:bg-gray-300 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
+          className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300 flex items-center justify-center shadow-xl hover:bg-gray-300 dark:hover:bg-gray-600 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
         >
           <ChevronLeft size={20} />
         </button>
@@ -651,7 +636,7 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
               budgetRange: budget,
             })
           }
-          className="px-8 py-3 bg-rose-500 rounded-xl text-white font-semibold shadow-xl hover:bg-rose-600 hover:shadow-2xl disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center gap-2"
+          className="px-8 py-3 bg-rose-500 rounded-xl text-white font-semibold shadow-xl hover:bg-rose-600 hover:shadow-2xl disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center gap-2"
         >
           Next
           <ChevronRight size={20} />
@@ -673,7 +658,7 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <label className="block font-serif font-medium text-gray-700 mb-3 text-base">
+            <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">
               Your Name
             </label>
             <div className="relative">
@@ -682,13 +667,13 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
-                className="w-full p-4 pl-12 bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
+                className="w-full p-4 pl-12 bg-white dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
               />
-              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-gray-400" />
             </div>
           </div>
           <div>
-            <label className="block font-serif font-medium text-gray-700 mb-3 text-base">
+            <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">
               Email Address
             </label>
             <input
@@ -696,11 +681,11 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className="w-full p-4 bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
+              className="w-full p-4 bg-white dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
             />
           </div>
           <div>
-            <label className="block font-serif font-medium text-gray-700 mb-3 text-base">
+            <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">
               Phone Number
             </label>
             <input
@@ -708,7 +693,7 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+91 XXXXX XXXXX"
-              className="w-full p-4 bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
+              className="w-full p-4 bg-white dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base transition-all duration-200 hover:border-amber-400 shadow-sm hover:shadow-md"
             />
           </div>
         </div>
@@ -717,7 +702,7 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
       <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center pt-4 gap-4">
         <button
           onClick={onPrev}
-          className="w-full sm:w-12 h-12 bg-gray-200 rounded-xl sm:rounded-full text-gray-600 flex items-center justify-center shadow-xl hover:bg-gray-300 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
+          className="w-full sm:w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl sm:rounded-full text-gray-600 dark:text-gray-300 flex items-center justify-center shadow-xl hover:bg-gray-300 dark:hover:bg-gray-600 hover:shadow-2xl transition-all duration-200 transform hover:scale-110"
         >
           <ChevronLeft size={20} className="sm:inline" />
           <span className="sm:hidden">Previous Step</span>
@@ -731,7 +716,7 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
               phone: phone.trim(),
             })
           }
-          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl text-white font-semibold shadow-xl hover:shadow-2xl disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl text-white font-semibold shadow-xl hover:shadow-2xl disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center justify-center gap-2"
         >
           Generate My Proposal
           <Star className="w-5 h-5" />
@@ -744,13 +729,15 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
 const DetailItem = ({ icon: Icon, label, value }) => {
   if (!value) return null;
   return (
-    <div className="flex items-start gap-4 p-4 bg-gray-50/50 rounded-lg">
-      <div className="flex-shrink-0 w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mt-1">
+    <div className="flex items-start gap-4 p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-lg">
+      <div className="flex-shrink-0 w-8 h-8 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300 rounded-full flex items-center justify-center mt-1">
         <Icon size={16} />
       </div>
       <div>
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="font-semibold text-gray-800 text-base">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="font-semibold text-gray-800 dark:text-gray-100 text-base">
+          {value}
+        </p>
       </div>
     </div>
   );
@@ -765,20 +752,20 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
   return (
     <div className="w-full max-w-4xl mx-auto text-center space-y-8 animate-slide-in">
       <div className="text-6xl">🎉</div>
-      <h2 className="text-3xl sm:text-4xl font-serif font-semibold text-gray-800">
+      <h2 className="text-3xl sm:text-4xl font-serif font-semibold text-gray-800 dark:text-gray-100">
         Thank You, {formData?.name || "friend"}!
       </h2>
       <div className="space-y-2">
-        <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
           {config.successMessage}
         </p>
-        <p className="text-sm sm:text-base text-gray-500">
+        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
           We&apos;ll be in touch within 24 hours. A summary of your request is
           below.
         </p>
       </div>
-      <div className="text-left bg-white border border-gray-200 rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
-        <h3 className="text-xl sm:text-2xl font-serif font-semibold text-gray-800 mb-2 text-center">
+      <div className="text-left bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
+        <h3 className="text-xl sm:text-2xl font-serif font-semibold text-gray-800 dark:text-gray-100 mb-2 text-center">
           Your Plan Summary
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -801,7 +788,7 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
       <div className="mt-8 flex flex-col-reverse sm:flex-row gap-4 justify-center">
         <button
           onClick={onPrev}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors transform hover:scale-105"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors transform hover:scale-105"
         >
           <ChevronLeft size={18} />
           Make a Change
@@ -816,7 +803,7 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
       <div className="pt-4">
         <Link
           href="/"
-          className="text-sm text-amber-700 hover:text-amber-800 font-medium transition-colors"
+          className="text-sm text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium transition-colors"
         >
           Back to Home
         </Link>
@@ -831,21 +818,17 @@ export default function PlanMyEventPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({});
   const [showExitModal, setShowExitModal] = useState(false);
-
   const handleNextStep = (data) => {
     setFormData((prev) => ({ ...prev, ...data }));
     setCurrentStep((prev) => prev + 1);
   };
-
   const handlePrevStep = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1));
   };
-
   const handleReset = () => {
     setFormData({});
     setCurrentStep(1);
   };
-
   const handleExit = () => {
     if (typeof window !== "undefined") {
       window.location.href = "/";
@@ -919,68 +902,35 @@ export default function PlanMyEventPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-[#FFFBF2] to-[#FEF7ED] relative">
+    <div className="min-h-screen flex bg-gradient-to-br from-[#FFFBF2] to-[#FEF7ED] dark:from-gray-900 dark:to-amber-900/10 relative">
       <MobileHeader category={category} />
       <LeftPanel category={category} />
-
       <main className="flex-1 lg:ml-[40%] relative pt-14">
         <button
           onClick={() => setShowExitModal(true)}
-          className="fixed top-5 right-5 sm:top-22 sm:right-5 z-30 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full flex items-center justify-center shadow-xl hover:bg-gray-50 hover:shadow-2xl transition-all duration-200 transform hover:scale-110 border border-gray-200"
+          className="fixed top-5 right-5 sm:top-22 sm:right-5 z-30 w-10 h-10 lg:w-12 lg:h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-2xl transition-all duration-200 transform hover:scale-110 border border-gray-200 dark:border-gray-700"
         >
-          <X className="w-5 h-5 lg:w-6 lg:h-6 text-gray-600" />
+          <X className="w-5 h-5 lg:w-6 lg:h-6 text-gray-600 dark:text-gray-300" />
         </button>
-
         <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] lg:min-h-screen py-12 px-4 sm:px-10 lg:px-20">
           {renderCurrentStep()}
         </div>
       </main>
-
       {showExitModal && (
         <ExitModal
           onConfirm={handleExit}
           onCancel={() => setShowExitModal(false)}
         />
       )}
-
       <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
-          cursor: pointer;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-          transition: all 0.2s;
-        }
-        .slider::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        .slider::-moz-range-thumb {
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-slide-in {
-          animation: slideIn 0.4s ease-out;
-        }
-      `}</style>
+.slider::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #d97706 0%, #92400e 100%); cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); transition: all 0.2s; }
+.slider::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); }
+.dark .slider::-webkit-slider-thumb { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #d97706 0%, #92400e 100%); cursor: pointer; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
+.dark .slider::-moz-range-thumb { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+ @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.animate-slide-in { animation: slideIn 0.4s ease-out; }
+`}</style>
     </div>
   );
 }

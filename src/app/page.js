@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import HeroSection from "@/components/ui/landingPage/HeroSection";
 import ServicesBanner from "@/components/ui/landingPage/ServicesBanner";
 import HowItWorksSection from "@/components/ui/landingPage/HowItWorks";
 import VendorsSection from "@/components/ui/landingPage/VendorsSection";
 import Testimonials from "@/components/ui/landingPage/TestimonialsSection";
+import { useCategoryStore } from "@/GlobalState/CategoryStore";
 
 export default function Home() {
   const activeCategory = useCategoryStore((state) => state.activeCategory);

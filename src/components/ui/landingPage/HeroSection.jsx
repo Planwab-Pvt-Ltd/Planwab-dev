@@ -307,6 +307,7 @@ export default function HeroSection() {
             trusted partner in crafting unforgettable celebrations.
           </p>
         </motion.div>
+        
         <motion.div
           ref={searchRef}
           variants={itemVariants}
@@ -315,7 +316,7 @@ export default function HeroSection() {
           <div
             className={`bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 ${activeField ? "shadow-2xl" : ""}`}
           >
-            <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-full flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
+            <div className="bg-white/50 dark:bg-gray-800/50 p-2 sm:rounded-full rounded-[26px] flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
               <div className="w-full sm:w-auto flex-1 relative">
                 <div
                   onClick={() => handleFieldClick("event")}

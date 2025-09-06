@@ -18,12 +18,15 @@ import {
   X,
   Sun,
   Moon,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, useClerk, UserButton, useUser } from "@clerk/nextjs";
 
 const CategoryButton = ({ category, imageSrc, active }) => (
   <button
@@ -33,7 +36,7 @@ const CategoryButton = ({ category, imageSrc, active }) => (
             relative flex items-center justify-center space-x-2.5 px-4 py-2.5 mx-0.5 rounded-xl
             transition-all duration-300 ease-out group
             focus:outline-none
-            hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:scale-105 hover:shadow-md
+            hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:scale-105 hover:shadow-md cursor-pointer
             ${active ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm" : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"}
         `}
   >
@@ -223,6 +226,12 @@ const LocationDropdown = ({ isOpen, onClose }) => {
 };
 
 const ProfileDropdown = ({ isOpen }) => {
+
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
+  console.log(user);
+
   if (!isOpen) return null;
   const menuItems = [
     {
@@ -251,24 +260,26 @@ const ProfileDropdown = ({ isOpen }) => {
     },
   ];
   return (
-    <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
-      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl flex items-center justify-center">
-            {" "}
-            <UserCircle size={20} className="text-white" />{" "}
+    <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 !z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2 px-2">
+      <SignedIn>
+        <button
+          className="text-left"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl flex items-center justify-center">
+              <img src={user?.imageUrl} alt={user?.fullName} className="w-10 h-10 rounded-xl" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">
+                {user?.username || user?.fullName || "User"}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {user?.primaryEmailAddress?.emailAddress}
+              </p>
+            </div>
           </div>
-          <div>
-            {" "}
-            <p className="font-semibold text-gray-900 dark:text-gray-100">
-              John Doe
-            </p>{" "}
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              john@example.com
-            </p>{" "}
-          </div>
-        </div>
-      </div>
+        </button>
+      </SignedIn>
       <div className="py-2">
         {" "}
         {menuItems.map((item, index) => (
@@ -291,16 +302,62 @@ const ProfileDropdown = ({ isOpen }) => {
           </Link>
         ))}{" "}
       </div>
-      <div className="border-t border-gray-100 dark:border-gray-700 pt-2">
-        {" "}
-        <button className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/40 transition-all duration-200 flex items-center space-x-3 group">
+      <SignedOut>
+        <AnimatePresence>
+          <div className="flex flex-col gap-2 border-t border-gray-100 dark:border-gray-700 pt-2 justify-center items-center">
+            <SignInButton>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="w-[90%] px-4 py-3 text-left flex items-center space-x-3 rounded-xl 
+                     bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 
+                     dark:hover:bg-amber-800/50 transition-colors duration-200 group cursor-pointer pr-7 justify-center"
+              >
+                <LogIn className="w-5 h-5 text-amber-500 group-hover:text-amber-600 transition-colors" />
+                <motion.span
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="font-medium text-amber-700 dark:text-amber-300"
+                >
+                  Login
+                </motion.span>
+              </motion.button>
+            </SignInButton>
+            <SignUpButton>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="w-[90%] px-4 py-3 text-left flex items-center space-x-3 rounded-xl 
+                     bg-green-100 dark:bg-green-700/30 hover:bg-green-200 
+                     dark:hover:bg-green-800/50 transition-colors duration-200 group cursor-pointer pr-7 justify-center"
+              >
+                <UserPlus className="w-5 h-5 text-green-500 group-hover:text-green-600 transition-colors" />
+                <motion.span
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="font-medium text-green-700 dark:text-green-300"
+                >
+                  Sign Up
+                </motion.span>
+              </motion.button>
+            </SignUpButton>
+          </div>
+        </AnimatePresence>
+      </SignedOut>
+      <SignedIn>
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-2">
           {" "}
-          <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-600" />{" "}
-          <span className="font-medium text-red-600 dark:text-red-400">
-            Sign out
-          </span>{" "}
-        </button>{" "}
-      </div>
+          <button className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/40 transition-all duration-200 flex items-center space-x-3 group" onClick={() => signOut()}>
+            {" "}
+            <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-600" />{" "}
+            <span className="font-medium text-red-600 dark:text-red-400">
+              Sign out
+            </span>{" "}
+          </button>{" "}
+        </div>
+      </SignedIn>
     </div>
   );
 };
@@ -430,7 +487,7 @@ export default function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out rounded-b-3xl ${isScrolled ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-xl" : "bg-white/10 dark:bg-black/10 backdrop-blur-2xl"}`}
+        className={`fixed top-0 left-0 right-0 !z-50 transition-all duration-500 ease-out rounded-b-3xl ${isScrolled ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-xl" : "bg-white/10 dark:bg-black/10 backdrop-blur-2xl"}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
@@ -488,14 +545,14 @@ export default function Header() {
             <div className="hidden lg:flex items-center space-x-2">
               <button
                 onClick={toggleTheme}
-                className="p-2.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg"
+                className="p-2.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg cursor-pointer"
               >
                 {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
               </button>
               <div className="relative" ref={plannerRef}>
                 <button
                   onClick={() => handleDropdownToggle("planner")}
-                  className="flex items-center space-x-1 font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-600 rounded-xl px-4 py-2.5 transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+                  className="flex items-center space-x-1 font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-600 rounded-xl px-4 py-2.5 transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-pointer"
                 >
                   <span>Become a Planner</span>
                   <ChevronDown
@@ -507,7 +564,7 @@ export default function Header() {
               <div className="relative" ref={locationRef}>
                 <button
                   onClick={() => handleDropdownToggle("location")}
-                  className="p-2.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg hover:rotate-12"
+                  className="p-2.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-300 ease-out hover:scale-110 hover:shadow-lg hover:rotate-12 cursor-pointer"
                 >
                   <Globe size={20} />
                 </button>
@@ -518,15 +575,28 @@ export default function Header() {
               </div>
               <div className="relative" ref={profileRef}>
                 <button
-                  onClick={() => handleDropdownToggle("profile")}
                   className="flex items-center space-x-2.5 border border-gray-300 dark:border-gray-700 rounded-2xl p-1.5 pl-3 pr-2 shadow-lg hover:shadow-xl transition-all duration-400 ease-out hover:scale-105 bg-white dark:bg-gray-800 hover:bg-gradient-to-r hover:from-white hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-600"
                 >
-                  <Menu
-                    size={16}
-                    className="text-gray-700 dark:text-gray-300"
-                  />
+                  {openDropdown !== "profile" ? (
+                    <Menu
+                      size={16}
+                      className="text-gray-700 dark:text-gray-300 cursor-pointer"
+                      onClick={() => handleDropdownToggle("profile")}
+                    />
+                  ) : (
+                    <X
+                      size={16}
+                      className="text-gray-700 dark:text-gray-300 cursor-pointer"
+                      onClick={() => handleDropdownToggle("profile")}
+                    />
+                  )}
                   <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300">
-                    <UserCircle size={18} className="text-white" />
+                    <SignedIn>
+                      <UserButton />
+                    </SignedIn>
+                    <SignedOut>
+                      <UserCircle className="w-5 h-5 text-gray-300" />
+                    </SignedOut>
                   </div>
                 </button>
                 <ProfileDropdown isOpen={openDropdown === "profile"} />
@@ -535,7 +605,7 @@ export default function Header() {
             <div className="lg:hidden flex items-center gap-2">
               <button
                 onClick={toggleTheme}
-                className="p-2.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl"
+                className="p-2.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl cursor-pointer"
               >
                 {theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
               </button>
