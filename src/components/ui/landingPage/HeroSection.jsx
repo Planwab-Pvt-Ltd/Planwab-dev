@@ -406,10 +406,10 @@ export default function HeroSection() {
                   <Link
                     key={index}
                     className="relative group"
-                    href={`/vendors/marketplace?category=${vendor.name.toLowerCase()}`}
+                    href={`/vendors/marketplace/${vendor.name.toLowerCase()}`}
                   >
                     <div className="w-12 h-12 flex items-center justify-center bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm border border-white/20 dark:border-gray-700/30 rounded-full shadow-sm text-gray-600 dark:text-gray-300 cursor-pointer transition-all duration-300 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-lg group-hover:-translate-y-1 group-hover:text-rose-500 dark:group-hover:text-rose-400">
-                      {vendor.icon}
+                      {vendor.icon} 
                     </div>
                     <span className="absolute top-full mt-2 w-max left-1/2 -translate-x-1/2 text-xs font-semibold bg-amber-300/70 dark:bg-amber-400/80 text-black dark:text-gray-900 px-2 py-1 rounded-md shadow-lg opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none">
                       {vendor.name}
