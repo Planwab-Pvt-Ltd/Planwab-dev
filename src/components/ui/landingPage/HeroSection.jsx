@@ -56,18 +56,18 @@ const eventTypeSuggestions = [
   },
 ];
 const vendorCategories = [
-  { name: "Venues", icon: <Building2 size={20} /> },
-  { name: "Photographers", icon: <Camera size={20} />, src: "/camera.gif" },
-  { name: "Makeup", icon: <Paintbrush2 size={20} /> },
-  { name: "Planners", icon: <UserCheck size={20} /> },
-  { name: "Catering", icon: <UtensilsCrossed size={20} /> },
-  { name: "Bridal Wear", icon: <Shirt size={20} /> },
-  { name: "Mehendi", icon: <Hand size={20} /> },
-  { name: "Cakes", icon: <CakeSlice size={20} /> },
-  { name: "Jewellery", icon: <Gem size={20} /> },
-  { name: "Invitations", icon: <Mail size={20} /> },
-  { name: "DJs", icon: <Music size={20} /> },
-  { name: "Hairstyling", icon: <Scissors size={20} /> },
+  { name: "Venues", icon: <Building2 size={20} />, src: "/Cat1.png" },
+  { name: "Photographers", icon: <Camera size={20} />, src: "/Cat2.png" },
+  { name: "Makeup", icon: <Paintbrush2 size={20} />, src: "/Cat3.png" },
+  { name: "Planners", icon: <UserCheck size={20} />, src: "/Cat4.png" },
+  { name: "Catering", icon: <UtensilsCrossed size={20} />, src: "/Cat5.png" },
+  { name: "Bridal Wear", icon: <Shirt size={20} />, src: "/Cat6.png" },
+  { name: "Mehendi", icon: <Hand size={20} />, src: "/Cat7.png" },
+  { name: "Cakes", icon: <CakeSlice size={20} />, src: "/Cat8.png" },
+  { name: "Jewellery", icon: <Gem size={20} />, src: "/Cat9.png" },
+  { name: "Invitations", icon: <Mail size={20} />, src: "/Cat10.png" },
+  { name: "DJs", icon: <Music size={20} />, src: "/Cat11.png" },
+  { name: "Hairstyling", icon: <Scissors size={20} />, src: "/Cat12.png" },
 ];
 
 export default function HeroSection() {
