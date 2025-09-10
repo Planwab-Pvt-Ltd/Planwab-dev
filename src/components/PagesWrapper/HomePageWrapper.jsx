@@ -7,6 +7,7 @@ import ServicesBanner from '@/components/ui/landingPage/ServicesBanner';
 import HowItWorksSection from '@/components/ui/landingPage/HowItWorks';
 import VendorsSection from '@/components/ui/landingPage/VendorsSection';
 import Testimonials from '@/components/ui/landingPage/TestimonialsSection';
+import ServicesSection from "../ui/landingPage/ServicesSection";
 
 export default function HomePageWrapper() {
   const activeCategory = useCategoryStore(state => state.activeCategory);
@@ -55,6 +56,7 @@ export default function HomePageWrapper() {
           className="relative z-10"
         >
           <HeroSection />
+          <ServicesSection />
           <ServicesBanner />
           <HowItWorksSection />
           <div>
