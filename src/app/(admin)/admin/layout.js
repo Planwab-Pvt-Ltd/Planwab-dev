@@ -1,37 +1,16 @@
-'use client';
+import AdminLayoutWrapper from '../../../components/admin/LayoutWrapper';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import Sidebar from '@/components/admin/Sidebar';
-import Header from '@/components/admin/Header';
+export const metadata = {
+  title: "Admin Panel | PlanWab - Event Planning Made Easy",
+  description:
+    "Manage your events efficiently. Access dashboards, user management, and settings all in one place with PlanWab's Admin Panel.",
+};
 
 export default function AdminLayout({ children }) {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!isSidebarOpen);
-  };
-
-  const mainVariants = {
-    open: { marginLeft: '260px' },
-    closed: { marginLeft: '88px' },
-  };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <Sidebar isOpen={isSidebarOpen} />
-      <motion.div
-        className="flex-1"
-        variants={mainVariants}
-        initial={false}
-        animate={isSidebarOpen ? 'open' : 'closed'}
-        transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-      >
-        <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        <main className="p-6">
-          {children}
-        </main>
-      </motion.div>
-    </div>
+    <>
+      <AdminLayoutWrapper children={children} />
+    </>
   );
 }

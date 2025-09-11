@@ -61,7 +61,7 @@ const vendorCategories = [
   { name: "Makeup", icon: <Paintbrush2 size={20} />, src: "/Cat3.png" },
   { name: "Planners", icon: <UserCheck size={20} />, src: "/Cat4.png" },
   { name: "Catering", icon: <UtensilsCrossed size={20} />, src: "/Cat5.png" },
-  { name: "Bridal Wear", icon: <Shirt size={20} />, src: "/Cat6.png" },
+  { name: "Clothes Wear", icon: <Shirt size={20} />, src: "/Cat6.png" },
   { name: "Mehendi", icon: <Hand size={20} />, src: "/Cat7.png" },
   { name: "Cakes", icon: <CakeSlice size={20} />, src: "/Cat8.png" },
   { name: "Jewellery", icon: <Gem size={20} />, src: "/Cat9.png" },
@@ -416,13 +416,13 @@ export default function HeroSection() {
                       onMouseLeave={() => setHoveredId(null)}
                     >
                       {vendor.src && hoveredId !== vendor.name ? (
+                        vendor.icon
+                      ) : (
                         <img
                           src={vendor.src}
                           alt={vendor.name}
                           className="w-full h-full object-cover mix-blend-multiply"
                         />
-                      ) : (
-                        vendor.icon
                       )}
                     </div>
                     <span className="absolute top-full mt-2 w-max left-1/2 -translate-x-1/2 text-xs font-semibold bg-amber-300/70 dark:bg-amber-400/80 text-black dark:text-gray-900 px-2 py-1 rounded-md shadow-lg opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none">
