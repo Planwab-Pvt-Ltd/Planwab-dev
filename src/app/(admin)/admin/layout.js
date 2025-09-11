@@ -10,7 +10,9 @@ export default function AdminLayout({ children }) {
 
   return (
     <>
-      <AdminLayoutWrapper children={children} />
+      <AdminLayoutWrapper>
+        {children}
+      </AdminLayoutWrapper>
     </>
   );
 }
