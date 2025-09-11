@@ -1,7 +1,7 @@
 import clsx from "clsx"
 import qs from "qs"
 import { twMerge } from "tailwind-merge"
-import { aspectRatioOptions } from "../../constants"
+import { aspectRatioOptions } from "../lib/constants/index"
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs))
