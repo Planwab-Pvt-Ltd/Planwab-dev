@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useUser } from '@clerk/nextjs';
 
 const categoryConfig = {
   wedding: {
@@ -318,13 +319,17 @@ const CustomDropdown = ({
             <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           )}
           <span
-            className={`text-base ${value ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}
+            className={`text-base ${value
+                ? "text-gray-800 dark:text-gray-100"
+                : "text-gray-400 dark:text-gray-500"
+              }`}
           >
             {value || placeholder}
           </span>
         </div>
         <ChevronDown
-          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""
+            }`}
         />
       </button>
       {isOpen && (
@@ -349,7 +354,10 @@ const CustomDropdown = ({
                   setIsOpen(false);
                   setSearchTerm("");
                 }}
-                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-between group ${value === option ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-medium" : "text-gray-700 dark:text-gray-300"}`}
+                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-between group ${value === option
+                    ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-medium"
+                    : "text-gray-700 dark:text-gray-300"
+                  }`}
               >
                 {String(option)}
                 {value === option && (
@@ -384,10 +392,14 @@ const StepCity = ({ onNext, formData, category }) => {
           <button
             key={city.name}
             onClick={() => setSelectedCity(city.name)}
-            className={`p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-center hover:shadow-xl transform hover:-translate-y-1 ${selectedCity === city.name ? "bg-gradient-to-br from-amber-600 to-amber-800 border-amber-800 shadow-xl text-white scale-105" : "bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 text-gray-800 dark:text-gray-200"}`}
+            className={`p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-center hover:shadow-xl transform hover:-translate-y-1 ${selectedCity === city.name
+                ? "bg-gradient-to-br from-amber-600 to-amber-800 border-amber-800 shadow-xl text-white scale-105"
+                : "bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 text-gray-800 dark:text-gray-200"
+              }`}
           >
             <div
-              className={`text-3xl mb-3 ${selectedCity === city.name ? "filter brightness-0 invert" : ""}`}
+              className={`text-3xl mb-3 ${selectedCity === city.name ? "filter brightness-0 invert" : ""
+                }`}
             >
               {city.icon}
             </div>
@@ -648,7 +660,14 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
   );
 };
 
-const StepName = ({ onNext, onPrev, formData, category }) => {
+const StepName = ({
+  onNext,
+  onPrev,
+  formData,
+  category,
+  isSubmitting,
+  submitError,
+}) => {
   const [name, setName] = useState(formData.name || "");
   const [email, setEmail] = useState(formData.email || "");
   const [phone, setPhone] = useState(formData.phone || "");
@@ -699,6 +718,11 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
             />
           </div>
         </div>
+        {submitError && (
+          <div className="my-4 text-center p-3 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300 rounded-lg text-sm">
+            <strong>Error:</strong> {submitError}
+          </div>
+        )}
         <InfoBox text={config.infoMessages.name} icon={User} />
       </div>
       <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center pt-4 gap-4">
@@ -710,7 +734,7 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
           <span className="sm:hidden">Previous Step</span>
         </button>
         <button
-          disabled={!name.trim() || !email.trim()}
+          disabled={!name.trim() || !email.trim() || isSubmitting}
           onClick={() =>
             onNext({
               name: name.trim(),
@@ -720,8 +744,8 @@ const StepName = ({ onNext, onPrev, formData, category }) => {
           }
           className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl text-white font-semibold shadow-xl hover:shadow-2xl disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 text-base flex items-center justify-center gap-2"
         >
-          Generate My Proposal
-          <Star className="w-5 h-5" />
+          {isSubmitting ? "Submitting..." : "Generate My Proposal"}
+          {!isSubmitting && <Star className="w-5 h-5" />}
         </button>
       </div>
     </div>
@@ -789,13 +813,6 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
       </div>
       <div className="mt-8 flex flex-col-reverse sm:flex-row gap-4 justify-center">
         <button
-          onClick={onPrev}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors transform hover:scale-105"
-        >
-          <ChevronLeft size={18} />
-          Make a Change
-        </button>
-        <button
           onClick={onReset}
           className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors transform hover:scale-105 shadow-lg hover:shadow-xl"
         >
@@ -815,22 +832,80 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
 };
 
 export default function PlanMyEventPageWrapper() {
+  const { user } = useUser();
   const params = useParams();
   const category = params?.category || "wedding";
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({});
   const [showExitModal, setShowExitModal] = useState(false);
-  const handleNextStep = (data) => {
-    setFormData((prev) => ({ ...prev, ...data }));
-    setCurrentStep((prev) => prev + 1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  const handleNextStep = async (data) => {
+    const updatedFormData = { ...formData, ...data };
+    setFormData(updatedFormData);
+
+    if (currentStep < 5) {
+      setCurrentStep((prev) => prev + 1);
+      return;
+    }
+
+    if (currentStep === 5) {
+      setIsSubmitting(true);
+      setSubmitError(null);
+
+      const payload = {
+        clerkId: user?.id,
+        username: user?.username,
+        userId: user?.internalUser?._id,
+        category: category,
+        city: updatedFormData?.city,
+        year: updatedFormData?.year,
+        month: updatedFormData?.month,
+        dateRange: updatedFormData?.dateRange,
+        timeSlot: updatedFormData?.timeSlot,
+        guests: updatedFormData?.guests,
+        ageGroup: updatedFormData?.ageGroup,
+        budget: updatedFormData?.budget,
+        budgetRange: updatedFormData?.budgetRange,
+        paymentPreference: updatedFormData?.paymentPreference,
+        name: updatedFormData?.name,
+        email: updatedFormData?.email,
+        phone: updatedFormData?.phone,
+      };
+
+      try {
+        const response = await fetch("/api/plannedevent/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || "Failed to submit the proposal.",
+          );
+        }
+
+        setCurrentStep((prev) => prev + 1);
+      } catch (error) {
+        setSubmitError(error.message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
   };
+
   const handlePrevStep = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1));
   };
+
   const handleReset = () => {
     setFormData({});
     setCurrentStep(1);
   };
+
   const handleExit = () => {
     if (typeof window !== "undefined") {
       window.location.href = "/";
@@ -881,6 +956,8 @@ export default function PlanMyEventPageWrapper() {
             onPrev={handlePrevStep}
             formData={formData}
             category={category}
+            isSubmitting={isSubmitting}
+            submitError={submitError}
           />
         );
       case 6:
@@ -925,14 +1002,49 @@ export default function PlanMyEventPageWrapper() {
         />
       )}
       <style jsx>{`
-.slider::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #d97706 0%, #92400e 100%); cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); transition: all 0.2s; }
-.slider::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); }
-.dark .slider::-webkit-slider-thumb { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-.slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #d97706 0%, #92400e 100%); cursor: pointer; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
-.dark .slider::-moz-range-thumb { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
- @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.animate-slide-in { animation: slideIn 0.4s ease-out; }
-`}</style>
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+          cursor: pointer;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s;
+        }
+        .slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .dark .slider::-webkit-slider-thumb {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .slider::-moz-range-thumb {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dark .slider::-moz-range-thumb {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.4s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

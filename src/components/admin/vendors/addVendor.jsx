@@ -357,20 +357,48 @@ export default function AddVendor() {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Business name is required";
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Business name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Business name must be at least 2 characters long";
+    }
+
     if (!formData.phoneNo.trim())
       newErrors.phoneNo = "Phone number is required";
+
     if (!formData.username.trim()) newErrors.username = "Username is required";
+
     if (!formData.address.city.trim()) newErrors.city = "City is required";
+
     if (uploadedFiles.length === 0)
       newErrors.images = "At least one image is required";
-    if (
-      activeCategory === "venues" &&
-      (!formData.categoryData.perDayPrice ||
-        !formData.categoryData.perDayPrice.min)
-    ) {
-      newErrors.perDayPrice = "Rental price is required.";
+
+    const { categoryData } = formData;
+
+    switch (activeCategory) {
+      case "venues":
+        if (!categoryData.perDayPrice?.min || !categoryData.perDayPrice?.max) {
+          newErrors.perDayPrice = "Both minimum and maximum rental prices are required.";
+        }
+        break;
+
+      case "catering":
+        if (!categoryData.price?.min) {
+          newErrors.price = "A minimum price per plate is required.";
+        }
+        break;
+
+      case "other":
+        if (!categoryData.name || !categoryData.name.trim()) {
+          newErrors.name = "Service name is required for the 'Other' category.";
+        }
+        break;
+
+      default:
+        break;
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -396,7 +424,7 @@ export default function AddVendor() {
         formData.append(
           "upload_preset",
           process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
-            "planWab",
+          "planWab",
         );
         return fetch(
           `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dkbbz4ev9"}/image/upload`,

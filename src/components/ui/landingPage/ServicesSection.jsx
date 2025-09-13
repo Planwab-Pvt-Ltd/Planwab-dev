@@ -1,82 +1,42 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCategoryStore } from '@/GlobalState/CategoryStore';
 import Link from "next/link";
-import {
-    Camera, Utensils, Palette, Music, Gift, Car, Flower, Crown, Home, Heart,
-    Cake, Sparkles, Filter, ArrowRight, Briefcase, GraduationCap, Baby,
-    PartyPopper, Gem, Mail, ShieldCheck, Calendar
-} from "lucide-react";
+import { Sparkles, Filter } from "lucide-react";
 
 const categoryThemes = {
-    Wedding: {
-        primary: "from-rose-500 to-pink-500",
-        accent: "bg-white/60 dark:bg-slate-900/60",
-        border: "border-rose-200/30 dark:border-rose-500/20",
-        text: "text-rose-600 dark:text-rose-400",
-        glow: "group-hover:shadow-[0_0_20px_4px_theme(colors.rose.200)] dark:group-hover:shadow-[0_0_20px_4px_theme(colors.rose.500/50%)]",
-        iconBg: "bg-white dark:bg-slate-800",
-        specialBg: "bg-cover bg-center", // For a potential image/texture background
-        specialStyle: { backgroundImage: `url('/pat-white-paper.svg')` } // Subtle texture
-    },
-    Anniversary: {
-        primary: "from-amber-500 to-orange-500",
-        accent: "bg-amber-50/60 dark:bg-gray-900/60",
-        border: "border-amber-300/30 dark:border-amber-500/20",
-        text: "text-amber-600 dark:text-amber-400",
-        glow: "group-hover:shadow-[0_0_20px_4px_theme(colors.amber.200)] dark:group-hover:shadow-[0_0_20px_4px_theme(colors.amber.500/50%)]",
-        iconBg: "bg-amber-50 dark:bg-gray-800",
-        specialBg: "",
-        specialStyle: {}
-    },
-    Birthday: {
-        primary: "from-blue-500 to-violet-500",
-        accent: "bg-slate-900/80",
-        border: "border-transparent", // We use a gradient border instead
-        text: "text-blue-400",
-        glow: "group-hover:shadow-[0_0_20px_4px_theme(colors.blue.500/50%)]",
-        iconBg: "bg-slate-800",
-        specialBg: "p-[1px] bg-gradient-to-br from-blue-500 to-violet-500", // Creates gradient border
-        specialStyle: {}
-    },
-    Default: {
-        primary: "from-rose-500 to-pink-500",
-        accent: "bg-white/60 dark:bg-slate-900/60",
-        border: "border-rose-200/30 dark:border-rose-500/20",
-        text: "text-rose-600 dark:text-rose-400",
-        glow: "group-hover:shadow-[0_0_20px_4px_theme(colors.rose.200)] dark:group-hover:shadow-[0_0_20px_4px_theme(colors.rose.500/50%)]",
-        iconBg: "bg-white dark:bg-slate-800",
-        specialBg: "bg-cover bg-center", // For a potential image/texture background
-        specialStyle: { backgroundImage: `url('/pat-white-paper.svg')` } // Subtle texture
-    },
+    Wedding: { primary: "from-rose-500 to-pink-500", accent: "bg-white/60 dark:bg-slate-900/60", border: "border-rose-200/30 dark:border-rose-500/20", text: "text-rose-600 dark:text-rose-400" },
+    Anniversary: { primary: "from-amber-500 to-orange-500", accent: "bg-amber-50/60 dark:bg-gray-900/60", border: "border-amber-300/30 dark:border-amber-500/20", text: "text-amber-600 dark:text-amber-400" },
+    Birthday: { primary: "from-blue-500 to-violet-500", accent: "bg-slate-900/80", border: "border-transparent", text: "text-blue-400" },
+    Default: { primary: "from-rose-500 to-pink-500", accent: "bg-white/60 dark:bg-slate-900/60", border: "border-rose-200/30 dark:border-rose-500/20", text: "text-rose-600 dark:text-rose-400" },
 };
 
 const eventTypes = [
-    { name: "Wedding", icon: Heart, color: "from-rose-400 to-pink-500", accent: "bg-rose-50 dark:bg-rose-950/50", description: "Elegantly crafted celebrations for your special day.", features: ["Bridal Services", "Grand Venues", "Ceremonies"] },
-    { name: "Anniversary", icon: Crown, color: "from-amber-400 to-orange-500", accent: "bg-amber-50 dark:bg-amber-950/50", description: "Commemorate your journey with a memorable event.", features: ["Romantic Settings", "Milestones", "Gatherings"] },
-    { name: "Birthday", icon: Cake, color: "from-sky-400 to-blue-500", accent: "bg-sky-50 dark:bg-sky-950/50", description: "Make every birthday unforgettable with fun and flair.", features: ["Theme Parties", "Entertainment", "Surprises"] },
-    { name: "Corporate", icon: Briefcase, color: "from-indigo-400 to-purple-500", accent: "bg-indigo-50 dark:bg-indigo-950/50", description: "Professional, seamless events that reflect your brand.", features: ["Team Building", "Launches", "Award Ceremonies"] },
-    { name: "Graduation", icon: GraduationCap, color: "from-emerald-400 to-green-500", accent: "bg-emerald-50 dark:bg-emerald-950/50", description: "Celebrate academic achievements in style.", features: ["Ceremony Planning", "Photo Sessions", "Receptions"] },
-    { name: "Baby Shower", icon: Baby, color: "from-pink-400 to-fuchsia-500", accent: "bg-pink-50 dark:bg-pink-950/50", description: "Welcome the new arrival with a joyful celebration.", features: ["Gender Reveals", "Decorations", "Fun Activities"] },
-    { name: "Festivals", icon: PartyPopper, color: "from-red-400 to-orange-500", accent: "bg-red-50 dark:bg-red-950/50", description: "Vibrant traditional and cultural celebrations.", features: ["Diwali", "Holi", "Christmas Parties"] },
-    { name: "Engagement", icon: Gem, color: "from-purple-400 to-violet-500", accent: "bg-purple-50 dark:bg-purple-950/50", description: "Mark the beautiful beginning of your journey to forever.", features: ["Ring Ceremonies", "Photo Shoots", "Family Gatherings"] },
+    { name: "Wedding", imageUrl: "https://images.pexels.com/photos/169198/pexels-photo-169198.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Anniversary", imageUrl: "https://images.pexels.com/photos/313700/pexels-photo-313700.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Birthday", imageUrl: "https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Corporate", imageUrl: "https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Graduation", imageUrl: "https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Baby Shower", imageUrl: "https://images.pexels.com/photos/7282367/pexels-photo-7282367.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Festivals", imageUrl: "https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { name: "Engagement", imageUrl: "https://images.pexels.com/photos/931321/pexels-photo-931321.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
 ];
 
 const services = [
-    { category: "Photography", icon: Camera, events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation", "Engagement"], subcategories: ["Candid Photographers", "Videographers", "Drone Shoots", "Photo Booths"], description: "Capture every precious moment with our professional photo and video services.", popularity: "Most Popular" },
-    { category: "Venues", icon: Home, events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], subcategories: ["Banquet Halls", "Outdoor Lawns", "Luxury Hotels", "Private Farmhouses"], description: "Find the perfect and exclusive setting for your memorable celebration.", popularity: "Essential" },
-    { category: "Catering", icon: Utensils, events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], subcategories: ["Multi-cuisine Menus", "Live Counters", "Artisan Cakes", "Bartending"], description: "Delicious culinary experiences tailored to your event's theme and guest list.", popularity: "Trending" },
-    { category: "Decoration", icon: Flower, events: ["Wedding", "Anniversary", "Birthday", "Baby Shower", "Festivals"], subcategories: ["Floral Arrangements", "Stage Design", "Thematic Decor", "Lighting Design"], description: "Transform any venue into a stunning masterpiece with our creative decor solutions.", popularity: null },
-    { category: "Entertainment", icon: Music, events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], subcategories: ["DJs", "Live Bands", "Dancers", "Anchors & Hosts"], description: "Keep your guests engaged and entertained with amazing music and performances.", popularity: "Popular" },
-    { category: "Beauty & Styling", icon: Palette, events: ["Wedding", "Anniversary", "Engagement", "Graduation"], subcategories: ["Bridal Makeup", "Hair Styling", "Mehendi Artists", "Grooming Services"], description: "Look and feel your absolute best with our expert beauty and styling professionals.", popularity: null },
-    { category: "Planning", icon: Calendar, events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], subcategories: ["Full Event Planning", "Day-of Coordination", "Vendor Management", "Budget Planning"], description: "Our expert planners handle every detail, ensuring a flawless and stress-free event.", popularity: "Recommended" },
-    { category: "Invitations", icon: Mail, events: ["Wedding", "Birthday", "Corporate", "Baby Shower", "Engagement"], subcategories: ["Digital E-vites", "Luxury Card Stock", "Custom Designs", "Calligraphy Services"], description: "Set the tone for your event with beautiful, custom-designed invitations.", popularity: null },
-    { category: "Gifts & Favors", icon: Gift, events: ["Wedding", "Birthday", "Anniversary", "Corporate"], subcategories: ["Personalized Gifts", "Welcome Hampers", "Return Favors", "Luxury Gifting"], description: "Delight your guests with thoughtful and unique gifts and party favors.", popularity: "New" },
-    { category: "Cakes & Desserts", icon: Cake, events: ["Wedding", "Birthday", "Anniversary", "Baby Shower"], subcategories: ["Custom Wedding Cakes", "Themed Birthday Cakes", "Dessert Tables", "Chocolatiers"], description: "The sweetest part of any celebration, crafted by artisan bakers and confectioners.", popularity: null },
-    { category: "Transport", icon: Car, events: ["Wedding", "Anniversary", "Corporate"], subcategories: ["Luxury Sedans", "Vintage Cars", "Guest Shuttles", "Valet Services"], description: "Arrive in style and ensure seamless transport for you and your guests.", popularity: null },
-    { category: "Security", icon: ShieldCheck, events: ["Wedding", "Corporate", "Festivals"], subcategories: ["Event Security Staff", "Crowd Management", "VIP Protection", "Parking Security"], description: "Ensure a safe and secure environment for your event and all your guests.", popularity: null },
+    { category: "Photography", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation", "Engagement"], imageUrl: "https://images.pexels.com/photos/3371367/pexels-photo-3371367.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Venues", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], imageUrl: "https://images.pexels.com/photos/2263436/pexels-photo-2263436.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Catering", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], imageUrl: "https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Decoration", events: ["Wedding", "Anniversary", "Birthday", "Baby Shower", "Festivals"], imageUrl: "https://images.pexels.com/photos/2988229/pexels-photo-2988229.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Entertainment", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], imageUrl: "https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Beauty & Styling", events: ["Wedding", "Anniversary", "Engagement", "Graduation"], imageUrl: "https://images.pexels.com/photos/3018845/pexels-photo-3018845.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Planning", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], imageUrl: "https://images.pexels.com/photos/416405/pexels-photo-416405.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Invitations", events: ["Wedding", "Birthday", "Corporate", "Baby Shower", "Engagement"], imageUrl: "https://images.pexels.com/photos/1097217/pexels-photo-1097217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Gifts & Favors", events: ["Wedding", "Birthday", "Anniversary", "Corporate"], imageUrl: "https://images.pexels.com/photos/3780469/pexels-photo-3780469.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Cakes & Desserts", events: ["Wedding", "Birthday", "Anniversary", "Baby Shower"], imageUrl: "https://images.pexels.com/photos/1854652/pexels-photo-1854652.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Transport", events: ["Wedding", "Anniversary", "Corporate"], imageUrl: "https://images.pexels.com/photos/385997/pexels-photo-385997.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Security", events: ["Wedding", "Corporate", "Festivals"], imageUrl: "https://images.pexels.com/photos/7245308/pexels-photo-7245308.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
 ];
 
 const containerVariants = {
@@ -89,86 +49,60 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-const EventTypeCard = React.memo(({ event, isActive }) => {
-    const Icon = event.icon;
-    return (
-        <motion.div variants={itemVariants} whileHover={{ y: -8, scale: 1.03 }} className={`group relative cursor-pointer transition-all duration-300 ${isActive ? 'scale-105' : ''}`}>
-            <div className={`absolute -inset-px bg-gradient-to-r ${event.color} rounded-2xl blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-500 ${isActive ? 'opacity-80' : ''}`} />
-            <div className={`relative ${event.accent} backdrop-blur-sm rounded-xl p-6 border ${isActive ? 'border-slate-400 dark:border-slate-600' : 'border-slate-200 dark:border-slate-800'} shadow-md group-hover:shadow-xl transition-shadow duration-300 h-full flex flex-col`}>
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${event.color} p-4 mb-5 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{event.name}</h4>
-                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed flex-grow mb-4">{event.description}</p>
-                <div className="space-y-2 mt-auto">
-                    {event.features.map((feature) => (
-                        <div key={feature} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                            <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${event.color}`} />
-                            <span className="font-medium">{feature}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </motion.div>
-    );
-});
+const EventTypeCard = React.memo(({ event, isActive, onClick, selectedFilter }) => (
+    <motion.div
+        variants={itemVariants}
+        whileHover={{ scale: 1.05 }}
+        onClick={() => onClick(event.name)}
+        className={`group relative h-48 rounded-xl cursor-pointer overflow-hidden shadow-lg transition-all duration-300 ${isActive || selectedFilter === event.name ? 'ring-4 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900 ring-rose-500' : 'ring-1 ring-slate-300/30 dark:ring-slate-700/50'}`}
+        style={{ backgroundImage: `url(${event.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+    >
+        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors duration-300" />
+        <div className="relative h-full flex items-center justify-center p-4">
+            <h4 className="text-white text-2xl font-bold text-center tracking-tight">{event.name}</h4>
+        </div>
+    </motion.div>
+));
 EventTypeCard.displayName = 'EventTypeCard';
 
-const ServiceCard = React.memo(({ service, theme }) => {
-    const Icon = service.icon;
-    const cardContent = (
-        <>
-            {service.popularity && (
-                <div className={`absolute -top-3 -right-3 px-3 py-1 rounded-full bg-gradient-to-r ${theme.primary} text-white text-xs font-bold shadow-md z-10`}>
-                    {service.popularity}
+const ServiceCard = React.memo(({ service }) => (
+    <motion.div variants={itemVariants} layout transition={{ duration: 0.4, ease: "easeInOut" }}>
+        <Link href={`/vendors/marketplace/${service.category.toLowerCase()}`} passHref>
+            <motion.div
+                className="group relative block w-full h-80 rounded-xl overflow-hidden shadow-lg"
+                style={{ backgroundImage: `url(${service.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-0 left-0 p-6 w-full">
+                    <h3 className="text-white text-2xl font-bold opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-100">
+                        {service.category}
+                    </h3>
                 </div>
-            )}
-            <div className="flex items-start justify-between mb-5">
-                <div className={`w-16 h-16 rounded-xl ${theme.iconBg} p-4 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <div className={`w-full h-full rounded-lg bg-gradient-to-br ${theme.primary} p-2 flex items-center justify-center`}>
-                        <Icon className="w-6 h-6 text-white" />
-                    </div>
-                </div>
-            </div>
-            <h3 className={`text-2xl font-bold ${theme.text} mb-3`}>{service.category}</h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed flex-grow">{service.description}</p>
-            <div className="space-y-3 mb-6">
-                {service.subcategories.slice(0, 4).map((sub) => (
-                    <div key={sub} className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-                        <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${theme.primary} flex-shrink-0`} />
-                        <span>{sub}</span>
-                    </div>
-                ))}
-            </div>
-            <Link href={`/vendors/marketplace/${service.category.toLowerCase()}`} className={`w-full mt-auto py-3 px-6 rounded-lg bg-gradient-to-r ${theme.primary} text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2`}>
-                Explore
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-        </>
-    );
-
-    return (
-        <motion.div variants={itemVariants} layout transition={{ duration: 0.4, ease: "easeInOut" }} className={`group relative ${theme.specialBg} rounded-xl`}>
-            <div className={`relative ${theme.accent} backdrop-blur-2xl rounded-xl p-6 border ${theme.border} transition-all duration-300 h-full flex flex-col ${theme.glow} ${theme.specialBg && 'rounded-[11px]'}`} style={theme.specialStyle}>
-                {cardContent}
-            </div>
-        </motion.div>
-    );
-});
+            </motion.div>
+        </Link>
+    </motion.div>
+));
 ServiceCard.displayName = 'ServiceCard';
-
 
 export default function ServicesSection() {
     const [selectedFilter, setSelectedFilter] = useState("All");
     const activeCategory = useCategoryStore(state => state.activeCategory);
+    const servicesSectionRef = useRef(null);
 
     const currentTheme = useMemo(() => categoryThemes[activeCategory] || categoryThemes.Default, [activeCategory]);
     const eventFilters = useMemo(() => ["All", ...eventTypes.map(event => event.name)], []);
     const filteredServices = useMemo(() => selectedFilter === "All" ? services : services.filter(service => service.events.includes(selectedFilter)), [selectedFilter]);
+    
+    const handleEventTypeClick = (eventName) => {
+        setSelectedFilter(eventName);
+        servicesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     return (
         <>
-            <section className="relative py-16 md:py-20 overflow-hidden">
+            <section className="relative pt-16 md:pt-20 pb-8 overflow-hidden">
                 <div className="absolute inset-0 -z-20 dark:hidden" style={{ background: "radial-gradient(125% 125% at 50% 90%, #fff 40%, #f59e0b 100%)" }} />
                 <div className="absolute inset-0 -z-20 hidden dark:block" style={{ background: "radial-gradient(125% 125% at 50% 90%, #0d1117 40%, #451a03 100%)" }} />
 
@@ -189,29 +123,18 @@ export default function ServicesSection() {
 
                     <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         {eventTypes.map((event) => (
-                            <EventTypeCard key={event.name} event={event} isActive={activeCategory === event.name} />
+                            <EventTypeCard key={event.name} event={event} isActive={activeCategory === event.name} onClick={handleEventTypeClick} selectedFilter={selectedFilter} />
                         ))}
                     </motion.section>
                 </div>
             </section>
-            <section className="relative py-16 md:py-20 overflow-hidden">
-                <div
-                    className="absolute inset-0 -z-20 dark:hidden"
-                    style={{
-                        background:
-                            "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)",
-                    }}
-                />
-                <div
-                    className="absolute inset-0 -z-20 hidden dark:block"
-                    style={{
-                        background:
-                            "radial-gradient(125% 125% at 50% 10%, #0d1117 40%, #451a03 100%)",
-                    }}
-                />
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 md:space-y-16">
-                    <div className="absolute inset-0 bg-grid-slate-900/[0.04] dark:bg-grid-slate-100/[0.03] [mask-image:linear-gradient(to_bottom,white_5%,transparent_90%)]"></div>
-                    <section className="relative space-y-12 pt-8">
+            
+            <section ref={servicesSectionRef} className="relative pt-12 pb-16 md:pb-20 overflow-hidden scroll-mt-20">
+                <div className="absolute inset-0 -z-20 dark:hidden" style={{ background: "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)" }}/>
+                <div className="absolute inset-0 -z-20 hidden dark:block" style={{ background: "radial-gradient(125% 125% at 50% 10%, #0d1117 40%, #451a03 100%)" }} />
+                <div className="absolute inset-0 bg-grid-slate-900/[0.04] dark:bg-grid-slate-100/[0.03] [mask-image:linear-gradient(to_bottom,white_5%,transparent_90%)]"></div>
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                    <section className="relative space-y-12">
                         <div className="text-center">
                             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3">Our Premium Services</h2>
                             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Comprehensive solutions for every aspect of your event, tailored to your needs.</p>
@@ -228,10 +151,18 @@ export default function ServicesSection() {
                             ))}
                         </div>
 
+                        {selectedFilter !== 'All' && (
+                            <motion.div layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    Showing services for: <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedFilter}</span>
+                                </p>
+                            </motion.div>
+                        )}
+
                         <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8" layout>
                             <AnimatePresence>
                                 {filteredServices.map((service) => (
-                                    <ServiceCard key={service.category} service={service} theme={currentTheme} />
+                                    <ServiceCard key={service.category} service={service} />
                                 ))}
                             </AnimatePresence>
                         </motion.div>

@@ -5,7 +5,7 @@ const VendorBaseSchema = new Schema(
     name: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
     email: { type: String, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, "Invalid email format"] },
     phoneNo: { type: String, required: true, trim: true },
-    username: { type: String, required: true, unique: true, trim: true, minlength: 3, maxlength: 50 },
+    username: { type: String, required: true, unique: true, trim: true},
     address: {
       street: { type: String, trim: true },
       city: { type: String, trim: true, required: true },
