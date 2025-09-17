@@ -1,34 +1,35 @@
 import mongoose, { Schema, model, models } from "mongoose";
 
 const VendorBaseSchema = new Schema(
-  {
-    name: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
-    email: { type: String, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, "Invalid email format"] },
-    phoneNo: { type: String, required: true, trim: true },
-    username: { type: String, required: true, unique: true, trim: true},
-    address: {
-      street: { type: String, trim: true },
-      city: { type: String, trim: true, required: true },
-      state: { type: String, trim: true },
-      postalCode: { type: String, trim: true },
-      country: { type: String, trim: true, default: 'India' },
+    {
+        name: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
+        email: { type: String, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, "Invalid email format"] },
+        phoneNo: { type: String, required: true, trim: true },
+        username: { type: String, required: true, unique: true, trim: true },
+        address: {
+            street: { type: String, trim: true },
+            city: { type: String, trim: true, required: true },
+            state: { type: String, trim: true },
+            postalCode: { type: String, trim: true },
+            country: { type: String, trim: true, default: 'India' },
+        },
+        images: { type: [String], default: [] },
+        defaultImage: { type: String },
+        tags: { type: [String], default: [] },
+        description: { type: String, maxlength: 2000 },
+        rating: { type: Number, default: 0, min: 0, max: 5 },
+        availableAreas: { type: [String], default: [] },
+        amenities: { type: [String], default: [] },
+        facilities: { type: [String], default: [] },
+        contactPerson: {
+            firstName: { type: String, trim: true },
+            lastName: { type: String, trim: true },
+        },
+        availability: { type: String, default: 'Available', enum: ['Available', 'Busy', 'Unavailable'] },
+        bookings: { type: Number, default: 0 },
+        basePrice: { type: Number, required: true, index: true },
     },
-    images: { type: [String], default: [] },
-    defaultImage: { type: String },
-    tags: { type: [String], default: [] },
-    description: { type: String, maxlength: 2000 },
-    rating: { type: Number, default: 0, min: 0, max: 5 },
-    availableAreas: { type: [String], default: [] },
-    amenities: { type: [String], default: [] },
-    facilities: { type: [String], default: [] },
-    contactPerson: {
-      firstName: { type: String, trim: true },
-      lastName: { type: String, trim: true },
-    },
-    planId: { type: Number, default: 1 },
-    creditBalance: { type: Number, default: 10 },
-  },
-  { timestamps: true, discriminatorKey: "category" }
+    { timestamps: true, discriminatorKey: "category" }
 );
 
 const Vendor = models.Vendor || model("Vendor", VendorBaseSchema);
@@ -128,20 +129,20 @@ const OtherVendor = createDiscriminator('other', new Schema({
 
 
 export {
-  Vendor,
-  VenueVendor,
-  PhotographerVendor,
-  MakeupVendor,
-  PlannerVendor,
-  CatererVendor,
-  ClothesVendor,
-  MehendiVendor,
-  CakeVendor,
-  JewelleryVendor,
-  InvitationVendor,
-  DjVendor,
-  HairstylingVendor,
-  OtherVendor,
+    Vendor,
+    VenueVendor,
+    PhotographerVendor,
+    MakeupVendor,
+    PlannerVendor,
+    CatererVendor,
+    ClothesVendor,
+    MehendiVendor,
+    CakeVendor,
+    JewelleryVendor,
+    InvitationVendor,
+    DjVendor,
+    HairstylingVendor,
+    OtherVendor,
 };
 
 export default Vendor;

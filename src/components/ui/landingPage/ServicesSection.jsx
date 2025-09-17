@@ -25,18 +25,18 @@ const eventTypes = [
 ];
 
 const services = [
-    { category: "Photography", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation", "Engagement"], imageUrl: "https://images.pexels.com/photos/3371367/pexels-photo-3371367.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Photography", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation", "Engagement"], imageUrl: "/CardsCatPhotos/PhotoGraphyCardPhoto.png" },
     { category: "Venues", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], imageUrl: "https://images.pexels.com/photos/2263436/pexels-photo-2263436.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Catering", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], imageUrl: "https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Decoration", events: ["Wedding", "Anniversary", "Birthday", "Baby Shower", "Festivals"], imageUrl: "https://images.pexels.com/photos/2988229/pexels-photo-2988229.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Entertainment", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], imageUrl: "https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Catering", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], imageUrl: "/CardsCatPhotos/CateringCardPhoto.png" },
+    { category: "Decoration", events: ["Wedding", "Anniversary", "Birthday", "Baby Shower", "Festivals"], imageUrl: "/CardsCatPhotos/DecorationCardPhoto.png" },
+    { category: "Entertainment", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Festivals"], imageUrl: "/CardsCatPhotos/EntertainmentCardPhoto.png" },
     { category: "Beauty & Styling", events: ["Wedding", "Anniversary", "Engagement", "Graduation"], imageUrl: "https://images.pexels.com/photos/3018845/pexels-photo-3018845.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Planning", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], imageUrl: "https://images.pexels.com/photos/416405/pexels-photo-416405.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Invitations", events: ["Wedding", "Birthday", "Corporate", "Baby Shower", "Engagement"], imageUrl: "https://images.pexels.com/photos/1097217/pexels-photo-1097217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Gifts & Favors", events: ["Wedding", "Birthday", "Anniversary", "Corporate"], imageUrl: "https://images.pexels.com/photos/3780469/pexels-photo-3780469.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Cakes & Desserts", events: ["Wedding", "Birthday", "Anniversary", "Baby Shower"], imageUrl: "https://images.pexels.com/photos/1854652/pexels-photo-1854652.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Transport", events: ["Wedding", "Anniversary", "Corporate"], imageUrl: "https://images.pexels.com/photos/385997/pexels-photo-385997.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
-    { category: "Security", events: ["Wedding", "Corporate", "Festivals"], imageUrl: "https://images.pexels.com/photos/7245308/pexels-photo-7245308.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" },
+    { category: "Planning", events: ["Wedding", "Anniversary", "Birthday", "Corporate", "Graduation"], imageUrl: "/CardsCatPhotos/PlannersCardPhoto.png" },
+    { category: "Invitations", events: ["Wedding", "Birthday", "Corporate", "Baby Shower", "Engagement"], imageUrl: "/CardsCatPhotos/InvitationsCardPhoto.png" },
+    { category: "Gifts & Favors", events: ["Wedding", "Birthday", "Anniversary", "Corporate"], imageUrl: "/CardsCatPhotos/GiftsAndFavoursCardPhoto.png" },
+    { category: "Cakes & Desserts", events: ["Wedding", "Birthday", "Anniversary", "Baby Shower"], imageUrl: "/CardsCatPhotos/CakesCardPhoto.png" },
+    { category: "Transport", events: ["Wedding", "Anniversary", "Corporate"], imageUrl: "/CardsCatPhotos/TransportCardPhoto.png" },
+    { category: "Security", events: ["Wedding", "Corporate", "Festivals"], imageUrl: "/CardsCatPhotos/SecurityCardPhoto.png" },
 ];
 
 const containerVariants = {

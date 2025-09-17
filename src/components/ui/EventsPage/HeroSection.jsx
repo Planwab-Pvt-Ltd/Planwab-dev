@@ -35,6 +35,27 @@ const HeroSection = () => {
     };
   }, []);
 
+  const videoSources = {
+    wedding: {
+      desktop:
+        "https://imageswedding.theweddingcompany.com/bh_prod_bucket/weddings/assets/goa-new-ph.mp4",
+      mobile:
+        "https://imageswedding.theweddingcompany.com/bh_prod_bucket/weddings/assets/goa-new-ph-potrait.mp4",
+    },
+    anniversary: {
+      desktop: "/CatVideos/AnniversaryCatVid.mp4",
+      mobile: "/CatVideos/AnniversaryCatVid.mp4",
+    },
+    birthday: {
+      desktop: "/CatVideos/BirthdayCatVid.mp4",
+      mobile: "/CatVideos/BirthdayCatVid.mp4",
+    },
+  };
+
+  const categoryKey = activeCategory.toLowerCase();
+  const currentVideos =
+    videoSources[categoryKey] || videoSources.wedding;
+
   return (
     <div className="relative h-screen w-full overflow-hidden" ref={heroRef}>
       <div className="absolute inset-0 z-0">
@@ -45,14 +66,15 @@ const HeroSection = () => {
             muted
             playsInline
             className="h-full w-full object-cover dark:opacity-50"
+            key={currentVideos.desktop}
           >
             <source
-              src="https://imageswedding.theweddingcompany.com/bh_prod_bucket/weddings/assets/goa-new-ph.mp4"
+              src={currentVideos.desktop}
               type="video/mp4"
               media="(min-width: 769px)"
             />
             <source
-              src="https://imageswedding.theweddingcompany.com/bh_prod_bucket/weddings/assets/goa-new-ph-potrait.mp4"
+              src={currentVideos.mobile}
               type="video/mp4"
               media="(max-width: 768px)"
             />
@@ -257,7 +279,7 @@ const HeroSection = () => {
             </a>
           </div>
         </div>
-        <div className="flex w-full justify-center mt-8">
+        <div className="flex sm:hidden w-full justify-center mt-8">
           <svg
             width="60"
             height="60"
