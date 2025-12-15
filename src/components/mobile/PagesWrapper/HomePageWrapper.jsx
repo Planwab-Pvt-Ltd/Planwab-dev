@@ -9,6 +9,7 @@ import MostBooked from "../homepage/MostBooked";
 import ServicesSteps from "../homepage/ServicesSteps";
 import SampleProposal from "../homepage/SampleProposals";
 import WhyWeBetter from "../homepage/WhyWeBetter";
+import AreYouAVendorSection from "../homepage/AreYouVendor";
 
 const QUICK_LINKS = [
   { label: "Venues", icon: "🏰" },
@@ -56,7 +57,7 @@ const MobileEventPlanner = () => {
   }, []);
 
   return (
-    <div className="relative w-full min-h-screen bg-gray-50 text-slate-800 font-sans pb-24 mx-auto max-w-md shadow-2xl overflow-hidden">
+    <div className="relative w-full min-h-screen bg-gray-50 text-slate-800 font-sans pb-24 mx-auto max-w-md overflow-hidden">
       {/* 2. Hero Video (No Overlay) */}
       <div className="relative h-[55vh] w-full p-0 m-0">
         <video
@@ -99,7 +100,7 @@ const MobileEventPlanner = () => {
       <div className="mx-1 mt-2 mb-1">
         <motion.div whileTap={{ scale: 0.98 }} className="w-full h-24">
           <img
-            src="/HeroNAP1.png"
+            src={`HeroNAP${currentCategory}.png`}
             alt=""
             className="w-full h-full object-cover object-center"
             height={15}
@@ -109,7 +110,7 @@ const MobileEventPlanner = () => {
       </div>
 
       {/* 6. Explore Categories */}
-      <CategoryGrid />
+      <CategoryGrid currentCategory={currentCategory} />
 
       {/* 7. Most Booked */}
       <MostBooked />
@@ -137,6 +138,8 @@ const MobileEventPlanner = () => {
       </div>
 
       <WhyWeBetter />
+
+      <AreYouAVendorSection />
 
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {

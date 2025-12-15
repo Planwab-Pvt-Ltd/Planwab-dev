@@ -1,48 +1,54 @@
 import React from "react";
 
-const CategoryGrid = () => {
+const CategoryGrid = ({ currentCategory }) => {
   // Data extraction based on the provided HTML structure
   const categories = [
     {
-      name: "Salon for Women",
-      image: "https://cdn.yesmadam.com/images/live/category/Salon.jpg",
+      name: `${currentCategory} Planner`,
+      image: "/CardsCatPhotos/PlannerCat.png",
       span: 1,
       widthClass: "w-20",
     },
     {
-      name: "Spa for Women",
-      image: "https://cdn.yesmadam.com/images/live/category/Spa-30oct.jpg",
+      name: "Photographer",
+      image: "/CardsCatPhotos/PhotographerCat.png",
       span: 1,
       widthClass: "w-20",
     },
     {
-      name: "HydraGlo Facials",
+      name: `${currentCategory} Venues`,
       // Note: This image spans 2 columns in the source
       image: "https://cdn.yesmadam.com/images/live/category/Hydra%20Category_Wedding%20Season-18-11-25.gif",
       span: 2,
       widthClass: "w-40", // Corresponds to the wider image in source
     },
     {
-      name: "Laser Treatments",
-      image: "https://cdn.yesmadam.com/images/live/category/Cat-Icon-Laser-Female-27nov25.jpg",
+      name: "MakeUp",
+      image: "/CardsCatPhotos/MakeUpCat.png",
       span: 1,
       widthClass: "w-20",
     },
     {
-      name: "Makeup & Styling",
-      image: "https://cdn.yesmadam.com/images/live/category/Makeup-30oct.jpg",
+      name: "Mehndi",
+      image: "/CardsCatPhotos/MehndiCat.png",
       span: 1,
       widthClass: "w-20",
     },
     {
-      name: "Hair Cut & Style",
-      image: "https://cdn.yesmadam.com/images/live/category/Hair-30oct.jpg",
+      name: "DJs & Sound",
+      image: "/CardsCatPhotos/DJCat.png",
       span: 1,
       widthClass: "w-20",
     },
     {
-      name: "Pre Bridal",
-      image: "https://cdn.yesmadam.com/images/live/category/Bridal-30oct.jpg",
+      name: "Dhol",
+      image: "/CardsCatPhotos/DholCat.png",
+      span: 1,
+      widthClass: "w-20",
+    },
+    {
+      name: "Caterors",
+      image: "/CardsCatPhotos/CaterorsCat.png",
       span: 1,
       widthClass: "w-20",
     },

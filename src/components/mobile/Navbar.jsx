@@ -1,21 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import {
-  Home,
-  Grid,
-  Calendar,
-  User,
-  X,
-  Plus,
-  Minus,
-  Search,
-  Star,
-  ShoppingBag,
-  ChevronRight,
-  Trash2,
-  ArrowRight,
-} from "lucide-react";
+import { Home, ChartBarStacked, Calendar, User, X, Plus, Star, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -80,7 +66,7 @@ const MobileNavbar = () => {
   // --- NAVIGATION CONFIG ---
   const navItems = [
     { id: "home", label: "Home", icon: Home, route: "/m" },
-    { id: "categories", label: "Categories", icon: Grid, route: "/m/vendors/marketplace/venues" },
+    { id: "categories", label: "Categories", icon: ChartBarStacked, route: "/m/vendors/marketplace/venues" },
     { id: "center_fab", type: "center" },
     { id: "bookings", label: "Bookings", icon: Calendar, route: "/m/user/bookings" },
     { id: "profile", label: "Profile", icon: User, route: "/m/user/profile" },

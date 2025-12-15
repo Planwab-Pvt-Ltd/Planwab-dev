@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import MobileHeader from "@/components/mobile/Header";
 import MobileNavbar from "./Navbar";
+import Footer from "./Footer";
 
 export default function ClientWrapper({ children }) {
   const pathname = usePathname();
@@ -13,6 +14,9 @@ export default function ClientWrapper({ children }) {
     <>
       {!isAdminRoute && <MobileHeader />}
       <main>{children}</main>
+      <footer>
+        <Footer />
+      </footer>
       {!isAdminRoute && <MobileNavbar />}
     </>
   );

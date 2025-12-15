@@ -3,7 +3,7 @@ import React from "react";
 const WhyWeBetter = () => {
   return (
     <>
-      <section className="mb-8 w-full" id="why_are_we_better_section">
+      <section className="mb-8 w-full relative" id="why_are_we_better_section">
         {/* Top Curve SVG */}
         <div>
           <img
@@ -17,7 +17,7 @@ const WhyWeBetter = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col items-center bg-[#F0F7F4] px-5 pb-8 md:px-0 md:pb-12">
+        <div className="flex flex-col items-center bg-[#F0F7F4] px-5 pb-0 md:px-0 md:pb-12">
           {/* Header Text */}
           <div>
             <p className="pb-2 text-center font-serif text-3xl font-semibold text-[#121212] md:pb-4 lg:text-5xl">
@@ -92,6 +92,21 @@ const WhyWeBetter = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-1 z-50 translate-y-full">
+          <div className="relative">
+            <img
+              src="https://www.theweddingcompany.com/images/HomePage/new/green-curve.svg"
+              alt=" "
+              loading="lazy"
+              width={100}
+              height={8}
+              decoding="async"
+              className="max-h-24 w-full object-cover object-bottom"
+              style={{ color: "transparent" }}
+            />
           </div>
         </div>
       </section>
