@@ -139,7 +139,7 @@ const MobileHeader = () => {
     {
       id: "Birthday",
       label: "Birthday",
-      styles: "!bg-linear-to-r from-gray-800/65 via-yellow-400/90 to-gray-900/65 bg-gradient-animated",
+      styles: "!bg-linear-to-r from-gray-800/65 via-yellow-500/90 to-gray-900/65 bg-gradient-animated",
       image: "/BirthdayCat.png",
       placeholderContext: ["Birthday Cakes", "Party Decor", "Event Planners", "Entertainment"],
     },

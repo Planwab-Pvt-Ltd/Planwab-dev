@@ -1,4 +1,4 @@
-import AdminLayoutWrapper from "../../../components/desktop/admin/LayoutWrapper";
+import AdminLayoutWrapper from "@/components/desktop/admin/LayoutWrapper";
 
 export const metadata = {
   title: "Admin Panel | PlanWab - Event Planning Made Easy",

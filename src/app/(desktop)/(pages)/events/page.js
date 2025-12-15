@@ -9,7 +9,7 @@ import Birthday from "@/components/desktop/Birthday";
 import HeroSection from "@/components/desktop/ui/EventsPage/HeroSection";
 import Banner1 from "@/components/desktop/ui/EventsPage/Banner1";
 import HowItWorksSection from "@/components/desktop/ui/EventsPage/HowItWorks";
-import SearchSection from "@/components/ui/desktop/EventsPage/SearchSection";
+import SearchSection from "@/components/desktop/ui/EventsPage/SearchSection";
 
 export default function Home() {
   const activeCategory = useCategoryStore((state) => state.activeCategory);

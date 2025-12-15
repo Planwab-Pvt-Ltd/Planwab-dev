@@ -6,7 +6,7 @@ import SkeletonCard from "@/components/mobile/SkeletonCard";
 import Wedding from "@/components/mobile/Wedding";
 import Anniversary from "@/components/mobile/Anniversary";
 import Birthday from "@/components/mobile/Birthday";
-import HeroSection from "@/componentsmobile//ui/EventsPage/HeroSection";
+import HeroSection from "@/components/mobile/ui/EventsPage/HeroSection";
 import Banner1 from "@/components/mobile/ui/EventsPage/Banner1";
 import HowItWorksSection from "@/components/mobile/ui/EventsPage/HowItWorks";
 import SearchSection from "@/components/mobile/ui/EventsPage/SearchSection";
