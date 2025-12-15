@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ClientWrapper from "@/components/ClientWrapper";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ThemeClerkProvider from "../lib/ThemeClerkProvider";
 
@@ -16,8 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "PlanWAB - Events Planning Made Easy",
-  description:
-    "Your one-stop solution for planning Weddings, Anniversaries, and Birthdays.",
+  description: "Your one-stop solution for planning Weddings, Anniversaries, and Birthdays.",
 };
 
 export default function RootLayout({ children }) {
@@ -25,14 +23,11 @@ export default function RootLayout({ children }) {
     <ThemeProvider>
       <ThemeClerkProvider>
         <html lang="en">
-          <body
-            className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}
-          >
-            <ClientWrapper>{children}</ClientWrapper>
+          <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}>
+            {children}
           </body>
         </html>
       </ThemeClerkProvider>
     </ThemeProvider>
-
   );
 }
