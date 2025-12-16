@@ -1,5 +1,6 @@
 import React from "react";
 import { Check, ArrowRight } from "lucide-react";
+import SmartMedia from "../SmartMediaLoader";
 
 const ServicesSteps = () => {
   const features = ["Wedding planning", "Budget optimisation", "Event management"];
@@ -33,13 +34,14 @@ const ServicesSteps = () => {
             </div>
 
             {/* Mobile Image */}
-            <img
-              alt="mandap"
-              loading="lazy"
+            <SmartMedia
+              src="https://www.theweddingcompany.com/_next/static/media/Mandap.d8d5d35e.webp"
+              type="image"
+              className="w-32 object-contain lg:hidden rounded-lg"
+              loaderImage="/GlowLoadingGif.gif"
               width="464"
               height="378"
-              className="w-32 object-contain lg:hidden rounded-lg"
-              src="https://www.theweddingcompany.com/_next/static/media/Mandap.d8d5d35e.webp"
+              alt="mandap"
             />
           </div>
 

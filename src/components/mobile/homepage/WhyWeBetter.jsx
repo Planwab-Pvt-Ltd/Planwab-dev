@@ -1,4 +1,5 @@
 import React from "react";
+import SmartMedia from "../SmartMediaLoader";
 
 const WhyWeBetter = () => {
   return (
@@ -76,13 +77,22 @@ const WhyWeBetter = () => {
             {/* Card 3: Stress-free Experience */}
             <div className="flex items-center rounded-r-xl py-4 shadow-[0_15px_30px_0_#A1C8B733] md:max-w-[320px] md:flex-col md:rounded-b-xl md:rounded-tr-none md:px-4 md:bg-[linear-gradient(180deg,#F0F7F4_0%,#FFF_100%)] bg-[linear-gradient(90deg,#F0F7F4_11.36%,#FFFFFF_100%)]">
               <div style={{ transform: "translateY(-5.65067px)" }}>
-                <img
+                {/* <img
                   alt="Stress-free Experience"
                   loading="lazy"
                   width="90"
                   height="90"
                   className="md:h-[145px] md:w-[145px]"
                   src="https://www.theweddingcompany.com/images/HomePageRevamp/benefits/lady.webp"
+                /> */}
+                <SmartMedia
+                  src="https://www.theweddingcompany.com/images/HomePageRevamp/benefits/lady.webp"
+                  type="image"
+                  className="md:h-[145px] md:w-[145px]"
+                  loaderImage="/GlowLoadingGif.gif"
+                  width="100"
+                  height="100"
+                  alt="Stress-free Experience"
                 />
               </div>
               <div className="flex flex-col px-4 md:items-center md:px-2">

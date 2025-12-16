@@ -16,7 +16,8 @@ import {
   Building2,
 } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import SmartMedia from "./SmartMediaLoader";
 
 // --- MOCK DATA ---
 const POPULAR_CITIES = [
@@ -61,53 +62,45 @@ const TRENDING_AREAS = [
 ];
 
 // --- 1. CATEGORY BUTTON ---
-const CategoryButton = ({ category, imageSrc, active, onClick, styles }) => (
+const CategoryButton = ({ category, imageSrc, active, onClick, styles, src }) => (
   <div
     role="tab"
     aria-selected={active}
-    onClick={onClick}
+    onClick={() => onClick()}
     className={`
-        relative flex items-center justify-center space-x-2.5 px-4 py-2 mx-0.5 rounded-xl flex-1
-        transition-all duration-300 ease-out group
-        focus:outline-none bg-pink-50/80
-        hover:bg-gray-50 hover:scale-105 hover:shadow-md cursor-pointer
-        ${active ? styles : "text-gray-600 hover:text-gray-900"}
-    `}
-  >
-    <div className="relative flex items-center justify-center">
-      <img
-        src={imageSrc}
-        alt={`${category} icon`}
-        className={`
-            object-contain transition-all duration-300 ease-out
-            ${active ? "w-9 h-9" : "w-9 h-8 group-hover:w-7 group-hover:h-7"}
-        `}
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = "https://placehold.co/38x38/png?text=icon";
-        }}
-      />
-    </div>
-    <span
-      className={`
-        whitespace-nowrap transition-all duration-300 ease-out text-sm
+        relative flex-1 h-12 mx-0.5 rounded-xl overflow-hidden transition-all duration-300 ease-out cursor-pointer
         ${
           active
-            ? "font-bold text-white"
-            : "font-medium text-gray-700 group-hover:text-gray-900 group-hover:font-semibold"
+            ? `flex items-center justify-center space-x-1 px-3 pl-2 ${styles}` // Active: Flex layout + Gradient
+            : "bg-gray-100" // Inactive: Background color
         }
     `}
-    >
-      {category}
-    </span>
-    {/* Active Underline Indicator */}
-    <div
-      className={`
-        absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full
-        transition-all duration-400 ease-out
-        ${active ? "w-[70%] opacity-100" : "w-0 opacity-0 group-hover:w-[50%] group-hover:opacity-50"}
-    `}
-    ></div>
+  >
+    {active ? (
+      /* --- ACTIVE STATE: Icon + Text + Gradient --- */
+      <>
+        <div className="relative flex items-center justify-center z-10 shrink-0 pb-2">
+          <img
+            src={imageSrc}
+            alt={`${category} icon`}
+            className={`object-contain ${category === "Anniversary" ? "w-7 h-9" : "w-10 h-15"}`} // Slightly smaller to fit h-12 comfortably
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://placehold.co/38x38/png?text=icon";
+            }}
+          />
+        </div>
+        <span className="whitespace-nowrap text-sm font-bold text-white z-10 truncate">{category}</span>
+
+        {/* Active Underline Indicator */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full w-[70%] z-10" />
+      </>
+    ) : (
+      /* --- INACTIVE STATE: Full Image Only --- */
+      <div className="absolute inset-0 w-full h-full">
+        <SmartMedia src={src} type="image" alt={category} className="w-full h-full" />
+      </div>
+    )}
   </div>
 );
 
@@ -115,6 +108,7 @@ const CategoryButton = ({ category, imageSrc, active, onClick, styles }) => (
 const MobileHeader = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const { scrollY } = useScroll();
   const [isSticky, setIsSticky] = useState(false);
@@ -122,6 +116,7 @@ const MobileHeader = () => {
   // Logic: Get active category from URL or default to 'Wedding'
   const currentCategoryParam = searchParams.get("category");
   const activeTabId = currentCategoryParam;
+  const isHomePage = pathname === "/m";
 
   // Theme Configuration
   const tabs = [
@@ -130,6 +125,7 @@ const MobileHeader = () => {
       label: "Wedding",
       styles: "!bg-linear-to-r from-gray-800/85 via-blue-700/85 to-gray-900/85 bg-gradient-animated",
       image: "/WeddingCat.png",
+      src: "/WeddingHeaderCard.gif",
       placeholderContext: ["Wedding Venues", "Bridal Makeup", "Mehndi Artists", "Wedding Photographers"],
     },
     {
@@ -137,6 +133,7 @@ const MobileHeader = () => {
       label: "Anniversary",
       styles: "!bg-linear-to-r from-gray-800/85 via-pink-700/80 to-gray-900/85 bg-gradient-animated",
       image: "/AnniversaryCat.png",
+      src: "/AnniversaryHeaderCard.gif",
       placeholderContext: ["Romantic Dinner", "Flower Bouquets", "Couple Spa", "Anniversary Cakes"],
     },
     {
@@ -144,6 +141,7 @@ const MobileHeader = () => {
       label: "Birthday",
       styles: "!bg-linear-to-r from-gray-800/65 via-yellow-500/90 to-gray-900/65 bg-gradient-animated",
       image: "/BirthdayCat.png",
+      src: "/BirthdayHeaderCard.gif",
       placeholderContext: ["Birthday Cakes", "Party Decor", "Event Planners", "Entertainment"],
     },
   ];
@@ -187,8 +185,9 @@ const MobileHeader = () => {
 
   // Handle Category Click -> Updates URL
   const handleCategoryClick = (id) => {
+    const targetCategory = id === activeTabId ? "Default" : id;
     startTransition(() => {
-      router.push(`?category=${id}`, { scroll: false });
+      router.push(`?category=${targetCategory}`, { scroll: false });
     });
     setPlaceholderIndex(0);
   };
@@ -251,107 +250,110 @@ const MobileHeader = () => {
 
       {/* --- Floating Header (Absolute) --- */}
       {/* This container stays absolute at top for initial view */}
-      <motion.div
-        className="absolute top-0 left-0 w-full z-50"
-        initial={false}
-        animate={{
-          opacity: isSticky ? 0 : 1,
-          pointerEvents: isSticky ? "none" : "auto",
-        }}
-      >
-        <div className="pt-1 pb-2 bg-gradient-to-b from-black/60 via-black/20 to-transparent">
-          {/* A. Categories Section (White Pill Container) */}
-          <div className="px-1 mb-2">
-            <div className="flex items-center justify-between bg-white/10 rounded-2xl p-1.5 shadow-inner border border-gray-200/50">
-              {tabs.map((tab) => {
-                const isActive = activeTabId === tab.id;
-                return (
-                  <CategoryButton
-                    key={tab.id}
-                    category={tab.label}
-                    styles={tab.styles}
-                    imageSrc={tab.image}
-                    active={isActive}
-                    onClick={() => handleCategoryClick(tab.id)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* B. Address Pill */}
-          <div className="px-3 mb-3">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsAddressDrawerOpen(true)}
-              className="w-full flex items-center gap-3 bg-white/10 rounded-2xl p-2 pr-4 shadow-sm active:bg-white/25 transition-all"
-            >
-              {/* Icon Box */}
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shadow-inner backdrop-blur-sm">
-                <MapPin size={20} fill="currentColor" fillOpacity={0.3} strokeWidth={2.5} />
+      {isHomePage && (
+        <motion.div
+          className="absolute top-0 left-0 w-full z-50"
+          initial={false}
+          animate={{
+            opacity: isSticky ? 0 : 1,
+            pointerEvents: isSticky ? "none" : "auto",
+          }}
+        >
+          <div className="pt-1 pb-2 bg-gradient-to-b from-black/60 via-black/20 to-transparent">
+            {/* A. Categories Section (White Pill Container) */}
+            <div className="px-1 mb-2">
+              <div className="flex items-center justify-between bg-white/10 rounded-2xl p-1.5 shadow-inner border border-gray-200/50">
+                {tabs.map((tab) => {
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <CategoryButton
+                      key={tab.id}
+                      category={tab.label}
+                      styles={tab.styles}
+                      imageSrc={tab.image}
+                      active={isActive}
+                      src={tab.src}
+                      onClick={() => handleCategoryClick(tab.id)}
+                    />
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Text Content */}
-              <div className="flex-1 text-left overflow-hidden">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[15px] font-bold text-white truncate max-w-[200px] drop-shadow-md">
-                    {selectedAddress.label}
-                  </span>
-                  <ChevronDown size={14} className="text-white/80 stroke-[3px]" />
+            {/* B. Address Pill */}
+            <div className="px-3 mb-3">
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsAddressDrawerOpen(true)}
+                className="w-full flex items-center gap-3 bg-white/10 rounded-2xl p-2 pr-4 shadow-sm active:bg-white/25 transition-all"
+              >
+                {/* Icon Box */}
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shadow-inner backdrop-blur-sm">
+                  <MapPin size={20} fill="currentColor" fillOpacity={0.3} strokeWidth={2.5} />
                 </div>
-                <p className="text-[11px] text-white/90 truncate font-medium leading-tight drop-shadow-sm">
-                  {selectedAddress.area}, {selectedAddress.city.split(",")[0]}
-                </p>
-              </div>
-            </motion.button>
-          </div>
 
-          {/* C. Search Bar */}
-          <div className="px-3 flex items-center gap-3">
-            <div className="flex-1 h-12 bg-white/15 backdrop-blur-md rounded-2xl shadow-sm border border-white/20 flex items-center px-4 relative transition-all active:scale-[0.99]">
-              <Search className="text-white/70 w-5 h-5 mr-3" strokeWidth={2.5} />
-              <div className="relative flex-1 h-full overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {!searchQuery && (
-                    <motion.span
-                      key={`${activeTabId}-${placeholderIndex}`}
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -20, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute top-0 bottom-0 flex items-center text-[13px] font-semibold text-white/70 w-full truncate pointer-events-none"
-                    >
-                      Search for "{currentTab.placeholderContext[placeholderIndex]}"
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-full bg-transparent border-none outline-none text-sm text-white font-semibold relative z-10 placeholder-transparent"
-                />
-              </div>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="p-1 bg-white/20 rounded-full z-10 hover:bg-white/30"
-                >
-                  <X size={12} className="text-white" />
-                </button>
-              )}
+                {/* Text Content */}
+                <div className="flex-1 text-left overflow-hidden">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[15px] font-bold text-white truncate max-w-[200px] drop-shadow-md">
+                      {selectedAddress.label}
+                    </span>
+                    <ChevronDown size={14} className="text-white/80 stroke-[3px]" />
+                  </div>
+                  <p className="text-[11px] text-white/90 truncate font-medium leading-tight drop-shadow-sm">
+                    {selectedAddress.area}, {selectedAddress.city.split(",")[0]}
+                  </p>
+                </div>
+              </motion.button>
             </div>
 
-            <button className="h-12 w-12 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-sm active:scale-95 transition-transform text-white">
-              <SlidersHorizontal size={20} strokeWidth={2.5} />
-            </button>
+            {/* C. Search Bar */}
+            <div className="px-3 flex items-center gap-3">
+              <div className="flex-1 h-12 bg-white/15 backdrop-blur-md rounded-2xl shadow-sm border border-white/20 flex items-center px-4 relative transition-all active:scale-[0.99]">
+                <Search className="text-white/70 w-5 h-5 mr-3" strokeWidth={2.5} />
+                <div className="relative flex-1 h-full overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    {!searchQuery && (
+                      <motion.span
+                        key={`${activeTabId}-${placeholderIndex}`}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute top-0 bottom-0 flex items-center text-[13px] font-semibold text-white/70 w-full truncate pointer-events-none"
+                      >
+                        Search for "{currentTab.placeholderContext[placeholderIndex]}"
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-full bg-transparent border-none outline-none text-sm text-white font-semibold relative z-10 placeholder-transparent"
+                  />
+                </div>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="p-1 bg-white/20 rounded-full z-10 hover:bg-white/30"
+                  >
+                    <X size={12} className="text-white" />
+                  </button>
+                )}
+              </div>
+
+              <button className="h-12 w-12 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-sm active:scale-95 transition-transform text-white">
+                <SlidersHorizontal size={20} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* --- Sticky Header (Fixed) --- */}
       {/* Appears when scrolling past 200px */}
       <motion.div
-        className="fixed top-0 left-0 w-full z-[60] bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100"
+        className="fixed top-0 left-0 w-full z-[60] bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100 overflow-hidden"
         initial={{ y: -150, opacity: 0 }}
         animate={{
           y: isSticky ? 0 : -150,
@@ -371,6 +373,7 @@ const MobileHeader = () => {
                     category={tab.label}
                     styles={tab.styles}
                     imageSrc={tab.image}
+                    src={tab.src}
                     active={isActive}
                     onClick={() => handleCategoryClick(tab.id)}
                   />

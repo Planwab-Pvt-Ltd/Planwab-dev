@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Sparkles } from "lucide-react";
+import SmartMedia from "../SmartMediaLoader";
 
 const SampleProposal = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -119,6 +120,15 @@ const SampleProposal = () => {
                   alt={proposals[currentIndex].title}
                   // Changed object-cover to object-contain for better fitting
                   className="w-full h-full object-contain rounded-lg"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <SmartMedia
+                  src={proposals[currentIndex].image}
+                  type="image"
+                  className="w-full h-full object-contain rounded-lg"
+                  loaderImage="/GlowLoadingGif.gif"
+                  alt={proposals[currentIndex].title}
                 />
               </motion.div>
             </AnimatePresence>

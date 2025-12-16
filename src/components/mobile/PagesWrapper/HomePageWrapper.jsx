@@ -10,6 +10,7 @@ import ServicesSteps from "../homepage/ServicesSteps";
 import SampleProposal from "../homepage/SampleProposals";
 import WhyWeBetter from "../homepage/WhyWeBetter";
 import AreYouAVendorSection from "../homepage/AreYouVendor";
+import SmartMedia from "./../SmartMediaLoader";
 
 const QUICK_LINKS = [
   { label: "Venues", icon: "🏰" },
@@ -60,16 +61,15 @@ const MobileEventPlanner = () => {
     <div className="relative w-full min-h-screen bg-gray-50 text-slate-800 font-sans pb-24 mx-auto max-w-md overflow-hidden">
       {/* 2. Hero Video (No Overlay) */}
       <div className="relative h-[55vh] w-full p-0 m-0">
-        <video
+        <SmartMedia
           src={
             currentCategory === "Default" ? "/CatVideos/EventsHeroMob.mp4" : `/CatVideos/${currentCategory}HeroMob.mp4`
           }
-          alt="Hero"
+          type="video"
           className="w-full h-full object-cover object-center"
-          autoPlay
-          loop
-          muted
-          playsInline
+          alt={currentCategory + " Hero Video"}
+          // poster={currentCategory === "Default" ? "/DefaultHeroMobImg.png" : `/${currentCategory}HeroMobImg.png`}
+          loaderImage="/GlowLoadingGif.gif"
         />
       </div>
 
@@ -99,12 +99,11 @@ const MobileEventPlanner = () => {
       {/* 4. Compact Planner Banner */}
       <div className="mx-1 mt-2 mb-1">
         <motion.div whileTap={{ scale: 0.98 }} className="w-full h-24">
-          <img
+          <SmartMedia
             src={`HeroNAP${currentCategory}.png`}
-            alt=""
+            type="image"
             className="w-full h-full object-cover object-center"
-            height={15}
-            width={100}
+            loaderImage="/GlowLoadingGif.gif"
           />
         </motion.div>
       </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import SmartMedia from "../SmartMediaLoader";
 
 const MostBooked = () => {
   // Data extraction from the source HTML
@@ -109,13 +110,14 @@ const MostBooked = () => {
               className="flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border border-gray-100 rounded-xl p-3 h-full relative min-h-[120px] shadow-sm"
             >
               {/* Image */}
-              <img
-                alt={service.title}
+              <SmartMedia
                 src={service.image}
+                type="image"
+                className="rounded-lg object-cover w-[90px] h-[90px] flex-shrink-0 bg-gray-100"
+                loaderImage="/GlowLoadingGif.gif"
                 width={90}
                 height={90}
-                loading="lazy"
-                className="rounded-lg object-cover w-[90px] h-[90px] flex-shrink-0 bg-gray-100"
+                alt={service.title}
               />
 
               {/* Content */}
