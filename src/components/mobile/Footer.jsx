@@ -8,7 +8,7 @@ const Footer = () => {
 
   return (
     <>
-      <section className="mb-0 w-full bg-[#FFEFF4]" id="more_about_planwab">
+      <section className="mb-0 w-full" id="more_about_planwab">
         {/* Top Curve Decoration */}
         <div className="w-full -mt-10 md:-mt-16 relative z-10 pointer-events-none">
           <img
@@ -19,7 +19,7 @@ const Footer = () => {
           />
         </div>
 
-        <div className="pb-12 pt-6 px-4 md:px-0 shadow-none">
+        <div className="pb-12 pt-6 px-4 md:px-0 shadow-none bg-[#FFEFF4]">
           <div className="mx-auto flex max-w-screen-lg flex-col justify-center items-center shadow-none">
             <h2 className="mb-6 font-serif text-3xl font-semibold md:mb-10 md:text-4xl text-center">About PlanWAB</h2>
 

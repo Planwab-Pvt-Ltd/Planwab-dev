@@ -125,28 +125,34 @@ body {
   background-color: #f9fafb;
 }
 
+@layer utilities {
+  /* For Webkit Browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px; /* Width of the vertical scrollbar */
+    height: 8px; /* Height of the horizontal scrollbar */
+  }
 
-/* Scrollbar Styles */
-::-webkit-scrollbar {
-  width: 8px; /* adjust width */
-  height: 8px; /* for horizontal scrollbar */
-}
+  ::-webkit-scrollbar-track {
+    background: transparent; /* The track is invisible */
+  }
 
-::-webkit-scrollbar-track {
-  background: #ffffff; /* white background */
-}
+  ::-webkit-scrollbar-thumb {
+    /* The scrollbar part itself */
+    background-color: rgba(255, 255, 255, 0.2); /* Whitish-gray, semi-transparent */
+    border-radius: 9999px; /* Fully rounded corners */
+    border: 2px solid transparent; /* Creates padding around the thumb so it looks floating */
+    background-clip: content-box; /* Clips background to inside the border */
+    transition: background-color 0.3s;
+  }
 
-::-webkit-scrollbar-thumb {
-  background-color: #d97706; /* amber-600 */
-  border-radius: 9999px; /* fully rounded */
-}
+  /* Make it darker/more visible when hovering over the scrollbar area */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: #b45309; /* amber-700 on hover */
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #d97706 #ffffff;
+  /* For Firefox */
+  html {
+    scrollbar-width: thin; /* Makes it thinner */
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* Thumb Color | Track Color */
+  }
 }

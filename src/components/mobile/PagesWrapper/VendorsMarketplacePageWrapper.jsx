@@ -132,7 +132,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       >
         <ChevronLeft size={16} />
-        <span>Previous</span>
+        {/* <span>Previous</span> */}
       </button>
       <div className="flex items-center gap-2">
         {pageNumbers.map((num, index) => (
@@ -159,7 +159,7 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
         disabled={currentPage === totalPages}
         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       >
-        <span>Next</span>
+        {/* <span>Next</span> */}
         <ChevronRight size={16} />
       </button>
     </div>
@@ -744,6 +744,17 @@ export default function MarketplacePageWrapper() {
     setAvailableCities(cities);
   }, [vendors]);
 
+  useEffect(() => {
+    if (mobileFiltersOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [mobileFiltersOpen]);
+
   const fetchVendors = useMemo(() => {
     return async () => {
       setIsLoading(true);
@@ -917,7 +928,7 @@ export default function MarketplacePageWrapper() {
   );
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 theme-${color}`}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 theme-${color} !overflow-x-hidden`}>
       <style jsx global>{`
         .theme-rose {
           --color-rose-500: #f43f5e;

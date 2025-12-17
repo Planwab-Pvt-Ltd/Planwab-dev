@@ -15,7 +15,7 @@ export default function PlanWABLoader({ videoSrc = "", onComplete = () => {} }) 
   // 2. Fallback Timer (max 4.5s)
   useEffect(() => {
     if (phase === "intro") {
-      const timer = setTimeout(() => handleVideoComplete(), 4500);
+      const timer = setTimeout(() => handleVideoComplete(), 500);
       return () => clearTimeout(timer);
     }
   }, [phase]);
@@ -69,7 +69,7 @@ export default function PlanWABLoader({ videoSrc = "", onComplete = () => {} }) 
         initial={{ rotateY: 0 }}
         animate={phase === "opening" ? { rotateY: -110 } : { rotateY: 0 }}
         transition={{
-          duration: 2.2,
+          duration: 4.0,
           ease: [0.16, 1, 0.3, 1], // "Heavy Door" easing (starts fast, slows down)
         }}
         // origin-left puts the "hinge" on the left edge of the screen
@@ -97,7 +97,7 @@ export default function PlanWABLoader({ videoSrc = "", onComplete = () => {} }) 
         initial={{ rotateY: 0 }}
         animate={phase === "opening" ? { rotateY: 110 } : { rotateY: 0 }}
         transition={{
-          duration: 2.2,
+          duration: 4.0,
           ease: [0.16, 1, 0.3, 1],
         }}
         onAnimationComplete={() => {
