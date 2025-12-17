@@ -116,6 +116,18 @@ const MobileEventPlanner = () => {
 
       <ServicesSteps />
 
+      {/* 4. Compact Banner */}
+      <div className="mx-1 mt-6 px-2">
+        <motion.div whileTap={{ scale: 0.98 }} className="w-full h-62">
+          <SmartMedia
+            src={`Banners/banner1.png`}
+            type="image"
+            className="w-full h-full object-cover object-center rounded-2xl"
+            loaderImage="/GlowLoadingGif.gif"
+          />
+        </motion.div>
+      </div>
+
       <SampleProposal />
 
       {/* 5. Quick Services (Blue/Yellow Theme) */}

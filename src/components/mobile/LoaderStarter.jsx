@@ -15,7 +15,7 @@ export default function PlanWABLoader({ videoSrc = "", onComplete = () => {} }) 
   // 2. Fallback Timer (max 4.5s)
   useEffect(() => {
     if (phase === "intro") {
-      const timer = setTimeout(() => handleVideoComplete(), 500);
+      const timer = setTimeout(() => handleVideoComplete(), 1000);
       return () => clearTimeout(timer);
     }
   }, [phase]);

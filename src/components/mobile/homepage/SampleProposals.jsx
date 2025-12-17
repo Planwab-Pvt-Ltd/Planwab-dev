@@ -80,7 +80,7 @@ const SampleProposal = () => {
 
   return (
     <>
-      <div className="py-12 bg-[linear-gradient(180deg,rgba(255,239,244,0.00)_7.21%,rgba(255,239,244,0.70)_70.13%)] relative mb-10">
+      <div className="py-12 pt-8 bg-[linear-gradient(180deg,rgba(255,239,244,0.00)_7.21%,rgba(255,239,244,0.70)_70.13%)] relative mb-10">
         {/* Header Section */}
         <div className="px-4 lg:px-10">
           <h2 className="font-serif text-3xl font-medium text-gray-900 mb-3">Sample Proposals</h2>

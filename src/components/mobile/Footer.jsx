@@ -19,7 +19,7 @@ const Footer = () => {
           />
         </div>
 
-        <div className="pb-12 pt-6 px-4 md:px-0 shadow-none bg-[#FFEFF4]">
+        <div className="pb-12 pt-6 px-4 md:px-0 shadow-none !bg-[#FFEFF4] !z-[999999999]">
           <div className="mx-auto flex max-w-screen-lg flex-col justify-center items-center shadow-none">
             <h2 className="mb-6 font-serif text-3xl font-semibold md:mb-10 md:text-4xl text-center">About PlanWAB</h2>
 

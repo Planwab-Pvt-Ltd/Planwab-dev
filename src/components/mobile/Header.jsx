@@ -251,158 +251,160 @@ const MobileHeader = () => {
       {/* --- Floating Header (Absolute) --- */}
       {/* This container stays absolute at top for initial view */}
       {isHomePage && (
-        <motion.div
-          className="absolute top-0 left-0 w-full z-50"
-          initial={false}
-          animate={{
-            opacity: isSticky ? 0 : 1,
-            pointerEvents: isSticky ? "none" : "auto",
-          }}
-        >
-          <div className="pt-1 pb-2 bg-gradient-to-b from-black/60 via-black/20 to-transparent">
-            {/* A. Categories Section (White Pill Container) */}
-            <div className="px-1 mb-2">
-              <div className="flex items-center justify-between bg-white/10 rounded-2xl p-1.5 shadow-inner border border-gray-200/50">
-                {tabs.map((tab) => {
-                  const isActive = activeTabId === tab.id;
-                  return (
-                    <CategoryButton
-                      key={tab.id}
-                      category={tab.label}
-                      styles={tab.styles}
-                      imageSrc={tab.image}
-                      active={isActive}
-                      src={tab.src}
-                      onClick={() => handleCategoryClick(tab.id)}
+        <>
+          <motion.div
+            className="absolute top-0 left-0 w-full z-50"
+            initial={false}
+            animate={{
+              opacity: isSticky ? 0 : 1,
+              pointerEvents: isSticky ? "none" : "auto",
+            }}
+          >
+            <div className="pt-1 pb-2 bg-gradient-to-b from-black/60 via-black/20 to-transparent">
+              {/* A. Categories Section (White Pill Container) */}
+              <div className="px-1 mb-2">
+                <div className="flex items-center justify-between bg-white/10 rounded-2xl p-1.5 shadow-inner border border-gray-200/50">
+                  {tabs.map((tab) => {
+                    const isActive = activeTabId === tab.id;
+                    return (
+                      <CategoryButton
+                        key={tab.id}
+                        category={tab.label}
+                        styles={tab.styles}
+                        imageSrc={tab.image}
+                        active={isActive}
+                        src={tab.src}
+                        onClick={() => handleCategoryClick(tab.id)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* B. Address Pill */}
+              <div className="px-3 mb-3">
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsAddressDrawerOpen(true)}
+                  className="w-full flex items-center gap-3 bg-white/10 rounded-2xl p-2 pr-4 shadow-sm active:bg-white/25 transition-all"
+                >
+                  {/* Icon Box */}
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shadow-inner backdrop-blur-sm">
+                    <MapPin size={20} fill="currentColor" fillOpacity={0.3} strokeWidth={2.5} />
+                  </div>
+
+                  {/* Text Content */}
+                  <div className="flex-1 text-left overflow-hidden">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[15px] font-bold text-white truncate max-w-[200px] drop-shadow-md">
+                        {selectedAddress.label}
+                      </span>
+                      <ChevronDown size={14} className="text-white/80 stroke-[3px]" />
+                    </div>
+                    <p className="text-[11px] text-white/90 truncate font-medium leading-tight drop-shadow-sm">
+                      {selectedAddress.area}, {selectedAddress.city.split(",")[0]}
+                    </p>
+                  </div>
+                </motion.button>
+              </div>
+
+              {/* C. Search Bar */}
+              <div className="px-3 flex items-center gap-3">
+                <div className="flex-1 h-12 bg-white/15 backdrop-blur-md rounded-2xl shadow-sm border border-white/20 flex items-center px-4 relative transition-all active:scale-[0.99]">
+                  <Search className="text-white/70 w-5 h-5 mr-3" strokeWidth={2.5} />
+                  <div className="relative flex-1 h-full overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      {!searchQuery && (
+                        <motion.span
+                          key={`${activeTabId}-${placeholderIndex}`}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -20, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="absolute top-0 bottom-0 flex items-center text-[13px] font-semibold text-white/70 w-full truncate pointer-events-none"
+                        >
+                          Search for "{currentTab.placeholderContext[placeholderIndex]}"
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full h-full bg-transparent border-none outline-none text-sm text-white font-semibold relative z-10 placeholder-transparent"
                     />
-                  );
-                })}
+                  </div>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="p-1 bg-white/20 rounded-full z-10 hover:bg-white/30"
+                    >
+                      <X size={12} className="text-white" />
+                    </button>
+                  )}
+                </div>
+
+                <button className="h-12 w-12 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-sm active:scale-95 transition-transform text-white">
+                  <SlidersHorizontal size={20} strokeWidth={2.5} />
+                </button>
               </div>
             </div>
+          </motion.div>
 
-            {/* B. Address Pill */}
-            <div className="px-3 mb-3">
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setIsAddressDrawerOpen(true)}
-                className="w-full flex items-center gap-3 bg-white/10 rounded-2xl p-2 pr-4 shadow-sm active:bg-white/25 transition-all"
-              >
-                {/* Icon Box */}
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white shadow-inner backdrop-blur-sm">
-                  <MapPin size={20} fill="currentColor" fillOpacity={0.3} strokeWidth={2.5} />
+          {/* --- Sticky Header (Fixed) --- */}
+          {/* Appears when scrolling past 200px */}
+          <motion.div
+            className="fixed top-0 left-0 w-full z-[60] bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100 overflow-hidden"
+            initial={{ y: -150, opacity: 0 }}
+            animate={{
+              y: isSticky ? 0 : -150,
+              opacity: isSticky ? 1 : 0,
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <div className="px-2 py-2">
+              {/* A. Categories Row */}
+              <div className="mb-2 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-1">
+                  {tabs.map((tab) => {
+                    const isActive = activeTabId === tab.id;
+                    return (
+                      <CategoryButton
+                        key={tab.id}
+                        category={tab.label}
+                        styles={tab.styles}
+                        imageSrc={tab.image}
+                        src={tab.src}
+                        active={isActive}
+                        onClick={() => handleCategoryClick(tab.id)}
+                      />
+                    );
+                  })}
                 </div>
+              </div>
 
-                {/* Text Content */}
-                <div className="flex-1 text-left overflow-hidden">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[15px] font-bold text-white truncate max-w-[200px] drop-shadow-md">
-                      {selectedAddress.label}
-                    </span>
-                    <ChevronDown size={14} className="text-white/80 stroke-[3px]" />
-                  </div>
-                  <p className="text-[11px] text-white/90 truncate font-medium leading-tight drop-shadow-sm">
-                    {selectedAddress.area}, {selectedAddress.city.split(",")[0]}
-                  </p>
-                </div>
-              </motion.button>
-            </div>
-
-            {/* C. Search Bar */}
-            <div className="px-3 flex items-center gap-3">
-              <div className="flex-1 h-12 bg-white/15 backdrop-blur-md rounded-2xl shadow-sm border border-white/20 flex items-center px-4 relative transition-all active:scale-[0.99]">
-                <Search className="text-white/70 w-5 h-5 mr-3" strokeWidth={2.5} />
-                <div className="relative flex-1 h-full overflow-hidden">
-                  <AnimatePresence mode="wait">
-                    {!searchQuery && (
-                      <motion.span
-                        key={`${activeTabId}-${placeholderIndex}`}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="absolute top-0 bottom-0 flex items-center text-[13px] font-semibold text-white/70 w-full truncate pointer-events-none"
-                      >
-                        Search for "{currentTab.placeholderContext[placeholderIndex]}"
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+              {/* B. Compact Search Bar */}
+              <div className="flex items-center gap-2 px-1">
+                <div className="flex-1 h-10 bg-gray-100/80 rounded-xl flex items-center px-3 relative">
+                  <Search className="text-gray-500 w-4 h-4 mr-2" />
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-full bg-transparent border-none outline-none text-sm text-white font-semibold relative z-10 placeholder-transparent"
+                    placeholder={`Search ${currentTab.label}...`}
+                    className="w-full h-full bg-transparent border-none outline-none text-xs text-gray-800 font-medium placeholder-gray-400"
                   />
                 </div>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="p-1 bg-white/20 rounded-full z-10 hover:bg-white/30"
-                  >
-                    <X size={12} className="text-white" />
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsAddressDrawerOpen(true)}
+                  className="h-10 px-3 bg-gray-100/80 rounded-xl flex items-center gap-1 text-gray-700"
+                >
+                  <MapPin size={16} />
+                  <span className="text-[10px] font-bold max-w-[60px] truncate">{selectedAddress.label}</span>
+                </button>
               </div>
-
-              <button className="h-12 w-12 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-sm active:scale-95 transition-transform text-white">
-                <SlidersHorizontal size={20} strokeWidth={2.5} />
-              </button>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </>
       )}
-
-      {/* --- Sticky Header (Fixed) --- */}
-      {/* Appears when scrolling past 200px */}
-      <motion.div
-        className="fixed top-0 left-0 w-full z-[60] bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100 overflow-hidden"
-        initial={{ y: -150, opacity: 0 }}
-        animate={{
-          y: isSticky ? 0 : -150,
-          opacity: isSticky ? 1 : 0,
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
-        <div className="px-2 py-2">
-          {/* A. Categories Row */}
-          <div className="mb-2 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-1">
-              {tabs.map((tab) => {
-                const isActive = activeTabId === tab.id;
-                return (
-                  <CategoryButton
-                    key={tab.id}
-                    category={tab.label}
-                    styles={tab.styles}
-                    imageSrc={tab.image}
-                    src={tab.src}
-                    active={isActive}
-                    onClick={() => handleCategoryClick(tab.id)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* B. Compact Search Bar */}
-          <div className="flex items-center gap-2 px-1">
-            <div className="flex-1 h-10 bg-gray-100/80 rounded-xl flex items-center px-3 relative">
-              <Search className="text-gray-500 w-4 h-4 mr-2" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${currentTab.label}...`}
-                className="w-full h-full bg-transparent border-none outline-none text-xs text-gray-800 font-medium placeholder-gray-400"
-              />
-            </div>
-            <button
-              onClick={() => setIsAddressDrawerOpen(true)}
-              className="h-10 px-3 bg-gray-100/80 rounded-xl flex items-center gap-1 text-gray-700"
-            >
-              <MapPin size={16} />
-              <span className="text-[10px] font-bold max-w-[60px] truncate">{selectedAddress.label}</span>
-            </button>
-          </div>
-        </div>
-      </motion.div>
 
       {/* --- Address Drawer (Fixed Overlay) --- */}
       <AnimatePresence>
