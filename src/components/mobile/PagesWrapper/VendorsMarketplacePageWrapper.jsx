@@ -26,7 +26,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -131,367 +131,294 @@ const UnifiedCard = ({
   onCompare,
   isComparing,
   isSelectedForCompare,
-  colorPrimary,
+  colorPrimary = "#2563eb",
 }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const router = useRouter();
+  // 1. TUPLE STATE: Tracks [currentIndex, direction] together
+  // This is critical for Framer Motion to know which way to animate
+  const [[page, direction], setPage] = useState([0, 0]);
+
   const [addedToCart, setAddedToCart] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  // Data Logic
   const images = useMemo(() => (vendor.images || []).filter((img) => img), [vendor.images]);
   const displayImages = useMemo(() => {
     if (images.length > 0) return images;
     if (vendor.defaultImage) return [vendor.defaultImage];
     return ["/placeholder.jpg"];
   }, [images, vendor.defaultImage]);
+
+  // Derived Index (handles infinite loop wrapping safely)
+  const imageIndex = ((page % displayImages.length) + displayImages.length) % displayImages.length;
+
   const hasMultipleImages = displayImages.length > 1;
   const isGrid = viewMode === "grid";
-
-  const handleNext = (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    if (hasMultipleImages && !isGrid) {
-      setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
-    }
-  };
-
-  const handlePrev = (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    if (hasMultipleImages && !isGrid) {
-      setCurrentImageIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
-    }
-  };
-
-  const handleAddToCart = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      setAddedToCart(true);
-      setTimeout(() => setAddedToCart(false), 3000);
-    } catch (error) {
-      console.error("Add to cart failed:", error);
-    }
-  };
-
-  const handleImageLoad = () => {
-    setIsImageLoading(false);
-  };
-
-  const handleImageError = (e) => {
-    e.target.src = "/placeholder.jpg";
-    setIsImageLoading(false);
-  };
-
-  const handleTouchStart = (e) => {
-    if (!hasMultipleImages || isGrid) return;
-    setStartX(e.touches[0].clientX);
-    setCurrentX(e.touches[0].clientX);
-    setIsDragging(true);
-    setDragOffset(0);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging || !hasMultipleImages || isGrid) return;
-    const newX = e.touches[0].clientX;
-    setCurrentX(newX);
-    const delta = newX - startX;
-    setDragOffset(delta);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging || !hasMultipleImages || isGrid) return;
-    const delta = currentX - startX;
-    setIsDragging(false);
-    setDragOffset(0);
-    const threshold = 50;
-    if (Math.abs(delta) > threshold) {
-      if (delta > 0) {
-        handlePrev();
-      } else {
-        handleNext();
-      }
-    }
-  };
-
-  const cardVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-    hover: { scale: 1.02, transition: { duration: 0.2 } },
-    tap: { scale: 0.98 },
-  };
-
-  const imageVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 100 : -100,
-      opacity: 0,
-    }),
-    center: { zIndex: 1, x: 0, opacity: 1 },
-    exit: (direction) => ({
-      zIndex: 0,
-      x: direction < 0 ? 100 : -100,
-      opacity: 0,
-    }),
-  };
-
-  const direction = useMemo(() => Math.sign(dragOffset), [dragOffset]);
-
   const price = vendor.perDayPrice?.min || vendor.basePrice || vendor.price?.min || 0;
   const displayPrice = Number.isNaN(price) ? "N/A" : price.toLocaleString("en-IN");
 
+  // Navigation Handler
+  const paginate = (newDirection) => {
+    if (!hasMultipleImages) return;
+    setPage([page + newDirection, newDirection]);
+  };
+
+  // Drag End Logic
+  const onDragEnd = (e, { offset, velocity }) => {
+    setIsDragging(false);
+    const swipe = Math.abs(offset.x) * velocity.x;
+    const swipeConfidenceThreshold = 10000;
+
+    if (swipe < -swipeConfidenceThreshold) {
+      paginate(1); // Swipe Left -> Next
+    } else if (swipe > swipeConfidenceThreshold) {
+      paginate(-1); // Swipe Right -> Prev
+    }
+  };
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  // 2. SMOOTH VARIANTS
+  // Logic:
+  // If direction > 0 (Next): Enter from Right (100%), Exit to Left (-100%)
+  // If direction < 0 (Prev): Enter from Left (-100%), Exit to Right (100%)
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? "100%" : "-100%",
+      opacity: 1,
+      zIndex: 0, // Prepare to be visible
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction) => ({
+      zIndex: 0,
+      x: direction < 0 ? "100%" : "-100%", // Exit opposite to enter
+      opacity: 1, // Keep opacity to avoid fading while sliding
+    }),
+  };
+
   return (
     <motion.div
-      variants={cardVariants}
-      initial="initial"
-      animate="animate"
-      whileHover="hover"
-      whileTap="tap"
-      className={`relative group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:shadow-2xl ${
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+      className={`relative group bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 transition-all duration-300 ${
         isSelectedForCompare ? `ring-2 ring-offset-2` : ""
       } ${isGrid ? "mb-0" : "mb-6"}`}
       style={isSelectedForCompare ? { borderColor: colorPrimary, ringColor: colorPrimary } : {}}
     >
+      {/* Compare Overlay */}
       {isComparing && (
-        <motion.div
+        <div
           onClick={(e) => {
-            e.preventDefault();
             e.stopPropagation();
             onCompare(vendor);
           }}
-          className="absolute inset-0 z-30 bg-black/20 backdrop-blur-sm flex items-center justify-center cursor-pointer"
-          whileHover={{ scale: 1.02 }}
+          className="absolute inset-0 z-40 bg-black/10 backdrop-blur-[1px] flex items-center justify-center cursor-pointer group-hover:bg-black/20 transition-colors"
         >
           <motion.div
-            animate={{ scale: isSelectedForCompare ? 1 : 0.8 }}
-            className={`w-10 h-10 rounded-full border-2 border-white/80 flex items-center justify-center shadow-lg ${
-              isSelectedForCompare ? "" : "bg-gray-500/30"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: isSelectedForCompare ? 1.1 : 1 }}
+            className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center shadow-lg ${
+              isSelectedForCompare ? "" : "bg-gray-400/50"
             }`}
             style={isSelectedForCompare ? { backgroundColor: colorPrimary } : {}}
           >
             {isSelectedForCompare && <CheckCircle size={20} className="text-white" />}
           </motion.div>
-        </motion.div>
-      )}
-      <div
-        className={`relative ${isGrid ? "h-40" : "h-64"} overflow-hidden`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div className="block h-full cursor-pointer touch-manipulation relative">
-          {isImageLoading && (
-            <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
-              <div
-                className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
-                style={{ borderColor: colorPrimary }}
-              />
-            </div>
-          )}
-          <AnimatePresence custom={direction}>
-            <motion.img
-              key={currentImageIndex}
-              src={displayImages[currentImageIndex]}
-              alt={vendor.name}
-              custom={direction}
-              variants={imageVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              style={{
-                x: isDragging ? dragOffset : 0,
-                scale: Math.abs(dragOffset) > 50 ? 0.95 : 1,
-              }}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              drag={false}
-              dragConstraints={{ left: 0, right: 0 }}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-            />
-          </AnimatePresence>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
+      )}
+
+      {/* Image Carousel Area */}
+      <div className={`relative bg-gray-100 dark:bg-gray-800 overflow-hidden ${isGrid ? "h-40" : "h-64"}`}>
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.img
+            key={page} // Using 'page' ensures key uniqueness on every slide
+            src={displayImages[imageIndex]}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 },
+            }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={1}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={onDragEnd}
+            className="absolute inset-0 w-full h-full object-cover touch-pan-y"
+            alt={vendor.name}
+            loading="lazy"
+          />
+        </AnimatePresence>
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/5 pointer-events-none" />
+
+        {/* Top Badges & Actions */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-20 pointer-events-none">
           {vendor.tags?.includes("Popular") ? (
-            <motion.div
-              className="px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-[11px] font-bold uppercase tracking-wide rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-md"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05 }}
-            >
-              <Sparkles size={12} fill="currentColor" /> Popular
-            </motion.div>
+            <div className="px-2.5 py-1 bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-wide rounded-md shadow-lg flex items-center gap-1 backdrop-blur-md">
+              <Sparkles size={10} fill="black" /> Popular
+            </div>
           ) : (
             <div />
           )}
+
           <motion.button
+            whileTap={{ scale: 0.8 }}
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               onFavorite(vendor._id);
             }}
-            className="pointer-events-auto p-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full active:scale-90 transition-all duration-200"
-            whileTap={{ scale: 0.9 }}
-            whileHover={{ scale: 1.1 }}
+            className="pointer-events-auto p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full transition-colors"
           >
-            <Heart
-              size={isGrid ? 18 : 22}
-              className={`${isFavorite ? `fill-yellow-400 text-yellow-400` : "text-white"} stroke-white stroke-2`}
-              strokeWidth={2}
-              animate={isFavorite ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.3 }}
-            />
+            <Heart size={18} className={isFavorite ? "fill-rose-500 text-rose-500" : "text-white"} strokeWidth={2.5} />
           </motion.button>
         </div>
-        {/* Navigation only for list view with multiple images */}
+
+        {/* Image Indicators (Dots) */}
         {!isGrid && hasMultipleImages && (
-          <>
-            <motion.button
-              onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 bg-black/30 hover:bg-black/50 rounded-full text-white backdrop-blur-md z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform hover:scale-110 active:scale-95"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ChevronLeft size={20} />
-            </motion.button>
-            <motion.button
-              onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-black/30 hover:bg-black/50 rounded-full text-white backdrop-blur-md z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform hover:scale-110 active:scale-95"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ChevronRight size={20} />
-            </motion.button>
-          </>
-        )}
-        {/* Dots only for list view with multiple images */}
-        {!isGrid && hasMultipleImages && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 pointer-events-none">
             {displayImages.map((_, idx) => (
-              <motion.button
+              <motion.div
                 key={idx}
-                className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
-                  idx === currentImageIndex ? "bg-white scale-125 shadow-lg" : "bg-white/40"
-                }`}
-                onClick={() => setCurrentImageIndex(idx)}
-                animate={{ scale: idx === currentImageIndex ? 1.25 : 1 }}
-                whileHover={{ scale: 1.3 }}
-                whileTap={{ scale: 0.9 }}
+                animate={{
+                  width: idx === imageIndex ? 16 : 6,
+                  opacity: idx === imageIndex ? 1 : 0.5,
+                  backgroundColor: idx === imageIndex ? "#ffffff" : "#ffffff",
+                }}
+                className="h-1.5 rounded-full shadow-sm"
               />
             ))}
           </div>
         )}
+
+        {/* Manual Navigation Arrows */}
+        {!isGrid && hasMultipleImages && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                paginate(-1);
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-md z-20 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                paginate(1);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-md z-20 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
       </div>
-      <div className={`${isGrid ? "p-4" : "p-6"} cursor-pointer touch-manipulation`}>
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex-1 min-w-0 pr-3">
-            <motion.h3
+
+      {/* Content Body */}
+      <div
+        className={`${isGrid ? "p-3" : "p-5"}`}
+        onClick={() => router.push(`/vendor/${vendor?.category}/${vendor?._id}`)}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3
               className={`font-bold text-gray-900 dark:text-white leading-tight truncate ${
-                isGrid ? "text-base mb-1" : "text-2xl mb-1.5"
+                isGrid ? "text-sm mb-0.5" : "text-lg mb-1"
               }`}
-              whileHover={{ color: colorPrimary, scale: 1.02 }}
             >
               {vendor.name}
-            </motion.h3>
-            <motion.div
-              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
-              whileHover={{ x: 2 }}
-            >
-              <MapPin size={12} />
+            </h3>
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <MapPin size={10} />
               <span className="truncate">{vendor.address?.city || "City"}</span>
-            </motion.div>
+            </div>
           </div>
           <div className="flex flex-col items-end shrink-0">
-            <motion.div
-              className="flex items-center gap-1 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 border border-yellow-200 dark:border-yellow-700 px-2 py-1 rounded-lg"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Star size={12} className="text-yellow-500 fill-yellow-500" />
-              <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300">{vendor.rating || 4.5}</span>
-            </motion.div>
-            {!isGrid && <span className="text-xs text-gray-400 mt-1.5">{vendor.reviews || 0} reviews</span>}
+            <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 px-1.5 py-0.5 rounded-md">
+              <Star size={10} className="text-green-600 fill-green-600" />
+              <span className="text-xs font-bold text-green-700 dark:text-green-400">{vendor.rating || 4.5}</span>
+            </div>
+            {!isGrid && <span className="text-[10px] text-gray-400 mt-1">{vendor.reviews || 0} reviews</span>}
           </div>
         </div>
+
+        {/* Stats Row */}
         {!isGrid && (
-          <div
-            className="flex items-center gap-3 my-4 overflow-x-auto pb-1"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
+          <div className="flex items-center gap-2 my-3 overflow-x-auto no-scrollbar">
             {vendor.seating?.max && (
-              <motion.div
-                className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-[11px] font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap flex items-center gap-1.5 border border-gray-200 dark:border-gray-700"
-                whileHover={{ scale: 1.02, x: 2 }}
-              >
+              <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-md text-[10px] font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1">
                 <Users size={12} /> {vendor.seating.max} Capacity
-              </motion.div>
+              </div>
             )}
-            <motion.div
-              className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-[11px] font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap flex items-center gap-1.5 border border-gray-200 dark:border-gray-700"
-              whileHover={{ scale: 1.02, x: 2 }}
-            >
+            <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-md text-[10px] font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1">
               <TrendingUp size={12} /> {vendor.bookings || 0} Booked
-            </motion.div>
+            </div>
           </div>
         )}
+
+        {/* Footer Actions */}
         <div
           className={`flex items-center justify-between ${
-            isGrid ? "mt-3" : "mt-5 border-t border-gray-100 dark:border-gray-800 pt-4"
+            isGrid ? "mt-2" : "mt-4 pt-3 border-t border-gray-100 dark:border-gray-800"
           }`}
         >
           <div>
             {!isGrid && (
-              <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Starting From</p>
+              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Starting at</p>
             )}
-            <motion.p
-              className={`${isGrid ? "text-lg" : "text-2xl"} font-bold`}
-              style={{ color: colorPrimary }}
-              whileHover={{ scale: 1.05 }}
-            >
+            <p className={`${isGrid ? "text-sm" : "text-lg"} font-bold`} style={{ color: colorPrimary }}>
               ₹{displayPrice}
-            </motion.p>
+            </p>
           </div>
+
           <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={handleAddToCart}
             className={`
-              relative overflow-hidden flex items-center justify-center gap-2
-              ${isGrid ? "px-4 py-2.5 rounded-xl text-sm" : "px-6 py-3 rounded-xl text-base"}
-              ${
-                addedToCart
-                  ? "bg-green-600 text-white shadow-lg"
-                  : `bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-100 text-white dark:text-black shadow-md`
-              }
-              font-bold transition-all duration-300 ease-in-out hover:shadow-xl
+              relative overflow-hidden flex items-center justify-center gap-2 
+              ${isGrid ? "p-2 rounded-lg" : "px-4 py-2 rounded-xl"} 
+              ${addedToCart ? "bg-green-600 text-white" : "bg-black dark:bg-white text-white dark:text-black"}
+              font-bold text-xs shadow-md transition-colors
             `}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            disabled={addedToCart}
           >
             <AnimatePresence mode="wait">
               {addedToCart ? (
                 <motion.div
-                  key="added"
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 180 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="flex items-center gap-1.5"
+                  key="check"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="flex items-center gap-1"
                 >
-                  <CheckCircle size={isGrid ? 16 : 18} />
-                  {!isGrid && "Added!"}
+                  <CheckCircle size={isGrid ? 14 : 16} />
+                  {!isGrid && "Saved"}
                 </motion.div>
               ) : (
                 <motion.div
-                  key="add"
-                  initial={{ scale: 0, rotate: 180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: -180 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="flex items-center gap-1.5"
+                  key="bag"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="flex items-center gap-1"
                 >
-                  <ShoppingBag size={isGrid ? 16 : 18} />
-                  {!isGrid && "Book Now"}
+                  <ShoppingBag size={isGrid ? 14 : 16} />
+                  {!isGrid && "Book"}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1081,7 +1008,7 @@ export default function MarketplacePageWrapper() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white leading-none tracking-tight">
-                {activeCategory || "Marketplace"}
+                {"Marketplace"}
               </h1>
               <p className="text-[11px] text-gray-500 mt-1 font-bold uppercase tracking-wide">
                 {paginationInfo.totalVendors || 0} results found

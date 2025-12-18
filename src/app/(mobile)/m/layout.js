@@ -1,5 +1,6 @@
 import ClientWrapper from "@/components/mobile/ClientWrapper";
 import AppEntryGate from "@/components/mobile/AppEntryGate";
+import MobileNavbar from "@/components/mobile/Navbar";
 
 export const metadata = {
   title: "PlanWAB - Events Planning Made Easy",
@@ -14,6 +15,7 @@ export default function MobileLayout({ children }) {
           <AppEntryGate>{children}</AppEntryGate>
         </ClientWrapper>
       </main>
+      <MobileNavbar />
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Sparkles } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
@@ -8,6 +8,8 @@ import SmartMedia from "../SmartMediaLoader";
 const SampleProposal = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [isPaused, setIsPaused] = useState(false); // Pause on hover/touch
+  const timerRef = useRef(null);
 
   const proposals = [
     {
@@ -15,7 +17,7 @@ const SampleProposal = () => {
       title: "Royal Jaipur Palace Wedding",
       location: "Fairmont, Jaipur",
       image: "https://www.theweddingcompany.com/_next/static/media/1.28919306.webp",
-      theme: "Traditional Gold & Red",
+      theme: "Traditional Gold",
     },
     {
       id: 2,
@@ -33,179 +35,170 @@ const SampleProposal = () => {
     },
     {
       id: 4,
-      title: "Grand Hotel Celebration",
+      title: "Grand Celebration",
       location: "The Oberoi, Delhi",
       image: "https://www.theweddingcompany.com/_next/static/media/4.a93956bd.webp",
-      theme: "Modern Chic",
+      theme: "Classic Lux",
     },
   ];
 
-  // Auto-play logic
+  // 1. Professional Strategy: Preload the NEXT image
+  // This ensures the image is in the browser cache before the slide happens.
   useEffect(() => {
-    const timer = setInterval(() => {
-      nextSlide();
-    }, 5000);
-    return () => clearInterval(timer);
+    const nextIndex = (currentIndex + 1) % proposals.length;
+    const img = new Image();
+    img.src = proposals[nextIndex].image;
   }, [currentIndex]);
+
+  const paginate = useCallback((newDirection) => {
+    setDirection(newDirection);
+    setCurrentIndex((prevIndex) => (prevIndex + newDirection + proposals.length) % proposals.length);
+  }, []);
+
+  const nextSlide = useCallback(() => paginate(1), [paginate]);
+  const prevSlide = useCallback(() => paginate(-1), [paginate]);
+
+  // 2. Optimized Auto-Play (Pauses on Interaction)
+  useEffect(() => {
+    if (!isPaused) {
+      timerRef.current = setInterval(() => {
+        nextSlide();
+      }, 5000);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [currentIndex, isPaused, nextSlide]);
 
   const slideVariants = {
     enter: (direction) => ({
-      x: direction > 0 ? 1000 : -1000,
+      x: direction > 0 ? "100%" : "-100%",
       opacity: 0,
+      scale: 0.95, // Subtle scale effect for performance perception
     }),
     center: {
       zIndex: 1,
       x: 0,
       opacity: 1,
+      scale: 1,
     },
     exit: (direction) => ({
       zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
+      x: direction < 0 ? "100%" : "-100%",
       opacity: 0,
+      scale: 0.95,
     }),
   };
 
-  const swipeConfidenceThreshold = 10000;
-  const swipePower = (offset, velocity) => {
-    return Math.abs(offset) * velocity;
-  };
-
-  const paginate = (newDirection) => {
-    setDirection(newDirection);
-    setCurrentIndex((prevIndex) => (prevIndex + newDirection + proposals.length) % proposals.length);
-  };
-
-  const nextSlide = () => paginate(1);
-  const prevSlide = () => paginate(-1);
-
   return (
-    <>
-      <div className="py-12 pt-8 bg-[linear-gradient(180deg,rgba(255,239,244,0.00)_7.21%,rgba(255,239,244,0.70)_70.13%)] relative mb-10">
-        {/* Header Section */}
-        <div className="px-4 lg:px-10">
-          <h2 className="font-serif text-3xl font-medium text-gray-900 mb-3">Sample Proposals</h2>
-          <p className="text-base text-gray-500">Explore our curated wedding experiences.</p>
-        </div>
+    <div
+      className="py-12 pb-0 pt-8 bg-gradient-to-b from-transparent via-[#FFEFF4]/70 to-[#FFEFF4]/70 relative overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+      {/* Header */}
+      <div className="px-4 lg:px-10 mb-4">
+        <h2 className="font-serif text-3xl font-medium text-gray-900 mb-1">Sample Proposals</h2>
+        <p className="text-sm text-gray-500">Explore our curated wedding experiences.</p>
+      </div>
 
-        {/* Carousel Container - Added padding here */}
-        <div className="relative w-full px-4 lg:px-10 bg-[linear-gradient(180deg,rgba(255,239,244,0.00)_7.21%,rgba(255,239,244,0.70)_70.13%)]">
-          <div className="relative w-full aspect-[4/3] lg:aspect-[21/9] overflow-hidden group bg-[linear-gradient(180deg,rgba(255,239,244,0.00)_7.21%,rgba(255,239,244,0.70)_70.13%)] rounded-xl">
-            <AnimatePresence initial={false} custom={direction}>
-              <motion.div
-                key={currentIndex}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
-                }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={1}
-                onDragEnd={(e, { offset, velocity }) => {
-                  const swipe = swipePower(offset.x, velocity.x);
-                  if (swipe < -swipeConfidenceThreshold) {
-                    nextSlide();
-                  } else if (swipe > swipeConfidenceThreshold) {
-                    prevSlide();
-                  }
-                }}
-                className="absolute inset-0 w-full h-full p-2"
-              >
-                <img
-                  src={proposals[currentIndex].image}
-                  alt={proposals[currentIndex].title}
-                  // Changed object-cover to object-contain for better fitting
-                  className="w-full h-full object-contain rounded-lg"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <SmartMedia
-                  src={proposals[currentIndex].image}
-                  type="image"
-                  className="w-full h-full object-contain rounded-lg"
-                  loaderImage="/GlowLoadingGif.gif"
-                  alt={proposals[currentIndex].title}
-                />
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Navigation Buttons */}
-            <button
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md p-2 rounded-full hover:bg-white/50 transition-colors z-10 text-white"
-              onClick={prevSlide}
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 backdrop-blur-md p-2 rounded-full hover:bg-white/50 transition-colors z-10 text-white"
-              onClick={nextSlide}
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-
-          {/* Bottom Text Part (Moved outside image) - Removed redundant px-4 */}
-          <div className="mt-6">
+      {/* Carousel Container */}
+      <div className="relative w-full px-4 lg:px-10">
+        <div className="relative w-full aspect-[4/2.3] lg:aspect-[21/9] overflow-hidden rounded-xl bg-gray-100 shadow-sm transform-gpu">
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 400, damping: 40 }, // Snappier spring
+                opacity: { duration: 0.2 },
+              }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.7} // Reduced elasticity for faster feel
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = Math.abs(offset.x) * velocity.x;
+                if (swipe < -5000) nextSlide();
+                else if (swipe > 5000) prevSlide();
+              }}
+              className="absolute inset-0 w-full h-full"
             >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="bg-[#FAE8B3] text-[#8B5E34] text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles size={12} /> {proposals[currentIndex].theme}
-                </span>
-              </div>
+              {/* 3. Single Source of Truth for Image */}
+              <SmartMedia
+                src={proposals[currentIndex].image}
+                type="image"
+                className="w-full h-full object-contain" // Changed to cover for better aesthetic
+                loaderImage="/GlowLoadingGif.gif"
+                alt={proposals[currentIndex].title}
+                priority={true} // Prioritize loading the active slide
+              />
 
-              <h3 className="text-2xl font-serif font-medium text-gray-900 mb-2">{proposals[currentIndex].title}</h3>
-
-              <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                <MapPin size={16} className="text-gray-400" />
-                <span>{proposals[currentIndex].location}</span>
-              </div>
+              {/* Gradient Overlay for Text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
             </motion.div>
+          </AnimatePresence>
 
-            {/* Dots Indicator */}
-            <div className="flex gap-2 mt-6">
-              {proposals.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setDirection(idx > currentIndex ? 1 : -1);
-                    setCurrentIndex(idx);
-                  }}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    idx === currentIndex ? "w-8 bg-[#C33765]" : "w-2 bg-gray-200 hover:bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
+          {/* Navigation Buttons (Optimized placement) */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 pointer-events-none">
+            <NavButton onClick={prevSlide} icon={<ChevronLeft size={20} />} />
+            <NavButton onClick={nextSlide} icon={<ChevronRight size={20} />} />
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-10 z-50 translate-y-full">
-          <div className="relative w-full scale-[-1]">
-            <img
-              alt=""
-              loading="lazy"
-              width="100"
-              height="8"
-              decoding="async"
-              data-nimg="1"
-              className="max-h-20 w-full object-cover object-top opacity-70"
-              style={{ color: "transparent" }}
-              src="https://www.theweddingcompany.com/images/HomePage/new/pink-curve.svg"
-            />
+        {/* Info Section (Stable Height) */}
+        <div className="mt-4 min-h-[100px]">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-[#FAE8B3] text-[#8B5E34] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
+                <Sparkles size={10} /> {proposals[currentIndex].theme}
+              </span>
+            </div>
+            <h3 className="text-xl font-serif font-medium text-gray-900 leading-tight mb-1">
+              {proposals[currentIndex].title}
+            </h3>
+            <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium">
+              <MapPin size={14} className="text-gray-400" />
+              <span>{proposals[currentIndex].location}</span>
+            </div>
+          </motion.div>
+
+          {/* Indicators */}
+          <div className="flex gap-1.5 mt-4">
+            {proposals.map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  idx === currentIndex ? "w-6 bg-[#C33765]" : "w-1.5 bg-gray-300"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
+
+// Memoized Button Component to prevent re-renders
+const NavButton = React.memo(({ onClick, icon }) => (
+  <button
+    onClick={(e) => {
+      e.stopPropagation(); // Prevent drag interference
+      onClick();
+    }}
+    className="pointer-events-auto bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/40 active:scale-95 transition-all text-white shadow-sm border border-white/10"
+  >
+    {icon}
+  </button>
+));
 
 export default SampleProposal;

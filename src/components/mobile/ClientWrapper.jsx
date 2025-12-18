@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import MobileHeader from "@/components/mobile/Header";
-import MobileNavbar from "./Navbar";
 import Footer from "./Footer";
 
 export default function ClientWrapper({ children }) {
@@ -17,7 +16,6 @@ export default function ClientWrapper({ children }) {
       <footer>
         <Footer />
       </footer>
-      {!isAdminRoute && <MobileNavbar />}
     </>
   );
 }
