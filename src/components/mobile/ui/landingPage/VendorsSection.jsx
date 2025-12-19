@@ -18,7 +18,6 @@ import {
   Mail,
   Calendar,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const vendorsData = [
@@ -27,8 +26,7 @@ const vendorsData = [
     type: "Venue",
     name: "The Marble Palace",
     location: "Udaipur, Rajasthan",
-    image:
-      "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80",
     capacity: 500,
     price: "5,00,000",
     rating: 4.9,
@@ -40,8 +38,7 @@ const vendorsData = [
     type: "Photographer",
     name: "Rohan Mehta",
     specialty: "Candid Wedding Photographer",
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
     rating: 4.9,
     experience: 8,
     verified: true,
@@ -52,8 +49,7 @@ const vendorsData = [
     type: "Decorator",
     name: "Bloom & Petal",
     style: "Modern & Minimalist",
-    image:
-      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80",
     services: ["Floral Design", "Lighting", "Theming"],
     verified: true,
     projects: 120,
@@ -63,8 +59,7 @@ const vendorsData = [
     type: "Venue",
     name: "Coastal Dreams Resort",
     location: "Goa",
-    image:
-      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80",
     capacity: 200,
     price: "3,50,000",
     rating: 4.8,
@@ -76,8 +71,7 @@ const vendorsData = [
     type: "Planner",
     name: "Priya Sharma",
     experience: "10 Years",
-    image:
-      "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80",
     tagline: "Flawless execution, unforgettable moments.",
     verified: true,
     events: 300,
@@ -87,8 +81,7 @@ const vendorsData = [
     type: "Photographer",
     name: "Frames & Vows",
     specialty: "Fine Art Storytelling",
-    image:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&q=80",
     rating: 5.0,
     experience: 12,
     verified: true,
@@ -99,8 +92,7 @@ const vendorsData = [
     type: "Decorator",
     name: "The Gilded Lily",
     style: "Royal & Opulent",
-    image:
-      "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&q=80",
     services: ["Luxury Drapery", "Chandeliers", "Floral"],
     verified: true,
     projects: 95,
@@ -110,8 +102,7 @@ const vendorsData = [
     type: "Planner",
     name: "The Event Architects",
     experience: "15 Years",
-    image:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&q=80",
     tagline: "Your vision, our passion.",
     verified: true,
     events: 450,
@@ -160,8 +151,7 @@ export const VenueCard = ({ vendor }) => (
         alt={vendor?.name}
         className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
         onError={(e) => {
-          e.target.src =
-            "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80";
+          e.target.src = "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80";
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -182,9 +172,7 @@ export const VenueCard = ({ vendor }) => (
         </div>
       </div>
       <div className="absolute bottom-0 left-0 right-0 p-5">
-        <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">
-          {vendor?.name}
-        </h3>
+        <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">{vendor?.name}</h3>
         <div className="flex items-center text-white/90 text-sm">
           <MapPin size={14} className="mr-2" />
           <span>{vendor?.location}</span>
@@ -199,15 +187,11 @@ export const VenueCard = ({ vendor }) => (
           </div>
           <div>
             <p className="font-semibold text-sm">Capacity</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Up to {vendor?.capacity} guests
-            </p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">Up to {vendor?.capacity} guests</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-            Starting from
-          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Starting from</p>
           <p className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
             ₹{vendor?.price}
           </p>
@@ -248,8 +232,7 @@ export const PhotographerCard = ({ vendor }) => (
         alt={vendor?.name}
         className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
         onError={(e) => {
-          e.target.src =
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80";
+          e.target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80";
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -275,9 +258,7 @@ export const PhotographerCard = ({ vendor }) => (
           </div>
           <div className="flex items-center gap-2 bg-white/20 dark:bg-black/20 px-3 py-1.5 rounded-full">
             <Clock size={14} className="text-white" />
-            <span className="text-sm font-medium text-white">
-              {vendor?.experience}Y Exp
-            </span>
+            <span className="text-sm font-medium text-white">{vendor?.experience}Y Exp</span>
           </div>
         </div>
       </div>
@@ -319,8 +300,7 @@ export const DecoratorCard = ({ vendor }) => (
           alt={vendor?.name}
           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
           onError={(e) => {
-            e.target.src =
-              "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80";
+            e.target.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80";
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -337,12 +317,8 @@ export const DecoratorCard = ({ vendor }) => (
       </div>
       <div className="flex-1 flex flex-col">
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-            {vendor?.name}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            {vendor?.style}
-          </p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">{vendor?.name}</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{vendor?.style}</p>
         </div>
         <div className="flex flex-wrap gap-2 mb-4 flex-1">
           {vendor?.services?.slice(0, 3).map((service, index) => (
@@ -395,8 +371,7 @@ export const PlannerCard = ({ vendor }) => (
             alt={vendor?.name}
             className="w-20 h-20 rounded-2xl object-cover border-4 border-white dark:border-gray-700 shadow-lg transition-all duration-300 group-hover:scale-105"
             onError={(e) => {
-              e.target.src =
-                "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
+              e.target.src = "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
             }}
           />
           {vendor?.verified && (
@@ -417,9 +392,7 @@ export const PlannerCard = ({ vendor }) => (
               VERIFIED PLANNER
             </div>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-            {vendor?.name}
-          </h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">{vendor?.name}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-1">
             <Clock size={14} />
             {vendor?.experience} Experience
@@ -463,13 +436,9 @@ export const PlannerCard = ({ vendor }) => (
 
 export default function VendorsSection() {
   const [activeFilter, setActiveFilter] = useState("All");
-  const router = useRouter();
+  const MotionLink = motion(Link);
   const filteredVendors =
-    activeFilter === "All"
-      ? vendorsData
-      : vendorsData.filter(
-          (vendor) => vendor.type === activeFilter.slice(0, -1),
-        );
+    activeFilter === "All" ? vendorsData : vendorsData.filter((vendor) => vendor.type === activeFilter.slice(0, -1));
 
   const getCardComponent = (vendor) => {
     const cardProps = { vendor };
@@ -514,10 +483,7 @@ export default function VendorsSection() {
         viewport={{ once: true, amount: 0.1 }}
         variants={containerVariants}
       >
-        <motion.div
-          variants={itemVariants}
-          className="text-center max-w-4xl mx-auto mb-12 sm:mb-16"
-        >
+        <motion.div variants={itemVariants} className="text-center max-w-4xl mx-auto mb-12 sm:mb-16">
           <motion.div
             className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100/80 to-yellow-100/80 dark:from-amber-900/50 dark:to-yellow-900/50 backdrop-blur-sm text-amber-700 dark:text-amber-300 px-6 py-3 rounded-full text-sm font-bold mb-6 border border-amber-200/50 dark:border-amber-800/60"
             initial={{ opacity: 0, y: 20 }}
@@ -544,22 +510,22 @@ export default function VendorsSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            Connect with our carefully curated network of top-tier vendors who
-            will bring your dream event to life with unmatched expertise and
-            creativity.
+            Connect with our carefully curated network of top-tier vendors who will bring your dream event to life with
+            unmatched expertise and creativity.
           </motion.p>
         </motion.div>
-        <motion.div
-          variants={itemVariants}
-          className="flex justify-center mb-12 sm:mb-16"
-        >
+        <motion.div variants={itemVariants} className="flex justify-center mb-12 sm:mb-16">
           <div className="bg-white/90 dark:bg-gray-800/50 backdrop-blur-lg rounded-3xl p-2 shadow-xl border border-amber-100/50 dark:border-gray-700/50">
             <div className="flex flex-wrap justify-center gap-2">
               {filters.map((filter) => (
                 <motion.button
                   key={filter.label}
                   onClick={() => setActiveFilter(filter.label)}
-                  className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${activeFilter === filter.label ? "text-white shadow-lg scale-105" : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-amber-50/50 dark:hover:bg-gray-700/50"}`}
+                  className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${
+                    activeFilter === filter.label
+                      ? "text-white shadow-lg scale-105"
+                      : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-amber-50/50 dark:hover:bg-gray-700/50"
+                  }`}
                   whileHover={{
                     scale: activeFilter !== filter.label ? 1.05 : 1.05,
                   }}
@@ -589,21 +555,19 @@ export default function VendorsSection() {
           layout
           variants={containerVariants}
         >
-          <AnimatePresence mode="wait">
-            {filteredVendors.map((vendor) => getCardComponent(vendor))}
-          </AnimatePresence>
+          <AnimatePresence mode="wait">{filteredVendors.map((vendor) => getCardComponent(vendor))}</AnimatePresence>
         </motion.div>
         <motion.div variants={itemVariants} className="text-center mt-16">
-          <motion.button
+          <MotionLink
+            href="/m/vendors/marketplace"
             className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white px-8 sm:px-10 py-4 rounded-3xl font-bold text-base sm:text-lg flex items-center gap-3 mx-auto hover:shadow-2xl transition-all duration-400 border-2 border-amber-300/50"
             whileHover={{ scale: 1.05, y: -3 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push("/vendors/marketplace")}
           >
             <Sparkles size={20} />
             Explore All Premium Vendors
             <ArrowRight size={20} />
-          </motion.button>
+          </MotionLink>
           <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
             Join 10,000+ satisfied customers who found their perfect vendors
           </p>

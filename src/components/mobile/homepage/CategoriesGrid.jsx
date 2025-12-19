@@ -27,6 +27,8 @@ const CategoryGrid = ({ currentCategory }) => {
         widthClass: "w-20",
         pixelWidth: 80,
       },
+      { name: "Mehndi", image: "/CardsCatPhotos/MehndiCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      { name: "MakeUp", image: "/CardsCatPhotos/MakeUpCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       {
         name: `${currentCategory} Venues`,
         // Use a smaller, optimized static image if possible instead of a heavy GIF for thumbnails
@@ -35,8 +37,6 @@ const CategoryGrid = ({ currentCategory }) => {
         widthClass: "w-40",
         pixelWidth: 160,
       },
-      { name: "MakeUp", image: "/CardsCatPhotos/MakeUpCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
-      { name: "Mehndi", image: "/CardsCatPhotos/MehndiCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       { name: "DJs & Sound", image: "/CardsCatPhotos/DJCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       { name: "Dhol", image: "/CardsCatPhotos/DholCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       { name: "Caterers", image: "/CardsCatPhotos/CaterorsCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },

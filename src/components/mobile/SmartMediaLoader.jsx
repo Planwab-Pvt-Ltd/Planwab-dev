@@ -61,7 +61,7 @@ const SmartMedia = memo(
     }, [type, autoPlay]);
 
     // --- STYLES ---
-    const containerClass = `relative overflow-hidden bg-gray-200 ${className}`;
+    const containerClass = `relative overflow-hidden bg-transparent ${className}`;
     const mediaClass = `duration-700 ease-out transition-all ${
       isLoaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-105 blur-lg"
     }`;

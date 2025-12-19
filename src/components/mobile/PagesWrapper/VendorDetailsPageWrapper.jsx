@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
+import SmartMedia from "@/components/mobile/SmartMediaLoader";
 
 const VendorDetailsPageWrapper = () => {
   const { id } = useParams();
@@ -608,6 +609,24 @@ const VendorDetailsPageWrapper = () => {
               <div className="w-full py-8 text-center text-gray-500 text-sm">No similar venues found.</div>
             )}
           </div>
+        </div>
+
+        {/* Static Banner 2 - High Priority */}
+        <div className="mx-1 mt-2 px-2 mb-6 pb-4">
+          <Link href={`/m/events/wedding`}>
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              className="w-full aspect-[4/2.3] relative rounded-xl overflow-hidden"
+            >
+              <SmartMedia
+                src={`/Banners/banner4.png`}
+                type="image"
+                className="w-full h-full object-cover object-center"
+                loaderImage="/GlowLoadingGif.gif"
+                priority={true}
+              />
+            </motion.div>
+          </Link>
         </div>
 
         {/* Recommended Section (Two Rows Scrollable & Hidden Scrollbar) */}

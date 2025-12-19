@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, Suspense, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Sparkles } from "lucide-react";
 import SmartMedia from "./../SmartMediaLoader";
+import Link from "next/link";
 
 // 1. Precise Skeletons: Match the EXACT height of your real components
 // to prevent "Content Layout Shift" (Jumping UI)
@@ -94,7 +95,7 @@ const HeroSection = memo(() => {
 // --- Main Page Structure ---
 
 const MainContent = () => {
-  const router = useRouter();
+  const MotionLink = motion(Link);
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get("category") || "Default";
 
@@ -116,21 +117,19 @@ const MainContent = () => {
         <ChevronRight className="text-gray-400 w-4 h-4 shrink-0" />
       </div>
 
-      {/* Static Banner - High Priority */}
-      <div className="mx-1 mt-2 mb-1">
-        <motion.div
-          whileTap={{ scale: 0.98 }}
-          className="w-full h-24 relative rounded-xl overflow-hidden"
-          onClick={() => router.push(`/m/events/${currentCategory}`, { scroll: false })}
-        >
-          <SmartMedia
-            src={`/HeroNAP${currentCategory}.png`}
-            type="image"
-            className="w-full h-full object-cover object-center"
-            loaderImage="/GlowLoadingGif.gif"
-            priority={true}
-          />
-        </motion.div>
+      {/* Static Banner 1 - High Priority */}
+      <div className="mx-1 mt-2 px-2">
+        <Link href={`/m/events/${currentCategory}`}>
+          <motion.div whileTap={{ scale: 0.98 }} className="w-full h-24 relative rounded-xl overflow-hidden">
+            <SmartMedia
+              src={`/HeroNAP${currentCategory}.gif`}
+              type="image"
+              className="w-full h-full object-cover object-center"
+              loaderImage="/GlowLoadingGif.gif"
+              priority={true}
+            />
+          </motion.div>
+        </Link>
       </div>
 
       {/* --- Main Interactive Grid --- */}
@@ -140,6 +139,26 @@ const MainContent = () => {
       {/* 'contain-intrinsic-size' prevents scrollbar jumping before content loads */}
       <div style={{ contentVisibility: "auto", containIntrinsicSize: "1000px" }}>
         <MostBooked />
+
+        {/* Static Banner 2 - High Priority */}
+        <div className="mx-1 mt-2 px-2 mb-6 pb-4">
+          <Link href={`/m/events/${currentCategory}`}>
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              className="w-full aspect-[4/2.3] relative rounded-xl overflow-hidden"
+            >
+              <SmartMedia
+                src={`/Banners/${
+                  currentCategory ? (currentCategory === "Wedding" ? "banner2.png" : "banner3.png") : "banner2.png"
+                }`}
+                type="image"
+                className="w-full h-full object-cover object-center"
+                loaderImage="/GlowLoadingGif.gif"
+                priority={true}
+              />
+            </motion.div>
+          </Link>
+        </div>
 
         <ServicesSteps />
 

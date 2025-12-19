@@ -59,7 +59,7 @@ const TABS_CONFIG = [
     label: "Wedding",
     styles: "bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900",
     image: "/WeddingCat.png",
-    src: "/WeddingHeaderCard.gif",
+    src: "/WeddingHeaderCard.png",
     placeholders: ["Wedding Venues", "Bridal Makeup", "Mehndi Artists"],
   },
   {
@@ -67,7 +67,7 @@ const TABS_CONFIG = [
     label: "Anniversary",
     styles: "bg-gradient-to-r from-gray-900 via-pink-700 to-gray-900",
     image: "/AnniversaryCat.png",
-    src: "/AnniversaryHeaderCard.gif",
+    src: "/AnniversaryHeaderCard.png",
     placeholders: ["Romantic Dinner", "Flower Bouquets", "Couple Spa"],
   },
   {
@@ -75,7 +75,7 @@ const TABS_CONFIG = [
     label: "Birthday",
     styles: "bg-gradient-to-r from-gray-900 via-yellow-600 to-gray-900",
     image: "/BirthdayCat.png",
-    src: "/BirthdayHeaderCard.gif",
+    src: "/BirthdayHeaderCard.png",
     placeholders: ["Birthday Cakes", "Party Decor", "Event Planners"],
   },
 ];

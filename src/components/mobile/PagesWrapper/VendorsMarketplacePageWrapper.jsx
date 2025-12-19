@@ -24,8 +24,9 @@ import {
 } from "lucide-react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -132,7 +133,6 @@ const UnifiedCard = ({
   isSelectedForCompare,
   colorPrimary = "#2563eb",
 }) => {
-  const router = useRouter();
   // 1. TUPLE STATE: Tracks [currentIndex, direction] together
   // This is critical for Framer Motion to know which way to animate
   const [[page, direction], setPage] = useState([0, 0]);
@@ -330,10 +330,7 @@ const UnifiedCard = ({
       </div>
 
       {/* Content Body */}
-      <div
-        className={`${isGrid ? "p-3" : "p-5"}`}
-        onClick={() => router.push(`/vendor/${vendor?.category}/${vendor?._id}`)}
-      >
+      <Link href={`/m/vendor/${vendor?.category}/${vendor?._id}`} className={`${isGrid ? "p-3" : "p-5"}`}>
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1 min-w-0 pr-2">
             <h3
@@ -423,7 +420,7 @@ const UnifiedCard = ({
             </AnimatePresence>
           </motion.button>
         </div>
-      </div>
+      </Link>
     </motion.div>
   );
 };
