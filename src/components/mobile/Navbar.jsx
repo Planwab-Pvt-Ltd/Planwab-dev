@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useTransition, memo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useTransition, memo, useCallback } from "react";
 import {
   Home,
   ChartBarStacked,
@@ -13,36 +13,840 @@ import {
   Trash2,
   ArrowRight,
   Loader2,
+  Search,
+  Filter,
+  Heart,
+  MapPin,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Minus,
+  Tag,
+  Percent,
+  Shield,
+  Sparkles,
+  ChevronRight,
+  ChevronDown,
+  BadgeCheck,
+  Gift,
+  Info,
+  Phone,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  TrendingUp,
+  Users,
+  Camera,
+  Building,
+  Utensils,
+  Music,
+  Palette,
+  Scissors,
+  Crown,
+  Flower2,
+  RefreshCw,
+  Copy,
+  Check,
+  Lock,
+  CreditCard,
+  Wallet,
+  Calendar as CalendarIcon,
+  ImageIcon,
+  MoreHorizontal,
+  SlidersHorizontal,
+  Grid3X3,
+  List,
+  Zap,
+  Award,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const COLORS = {
+  primary: "#2563eb",
+  primaryLight: "#3b82f6",
+  primaryDark: "#1d4ed8",
+  secondary: "#f59e0b",
+  secondaryLight: "#fbbf24",
+  success: "#10b981",
+  successLight: "#34d399",
+  error: "#ef4444",
+  warning: "#f59e0b",
+  gold: "#E5B80B",
+};
+
+const SPRING_CONFIG = {
+  stiff: { type: "spring", stiffness: 400, damping: 30 },
+  gentle: { type: "spring", stiffness: 200, damping: 25 },
+  bouncy: { type: "spring", stiffness: 300, damping: 20 },
+};
 
 // --- MOCK DATA (Moved Outside) ---
-const DRAWER_CATEGORIES = ["Venues", "Catering", "Photography", "Makeup", "Decor", "Music"];
+const DRAWER_CATEGORIES = [
+  { id: "all", label: "All", icon: Grid3X3, color: "#6b7280" },
+  { id: "venues", label: "Venues", icon: Building, color: "#8b5cf6" },
+  { id: "catering", label: "Catering", icon: Utensils, color: "#f97316" },
+  { id: "photography", label: "Photo", icon: Camera, color: "#ec4899" },
+  { id: "makeup", label: "Makeup", icon: Palette, color: "#f43f5e" },
+  { id: "decor", label: "Decor", icon: Flower2, color: "#14b8a6" },
+  { id: "music", label: "Music", icon: Music, color: "#3b82f6" },
+];
+
 const VENDOR_ITEMS = [
   {
     id: 1,
-    name: "Grand Hyatt",
-    category: "Venues",
+    name: "Grand Hyatt Ballroom",
+    category: "venues",
     price: 250000,
+    originalPrice: 300000,
     rating: 4.8,
+    reviews: 124,
     img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
+    location: "Mumbai",
+    isVerified: true,
+    isPopular: true,
+    capacity: "500 guests",
+    tags: ["Premium", "5-Star"],
   },
   {
     id: 2,
-    name: "Royal Catering",
-    category: "Catering",
+    name: "Royal Catering Services",
+    category: "catering",
     price: 850,
+    originalPrice: 1000,
     rating: 4.5,
+    reviews: 89,
     img: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400",
+    location: "Delhi",
+    isVerified: true,
+    isPopular: false,
+    priceUnit: "per plate",
+    tags: ["Multi-cuisine"],
+  },
+  {
+    id: 3,
+    name: "Capture Moments Studio",
+    category: "photography",
+    price: 75000,
+    originalPrice: 85000,
+    rating: 4.9,
+    reviews: 156,
+    img: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400",
+    location: "Bangalore",
+    isVerified: true,
+    isPopular: true,
+    tags: ["Award Winning"],
+  },
+  {
+    id: 4,
+    name: "Glamour Makeup Artists",
+    category: "makeup",
+    price: 35000,
+    originalPrice: 40000,
+    rating: 4.7,
+    reviews: 78,
+    img: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400",
+    location: "Mumbai",
+    isVerified: false,
+    isPopular: false,
+    tags: ["Bridal Expert"],
+  },
+  {
+    id: 5,
+    name: "Dream Decor Studios",
+    category: "decor",
+    price: 120000,
+    originalPrice: 150000,
+    rating: 4.6,
+    reviews: 92,
+    img: "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=400",
+    location: "Chennai",
+    isVerified: true,
+    isPopular: true,
+    tags: ["Luxury", "Themed"],
+  },
+  {
+    id: 6,
+    name: "Beat Masters DJ",
+    category: "music",
+    price: 45000,
+    originalPrice: 50000,
+    rating: 4.4,
+    reviews: 67,
+    img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
+    location: "Pune",
+    isVerified: true,
+    isPopular: false,
+    tags: ["Live Band Available"],
   },
 ];
 
-// --- SUB-COMPONENTS (Isolated for Performance) ---
+const MOCK_COUPONS = [
+  {
+    code: "FIRST20",
+    discount: 20,
+    type: "percent",
+    maxDiscount: 25000,
+    minOrder: 100000,
+    description: "20% off on first booking",
+  },
+  {
+    code: "WEDDING10",
+    discount: 10,
+    type: "percent",
+    maxDiscount: 15000,
+    minOrder: 50000,
+    description: "10% off on wedding bookings",
+  },
+  { code: "FLAT5K", discount: 5000, type: "flat", minOrder: 75000, description: "Flat ₹5,000 off" },
+];
 
-// 1. Explore Drawer Component
-const ExploreDrawer = memo(({ onClose, items, onAdd }) => {
-  const [activeCat, setActiveCat] = useState("Venues");
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+const formatPrice = (price) => {
+  if (isNaN(price) || price === 0) return "0";
+  if (price >= 100000) return `${(price / 100000).toFixed(1)}L`;
+  if (price >= 1000) return `${(price / 1000).toFixed(0)}K`;
+  return price.toLocaleString("en-IN");
+};
+
+const formatFullPrice = (price) => {
+  if (isNaN(price) || price === 0) return "0";
+  return price.toLocaleString("en-IN");
+};
+
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// =============================================================================
+// CUSTOM HOOKS
+// =============================================================================
+
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10] };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
+
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Toast Component
+// -----------------------------------------------------------------------------
+const Toast = memo(({ message, type = "success", isVisible, onClose }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(onClose, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  const icons = { success: CheckCircle, error: AlertCircle, info: Info, warning: AlertCircle };
+  const Icon = icons[type];
+  const colors = { success: "bg-green-500", error: "bg-red-500", info: "bg-blue-500", warning: "bg-amber-500" };
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          className={`fixed top-4 left-4 right-4 z-[200] ${colors[type]} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3`}
+        >
+          <Icon size={20} />
+          <span className="flex-1 font-medium text-sm">{message}</span>
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full">
+            <X size={16} />
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+});
+Toast.displayName = "Toast";
+
+// -----------------------------------------------------------------------------
+// Vendor Card for Explore Drawer
+// -----------------------------------------------------------------------------
+const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }) => {
+  const haptic = useHapticFeedback();
+  const discount =
+    item.originalPrice > item.price ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100) : 0;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100"
+    >
+      {/* Image Section */}
+      <div className="relative h-36">
+        <img src={item.img} className="w-full h-full object-cover" alt={item.name} loading="lazy" />
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+        {/* Top Badges */}
+        <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+          <div className="flex gap-1.5">
+            {item.isPopular && (
+              <div className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
+                <Sparkles size={10} /> Popular
+              </div>
+            )}
+            {item.isVerified && (
+              <div className="px-2 py-1 bg-blue-500 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
+                <BadgeCheck size={10} /> Verified
+              </div>
+            )}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.8 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              haptic("medium");
+              onToggleFavorite(item.id);
+            }}
+            className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
+          >
+            <Heart size={16} className={isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"} />
+          </motion.button>
+        </div>
+
+        {/* Bottom Info */}
+        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <span className="text-xs font-bold text-gray-800">{item.rating}</span>
+            <span className="text-[10px] text-gray-500">({item.reviews})</span>
+          </div>
+          {discount > 0 && (
+            <div className="px-2 py-1 bg-green-500 text-white text-[10px] font-bold rounded-md">{discount}% OFF</div>
+          )}
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="p-3">
+        <div className="flex items-start justify-between mb-1">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <MapPin size={11} className="text-gray-400 shrink-0" />
+              <span className="text-xs text-gray-500 truncate">{item.location}</span>
+              {item.capacity && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <Users size={11} className="text-gray-400 shrink-0" />
+                  <span className="text-xs text-gray-500">{item.capacity}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {item.tags && item.tags.length > 0 && (
+          <div className="flex gap-1 mt-2 overflow-x-auto scrollbar-hide">
+            {item.tags.map((tag, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-medium rounded-md whitespace-nowrap"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Price & Action */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-blue-600">₹{formatFullPrice(item.price)}</span>
+              {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
+            </div>
+            {item.originalPrice > item.price && (
+              <span className="text-xs text-gray-400 line-through">₹{formatFullPrice(item.originalPrice)}</span>
+            )}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic("medium");
+              onAdd(item);
+            }}
+            className={`px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 ${
+              isInCart ? "bg-green-100 text-green-700 border border-green-200" : "bg-yellow-400 text-blue-900"
+            }`}
+          >
+            {isInCart ? (
+              <>
+                <CheckCircle size={14} /> Added
+              </>
+            ) : (
+              <>
+                <Plus size={14} /> Add
+              </>
+            )}
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+VendorCard.displayName = "VendorCard";
+
+// -----------------------------------------------------------------------------
+// Cart Item Card
+// -----------------------------------------------------------------------------
+const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
+  const haptic = useHapticFeedback();
+  const discount = item.originalPrice > item.price ? item.originalPrice - item.price : 0;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
+      transition={SPRING_CONFIG.gentle}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-3"
+    >
+      <div className="p-3 flex gap-3">
+        {/* Image */}
+        <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+          <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+          {item.isVerified && (
+            <div className="absolute top-1 left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <BadgeCheck size={12} className="text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Star size={10} className="fill-amber-400 text-amber-400" />
+                  <span className="text-[10px] font-semibold text-gray-700">{item.rating}</span>
+                  <span className="text-[10px] text-gray-400">({item.reviews})</span>
+                </div>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("medium");
+                  onRemove(item);
+                }}
+                className="p-2 bg-red-50 rounded-lg text-red-500 hover:bg-red-100 transition-colors"
+              >
+                <Trash2 size={14} />
+              </motion.button>
+            </div>
+
+            {/* Location & Category */}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-gray-600 capitalize">
+                {item.category}
+              </span>
+              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                <MapPin size={10} />
+                {item.location}
+              </div>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-end justify-between mt-2">
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-bold text-blue-600">₹{formatFullPrice(item.price)}</span>
+                {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
+              </div>
+              {discount > 0 && (
+                <span className="text-[10px] font-medium text-green-600">Save ₹{formatFullPrice(discount)}</span>
+              )}
+            </div>
+
+            {/* Quantity Control (if applicable) */}
+            {item.priceUnit && (
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => onUpdateQuantity(item.id, (item.quantity || 1) - 1)}
+                  disabled={(item.quantity || 1) <= 1}
+                  className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm disabled:opacity-50"
+                >
+                  <Minus size={14} className="text-gray-600" />
+                </motion.button>
+                <span className="text-sm font-bold text-gray-900 w-6 text-center">{item.quantity || 1}</span>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => onUpdateQuantity(item.id, (item.quantity || 1) + 1)}
+                  className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm"
+                >
+                  <Plus size={14} className="text-gray-600" />
+                </motion.button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+CartItemCard.displayName = "CartItemCard";
+
+// -----------------------------------------------------------------------------
+// Coupon Section
+// -----------------------------------------------------------------------------
+const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subtotal, showToast }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const haptic = useHapticFeedback();
+
+  const handleApplyCoupon = useCallback(async () => {
+    if (!couponCode.trim()) {
+      setError("Please enter a coupon code");
+      return;
+    }
+
+    haptic("light");
+    setIsLoading(true);
+    setError("");
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const coupon = MOCK_COUPONS.find((c) => c.code.toLowerCase() === couponCode.trim().toLowerCase());
+
+    if (!coupon) {
+      setError("Invalid coupon code");
+      setIsLoading(false);
+      return;
+    }
+
+    if (subtotal < coupon.minOrder) {
+      setError(`Minimum order of ₹${formatFullPrice(coupon.minOrder)} required`);
+      setIsLoading(false);
+      return;
+    }
+
+    haptic("success");
+    onApplyCoupon(coupon);
+    setCouponCode("");
+    setIsExpanded(false);
+    setIsLoading(false);
+    showToast("Coupon applied successfully!", "success");
+  }, [couponCode, subtotal, onApplyCoupon, haptic, showToast]);
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {appliedCoupon ? (
+        <div className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Tag size={18} className="text-green-600" />
+              </div>
+              <div>
+                <p className="font-bold text-green-600 text-sm">{appliedCoupon.code}</p>
+                <p className="text-[10px] text-gray-500">{appliedCoupon.description}</p>
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                haptic("light");
+                onRemoveCoupon();
+              }}
+              className="p-2 text-gray-400 hover:text-red-500"
+            >
+              <X size={16} />
+            </motion.button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              haptic("light");
+              setIsExpanded(!isExpanded);
+            }}
+            className="w-full p-3 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Percent size={18} className="text-orange-500" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-gray-900 text-sm">Apply Coupon</p>
+                <p className="text-[10px] text-gray-500">{MOCK_COUPONS.length} coupons available</p>
+              </div>
+            </div>
+            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
+              <ChevronDown size={18} className="text-gray-400" />
+            </motion.div>
+          </motion.button>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={SPRING_CONFIG.gentle}
+                className="border-t border-gray-100 overflow-hidden"
+              >
+                <div className="p-3 space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase());
+                        setError("");
+                      }}
+                      placeholder="Enter code"
+                      className="flex-1 px-3 py-2.5 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleApplyCoupon}
+                      disabled={isLoading}
+                      className="px-4 py-2.5 rounded-xl text-white font-bold text-sm bg-blue-600 disabled:opacity-60"
+                    >
+                      {isLoading ? <RefreshCw size={16} className="animate-spin" /> : "Apply"}
+                    </motion.button>
+                  </div>
+
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-xs text-red-500 font-medium flex items-center gap-1"
+                    >
+                      <AlertCircle size={12} /> {error}
+                    </motion.p>
+                  )}
+
+                  <div className="space-y-2">
+                    {MOCK_COUPONS.map((coupon) => (
+                      <motion.button
+                        key={coupon.code}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setCouponCode(coupon.code);
+                          setError("");
+                        }}
+                        className="w-full p-2.5 bg-gray-50 rounded-xl flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Tag size={14} className="text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{coupon.code}</p>
+                            <p className="text-[10px] text-gray-500">{coupon.description}</p>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-400" />
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+    </div>
+  );
+});
+CouponSection.displayName = "CouponSection";
+
+// -----------------------------------------------------------------------------
+// Price Breakdown
+// -----------------------------------------------------------------------------
+const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, platformFee, total }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const haptic = useHapticFeedback();
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-gray-900 text-sm">Price Details</h3>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            haptic("light");
+            setShowDetails(!showDetails);
+          }}
+          className="text-[10px] font-semibold text-blue-600 flex items-center gap-1"
+        >
+          {showDetails ? "Hide" : "View"} breakdown
+          <motion.div animate={{ rotate: showDetails ? 180 : 0 }}>
+            <ChevronDown size={12} />
+          </motion.div>
+        </motion.button>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Subtotal</span>
+          <span className="font-medium text-gray-900">₹{formatFullPrice(subtotal)}</span>
+        </div>
+
+        {vendorDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600">Vendor Discount</span>
+            <span className="font-medium text-green-600">-₹{formatFullPrice(vendorDiscount)}</span>
+          </div>
+        )}
+
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600">Coupon Discount</span>
+            <span className="font-medium text-green-600">-₹{formatFullPrice(couponDiscount)}</span>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="space-y-2 pt-2 border-t border-dashed border-gray-200 overflow-hidden"
+            >
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Platform Fee</span>
+                <span className="font-medium text-gray-600">₹{formatFullPrice(platformFee)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">GST (18%)</span>
+                <span className="font-medium text-gray-600">₹{formatFullPrice(taxes)}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+          <span className="font-bold text-gray-900">Total</span>
+          <span className="text-xl font-black text-blue-600">₹{formatFullPrice(total)}</span>
+        </div>
+
+        {(vendorDiscount > 0 || couponDiscount > 0) && (
+          <div className="mt-2 p-2.5 bg-green-50 rounded-xl">
+            <p className="text-xs font-bold text-green-700 flex items-center gap-1.5">
+              <Sparkles size={14} />
+              You save ₹{formatFullPrice(vendorDiscount + couponDiscount)} on this order!
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+PriceBreakdown.displayName = "PriceBreakdown";
+
+// =============================================================================
+// ENHANCED EXPLORE DRAWER
+// =============================================================================
+const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => {
+  const [activeCat, setActiveCat] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("popular");
+  const [favorites, setFavorites] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const haptic = useHapticFeedback();
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const filteredItems = useMemo(() => {
+    let filtered = [...items];
+
+    // Filter by category
+    if (activeCat !== "all") {
+      filtered = filtered.filter((item) => item.category === activeCat);
+    }
+
+    // Filter by search
+    if (debouncedSearch) {
+      const query = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query) ||
+          item.location.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "popular":
+        filtered.sort((a, b) => (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0));
+        break;
+      case "rating":
+        filtered.sort((a, b) => b.rating - a.rating);
+        break;
+      case "price-low":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      default:
+        break;
+    }
+
+    return filtered;
+  }, [items, activeCat, debouncedSearch, sortBy]);
+
+  const toggleFavorite = useCallback((id) => {
+    setFavorites((prev) => (prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]));
+  }, []);
+
+  const cartItemIds = useMemo(() => cartItems.map((item) => item.id), [cartItems]);
 
   return (
     <>
@@ -57,156 +861,420 @@ const ExploreDrawer = memo(({ onClose, items, onAdd }) => {
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 h-[85vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+        transition={SPRING_CONFIG.gentle}
+        className="fixed bottom-0 left-0 right-0 h-[90vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="bg-white px-5 pt-3 pb-4 shadow-sm z-10 sticky top-0">
-          <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4" />
-          <div className="flex justify-between items-center mb-4">
+        {/* Header */}
+        <div className="bg-white px-4 pt-3 pb-3 shadow-sm z-10 sticky top-0 border-b border-gray-100">
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3" />
+
+          <div className="flex justify-between items-center mb-3">
             <div>
               <h2 className="text-xl font-black text-gray-900">Explore Vendors</h2>
-              <p className="text-xs text-gray-500 font-medium">Find the best for your event</p>
+              <p className="text-xs text-gray-500 font-medium">{filteredItems.length} vendors found</p>
             </div>
-            <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+            >
               <X size={20} className="text-gray-600" />
-            </button>
+            </motion.button>
           </div>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {DRAWER_CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCat(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-                  activeCat === cat
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 border border-gray-200"
-                }`}
+
+          {/* Search Bar */}
+          <div className="relative mb-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search vendors, locations..."
+              className="w-full pl-10 pr-10 py-2.5 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            {searchQuery && (
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-gray-300 rounded-full"
               >
-                {cat}
-              </button>
-            ))}
+                <X size={12} className="text-gray-600" />
+              </motion.button>
+            )}
+          </div>
+
+          {/* Categories */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {DRAWER_CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = activeCat === cat.id;
+              return (
+                <motion.button
+                  key={cat.id}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("light");
+                    setActiveCat(cat.id);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    isActive ? "text-white shadow-md" : "bg-gray-100 text-gray-600 border border-gray-200"
+                  }`}
+                  style={isActive ? { backgroundColor: cat.color } : {}}
+                >
+                  <Icon size={14} />
+                  {cat.label}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Sort & Filter Row */}
+          <div className="flex gap-2 mt-3">
+            <div className="flex-1 relative">
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  haptic("light");
+                  setSortBy(e.target.value);
+                }}
+                className="w-full px-3 py-2 bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 appearance-none outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="popular">Most Popular</option>
+                <option value="rating">Top Rated</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic("light");
+                setShowFilters(!showFilters);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                showFilters ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              <SlidersHorizontal size={14} />
+              Filters
+            </motion.button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl p-3 flex gap-3 shadow-sm border border-gray-100">
-              <img src={item.img} className="w-24 h-24 rounded-xl object-cover" alt={item.name} loading="lazy" />
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-gray-900">{item.name}</h3>
-                    <div className="flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-bold text-green-700">
-                      <Star size={10} fill="currentColor" /> {item.rating}
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">{item.category}</p>
-                </div>
-                <div className="flex justify-between items-end">
-                  <span className="text-blue-700 font-bold text-sm">₹{item.price.toLocaleString()}</span>
-                  <button
-                    onClick={() => onAdd(item)}
-                    className="bg-yellow-400 text-blue-900 px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 transition-transform"
-                  >
-                    Add +
-                  </button>
-                </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
+                <Search size={32} className="text-gray-300" />
               </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">No vendors found</h3>
+              <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
             </div>
-          ))}
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              <AnimatePresence mode="popLayout">
+                {filteredItems.map((item) => (
+                  <VendorCard
+                    key={item.id}
+                    item={item}
+                    onAdd={onAdd}
+                    isInCart={cartItemIds.includes(item.id)}
+                    onToggleFavorite={toggleFavorite}
+                    isFavorite={favorites.includes(item.id)}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
           <div className="h-24" />
         </div>
+
+        {/* Cart Summary Footer */}
+        {cartItems.length > 0 && (
+          <motion.div
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">{cartItems.length} items in cart</p>
+                <p className="text-lg font-black text-blue-600">
+                  ₹{formatFullPrice(cartItems.reduce((acc, item) => acc + item.price * (item.quantity || 1), 0))}
+                </p>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onClose}
+                className="px-6 py-3 bg-yellow-400 text-blue-900 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2"
+              >
+                <ShoppingBag size={18} />
+                View Cart
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </>
   );
 });
+ExploreDrawer.displayName = "ExploreDrawer";
 
-// 2. Cart Drawer Component
-const CartDrawer = memo(({ onClose, items, onToggle, total, onExplore }) => (
-  <>
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-      className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
-    />
-    <motion.div
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
-      transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className="fixed bottom-0 left-0 right-0 max-h-[75vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
-    >
-      <div className="bg-white px-5 pt-3 pb-3 border-b border-gray-100">
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4" />
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="text-blue-600" size={20} />
-            <h2 className="text-lg font-black text-gray-900">Your Cart</h2>
-            <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-              {items.length} Items
-            </span>
-          </div>
-          <button onClick={onExplore} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
-            + Add More
-          </button>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white p-3 rounded-xl flex items-center justify-between shadow-sm border border-gray-100"
-          >
-            <div className="flex items-center gap-3">
-              <img src={item.img} className="w-12 h-12 rounded-lg object-cover" alt="" />
+// =============================================================================
+// ENHANCED CART DRAWER
+// =============================================================================
+const CartDrawer = memo(({ onClose, items, onToggle, onUpdateQuantity, total, onExplore, showToast }) => {
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const haptic = useHapticFeedback();
+
+  // Price calculations
+  const priceDetails = useMemo(() => {
+    const subtotal = items.reduce((acc, item) => acc + item.price * (item.quantity || 1), 0);
+    const originalTotal = items.reduce((acc, item) => acc + item.originalPrice * (item.quantity || 1), 0);
+    const vendorDiscount = originalTotal - subtotal;
+
+    let couponDiscount = 0;
+    if (appliedCoupon) {
+      if (appliedCoupon.type === "percent") {
+        couponDiscount = Math.min(
+          Math.round((subtotal * appliedCoupon.discount) / 100),
+          appliedCoupon.maxDiscount || Infinity
+        );
+      } else {
+        couponDiscount = appliedCoupon.discount;
+      }
+    }
+
+    const afterDiscount = subtotal - couponDiscount;
+    const platformFee = Math.round(subtotal * 0.02);
+    const taxes = Math.round(afterDiscount * 0.18);
+    const grandTotal = afterDiscount + taxes + platformFee;
+
+    return {
+      subtotal,
+      vendorDiscount,
+      couponDiscount,
+      platformFee,
+      taxes,
+      total: grandTotal,
+    };
+  }, [items, appliedCoupon]);
+
+  const handleRemoveItem = useCallback(
+    (item) => {
+      haptic("medium");
+      onToggle(item);
+      showToast("Item removed from cart", "info");
+    },
+    [onToggle, haptic, showToast]
+  );
+
+  const handleApplyCoupon = useCallback((coupon) => {
+    setAppliedCoupon(coupon);
+  }, []);
+
+  const handleRemoveCoupon = useCallback(() => {
+    haptic("light");
+    setAppliedCoupon(null);
+    showToast("Coupon removed", "info");
+  }, [haptic, showToast]);
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={SPRING_CONFIG.gentle}
+        className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+      >
+        {/* Header */}
+        <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 sticky top-0 z-10">
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3" />
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="text-blue-600" size={20} />
+              </div>
               <div>
-                <p className="text-sm font-bold text-gray-900">{item.name}</p>
-                <p className="text-xs text-gray-500">{item.category}</p>
+                <h2 className="text-lg font-black text-gray-900">Your Cart</h2>
+                <p className="text-xs text-gray-500">
+                  {items.length} {items.length === 1 ? "item" : "items"}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <p className="text-sm font-bold text-blue-700">₹{item.price.toLocaleString()}</p>
-              <button
-                onClick={() => onToggle(item)}
-                className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="bg-white p-5 pb-8 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Subtotal</span>
-            <span>₹{total.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t border-gray-100">
-            <span>Grand Total</span>
-            <span>₹{(total * 1.05).toLocaleString()}</span>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onExplore}
+              className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-xl flex items-center gap-1.5"
+            >
+              <Plus size={14} /> Add More
+            </motion.button>
           </div>
         </div>
-        <button className="w-full bg-[#E5B80B] text-blue-900 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-yellow-200 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
-          Proceed to Checkout <ArrowRight size={16} />
-        </button>
-      </div>
-    </motion.div>
-  </>
-));
 
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
+                <ShoppingBag size={40} className="text-gray-300" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Your cart is empty</h3>
+              <p className="text-sm text-gray-500 mb-4">Add vendors to start planning your event</p>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onExplore}
+                className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg"
+              >
+                Explore Vendors
+              </motion.button>
+            </div>
+          ) : (
+            <>
+              {/* Cart Items */}
+              <div className="mb-4">
+                <AnimatePresence mode="popLayout">
+                  {items.map((item) => (
+                    <CartItemCard
+                      key={item.id}
+                      item={item}
+                      onRemove={handleRemoveItem}
+                      onUpdateQuantity={onUpdateQuantity}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Coupon Section */}
+              <div className="mb-4">
+                <CouponSection
+                  appliedCoupon={appliedCoupon}
+                  onApplyCoupon={handleApplyCoupon}
+                  onRemoveCoupon={handleRemoveCoupon}
+                  subtotal={priceDetails.subtotal}
+                  showToast={showToast}
+                />
+              </div>
+
+              {/* Price Breakdown */}
+              <PriceBreakdown
+                subtotal={priceDetails.subtotal}
+                vendorDiscount={priceDetails.vendorDiscount}
+                couponDiscount={priceDetails.couponDiscount}
+                taxes={priceDetails.taxes}
+                platformFee={priceDetails.platformFee}
+                total={priceDetails.total}
+              />
+
+              {/* Trust Badges */}
+              <div className="mt-4 p-3 bg-white rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-around">
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <Shield size={14} className="text-green-500" />
+                    <span className="text-[10px] font-medium">Secure</span>
+                  </div>
+                  <div className="w-px h-4 bg-gray-200" />
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <BadgeCheck size={14} className="text-blue-500" />
+                    <span className="text-[10px] font-medium">Verified</span>
+                  </div>
+                  <div className="w-px h-4 bg-gray-200" />
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <Clock size={14} className="text-amber-500" />
+                    <span className="text-[10px] font-medium">24/7 Support</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-32" />
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        {items.length > 0 && (
+          <div className="bg-white p-4 pb-6 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase font-semibold">Grand Total</p>
+                <p className="text-2xl font-black text-blue-600">₹{formatFullPrice(priceDetails.total)}</p>
+              </div>
+              {(priceDetails.vendorDiscount > 0 || priceDetails.couponDiscount > 0) && (
+                <div className="px-3 py-1.5 bg-green-100 rounded-xl">
+                  <p className="text-xs font-bold text-green-700">
+                    Save ₹{formatFullPrice(priceDetails.vendorDiscount + priceDetails.couponDiscount)}
+                  </p>
+                </div>
+              )}
+            </div>
+            <Link
+              href="/m/user/checkout"
+              onClick={() => {
+                haptic("medium");
+                onClose();
+              }}
+              className="w-full bg-[#E5B80B] text-blue-900 py-4 rounded-2xl font-bold text-base shadow-lg shadow-yellow-200/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              <Lock size={18} />
+              Proceed to Checkout
+              <ArrowRight size={18} />
+            </Link>
+            <p className="text-center text-[10px] text-gray-400 mt-2 flex items-center justify-center gap-1">
+              <Lock size={10} /> Secured by 256-bit SSL encryption
+            </p>
+          </div>
+        )}
+      </motion.div>
+    </>
+  );
+});
+CartDrawer.displayName = "CartDrawer";
+
+// =============================================================================
+// MAIN NAVBAR COMPONENT
+// =============================================================================
 const MobileNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
   // --- OPTIMIZATION 1: useTransition for Instant Feedback ---
   const [isPending, startTransition] = useTransition();
-  const [pendingRoute, setPendingRoute] = useState(null); // Track which specific tab is loading
+  const [pendingRoute, setPendingRoute] = useState(null);
 
   const [isVisible, setIsVisible] = useState(true);
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [toast, setToast] = useState({ message: "", type: "success", isVisible: false });
+
+  const haptic = useHapticFeedback();
+
+  // Hide navbar on checkout page
+  if (pathname?.includes("/m/checkout") || pathname?.includes("/m/user/checkout")) return null;
+
+  // --- Toast Handlers ---
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type, isVisible: true });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast((prev) => ({ ...prev, isVisible: false }));
+  }, []);
 
   // --- OPTIMIZATION 2: Throttled Scroll ---
   const { scrollY } = useScroll();
@@ -214,7 +1282,6 @@ const MobileNavbar = () => {
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const diff = latest - lastScrollY.current;
-    // Only update state if diff is significant (prevents jitter)
     if (Math.abs(diff) > 10) {
       if (diff > 0 && latest > 100) setIsVisible(false);
       else if (diff < 0) setIsVisible(true);
@@ -239,44 +1306,73 @@ const MobileNavbar = () => {
   };
 
   // --- OPTIMIZATION 3: Instant Handler ---
-  const handleTabChange = (item) => {
-    if (item.type === "center") {
-      setActiveDrawer(cartItems.length === 0 ? "explore" : "cart");
-      return;
-    }
+  const handleTabChange = useCallback(
+    (item) => {
+      if (item.type === "center") {
+        haptic("medium");
+        setActiveDrawer(cartItems.length === 0 ? "explore" : "cart");
+        return;
+      }
 
-    if (pathname === item.route) return; // Don't reload same page
+      if (pathname === item.route) return;
 
-    setPendingRoute(item.route); // 1. Set Loading State IMMEDIATELY
+      haptic("light");
+      setPendingRoute(item.route);
 
-    startTransition(() => {
-      router.push(item.route);
-    });
-  };
+      startTransition(() => {
+        router.push(item.route);
+      });
+    },
+    [pathname, cartItems.length, router, haptic]
+  );
 
-  // Reset pending state when path changes (Navigation Complete)
+  // Reset pending state when path changes
   useEffect(() => {
     setPendingRoute(null);
   }, [pathname]);
 
-  const toggleCartItem = (item) => {
-    setCartItems((prev) => {
-      const exists = prev.find((i) => i.id === item.id);
-      if (exists) return prev.filter((i) => i.id !== item.id);
-      return [...prev, item];
-    });
-  };
+  const toggleCartItem = useCallback(
+    (item) => {
+      setCartItems((prev) => {
+        const exists = prev.find((i) => i.id === item.id);
+        if (exists) {
+          return prev.filter((i) => i.id !== item.id);
+        }
+        showToast(`${item.name} added to cart`, "success");
+        return [...prev, { ...item, quantity: 1 }];
+      });
+    },
+    [showToast]
+  );
 
-  const cartTotal = useMemo(() => cartItems.reduce((acc, item) => acc + item.price, 0), [cartItems]);
+  const updateItemQuantity = useCallback((id, quantity) => {
+    if (quantity < 1) return;
+    setCartItems((prev) => prev.map((item) => (item.id === id ? { ...item, quantity } : item)));
+  }, []);
 
+  const cartTotal = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.price * (item.quantity || 1), 0),
+    [cartItems]
+  );
+
+  // Lock body scroll when drawer is open
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.body.style.overflow = activeDrawer ? "hidden" : "unset";
     }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.style.overflow = "unset";
+      }
+    };
   }, [activeDrawer]);
 
   return (
     <>
+      {/* Toast Notification */}
+      <Toast {...toast} onClose={hideToast} />
+
+      {/* Main Navbar */}
       <motion.div
         animate={{ y: isVisible ? 0 : 120 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
@@ -335,7 +1431,6 @@ const MobileNavbar = () => {
             }
 
             const isActive = isTabActive(item.route);
-            // Check if THIS specific route is currently pending load
             const isLoading = isPending && pendingRoute === item.route;
 
             return (
@@ -354,7 +1449,6 @@ const MobileNavbar = () => {
 
                 <div className="relative p-1.3">
                   <motion.div animate={isActive ? { y: -3, scale: 1.1 } : { y: 0, scale: 1 }}>
-                    {/* SHOW LOADER IF PENDING, ELSE SHOW ICON */}
                     {isLoading ? (
                       <Loader2 size={24} className="text-blue-600 animate-spin" />
                     ) : (
@@ -385,17 +1479,26 @@ const MobileNavbar = () => {
         </div>
       </motion.div>
 
+      {/* Drawers */}
       <AnimatePresence>
         {activeDrawer === "explore" && (
-          <ExploreDrawer onClose={() => setActiveDrawer(null)} items={VENDOR_ITEMS} onAdd={toggleCartItem} />
+          <ExploreDrawer
+            onClose={() => setActiveDrawer(null)}
+            items={VENDOR_ITEMS}
+            onAdd={toggleCartItem}
+            cartItems={cartItems}
+            showToast={showToast}
+          />
         )}
         {activeDrawer === "cart" && (
           <CartDrawer
             onClose={() => setActiveDrawer(null)}
             items={cartItems}
             onToggle={toggleCartItem}
+            onUpdateQuantity={updateItemQuantity}
             total={cartTotal}
             onExplore={() => setActiveDrawer("explore")}
+            showToast={showToast}
           />
         )}
       </AnimatePresence>

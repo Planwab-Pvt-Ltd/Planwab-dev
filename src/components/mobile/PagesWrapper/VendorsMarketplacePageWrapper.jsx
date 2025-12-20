@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
+import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense } from "react";
+import { motion, AnimatePresence, useSpring } from "framer-motion";
 import {
   MapPin,
   Star,
@@ -21,6 +22,41 @@ import {
   Map as MapIcon,
   ArrowRightLeft,
   Tag,
+  Clock,
+  Phone,
+  Share2,
+  Bookmark,
+  RefreshCw,
+  ChevronDown,
+  Zap,
+  Award,
+  Calendar,
+  Info,
+  Eye,
+  MessageCircle,
+  Navigation,
+  Filter,
+  Grid3X3,
+  ArrowUp,
+  Copy,
+  Check,
+  Percent,
+  Gift,
+  ThumbsUp,
+  Camera,
+  Music,
+  Utensils,
+  Scissors,
+  Crown,
+  Building,
+  Palette,
+  MoreHorizontal,
+  ExternalLink,
+  AlertCircle,
+  BarChart3,
+  Trophy,
+  Flame,
+  BadgeCheck,
 } from "lucide-react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
@@ -28,837 +64,2463 @@ import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+const COLORS = {
+  primary: "#2563eb",
+  primaryLight: "#3b82f6",
+  primaryDark: "#1d4ed8",
+  secondary: "#f59e0b",
+  secondaryLight: "#fbbf24",
+  success: "#10b981",
+  successLight: "#34d399",
+  error: "#ef4444",
+  warning: "#f59e0b",
+  info: "#06b6d4",
+  gray: {
+    50: "#f9fafb",
+    100: "#f3f4f6",
+    200: "#e5e7eb",
+    300: "#d1d5db",
+    400: "#9ca3af",
+    500: "#6b7280",
+    600: "#4b5563",
+    700: "#374151",
+    800: "#1f2937",
+    900: "#111827",
+  },
+};
+
+const SPRING_CONFIG = {
+  stiff: { type: "spring", stiffness: 400, damping: 30 },
+  gentle: { type: "spring", stiffness: 200, damping: 25 },
+  bouncy: { type: "spring", stiffness: 300, damping: 20 },
+  smooth: { type: "spring", stiffness: 150, damping: 20 },
+};
+
+const TRANSITION = {
+  fast: { duration: 0.15 },
+  normal: { duration: 0.25 },
+  slow: { duration: 0.4 },
+  spring: SPRING_CONFIG.gentle,
+};
+
+const VENDOR_CATEGORIES = [
+  { id: "venues", label: "Venues", icon: Building, emoji: "🏛️", color: "#8b5cf6" },
+  { id: "photographers", label: "Photo", icon: Camera, emoji: "📷", color: "#ec4899" },
+  { id: "makeup", label: "Makeup", icon: Palette, emoji: "💄", color: "#f43f5e" },
+  { id: "planners", label: "Planners", icon: Calendar, emoji: "📋", color: "#06b6d4" },
+  { id: "catering", label: "Catering", icon: Utensils, emoji: "🍽️", color: "#f97316" },
+  { id: "clothes", label: "Clothes", icon: Crown, emoji: "👗", color: "#a855f7" },
+  { id: "mehendi", label: "Mehendi", icon: Scissors, emoji: "🖐️", color: "#84cc16" },
+  { id: "djs", label: "DJs", icon: Music, emoji: "🎵", color: "#3b82f6" },
+];
+
+const SORT_OPTIONS = [
+  { id: "rating", label: "Top Rated", icon: Star, description: "Highest rated first" },
+  { id: "price-asc", label: "Budget", icon: DollarSign, description: "Lowest price first" },
+  { id: "price-desc", label: "Premium", icon: Crown, description: "Highest price first" },
+  { id: "bookings", label: "Popular", icon: TrendingUp, description: "Most booked" },
+  { id: "newest", label: "New", icon: Zap, description: "Recently added" },
+  { id: "reviews", label: "Reviews", icon: MessageCircle, description: "Most reviewed" },
+];
+
+const COMPARE_FEATURES = [
+  { key: "rating", label: "Rating", icon: Star, format: (v) => `${(v || 0).toFixed(1)}/5`, higher: true },
+  { key: "price", label: "Price", icon: DollarSign, format: (v) => `₹${formatPrice(v || 0)}`, higher: false },
+  { key: "reviews", label: "Reviews", icon: MessageCircle, format: (v) => v || 0, higher: true },
+  { key: "bookings", label: "Bookings", icon: TrendingUp, format: (v) => v || 0, higher: true },
+  { key: "capacity", label: "Capacity", icon: Users, format: (v) => (v ? `${v}` : "-"), higher: true },
+  { key: "response", label: "Response", icon: Clock, format: (v) => v || "Fast", higher: null },
+];
+
+const CITY_COORDS = {
+  Mumbai: { lat: 19.076, lng: 72.8777 },
+  Delhi: { lat: 28.6139, lng: 77.209 },
+  Bangalore: { lat: 12.9716, lng: 77.5946 },
+  Chennai: { lat: 13.0827, lng: 80.2707 },
+  Hyderabad: { lat: 17.385, lng: 78.4867 },
+  Pune: { lat: 18.5204, lng: 73.8567 },
+  Kolkata: { lat: 22.5726, lng: 88.3639 },
+  Jaipur: { lat: 26.9124, lng: 75.7873 },
+  Ahmedabad: { lat: 23.0225, lng: 72.5714 },
+  Goa: { lat: 15.2993, lng: 74.124 },
+};
+
+const DEFAULT_CENTER = CITY_COORDS.Mumbai;
+const ITEMS_PER_PAGE = 12;
+const MAX_COMPARE_ITEMS = 3;
+const DEBOUNCE_DELAY = 350;
+const MAX_RECENT_SEARCHES = 5;
+
+// =============================================================================
+// CUSTOM HOOKS
+// =============================================================================
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
 }
 
-const PromoCarousel = ({ colorPrimary, colorSecondary }) => {
-  return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between px-4 mb-3">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Tag size={16} style={{ color: colorPrimary }} />
-          Exclusive Deals
-        </h3>
-        <span className="text-xs font-medium text-gray-500">View All</span>
-      </div>
-      <div
-        className="flex gap-4 overflow-x-auto px-4 pb-4 snap-x"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="min-w-[280px] h-36 rounded-2xl relative overflow-hidden snap-start shadow-md border border-gray-100 dark:border-gray-800"
-          >
-            <div
-              className="absolute inset-0 opacity-90"
-              style={{ background: `linear-gradient(to right, ${colorPrimary}, ${colorSecondary})` }}
-            />
-            <div className="absolute inset-0 p-5 flex flex-col justify-center text-white">
-              <span className="px-2 py-1 bg-white/20 rounded-lg text-[10px] font-bold w-fit mb-2 backdrop-blur-md">
-                LIMITED TIME
-              </span>
-              <h4 className="font-bold text-lg leading-tight">20% Off on Venue Booking</h4>
-              <p className="text-xs opacity-90 mt-1">Use Code: PLANWAB20</p>
-            </div>
-            <div className="absolute right-[-20px] bottom-[-20px] w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(initialValue);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-const CardSkeleton = ({ viewMode }) => (
-  <div
-    className={`bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 mb-4 ${
-      viewMode === "grid" ? "h-72" : "h-96"
-    }`}
-  >
-    <div className="relative h-2/3 bg-gray-200 dark:bg-gray-800 animate-pulse" />
-    <div className="p-4 space-y-2">
-      <div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-      <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-      <div className="flex justify-between pt-2">
-        <div className="h-8 w-24 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
-      </div>
-    </div>
-  </div>
-);
-
-const PaginationControls = ({ currentPage, totalPages, totalVendors, onPageChange }) => {
-  if (totalPages === undefined || totalPages <= 1) return null;
-  return (
-    <div className="flex items-center justify-center gap-4 py-8 pb-20">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 disabled:opacity-50 active:scale-95 transition-all text-gray-700 dark:text-gray-200"
-      >
-        <ChevronLeft size={20} />
-      </button>
-      <div className="flex items-center gap-1 px-5 py-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <span className="text-sm font-bold" style={{ color: "var(--primary-color)" }}>
-          {currentPage}
-        </span>
-        <span className="text-sm font-medium text-gray-400">/</span>
-        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{totalPages}</span>
-      </div>
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 disabled:opacity-50 active:scale-95 transition-all text-gray-700 dark:text-gray-200"
-      >
-        <ChevronRight size={20} />
-      </button>
-    </div>
-  );
-};
-
-const UnifiedCard = ({
-  vendor,
-  onFavorite,
-  isFavorite,
-  viewMode,
-  onCompare,
-  isComparing,
-  isSelectedForCompare,
-  colorPrimary = "#2563eb",
-}) => {
-  // 1. TUPLE STATE: Tracks [currentIndex, direction] together
-  // This is critical for Framer Motion to know which way to animate
-  const [[page, direction], setPage] = useState([0, 0]);
-
-  const [addedToCart, setAddedToCart] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Data Logic
-  const images = useMemo(() => (vendor.images || []).filter((img) => img), [vendor.images]);
-  const displayImages = useMemo(() => {
-    if (images.length > 0) return images;
-    if (vendor.defaultImage) return [vendor.defaultImage];
-    return ["/placeholder.jpg"];
-  }, [images, vendor.defaultImage]);
-
-  // Derived Index (handles infinite loop wrapping safely)
-  const imageIndex = ((page % displayImages.length) + displayImages.length) % displayImages.length;
-
-  const hasMultipleImages = displayImages.length > 1;
-  const isGrid = viewMode === "grid";
-  const price = vendor.perDayPrice?.min || vendor.basePrice || vendor.price?.min || 0;
-  const displayPrice = Number.isNaN(price) ? "N/A" : price.toLocaleString("en-IN");
-
-  // Navigation Handler
-  const paginate = (newDirection) => {
-    if (!hasMultipleImages) return;
-    setPage([page + newDirection, newDirection]);
-  };
-
-  // Drag End Logic
-  const onDragEnd = (e, { offset, velocity }) => {
-    setIsDragging(false);
-    const swipe = Math.abs(offset.x) * velocity.x;
-    const swipeConfidenceThreshold = 10000;
-
-    if (swipe < -swipeConfidenceThreshold) {
-      paginate(1); // Swipe Left -> Next
-    } else if (swipe > swipeConfidenceThreshold) {
-      paginate(-1); // Swipe Right -> Prev
+  useEffect(() => {
+    setIsHydrated(true);
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) setStoredValue(JSON.parse(item));
+    } catch (error) {
+      console.warn(`Error reading localStorage key "${key}":`, error);
     }
-  };
+  }, [key]);
 
-  const handleAddToCart = (e) => {
-    e.stopPropagation();
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  };
-
-  // 2. SMOOTH VARIANTS
-  // Logic:
-  // If direction > 0 (Next): Enter from Right (100%), Exit to Left (-100%)
-  // If direction < 0 (Prev): Enter from Left (-100%), Exit to Right (100%)
-  const slideVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? "100%" : "-100%",
-      opacity: 1,
-      zIndex: 0, // Prepare to be visible
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
+  const setValue = useCallback(
+    (value) => {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      try {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      } catch (error) {
+        console.warn(`Error setting localStorage key "${key}":`, error);
+      }
     },
-    exit: (direction) => ({
-      zIndex: 0,
-      x: direction < 0 ? "100%" : "-100%", // Exit opposite to enter
-      opacity: 1, // Keep opacity to avoid fading while sliding
-    }),
-  };
+    [key, storedValue]
+  );
+
+  return [storedValue, setValue, isHydrated];
+}
+
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [hasBeenInView, setHasBeenInView] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasBeenInView) setHasBeenInView(true);
+      },
+      { threshold: 0.1, ...options }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [options, hasBeenInView]);
+
+  return { ref, hasBeenInView };
+}
+
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10], error: [50, 30, 50] };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
+
+function useScrollPosition() {
+  const [scrollY, setScrollY] = useState(0);
+  const [scrollDirection, setScrollDirection] = useState("up");
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setScrollDirection(currentScrollY > lastScrollY.current ? "down" : "up");
+      lastScrollY.current = currentScrollY;
+      setScrollY(currentScrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return { scrollY, scrollDirection };
+}
+
+function useNetworkStatus() {
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+  return isOnline;
+}
+
+function useDoubleTap(callback, delay = 300) {
+  const lastTap = useRef(0);
+  return useCallback(
+    (event) => {
+      const now = Date.now();
+      if (now - lastTap.current < delay) callback(event);
+      lastTap.current = now;
+    },
+    [callback, delay]
+  );
+}
+
+function usePullToRefresh(onRefresh, threshold = 80) {
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const startY = useRef(0);
+  const isPulling = useRef(false);
+
+  const handleTouchStart = useCallback((e) => {
+    if (window.scrollY === 0) {
+      startY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (!isPulling.current || isRefreshing) return;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY.current;
+      if (diff > 0) setPullDistance(Math.min(diff * 0.5, threshold * 1.5));
+    },
+    [isRefreshing, threshold]
+  );
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullDistance >= threshold && !isRefreshing) {
+      setIsRefreshing(true);
+      await onRefresh();
+      setIsRefreshing(false);
+    }
+    setPullDistance(0);
+    isPulling.current = false;
+  }, [pullDistance, threshold, isRefreshing, onRefresh]);
+
+  useEffect(() => {
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+
+  return { pullDistance, isRefreshing };
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+const formatPrice = (price) => {
+  if (isNaN(price) || price === 0) return "N/A";
+  if (price >= 100000) return `${(price / 100000).toFixed(1)}L`;
+  if (price >= 1000) return `${(price / 1000).toFixed(0)}K`;
+  return price.toLocaleString("en-IN");
+};
+
+const formatFullPrice = (price) => {
+  if (isNaN(price) || price === 0) return "N/A";
+  return price.toLocaleString("en-IN");
+};
+
+const getVendorPrice = (vendor) => {
+  return (
+    vendor.normalizedPrice ||
+    vendor.perDayPrice?.min ||
+    vendor.basePrice ||
+    vendor.price?.min ||
+    vendor.startingPrice ||
+    0
+  );
+};
+
+const truncateText = (text, maxLength) => {
+  if (!text || text.length <= maxLength) return text || "";
+  return `${text.substring(0, maxLength)}...`;
+};
+
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const getCompareVal = (v, key) => {
+  switch (key) {
+    case "rating":
+      return v.rating || v.averageRating || 0;
+    case "price":
+      return getVendorPrice(v);
+    case "reviews":
+      return v.reviews || v.totalReviews || v.reviewCount || 0;
+    case "bookings":
+      return v.bookings || v.totalBookings || 0;
+    case "capacity":
+      return v.seating?.max || v.capacity || null;
+    case "response":
+      return v.responseTime || null;
+    default:
+      return null;
+  }
+};
+
+const getBest = (vendors, key, higher) => {
+  const vals = vendors.map((v) => getCompareVal(v, key)).filter((x) => typeof x === "number");
+  if (!vals.length) return null;
+  return higher ? Math.max(...vals) : Math.min(...vals);
+};
+
+// =============================================================================
+// LAZY LOADED COMPONENTS
+// =============================================================================
+const MapView = dynamic(() => import("@/components/mobile/MapContainer"), {
+  ssr: false,
+  loading: () => <MapLoadingPlaceholder />,
+});
+
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+const OfflineBanner = memo(() => {
+  const isOnline = useNetworkStatus();
+  return (
+    <AnimatePresence>
+      {!isOnline && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium"
+        >
+          <AlertCircle size={16} />
+          <span>You're offline. Some features may be limited.</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+});
+OfflineBanner.displayName = "OfflineBanner";
+
+const PullToRefreshUI = memo(({ pullDistance, isRefreshing, threshold = 80 }) => {
+  const progress = Math.min(pullDistance / threshold, 1);
+  const rotation = useSpring(progress * 360, { stiffness: 300, damping: 30 });
+
+  if (pullDistance === 0 && !isRefreshing) return null;
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
-      className={`relative group bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 transition-all duration-300 ${
-        isSelectedForCompare ? `ring-2 ring-offset-2` : ""
-      } ${isGrid ? "mb-0" : "mb-6"}`}
-      style={isSelectedForCompare ? { borderColor: colorPrimary, ringColor: colorPrimary } : {}}
+      style={{ y: pullDistance }}
+      className="fixed top-0 left-0 right-0 flex justify-center z-50 pointer-events-none"
     >
-      {/* Compare Overlay */}
-      {isComparing && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onCompare(vendor);
-          }}
-          className="absolute inset-0 z-40 bg-black/10 backdrop-blur-[1px] flex items-center justify-center cursor-pointer group-hover:bg-black/20 transition-colors"
+      <motion.div
+        animate={{ scale: isRefreshing ? 1 : 0.8 + progress * 0.2, opacity: Math.min(progress * 2, 1) }}
+        className="mt-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center"
+      >
+        <motion.div
+          animate={{ rotate: isRefreshing ? 360 : rotation.get() }}
+          transition={isRefreshing ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}
         >
-          <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: isSelectedForCompare ? 1.1 : 1 }}
-            className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center shadow-lg ${
-              isSelectedForCompare ? "" : "bg-gray-400/50"
-            }`}
-            style={isSelectedForCompare ? { backgroundColor: colorPrimary } : {}}
-          >
-            {isSelectedForCompare && <CheckCircle size={20} className="text-white" />}
-          </motion.div>
-        </div>
+          <RefreshCw size={24} style={{ color: COLORS.primary }} className={isRefreshing ? "animate-spin" : ""} />
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+});
+PullToRefreshUI.displayName = "PullToRefreshUI";
+
+const ScrollToTopButton = memo(() => {
+  const { scrollY } = useScrollPosition();
+  const haptic = useHapticFeedback();
+  const isVisible = scrollY > 400;
+
+  const scrollToTop = useCallback(() => {
+    haptic("light");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [haptic]);
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={scrollToTop}
+          className="fixed bottom-32 right-4 z-40 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200"
+          style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}
+        >
+          <ArrowUp size={20} style={{ color: COLORS.primary }} />
+        </motion.button>
       )}
+    </AnimatePresence>
+  );
+});
+ScrollToTopButton.displayName = "ScrollToTopButton";
 
-      {/* Image Carousel Area */}
-      <div className={`relative bg-gray-100 dark:bg-gray-800 overflow-hidden ${isGrid ? "h-40" : "h-64"}`}>
-        <AnimatePresence initial={false} custom={direction}>
-          <motion.img
-            key={page} // Using 'page' ensures key uniqueness on every slide
-            src={displayImages[imageIndex]}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={onDragEnd}
-            className="absolute inset-0 w-full h-full object-cover touch-pan-y"
-            alt={vendor.name}
-            loading="lazy"
-          />
-        </AnimatePresence>
+const MapLoadingPlaceholder = memo(() => (
+  <div className="h-[70vh] bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex flex-col items-center justify-center gap-4 border border-blue-200">
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+      <MapIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-400" size={24} />
+    </div>
+    <div className="text-center">
+      <p className="text-blue-600 font-semibold">Loading Map</p>
+      <p className="text-blue-400 text-sm">Please wait...</p>
+    </div>
+  </div>
+));
+MapLoadingPlaceholder.displayName = "MapLoadingPlaceholder";
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/5 pointer-events-none" />
+const Toast = memo(({ message, type = "success", isVisible, onClose }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(onClose, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
 
-        {/* Top Badges & Actions */}
-        <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-20 pointer-events-none">
-          {vendor.tags?.includes("Popular") ? (
-            <div className="px-2.5 py-1 bg-yellow-400 text-black text-[10px] font-bold uppercase tracking-wide rounded-md shadow-lg flex items-center gap-1 backdrop-blur-md">
-              <Sparkles size={10} fill="black" /> Popular
-            </div>
-          ) : (
-            <div />
-          )}
+  const icons = { success: CheckCircle, error: AlertCircle, info: Info, warning: AlertCircle };
+  const Icon = icons[type];
+  const colors = { success: "bg-green-500", error: "bg-red-500", info: "bg-blue-500", warning: "bg-amber-500" };
 
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onFavorite(vendor._id);
-            }}
-            className="pointer-events-auto p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full transition-colors"
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ y: 100, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 100, opacity: 0, scale: 0.9 }}
+          className={`fixed bottom-28 left-4 right-4 z-[300] ${colors[type]} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3`}
+        >
+          <Icon size={20} />
+          <span className="flex-1 font-medium text-sm">{message}</span>
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+            <X size={16} />
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+});
+Toast.displayName = "Toast";
+
+const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [copiedCode, setCopiedCode] = useState(null);
+  const haptic = useHapticFeedback();
+  const scrollRef = useRef(null);
+  const autoScrollRef = useRef(null);
+
+  const promos = useMemo(
+    () => [
+      {
+        id: 1,
+        badge: "LIMITED TIME",
+        title: "20% Off Venue Booking",
+        subtitle: "Book your dream venue today",
+        code: "PLANWAB20",
+        gradient: `linear-gradient(135deg, ${colorPrimary}, #1e40af)`,
+        icon: Building,
+        validUntil: "Dec 31",
+      },
+      {
+        id: 2,
+        badge: "EXCLUSIVE",
+        title: "Free Pre-Wedding Shoot",
+        subtitle: "With any photography package",
+        code: "FREESHOOT",
+        gradient: "linear-gradient(135deg, #ec4899, #be185d)",
+        icon: Camera,
+        validUntil: "Jan 15",
+      },
+      {
+        id: 3,
+        badge: "FLASH SALE",
+        title: "₹5000 Off Catering",
+        subtitle: "Min. order ₹50,000",
+        code: "FEAST5K",
+        gradient: `linear-gradient(135deg, ${colorSecondary}, #b45309)`,
+        icon: Utensils,
+        validUntil: "Dec 25",
+      },
+      {
+        id: 4,
+        badge: "NEW USER",
+        title: "First Booking Bonus",
+        subtitle: "Extra 10% cashback",
+        code: "WELCOME10",
+        gradient: "linear-gradient(135deg, #10b981, #047857)",
+        icon: Gift,
+        validUntil: "Ongoing",
+      },
+    ],
+    [colorPrimary, colorSecondary]
+  );
+
+  const handleCopyCode = useCallback(
+    async (code, e) => {
+      e.stopPropagation();
+      haptic("success");
+      const success = await copyToClipboard(code);
+      if (success) {
+        setCopiedCode(code);
+        setTimeout(() => setCopiedCode(null), 2000);
+      }
+    },
+    [haptic]
+  );
+
+  const scrollToIndex = useCallback((index) => {
+    if (scrollRef.current) {
+      const cardWidth = scrollRef.current.offsetWidth * 0.82 + 12;
+      scrollRef.current.scrollTo({ left: index * cardWidth, behavior: "smooth" });
+    }
+  }, []);
+
+  const handleScroll = useCallback((e) => {
+    const scrollLeft = e.target.scrollLeft;
+    const cardWidth = e.target.offsetWidth * 0.82 + 12;
+    const newIndex = Math.round(scrollLeft / cardWidth);
+    setActiveIndex(Math.min(newIndex, 3));
+  }, []);
+
+  useEffect(() => {
+    autoScrollRef.current = setInterval(() => {
+      const nextIndex = (activeIndex + 1) % promos.length;
+      scrollToIndex(nextIndex);
+    }, 4000);
+    return () => clearInterval(autoScrollRef.current);
+  }, [activeIndex, promos.length, scrollToIndex]);
+
+  return (
+    <section className="mb-6" aria-label="Promotional offers">
+      <div className="flex items-center justify-between px-1 mb-3">
+        <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            className="w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: `${colorPrimary}15` }}
           >
-            <Heart size={18} className={isFavorite ? "fill-rose-500 text-rose-500" : "text-white"} strokeWidth={2.5} />
-          </motion.button>
-        </div>
+            <Tag size={14} style={{ color: colorPrimary }} />
+          </motion.div>
+          Exclusive Deals
+        </h2>
+        <button
+          className="text-xs font-semibold flex items-center gap-1 active:opacity-70"
+          style={{ color: colorPrimary }}
+        >
+          View All
+          <ChevronRight size={14} />
+        </button>
+      </div>
 
-        {/* Image Indicators (Dots) */}
-        {!isGrid && hasMultipleImages && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 pointer-events-none">
-            {displayImages.map((_, idx) => (
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {promos.map((promo, index) => {
+          const IconComponent = promo.icon;
+          return (
+            <motion.div
+              key={promo.id}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 25 }}
+              whileTap={{ scale: 0.98 }}
+              className="min-w-[82%] h-36 rounded-2xl relative overflow-hidden snap-start cursor-pointer shadow-lg"
+              style={{ background: promo.gradient }}
+            >
               <motion.div
-                key={idx}
-                animate={{
-                  width: idx === imageIndex ? 16 : 6,
-                  opacity: idx === imageIndex ? 1 : 0.5,
-                  backgroundColor: idx === imageIndex ? "#ffffff" : "#ffffff",
-                }}
-                className="h-1.5 rounded-full shadow-sm"
+                className="absolute right-[-40px] bottom-[-40px] w-40 h-40 bg-white/10 rounded-full"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               />
-            ))}
-          </div>
-        )}
+              <motion.div
+                className="absolute left-[-30px] top-[-30px] w-32 h-32 bg-white/5 rounded-full"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              />
+              <motion.div
+                className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10"
+                animate={{ rotate: [0, 5, -5, 0], y: [0, -5, 5, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <IconComponent size={80} strokeWidth={1} />
+              </motion.div>
 
-        {/* Manual Navigation Arrows */}
-        {!isGrid && hasMultipleImages && (
+              <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
+                <div className="flex items-start justify-between">
+                  <motion.span
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: index * 0.1 + 0.2 }}
+                    className="px-2 py-1 bg-white/25 backdrop-blur-sm rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                  >
+                    {promo.badge}
+                  </motion.span>
+                  <span className="text-[10px] opacity-80 flex items-center gap-1">
+                    <Clock size={10} />
+                    Until {promo.validUntil}
+                  </span>
+                </div>
+
+                <div>
+                  <motion.h3
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: index * 0.1 + 0.3 }}
+                    className="font-bold text-lg leading-tight mb-0.5"
+                  >
+                    {promo.title}
+                  </motion.h3>
+                  <motion.p
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: index * 0.1 + 0.4 }}
+                    className="text-xs opacity-90 mb-2"
+                  >
+                    {promo.subtitle}
+                  </motion.p>
+
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={(e) => handleCopyCode(promo.code, e)}
+                    className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-white/30"
+                  >
+                    <span className="font-mono tracking-wider">{promo.code}</span>
+                    <motion.div
+                      animate={copiedCode === promo.code ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {copiedCode === promo.code ? (
+                        <Check size={12} className="text-green-300" />
+                      ) : (
+                        <Copy size={12} className="opacity-70" />
+                      )}
+                    </motion.div>
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-center gap-1.5 mt-1">
+        {promos.map((_, idx) => (
+          <motion.button
+            key={idx}
+            onClick={() => scrollToIndex(idx)}
+            animate={{
+              width: idx === activeIndex ? 16 : 6,
+              backgroundColor: idx === activeIndex ? colorPrimary : COLORS.gray[300],
+            }}
+            transition={{ duration: 0.3 }}
+            className="h-1.5 rounded-full"
+          />
+        ))}
+      </div>
+    </section>
+  );
+});
+PromoCarousel.displayName = "PromoCarousel";
+
+const CategoryChips = memo(({ selectedCategories, onCategoryChange, colorPrimary }) => {
+  const haptic = useHapticFeedback();
+
+  return (
+    <div className="mb-4">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: "none" }}>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            haptic("light");
+            if (selectedCategories.length > 0) onCategoryChange("__clear__");
+          }}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+            selectedCategories.length === 0
+              ? "text-white border-transparent shadow-md"
+              : "bg-white text-gray-600 border-gray-200"
+          }`}
+          style={selectedCategories.length === 0 ? { backgroundColor: colorPrimary } : {}}
+        >
+          <Grid3X3 size={14} />
+          <span>All</span>
+        </motion.button>
+
+        {VENDOR_CATEGORIES.map((cat) => {
+          const isSelected = selectedCategories.includes(cat.id);
+          const IconComponent = cat.icon;
+          return (
+            <motion.button
+              key={cat.id}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic("light");
+                onCategoryChange(cat.id);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                isSelected ? "text-white border-transparent shadow-md" : "bg-white text-gray-600 border-gray-200"
+              }`}
+              style={isSelected ? { backgroundColor: cat.color } : {}}
+            >
+              <IconComponent size={14} />
+              <span>{cat.label}</span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+CategoryChips.displayName = "CategoryChips";
+
+const RecentSearches = memo(({ searches, onSelect, onClear, colorPrimary }) => {
+  const haptic = useHapticFeedback();
+  if (!searches || searches.length === 0) return null;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="px-4 pb-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-gray-500">Recent Searches</span>
+        <button
+          onClick={() => {
+            haptic("light");
+            onClear();
+          }}
+          className="text-xs text-gray-400 active:text-gray-600"
+        >
+          Clear
+        </button>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {searches.slice(0, MAX_RECENT_SEARCHES).map((search, idx) => (
+          <motion.button
+            key={idx}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic("light");
+              onSelect(search);
+            }}
+            className="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-medium text-gray-600 flex items-center gap-1.5"
+          >
+            <Clock size={12} className="text-gray-400" />
+            {search}
+          </motion.button>
+        ))}
+      </div>
+    </motion.div>
+  );
+});
+RecentSearches.displayName = "RecentSearches";
+
+const CardSkeleton = memo(({ viewMode }) => {
+  const isGrid = viewMode === "grid";
+  return (
+    <div className={`bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 ${isGrid ? "h-64" : ""}`}>
+      <div className={`bg-gray-200 animate-pulse ${isGrid ? "h-32" : "h-48"}`} />
+      <div className={`p-3 space-y-2 ${isGrid ? "" : "p-4 space-y-3"}`}>
+        <div className="flex justify-between">
+          <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
+        {!isGrid && (
           <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                paginate(-1);
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-md z-20 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                paginate(1);
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-md z-20 opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
-            >
-              <ChevronRight size={20} />
-            </button>
+            <div className="flex gap-2 pt-1">
+              <div className="h-6 w-20 bg-gray-200 rounded-md animate-pulse" />
+              <div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse" />
+            </div>
+            <div className="flex justify-between items-center pt-2">
+              <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="h-10 w-24 bg-gray-200 rounded-xl animate-pulse" />
+            </div>
           </>
         )}
       </div>
+    </div>
+  );
+});
+CardSkeleton.displayName = "CardSkeleton";
 
-      {/* Content Body */}
-      <Link href={`/m/vendor/${vendor?.category}/${vendor?._id}`} className={`${isGrid ? "p-3" : "p-5"}`}>
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex-1 min-w-0 pr-2">
-            <h3
-              className={`font-bold text-gray-900 dark:text-white leading-tight truncate ${
-                isGrid ? "text-sm mb-0.5" : "text-lg mb-1"
-              }`}
+const ImageCarousel = memo(({ images, vendorName, isGrid, isFavorite, onFavorite, tags, colorPrimary, rating }) => {
+  const [[page, direction], setPage] = useState([0, 0]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [showHeart, setShowHeart] = useState(false);
+  const haptic = useHapticFeedback();
+
+  const imageIndex = ((page % images.length) + images.length) % images.length;
+  const hasMultipleImages = images.length > 1;
+
+  const paginate = useCallback(
+    (newDirection) => {
+      if (!hasMultipleImages) return;
+      haptic("light");
+      setPage([page + newDirection, newDirection]);
+    },
+    [hasMultipleImages, page, haptic]
+  );
+
+  const handleDragEnd = useCallback(
+    (_, { offset, velocity }) => {
+      const swipe = Math.abs(offset.x) * velocity.x;
+      if (swipe < -3000) paginate(1);
+      else if (swipe > 3000) paginate(-1);
+    },
+    [paginate]
+  );
+
+  const handleDoubleTap = useDoubleTap(() => {
+    haptic("success");
+    setShowHeart(true);
+    setTimeout(() => setShowHeart(false), 800);
+    if (!isFavorite) onFavorite();
+  });
+
+  const slideVariants = {
+    enter: (d) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0.5 }),
+    center: { x: 0, opacity: 1, zIndex: 1 },
+    exit: (d) => ({ x: d < 0 ? "100%" : "-100%", opacity: 0.5, zIndex: 0 }),
+  };
+
+  return (
+    <div className={`relative bg-gray-100 overflow-hidden ${isGrid ? "h-32" : "h-48"}`} onClick={handleDoubleTap}>
+      <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        <motion.img
+          key={page}
+          src={images[imageIndex]}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={SPRING_CONFIG.stiff}
+          drag={hasMultipleImages ? "x" : false}
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.5}
+          onDragEnd={handleDragEnd}
+          onLoad={() => setIsLoaded(true)}
+          className={`absolute inset-0 w-full h-full object-cover select-none touch-pan-y ${
+            isLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          alt={vendorName}
+          loading="lazy"
+          decoding="async"
+        />
+      </AnimatePresence>
+
+      {!isLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+
+      <AnimatePresence>
+        {showHeart && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+          >
+            <Heart size={60} className="fill-white text-white drop-shadow-lg" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+      <div className="absolute top-2 left-2 right-2 flex justify-between items-start z-10">
+        <div className="flex gap-1.5">
+          {tags?.includes("Popular") && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1"
             >
-              {vendor.name}
-            </h3>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <MapPin size={10} />
-              <span className="truncate">{vendor.address?.city || "City"}</span>
-            </div>
-          </div>
-          <div className="flex flex-col items-end shrink-0">
-            <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 px-1.5 py-0.5 rounded-md">
-              <Star size={10} className="text-green-600 fill-green-600" />
-              <span className="text-xs font-bold text-green-700 dark:text-green-400">{vendor.rating || 4.5}</span>
-            </div>
-            {!isGrid && <span className="text-[10px] text-gray-400 mt-1">{vendor.reviews || 0} reviews</span>}
-          </div>
+              <Sparkles size={10} /> Popular
+            </motion.div>
+          )}
+          {tags?.includes("Verified") && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="px-2 py-1 bg-blue-400 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1"
+            >
+              <CheckCircle size={10} /> Verified
+            </motion.div>
+          )}
         </div>
 
-        {/* Stats Row */}
-        {!isGrid && (
-          <div className="flex items-center gap-2 my-3 overflow-x-auto no-scrollbar">
-            {vendor.seating?.max && (
-              <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-md text-[10px] font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <Users size={12} /> {vendor.seating.max} Capacity
-              </div>
-            )}
-            <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-md text-[10px] font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1">
-              <TrendingUp size={12} /> {vendor.bookings || 0} Booked
-            </div>
+        <motion.button
+          whileTap={{ scale: 0.8 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            haptic("medium");
+            onFavorite();
+          }}
+          className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
+        >
+          <Heart
+            size={16}
+            className={`transition-colors ${isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"}`}
+            strokeWidth={2}
+          />
+        </motion.button>
+      </div>
+
+      <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center z-10">
+        <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
+          <Star size={12} className="fill-amber-400 text-amber-400" />
+          <span className="text-xs font-bold text-gray-800">{rating?.toFixed(1) || "4.5"}</span>
+        </div>
+
+        {hasMultipleImages && !isGrid && (
+          <div className="flex gap-1">
+            {images.slice(0, 5).map((_, idx) => (
+              <motion.div
+                key={idx}
+                animate={{ width: idx === imageIndex ? 12 : 5, opacity: idx === imageIndex ? 1 : 0.5 }}
+                className="h-1.5 bg-white rounded-full shadow-sm"
+              />
+            ))}
+            {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
           </div>
         )}
+      </div>
 
-        {/* Footer Actions */}
-        <div
-          className={`flex items-center justify-between ${
-            isGrid ? "mt-2" : "mt-4 pt-3 border-t border-gray-100 dark:border-gray-800"
-          }`}
-        >
-          <div>
-            {!isGrid && (
-              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Starting at</p>
-            )}
-            <p className={`${isGrid ? "text-sm" : "text-lg"} font-bold`} style={{ color: colorPrimary }}>
-              ₹{displayPrice}
-            </p>
-          </div>
-
+      {!isGrid && hasMultipleImages && (
+        <>
           <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleAddToCart}
-            className={`
-              relative overflow-hidden flex items-center justify-center gap-2 
-              ${isGrid ? "p-2 rounded-lg" : "px-4 py-2 rounded-xl"} 
-              ${addedToCart ? "bg-green-600 text-white" : "bg-black dark:bg-white text-white dark:text-black"}
-              font-bold text-xs shadow-md transition-colors
-            `}
-          >
-            <AnimatePresence mode="wait">
-              {addedToCart ? (
-                <motion.div
-                  key="check"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="flex items-center gap-1"
-                >
-                  <CheckCircle size={isGrid ? 14 : 16} />
-                  {!isGrid && "Saved"}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="bag"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="flex items-center gap-1"
-                >
-                  <ShoppingBag size={isGrid ? 14 : 16} />
-                  {!isGrid && "Book"}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
-        </div>
-      </Link>
-    </motion.div>
-  );
-};
-
-const FilterContent = ({
-  showFeaturedOnly,
-  setShowFeaturedOnly,
-  vendorCategories,
-  selectedCategories,
-  handleCategoryChange,
-  priceRange,
-  setPriceRange,
-  availableCities,
-  selectedLocations,
-  handleLocationChange,
-  colorPrimary,
-}) => {
-  return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between p-5 bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600">
-            <Sparkles size={20} />
-          </div>
-          <div>
-            <p className="font-bold text-gray-900 dark:text-white">Featured Only</p>
-            <p className="text-xs text-gray-500">Show only top rated vendors</p>
-          </div>
-        </div>
-        <div
-          onClick={() => setShowFeaturedOnly(!showFeaturedOnly)}
-          className={`w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${
-            showFeaturedOnly ? "" : "bg-gray-200 dark:bg-gray-700"
-          }`}
-          style={showFeaturedOnly ? { backgroundColor: colorPrimary } : {}}
-        >
-          <motion.div animate={{ x: showFeaturedOnly ? 24 : 0 }} className="w-6 h-6 bg-white rounded-full shadow-md" />
-        </div>
-      </div>
-      <div>
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Vendor Types</h3>
-        <div className="flex flex-wrap gap-2">
-          {vendorCategories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
-                selectedCategories.includes(cat)
-                  ? `text-white shadow-md`
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
-              }`}
-              style={
-                selectedCategories.includes(cat) ? { backgroundColor: colorPrimary, borderColor: colorPrimary } : {}
-              }
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Budget Range</h3>
-        <div className="px-2">
-          <Slider
-            range
-            min={0}
-            max={1000000}
-            step={10000}
-            value={priceRange}
-            onChange={setPriceRange}
-            trackStyle={{ backgroundColor: colorPrimary, height: 6 }}
-            handleStyle={{
-              borderColor: colorPrimary,
-              backgroundColor: "white",
-              opacity: 1,
-              height: 24,
-              width: 24,
-              marginTop: -9,
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              paginate(-1);
             }}
-            railStyle={{ backgroundColor: "#e5e7eb", height: 6 }}
-          />
-        </div>
-        <div className="flex justify-between mt-6">
-          <div className="px-5 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm">
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Min Price</p>
-            <p className="font-bold text-gray-900 dark:text-white">₹{priceRange[0].toLocaleString()}</p>
-          </div>
-          <div className="px-5 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl text-right shadow-sm">
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Max Price</p>
-            <p className="font-bold text-gray-900 dark:text-white">₹{priceRange[1].toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
-      {availableCities.length > 0 && (
-        <div>
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Cities</h3>
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
-            {availableCities.map((city) => (
-              <label
-                key={city}
-                className="flex items-center justify-between p-4 cursor-pointer active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
-              >
-                <span className="text-gray-900 dark:text-white font-medium text-sm">{city}</span>
-                <div className="relative flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedLocations.includes(city)}
-                    onChange={() => handleLocationChange(city)}
-                    className="peer appearance-none w-6 h-6 border-2 border-gray-300 dark:border-gray-600 rounded-lg checked:bg-black dark:checked:bg-white transition-colors"
-                  />
-                  <CheckCircle
-                    size={14}
-                    className="absolute left-1 top-1 text-white dark:text-black opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
-                  />
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronLeft size={18} className="text-gray-700" />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              paginate(1);
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronRight size={18} className="text-gray-700" />
+          </motion.button>
+        </>
       )}
     </div>
   );
-};
+});
+ImageCarousel.displayName = "ImageCarousel";
 
-const FilterDrawer = ({ isOpen, onClose, children, onClear, colorPrimary }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+const QuickActionButton = memo(({ icon: Icon, label, onClick, isActive, color }) => {
+  const haptic = useHapticFeedback();
+  return (
+    <motion.button
+      whileTap={{ scale: 0.9 }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        haptic("light");
+        onClick?.();
+      }}
+      className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-colors ${
+        isActive ? "bg-gray-100" : "active:bg-gray-50"
+      }`}
+    >
+      <Icon size={18} className={isActive ? "" : "text-gray-400"} style={isActive ? { color } : {}} />
+      <span className="text-[10px] font-medium text-gray-500">{label}</span>
+    </motion.button>
+  );
+});
+QuickActionButton.displayName = "QuickActionButton";
+
+const VendorCard = memo(
+  ({
+    vendor,
+    viewMode,
+    isFavorite,
+    onFavorite,
+    isComparing,
+    isSelectedForCompare,
+    onCompare,
+    colorPrimary,
+    onShowToast,
+  }) => {
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [showActions, setShowActions] = useState(false);
+    const { ref, hasBeenInView } = useInView();
+    const haptic = useHapticFeedback();
+    const isGrid = viewMode === "grid";
+
+    const displayImages = useMemo(() => {
+      const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
+      if (imgs.length > 0) return imgs;
+      if (vendor.defaultImage) return [vendor.defaultImage];
+      return ["/placeholder.jpg"];
+    }, [vendor.images, vendor.defaultImage, vendor.normalizedImages]);
+
+    const price = useMemo(() => getVendorPrice(vendor), [vendor]);
+    const displayPrice = useMemo(() => formatPrice(price), [price]);
+    const fullPrice = useMemo(() => formatFullPrice(price), [price]);
+
+    const categoryInfo = useMemo(
+      () => VENDOR_CATEGORIES.find((c) => c.id === vendor.category) || VENDOR_CATEGORIES[0],
+      [vendor.category]
+    );
+
+    const handleShare = useCallback(
+      async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        haptic("light");
+        const shareData = {
+          title: vendor.name,
+          text: `Check out ${vendor.name} - Starting at ₹${fullPrice}`,
+          url: `${window.location.origin}/m/vendor/${vendor.category}/${vendor._id}`,
+        };
+        if (navigator.share && navigator.canShare?.(shareData)) {
+          try {
+            await navigator.share(shareData);
+            onShowToast?.("Shared successfully!", "success");
+          } catch (err) {
+            if (err.name !== "AbortError") console.log("Share failed");
+          }
+        } else {
+          await copyToClipboard(shareData.url);
+          onShowToast?.("Link copied to clipboard!", "success");
+        }
+      },
+      [vendor, fullPrice, haptic, onShowToast]
+    );
+
+    const handleBookmark = useCallback(
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        haptic("medium");
+        setIsBookmarked((prev) => !prev);
+        onShowToast?.(isBookmarked ? "Removed from saved" : "Saved for later", "success");
+      },
+      [haptic, isBookmarked, onShowToast]
+    );
+
+    const handleCall = useCallback(
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        haptic("medium");
+        if (vendor.phone) window.location.href = `tel:${vendor.phone}`;
+        else onShowToast?.("Phone number not available", "info");
+      },
+      [vendor.phone, haptic, onShowToast]
+    );
+
+    if (!hasBeenInView) return <div ref={ref} className={isGrid ? "h-64" : "h-80"} />;
+
+    return (
+      <motion.div
+        ref={ref}
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileTap={!isComparing ? { scale: 0.98 } : {}}
+        className={`relative group bg-white rounded-2xl overflow-hidden shadow-sm border transition-all ${
+          isSelectedForCompare ? "ring-2 ring-offset-2 border-transparent" : "border-gray-100"
+        } ${isGrid ? "" : "mb-4"}`}
+        style={isSelectedForCompare ? { ringColor: colorPrimary } : {}}
+      >
+        {isComparing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              haptic("medium");
+              onCompare(vendor);
+            }}
+            className="absolute inset-0 z-40 bg-black/10 backdrop-blur-[1px] flex items-center justify-center cursor-pointer"
+          >
+            <motion.div
+              animate={{ scale: isSelectedForCompare ? 1.1 : 1 }}
+              className={`w-12 h-12 rounded-full border-3 border-white flex items-center justify-center shadow-xl ${
+                isSelectedForCompare ? "" : "bg-white/50"
+              }`}
+              style={isSelectedForCompare ? { backgroundColor: colorPrimary } : {}}
+            >
+              {isSelectedForCompare ? (
+                <CheckCircle size={24} className="text-white" />
+              ) : (
+                <span className="text-2xl">+</span>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        <ImageCarousel
+          images={displayImages}
+          vendorName={vendor.name}
+          isGrid={isGrid}
+          isFavorite={isFavorite}
+          onFavorite={() => onFavorite(vendor._id)}
+          tags={vendor.tags}
+          colorPrimary={colorPrimary}
+          rating={vendor.rating}
         />
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="fixed bottom-0 left-0 right-0 h-[85vh] bg-gray-50 dark:bg-black rounded-t-[2rem] z-[101] flex flex-col shadow-2xl ring-1 ring-white/10"
-        >
-          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-950 rounded-t-[2rem]">
-            <div>
-              <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">Filters</h2>
-              <p className="text-xs text-gray-500 font-medium">Refine your search results</p>
+
+        <Link href={`/m/vendor/${vendor?.category}/${vendor?._id}`} className={`block ${isGrid ? "p-3" : "p-4"}`}>
+          <div className="flex justify-between items-start mb-1.5">
+            <div className="flex-1 min-w-0 pr-2">
+              <h3 className={`font-bold text-gray-900 leading-tight truncate ${isGrid ? "text-sm" : "text-base"}`}>
+                {vendor.name}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <MapPin size={11} className="text-gray-400 shrink-0" />
+                <span className="text-xs text-gray-500 truncate">{vendor.address?.city || "Location"}</span>
+                {vendor.distance && <span className="text-xs text-gray-400">• {vendor.distance}</span>}
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2.5 bg-gray-50 dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <X size={20} className="text-gray-500 dark:text-gray-300" />
-            </button>
+
+            {!isGrid && (
+              <div
+                className="px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1"
+                style={{ backgroundColor: `${categoryInfo.color}15`, color: categoryInfo.color }}
+              >
+                <categoryInfo.icon size={10} />
+                {categoryInfo.label}
+              </div>
+            )}
           </div>
-          <div className="flex-1 overflow-y-auto p-6 pb-24 space-y-8 bg-gray-50/50 dark:bg-black/20">{children}</div>
-          <div className="absolute bottom-0 left-0 right-0 p-5 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 flex gap-4 backdrop-blur-xl">
-            <button
-              onClick={onClear}
-              className="flex-1 py-4 rounded-2xl border-2 border-gray-200 dark:border-gray-800 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-sm"
+
+          {!isGrid && (
+            <div className="flex items-center gap-2 my-2.5 overflow-x-auto scrollbar-hide">
+              {vendor.seating?.max && (
+                <div className="px-2 py-1 bg-gray-50 rounded-lg text-[10px] font-medium text-gray-600 flex items-center gap-1 shrink-0">
+                  <Users size={11} /> {vendor.seating.max} guests
+                </div>
+              )}
+              <div className="px-2 py-1 bg-gray-50 rounded-lg text-[10px] font-medium text-gray-600 flex items-center gap-1 shrink-0">
+                <TrendingUp size={11} /> {vendor.bookings || 0} booked
+              </div>
+              {vendor.responseTime && (
+                <div className="px-2 py-1 bg-gray-50 rounded-lg text-[10px] font-medium text-gray-600 flex items-center gap-1 shrink-0">
+                  <Clock size={11} /> {vendor.responseTime}
+                </div>
+              )}
+              <div className="px-2 py-1 bg-gray-50 rounded-lg text-[10px] font-medium text-gray-600 flex items-center gap-1 shrink-0">
+                <MessageCircle size={11} /> {vendor.reviews || 0} reviews
+              </div>
+            </div>
+          )}
+
+          {!isGrid && (
+            <div className="flex items-center gap-1 mb-3 -mx-1">
+              <QuickActionButton icon={Phone} label="Call" onClick={handleCall} color={COLORS.success} />
+              <QuickActionButton
+                icon={MessageCircle}
+                label="Chat"
+                onClick={() => onShowToast?.("Chat coming soon!", "info")}
+                color={colorPrimary}
+              />
+              <QuickActionButton
+                icon={Bookmark}
+                label="Save"
+                onClick={handleBookmark}
+                isActive={isBookmarked}
+                color={COLORS.secondary}
+              />
+              <QuickActionButton icon={Share2} label="Share" onClick={handleShare} color={COLORS.info} />
+              <QuickActionButton
+                icon={Navigation}
+                label="Directions"
+                onClick={() => {
+                  window.open(`https://maps.google.com/?q=${vendor.address?.city || ""}`, "_blank");
+                }}
+                color={COLORS.error}
+              />
+            </div>
+          )}
+
+          <div
+            className={`flex items-center justify-between ${isGrid ? "mt-2" : "mt-2 pt-3 border-t border-gray-100"}`}
+          >
+            <div>
+              {!isGrid && (
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Starting at</p>
+              )}
+              <div className="flex items-baseline gap-1">
+                <span className={`font-bold ${isGrid ? "text-sm" : "text-xl"}`} style={{ color: colorPrimary }}>
+                  ₹{displayPrice}
+                </span>
+                {!isGrid && vendor.priceUnit && (
+                  <span className="text-xs text-gray-400">/{vendor.priceUnit || "day"}</span>
+                )}
+              </div>
+              {!isGrid && vendor.originalPrice && (
+                <span className="text-xs text-gray-400 line-through">₹{formatPrice(vendor.originalPrice)}</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {!isGrid && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowActions(!showActions);
+                  }}
+                  className="p-2 bg-gray-50 rounded-xl"
+                >
+                  <MoreHorizontal size={18} className="text-gray-400" />
+                </motion.button>
+              )}
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  haptic("medium");
+                  onShowToast?.("Added to inquiry list!", "success");
+                }}
+                className={`flex items-center justify-center gap-1.5 font-bold shadow-md transition-colors ${
+                  isGrid ? "p-2.5 rounded-xl bg-gray-900 text-white" : "px-5 py-2.5 rounded-xl text-white text-sm"
+                }`}
+                style={!isGrid ? { backgroundColor: colorPrimary } : {}}
+              >
+                <ShoppingBag size={isGrid ? 16 : 18} />
+                {!isGrid && "Get Quote"}
+              </motion.button>
+            </div>
+          </div>
+        </Link>
+
+        <AnimatePresence>
+          {showActions && !isGrid && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="border-t border-gray-100 overflow-hidden"
             >
-              Reset
-            </button>
+              <div className="p-3 grid grid-cols-4 gap-2">
+                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
+                  <Calendar size={18} className="text-gray-500" />
+                  <span className="text-[10px] text-gray-500">Check Dates</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
+                  <Eye size={18} className="text-gray-500" />
+                  <span className="text-[10px] text-gray-500">View Gallery</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
+                  <ArrowRightLeft size={18} className="text-gray-500" />
+                  <span className="text-[10px] text-gray-500">Compare</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
+                  <ExternalLink size={18} className="text-gray-500" />
+                  <span className="text-[10px] text-gray-500">Website</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  }
+);
+VendorCard.displayName = "VendorCard";
+
+const PaginationControls = memo(({ currentPage, totalPages, onPageChange, colorPrimary, isLoading }) => {
+  const haptic = useHapticFeedback();
+  if (totalPages <= 1) return null;
+
+  const pages = useMemo(() => {
+    const result = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    for (let i = start; i <= end; i++) result.push(i);
+    return result;
+  }, [currentPage, totalPages]);
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-6 pb-12">
+      <div className="flex items-center gap-2">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            haptic("light");
+            onPageChange(currentPage - 1);
+          }}
+          disabled={currentPage === 1 || isLoading}
+          className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 disabled:opacity-40"
+        >
+          <ChevronLeft size={18} className="text-gray-600" />
+        </motion.button>
+
+        {pages[0] > 1 && (
+          <>
             <button
-              onClick={onClose}
-              className="flex-1 py-4 rounded-2xl text-white font-bold shadow-xl active:scale-95 transition-transform text-sm"
-              style={{ backgroundColor: colorPrimary }}
+              onClick={() => onPageChange(1)}
+              className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-sm font-medium text-gray-600 border border-gray-200"
             >
-              Show Results
+              1
             </button>
+            {pages[0] > 2 && <span className="text-gray-400">...</span>}
+          </>
+        )}
+
+        {pages.map((page) => (
+          <motion.button
+            key={page}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic("light");
+              onPageChange(page);
+            }}
+            disabled={isLoading}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-colors ${
+              page === currentPage ? "text-white shadow-md" : "bg-white text-gray-600 border border-gray-200"
+            }`}
+            style={page === currentPage ? { backgroundColor: colorPrimary } : {}}
+          >
+            {page}
+          </motion.button>
+        ))}
+
+        {pages[pages.length - 1] < totalPages && (
+          <>
+            {pages[pages.length - 1] < totalPages - 1 && <span className="text-gray-400">...</span>}
+            <button
+              onClick={() => onPageChange(totalPages)}
+              className="w-10 h-10 flex items-center justify-center bg-white rounded-xl text-sm font-medium text-gray-600 border border-gray-200"
+            >
+              {totalPages}
+            </button>
+          </>
+        )}
+
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            haptic("light");
+            onPageChange(currentPage + 1);
+          }}
+          disabled={currentPage === totalPages || isLoading}
+          className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 disabled:opacity-40"
+        >
+          <ChevronRight size={18} className="text-gray-600" />
+        </motion.button>
+      </div>
+      <p className="text-xs text-gray-400">
+        Page {currentPage} of {totalPages}
+      </p>
+    </div>
+  );
+});
+PaginationControls.displayName = "PaginationControls";
+
+const EmptyState = memo(({ onClearFilters, colorPrimary, searchQuery }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex flex-col items-center justify-center py-16 text-center px-6"
+  >
+    <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mb-6">
+      <Search size={40} className="text-gray-300" />
+    </div>
+    <h3 className="text-xl font-bold text-gray-900 mb-2">No Results Found</h3>
+    <p className="text-gray-500 text-sm mb-6 max-w-xs">
+      {searchQuery
+        ? `We couldn't find vendors matching "${searchQuery}"`
+        : "No vendors match your current filters. Try adjusting them."}
+    </p>
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onClearFilters}
+      className="px-6 py-3 text-white font-bold rounded-xl shadow-lg"
+      style={{ backgroundColor: colorPrimary }}
+    >
+      Clear All Filters
+    </motion.button>
+  </motion.div>
+));
+EmptyState.displayName = "EmptyState";
+
+const SortSheet = memo(({ isOpen, onClose, currentSort, onSortChange, colorPrimary }) => {
+  const haptic = useHapticFeedback();
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={SPRING_CONFIG.gentle}
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[101] shadow-2xl"
+          >
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3" />
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Sort By</h3>
+            </div>
+            <div className="p-4 space-y-2 pb-8">
+              {SORT_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const isSelected = currentSort === option.id;
+                return (
+                  <motion.button
+                    key={option.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      haptic("light");
+                      onSortChange(option.id);
+                      onClose();
+                    }}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${
+                      isSelected ? "bg-gray-100" : "active:bg-gray-50"
+                    }`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        isSelected ? "bg-white shadow-sm" : "bg-gray-100"
+                      }`}
+                    >
+                      <Icon size={20} style={{ color: isSelected ? colorPrimary : COLORS.gray[400] }} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className={`font-semibold ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
+                        {option.label}
+                      </p>
+                      <p className="text-xs text-gray-500">{option.description}</p>
+                    </div>
+                    {isSelected && <CheckCircle size={20} style={{ color: colorPrimary }} />}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+});
+SortSheet.displayName = "SortSheet";
+
+const FilterContent = memo(
+  ({
+    showFeaturedOnly,
+    setShowFeaturedOnly,
+    selectedCategories,
+    handleCategoryChange,
+    priceRange,
+    setPriceRange,
+    availableCities,
+    selectedLocations,
+    handleLocationChange,
+    colorPrimary,
+    ratingFilter,
+    setRatingFilter,
+  }) => {
+    const haptic = useHapticFeedback();
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${colorPrimary}15` }}
+              >
+                <Sparkles size={20} style={{ color: colorPrimary }} />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Featured Only</p>
+                <p className="text-xs text-gray-500">Show top-rated vendors</p>
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic("light");
+                setShowFeaturedOnly(!showFeaturedOnly);
+              }}
+              className={`w-14 h-8 rounded-full p-1 transition-colors ${showFeaturedOnly ? "" : "bg-gray-200"}`}
+              style={showFeaturedOnly ? { backgroundColor: colorPrimary } : {}}
+            >
+              <motion.div
+                animate={{ x: showFeaturedOnly ? 24 : 0 }}
+                transition={SPRING_CONFIG.stiff}
+                className="w-6 h-6 bg-white rounded-full shadow-md"
+              />
+            </motion.button>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Minimum Rating</h3>
+          <div className="flex gap-2">
+            {[0, 3, 3.5, 4, 4.5].map((rating) => (
+              <motion.button
+                key={rating}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  haptic("light");
+                  setRatingFilter(rating);
+                }}
+                className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors ${
+                  ratingFilter === rating
+                    ? "text-white border-transparent shadow-md"
+                    : "bg-white text-gray-600 border-gray-200"
+                }`}
+                style={ratingFilter === rating ? { backgroundColor: colorPrimary } : {}}
+              >
+                {rating === 0 ? "Any" : `${rating}+`}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Vendor Types</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {VENDOR_CATEGORIES.map((cat) => {
+              const isSelected = selectedCategories.includes(cat.id);
+              const Icon = cat.icon;
+              return (
+                <motion.button
+                  key={cat.id}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("light");
+                    handleCategoryChange(cat.id);
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                    isSelected ? "border-transparent shadow-md" : "bg-white border-gray-200"
+                  }`}
+                  style={isSelected ? { backgroundColor: `${cat.color}15`, borderColor: cat.color } : {}}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: isSelected ? cat.color : COLORS.gray[100] }}
+                  >
+                    <Icon size={16} className={isSelected ? "text-white" : "text-gray-500"} />
+                  </div>
+                  <span className={`text-sm font-semibold ${isSelected ? "text-gray-900" : "text-gray-600"}`}>
+                    {cat.label}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-1">Budget Range</h3>
+          <div className="px-3 mb-4">
+            <Slider
+              range
+              min={0}
+              max={1000000}
+              step={10000}
+              value={priceRange}
+              onChange={setPriceRange}
+              trackStyle={{ backgroundColor: colorPrimary, height: 6 }}
+              handleStyle={{
+                borderColor: colorPrimary,
+                backgroundColor: "white",
+                opacity: 1,
+                height: 24,
+                width: 24,
+                marginTop: -9,
+                boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+              }}
+              railStyle={{ backgroundColor: COLORS.gray[200], height: 6 }}
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1 bg-white px-4 py-3 rounded-xl border border-gray-200">
+              <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Min Price</p>
+              <p className="font-bold text-gray-900">₹{formatFullPrice(priceRange[0])}</p>
+            </div>
+            <div className="flex-1 bg-white px-4 py-3 rounded-xl border border-gray-200 text-right">
+              <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Max Price</p>
+              <p className="font-bold text-gray-900">₹{formatFullPrice(priceRange[1])}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-3">
+            {[
+              { label: "Budget", range: [0, 100000] },
+              { label: "Mid-Range", range: [100000, 500000] },
+              { label: "Premium", range: [500000, 1000000] },
+            ].map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => {
+                  haptic("light");
+                  setPriceRange(preset.range);
+                }}
+                className="flex-1 py-2 px-3 bg-gray-100 rounded-lg text-xs font-medium text-gray-600 active:bg-gray-200"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {availableCities.length > 0 && (
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">
+              Cities ({selectedLocations.length} selected)
+            </h3>
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden max-h-60 overflow-y-auto">
+              {availableCities.map((city, idx) => {
+                const isSelected = selectedLocations.includes(city);
+                return (
+                  <motion.button
+                    key={city}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      haptic("light");
+                      handleLocationChange(city);
+                    }}
+                    className={`w-full flex items-center justify-between p-4 transition-colors ${
+                      idx !== availableCities.length - 1 ? "border-b border-gray-100" : ""
+                    } ${isSelected ? "bg-blue-50" : "active:bg-gray-50"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapPin size={16} className={isSelected ? "text-blue-500" : "text-gray-400"} />
+                      <span className={`font-medium ${isSelected ? "text-blue-700" : "text-gray-700"}`}>{city}</span>
+                    </div>
+                    <div
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
+                        isSelected ? "" : "border-2 border-gray-300"
+                      }`}
+                      style={isSelected ? { backgroundColor: colorPrimary } : {}}
+                    >
+                      {isSelected && <Check size={14} className="text-white" />}
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+FilterContent.displayName = "FilterContent";
+
+const FilterDrawer = memo(({ isOpen, onClose, children, onClear, colorPrimary, activeFilterCount, totalResults }) => {
+  const haptic = useHapticFeedback();
+
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={SPRING_CONFIG.gentle}
+            className="fixed bottom-0 left-0 right-0 h-[90vh] bg-gray-50 rounded-t-3xl z-[101] flex flex-col shadow-2xl"
+          >
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+                <p className="text-xs text-gray-500">
+                  {activeFilterCount > 0
+                    ? `${activeFilterCount} active • ${totalResults} results`
+                    : "Refine your search"}
+                </p>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("light");
+                  onClose();
+                }}
+                className="p-2 bg-gray-100 rounded-full"
+              >
+                <X size={20} className="text-gray-500" />
+              </motion.button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 pb-32">{children}</div>
+            <div
+              className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3"
+              style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+            >
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  haptic("medium");
+                  onClear();
+                }}
+                className="flex-1 py-3.5 rounded-xl border-2 border-gray-200 font-bold text-gray-600 text-sm"
+              >
+                Reset All
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  haptic("medium");
+                  onClose();
+                }}
+                className="flex-1 py-3.5 rounded-xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2"
+                style={{ backgroundColor: colorPrimary }}
+              >
+                Show {totalResults} Results
+              </motion.button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+});
+FilterDrawer.displayName = "FilterDrawer";
+
+const CompareBar = memo(({ count, vendors, onClear, onView, colorPrimary }) => {
+  const haptic = useHapticFeedback();
+
+  return (
+    <AnimatePresence>
+      {count > 0 && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          transition={SPRING_CONFIG.gentle}
+          className="fixed bottom-20 left-3 right-3 z-[90] bg-gray-900 text-white p-4 rounded-2xl shadow-2xl"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-3">
+                {vendors.slice(0, 3).map((v, i) => (
+                  <motion.div
+                    key={v._id}
+                    initial={{ scale: 0, x: -20 }}
+                    animate={{ scale: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="w-11 h-11 rounded-full border-2 border-gray-900 overflow-hidden bg-gray-700 shadow-lg"
+                  >
+                    <img
+                      src={v.images?.[0] || v.defaultImage || "/placeholder.jpg"}
+                      alt={v.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+              <div>
+                <p className="font-bold text-sm">
+                  {count} vendor{count > 1 ? "s" : ""} selected
+                </p>
+                <p className="text-xs text-gray-400">
+                  {MAX_COMPARE_ITEMS - count > 0 ? `Add ${MAX_COMPARE_ITEMS - count} more` : "Ready to compare"}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("light");
+                  onClear();
+                }}
+                className="px-3 py-2 text-xs font-medium text-gray-400 active:text-white"
+              >
+                Clear
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  haptic("medium");
+                  onView();
+                }}
+                className="px-5 py-2 rounded-xl text-sm font-bold shadow-lg"
+                style={{ backgroundColor: colorPrimary }}
+              >
+                Compare
+              </motion.button>
+            </div>
           </div>
         </motion.div>
-      </>
-    )}
-  </AnimatePresence>
-);
+      )}
+    </AnimatePresence>
+  );
+});
+CompareBar.displayName = "CompareBar";
 
-const CompareBar = ({ count, onClear, onView, colorPrimary }) => (
-  <AnimatePresence>
-    {count > 0 && (
-      <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        exit={{ y: 100 }}
-        className="fixed bottom-24 left-4 right-4 z-[90] bg-gray-900 dark:bg-white text-white dark:text-black p-4 rounded-2xl shadow-2xl flex items-center justify-between ring-1 ring-white/10"
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="bg-gray-800 dark:bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center font-bold"
-            style={{ color: colorPrimary }}
-          >
-            {count}
-          </div>
-          <div>
-            <p className="font-bold text-sm">Compare Vendors</p>
-            <p className="text-xs opacity-70">Add up to 3 to compare</p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={onClear} className="px-3 py-2 text-xs font-bold opacity-70">
-            Clear
-          </button>
-          <button
-            onClick={onView}
-            className="px-5 py-2 text-white rounded-xl text-xs font-bold shadow-lg"
-            style={{ backgroundColor: colorPrimary }}
-          >
-            Compare Now
-          </button>
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
+const CompareModal = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
+  const haptic = useHapticFeedback();
+  const [tab, setTab] = useState("overview");
+  const vendorCount = vendors.length;
 
-const CompareModal = ({ isOpen, onClose, vendors, colorPrimary }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200]"
-          onClick={onClose}
-        />
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center z-[201] p-4"
-        >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 dark:border-gray-800">
-            <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-6 flex justify-between items-center z-10">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Compare Vendors</h2>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <X size={24} className="text-gray-500 dark:text-gray-400" />
-              </button>
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  const bestVals = useMemo(() => {
+    const b = {};
+    COMPARE_FEATURES.forEach((f) => {
+      if (f.higher !== null) b[f.key] = getBest(vendors, f.key, f.higher);
+    });
+    return b;
+  }, [vendors]);
+
+  const scores = useMemo(
+    () =>
+      vendors.map((v) => {
+        let s = 0;
+        const rating = getCompareVal(v, "rating");
+        if (rating > 0) s += (rating / 5) * 30;
+        const reviews = getCompareVal(v, "reviews");
+        if (reviews > 0) s += Math.min(reviews / 100, 1) * 20;
+        const bookings = getCompareVal(v, "bookings");
+        if (bookings > 0) s += Math.min(bookings / 200, 1) * 25;
+        if (v.isVerified || v.tags?.includes("Verified")) s += 15;
+        if (v.tags?.includes("Popular")) s += 10;
+        return Math.round(s);
+      }),
+    [vendors]
+  );
+
+  const winnerIdx = useMemo(() => {
+    const max = Math.max(...scores);
+    return scores.indexOf(max);
+  }, [scores]);
+
+  const tabs = [
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "details", label: "Details", icon: Info },
+    { id: "pricing", label: "Pricing", icon: DollarSign },
+  ];
+
+  const colClass = vendorCount === 1 ? "w-full" : vendorCount === 2 ? "w-1/2" : "w-1/3";
+  const cardSize = vendorCount === 1 ? "max-w-[200px] mx-auto" : vendorCount === 2 ? "w-full" : "w-full";
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={SPRING_CONFIG.gentle}
+            className="fixed inset-x-0 bottom-0 top-0 bg-gray-50 z-[201] flex flex-col pt-4"
+          >
+            <div className="bg-white border-b border-gray-100 px-4 pt-8 pb-2 shrink-0">
+              <div className="flex items-center justify-between mb-2.5">
+                <div>
+                  <h2 className="text-lg font-black text-gray-900">Compare</h2>
+                  <p className="text-[11px] text-gray-500">
+                    {vendorCount} vendor{vendorCount > 1 ? "s" : ""} selected
+                  </p>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    haptic("light");
+                    onClose();
+                  }}
+                  className="p-2 bg-gray-100 rounded-full"
+                >
+                  <X size={20} className="text-gray-600" />
+                </motion.button>
+              </div>
+
+              <div className="flex gap-1.5">
+                {tabs.map((t) => {
+                  const Icon = t.icon;
+                  const active = tab === t.id;
+                  return (
+                    <motion.button
+                      key={t.id}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        haptic("light");
+                        setTab(t.id);
+                      }}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        active ? "text-white shadow-sm" : "bg-gray-100 text-gray-600"
+                      }`}
+                      style={active ? { backgroundColor: colorPrimary } : {}}
+                    >
+                      <Icon size={14} />
+                      {t.label}
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="p-6">
+
+            <div className="flex-1 overflow-y-auto">
               {vendors.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No vendors selected for comparison.</p>
+                <div className="flex flex-col items-center justify-center h-full px-6">
+                  <Info size={40} className="text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium text-sm">No vendors selected</p>
+                </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full table-auto border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                        <th className="text-left py-4 px-4 font-bold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                          Feature
-                        </th>
-                        {vendors.map((v, i) => (
-                          <th key={i} className="text-center py-4 px-2 font-bold text-gray-900 dark:text-white">
-                            {v.name.length > 15 ? `${v.name.substring(0, 15)}...` : v.name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        {
-                          label: "Rating",
-                          get: (v) => `${v.rating || 0}/5`,
-                          render: (val) => (
-                            <Star size={14} className="inline mx-auto fill-yellow-500 text-yellow-500" />
-                          ),
-                        },
-                        {
-                          label: "Price (Starting)",
-                          get: (v) => `₹${(v.perDayPrice?.min || 0).toLocaleString("en-IN")}`,
-                        },
-                        { label: "Capacity", get: (v) => (v.seating?.max ? `${v.seating.max} seats` : "N/A") },
-                        { label: "Reviews", get: (v) => v.reviews || 0 },
-                        { label: "Bookings", get: (v) => v.bookings || 0 },
-                        { label: "Location", get: (v) => v.address?.city || "N/A" },
-                      ].map((row, idx) => (
-                        <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
-                          <td className="py-3 px-4 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                            {row.label}
-                          </td>
+                <div className="p-3">
+                  <div className="flex gap-2 mb-4">
+                    {vendors.map((v, i) => {
+                      const winner = i === winnerIdx && vendorCount > 1;
+                      const score = scores[i];
+                      return (
+                        <motion.div
+                          key={v._id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.08 }}
+                          className={`${colClass} ${cardSize} bg-white rounded-xl p-2.5 border-2 shadow-sm relative overflow-hidden ${
+                            winner ? "border-amber-400" : "border-gray-100"
+                          }`}
+                        >
+                          {winner && (
+                            <div className="absolute top-0 right-0 bg-amber-400 text-amber-900 px-2 py-0.5 rounded-bl-lg text-[8px] font-bold flex items-center gap-0.5">
+                              <Trophy size={9} /> BEST
+                            </div>
+                          )}
+
+                          <div
+                            className={`w-full ${
+                              vendorCount === 1 ? "h-24" : vendorCount === 2 ? "h-20" : "h-16"
+                            } rounded-lg overflow-hidden mb-2 bg-gray-100`}
+                          >
+                            <img
+                              src={v.images?.[0] || v.defaultImage || "/placeholder.jpg"}
+                              alt={v.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          <h3 className="font-bold text-gray-900 text-xs truncate mb-0.5">
+                            {truncateText(v.name, vendorCount === 1 ? 30 : vendorCount === 2 ? 18 : 12)}
+                          </h3>
+                          <div className="flex items-center gap-0.5 text-[10px] text-gray-500 mb-1.5">
+                            <MapPin size={8} />
+                            <span className="truncate">{v.address?.city || "N/A"}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1 mb-2">
+                            <Star size={10} className="fill-amber-400 text-amber-400" />
+                            <span className="font-bold text-[11px]">{(v.rating || 0).toFixed(1)}</span>
+                            <span className="text-[9px] text-gray-400">({v.reviews || 0})</span>
+                          </div>
+
+                          <div className="mb-1.5">
+                            <div className="flex justify-between text-[9px] mb-0.5">
+                              <span className="text-gray-500 font-medium">Score</span>
+                              <span className="font-bold" style={{ color: colorPrimary }}>
+                                {score}%
+                              </span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${score}%` }}
+                                transition={{ delay: 0.3, duration: 0.6 }}
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: colorPrimary }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="pt-1.5 border-t border-gray-100">
+                            <p className="text-[8px] text-gray-400 uppercase font-semibold">From</p>
+                            <p className="text-sm font-bold" style={{ color: colorPrimary }}>
+                              ₹{formatPrice(getVendorPrice(v))}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-0.5 mt-1.5">
+                            {(v.isVerified || v.tags?.includes("Verified")) && (
+                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[7px] font-bold rounded flex items-center gap-0.5">
+                                <BadgeCheck size={7} /> Verified
+                              </span>
+                            )}
+                            {v.tags?.includes("Popular") && (
+                              <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[7px] font-bold rounded flex items-center gap-0.5">
+                                <Flame size={7} /> Popular
+                              </span>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {tab === "overview" && (
+                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                      <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                        <h4 className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                          <BarChart3 size={13} style={{ color: colorPrimary }} />
+                          Comparison
+                        </h4>
+                      </div>
+
+                      {COMPARE_FEATURES.map((f, idx) => {
+                        const Icon = f.icon;
+                        return (
+                          <div
+                            key={f.key}
+                            className={`flex items-stretch ${
+                              idx !== COMPARE_FEATURES.length - 1 ? "border-b border-gray-50" : ""
+                            }`}
+                          >
+                            <div className="w-20 shrink-0 px-2.5 py-2 bg-gray-50 border-r border-gray-100 flex items-center gap-1.5">
+                              <Icon size={11} className="text-gray-400 shrink-0" />
+                              <span className="text-[10px] font-medium text-gray-600 truncate">{f.label}</span>
+                            </div>
+                            <div className="flex-1 flex">
+                              {vendors.map((v) => {
+                                const val = getCompareVal(v, f.key);
+                                const formatted = f.format(val);
+                                const isBest = f.higher !== null && bestVals[f.key] !== null && val === bestVals[f.key];
+                                return (
+                                  <div
+                                    key={v._id}
+                                    className={`${colClass} px-2 py-2 text-center border-r border-gray-50 last:border-r-0 flex flex-col justify-center`}
+                                  >
+                                    <span
+                                      className={`text-xs font-semibold ${isBest ? "" : "text-gray-700"}`}
+                                      style={isBest ? { color: colorPrimary } : {}}
+                                    >
+                                      {formatted}
+                                    </span>
+                                    {isBest && f.higher !== null && (
+                                      <span
+                                        className="text-[8px] px-1 py-0.5 rounded mt-0.5 font-bold self-center"
+                                        style={{ backgroundColor: `${colorPrimary}15`, color: colorPrimary }}
+                                      >
+                                        Best
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {tab === "details" && (
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                          <h4 className="font-bold text-gray-900 text-xs">About</h4>
+                        </div>
+                        <div className="flex">
                           {vendors.map((v) => (
-                            <td key={v._id} className="py-3 px-2 text-center text-sm text-gray-700 dark:text-gray-300">
-                              {row.render ? row.render(row.get(v)) : row.get(v)}
-                            </td>
+                            <div key={v._id} className={`${colClass} p-2.5 border-r border-gray-100 last:border-r-0`}>
+                              <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-4">
+                                {v.description || "No description available."}
+                              </p>
+                            </div>
                           ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                          <h4 className="font-bold text-gray-900 text-xs">Amenities</h4>
+                        </div>
+                        <div className="flex">
+                          {vendors.map((v) => {
+                            const amenities = v.amenities || v.facilities || [];
+                            return (
+                              <div key={v._id} className={`${colClass} p-2.5 border-r border-gray-100 last:border-r-0`}>
+                                {amenities.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {amenities.slice(0, 4).map((a, i) => (
+                                      <span
+                                        key={i}
+                                        className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-medium text-gray-600"
+                                      >
+                                        {truncateText(a, 10)}
+                                      </span>
+                                    ))}
+                                    {amenities.length > 4 && (
+                                      <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-medium text-gray-500">
+                                        +{amenities.length - 4}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-gray-400">None listed</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                          <h4 className="font-bold text-gray-900 text-xs">Contact</h4>
+                        </div>
+                        <div className="flex">
+                          {vendors.map((v) => (
+                            <div
+                              key={v._id}
+                              className={`${colClass} p-2.5 border-r border-gray-100 last:border-r-0 space-y-1`}
+                            >
+                              {v.phone && (
+                                <div className="flex items-center gap-1 text-[10px] text-gray-600">
+                                  <Phone size={9} className="text-gray-400" />
+                                  <span className="truncate">{v.phone}</span>
+                                </div>
+                              )}
+                              {v.responseTime && (
+                                <div className="flex items-center gap-1 text-[10px] text-gray-600">
+                                  <Clock size={9} className="text-gray-400" />
+                                  <span>{v.responseTime}</span>
+                                </div>
+                              )}
+                              {!v.phone && !v.responseTime && (
+                                <p className="text-[10px] text-gray-400">Not available</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {tab === "pricing" && (
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                          <h4 className="font-bold text-gray-900 text-xs">Price Details</h4>
+                        </div>
+                        <div className="flex">
+                          {vendors.map((v) => {
+                            const price = getVendorPrice(v);
+                            const orig = v.originalPrice;
+                            const hasDisc = orig && orig > price;
+                            const discPct = hasDisc ? Math.round((1 - price / orig) * 100) : 0;
+
+                            return (
+                              <div key={v._id} className={`${colClass} p-2.5 border-r border-gray-100 last:border-r-0`}>
+                                <div className="mb-2.5">
+                                  <p className="text-[9px] text-gray-400 uppercase font-semibold mb-0.5">Starting</p>
+                                  <div className="flex items-baseline gap-1 flex-wrap">
+                                    <span className="text-lg font-black" style={{ color: colorPrimary }}>
+                                      ₹{formatPrice(price)}
+                                    </span>
+                                    {hasDisc && (
+                                      <span className="text-[11px] text-gray-400 line-through">
+                                        ₹{formatPrice(orig)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {hasDisc && (
+                                    <span className="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 bg-green-100 text-green-700 text-[9px] font-bold rounded">
+                                      <Percent size={8} /> {discPct}% OFF
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="space-y-1 pt-2 border-t border-gray-100 text-[10px]">
+                                  {v.perDayPrice?.max && (
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-500">Max/Day</span>
+                                      <span className="font-semibold">₹{formatPrice(v.perDayPrice.max)}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-500">Terms</span>
+                                    <span className="font-semibold">{v.paymentTerms || "Flexible"}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-3 border border-green-100">
+                        <h4 className="font-bold text-green-800 text-xs mb-2 flex items-center gap-1.5">
+                          <ThumbsUp size={13} />
+                          Value Analysis
+                        </h4>
+                        <div className="flex gap-2">
+                          {vendors.map((v) => {
+                            const price = getVendorPrice(v);
+                            const rating = v.rating || 0;
+                            const valueScore = price > 0 ? Math.round((rating / 5) * 100 - (price / 100000) * 10) : 0;
+                            const norm = Math.max(0, Math.min(100, valueScore + 50));
+
+                            return (
+                              <div
+                                key={v._id}
+                                className={`${colClass} bg-white rounded-lg p-2 border border-green-200`}
+                              >
+                                <p className="text-[9px] text-gray-500 font-medium truncate mb-1">
+                                  {truncateText(v.name, 12)}
+                                </p>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-green-500 rounded-full" style={{ width: `${norm}%` }} />
+                                  </div>
+                                  <span className="text-[10px] font-bold text-green-700">{norm}%</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-            <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex gap-3 justify-end">
-              <button
-                onClick={onClose}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                Close
-              </button>
+
+            <div
+              className="bg-white border-t border-gray-100 p-3 shrink-0"
+              style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+            >
+              <div className="flex gap-2.5">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("light");
+                    onClose();
+                  }}
+                  className="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-600 text-sm"
+                >
+                  Close
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("medium");
+                    if (vendors[winnerIdx])
+                      window.location.href = `/m/vendor/${vendors[winnerIdx].category}/${vendors[winnerIdx]._id}`;
+                  }}
+                  className="flex-1 py-3 rounded-xl text-white font-bold text-sm shadow-md flex items-center justify-center gap-1.5"
+                  style={{ backgroundColor: colorPrimary }}
+                >
+                  <Trophy size={16} />
+                  View Best
+                </motion.button>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      </>
-    )}
-  </AnimatePresence>
-);
-
-const MapView = dynamic(() => import("@/components/mobile/MapContainer"), {
-  // Adjust path to where you saved MapComponent
-  ssr: false,
-  loading: () => (
-    <div className="h-[80vh] bg-gray-200 dark:bg-gray-800 rounded-2xl flex items-center justify-center">
-      <p className="text-gray-500 animate-pulse">Loading Map...</p>
-    </div>
-  ),
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
 });
+CompareModal.displayName = "CompareModal";
 
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 export default function MarketplacePageWrapper() {
-  const [activeCategory] = useState("Wedding"); // Replace with useCategoryStore if available
   const params = useParams();
-  const pageCategory = params?.category || activeCategory;
+  const pageCategory = params?.category || "";
+  const searchInputRef = useRef(null);
+
   const [vendors, setVendors] = useState([]);
   const [paginationInfo, setPaginationInfo] = useState({ totalPages: 1, totalVendors: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState("list");
+  const [error, setError] = useState(null);
+
+  const [viewMode, setViewMode] = useLocalStorage("mp_viewMode", "list");
   const [isMapView, setIsMapView] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   const [sortBy, setSortBy] = useState("rating");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [favorites, setFavorites] = useState([]);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [ratingFilter, setRatingFilter] = useState(0);
   const [availableCities, setAvailableCities] = useState([]);
+
+  const [favorites, setFavorites] = useLocalStorage("mp_favorites", []);
+  const [recentSearches, setRecentSearches] = useLocalStorage("mp_recentSearches", []);
   const [compareMode, setCompareMode] = useState(false);
   const [compareList, setCompareList] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
 
-  const colorPrimary = "#2563eb";
-  const colorSecondary = "#eab308";
+  const [toast, setToast] = useState({ message: "", type: "success", isVisible: false });
 
-  const vendorCategories = useMemo(
-    () => ["venues", "photographers", "makeup", "planners", "catering", "clothes", "mehendi", "djs"],
-    []
-  );
+  const haptic = useHapticFeedback();
+  const { scrollY, scrollDirection } = useScrollPosition();
+  const isOnline = useNetworkStatus();
 
-  const cityCoords = useMemo(
-    () => ({
-      Mumbai: { lat: 19.076, lng: 72.8777 },
-      Delhi: { lat: 28.6139, lng: 77.209 },
-      Bangalore: { lat: 12.9716, lng: 77.5946 },
-      Chennai: { lat: 13.0827, lng: 80.2707 },
-    }),
-    []
-  );
+  const debouncedSearchQuery = useDebounce(searchQuery, DEBOUNCE_DELAY);
+  const debouncedPriceRange = useDebounce(priceRange, DEBOUNCE_DELAY);
 
-  const defaultCenter = useMemo(() => cityCoords.Mumbai, [cityCoords]);
+  const handleRefresh = useCallback(async () => {
+    setCurrentPage(1);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }, []);
+
+  const { pullDistance, isRefreshing } = usePullToRefresh(handleRefresh);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedCategories.length > 0) count++;
+    if (showFeaturedOnly) count++;
+    if (selectedLocations.length > 0) count++;
+    if (priceRange[0] > 0 || priceRange[1] < 1000000) count++;
+    if (ratingFilter > 0) count++;
+    return count;
+  }, [selectedCategories, showFeaturedOnly, selectedLocations, priceRange, ratingFilter]);
+
+  const currentSortLabel = useMemo(() => SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Sort", [sortBy]);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty("--primary-color", colorPrimary);
-    root.style.setProperty("--secondary-color", colorSecondary);
-  }, [colorPrimary, colorSecondary]);
-
-  useEffect(() => {
-    if (pageCategory && typeof pageCategory === "string") {
-      setSelectedCategories([pageCategory]);
-    } else {
-      setSelectedCategories([]);
-    }
+    if (pageCategory) setSelectedCategories([pageCategory]);
   }, [pageCategory]);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const debouncedPriceRange = useDebounce(priceRange, 500);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    debouncedSearchQuery,
+    debouncedPriceRange,
+    selectedCategories,
+    showFeaturedOnly,
+    selectedLocations,
+    sortBy,
+    ratingFilter,
+  ]);
 
   useEffect(() => {
-    const cities = [...new Set(vendors.map((v) => v.address?.city).filter(Boolean))].sort();
-    setAvailableCities(cities);
-  }, [vendors]);
+    if (debouncedSearchQuery && debouncedSearchQuery.length > 2) {
+      setRecentSearches((prev) => {
+        const filtered = prev.filter((s) => s.toLowerCase() !== debouncedSearchQuery.toLowerCase());
+        return [debouncedSearchQuery, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+      });
+    }
+  }, [debouncedSearchQuery, setRecentSearches]);
 
   useEffect(() => {
     const fetchVendors = async () => {
-      setIsLoading(true);
-      const paramsObj = {
-        page: currentPage.toString(),
-        limit: "12",
-        sortBy,
-      };
-
-      if (debouncedSearchQuery) paramsObj.search = debouncedSearchQuery;
-      if (selectedCategories.length > 0) paramsObj.categories = selectedCategories.join(",");
-      if (showFeaturedOnly) paramsObj.featured = "true";
-      if (selectedLocations.length > 0) paramsObj.cities = selectedLocations.join(",");
-      if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < 1000000) {
-        paramsObj.minPrice = debouncedPriceRange[0].toString();
-        paramsObj.maxPrice = debouncedPriceRange[1].toString();
+      if (!isOnline) {
+        setError("You're offline. Please check your connection.");
+        return;
       }
 
-      const params = new URLSearchParams(paramsObj);
-      const apiUrl = `/api/vendor?${params.toString()}`;
+      setIsLoading(true);
+      setError(null);
+
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: ITEMS_PER_PAGE.toString(),
+        sortBy,
+      });
+
+      if (debouncedSearchQuery) queryParams.set("search", debouncedSearchQuery);
+      if (selectedCategories.length > 0) queryParams.set("categories", selectedCategories.join(","));
+      if (showFeaturedOnly) queryParams.set("featured", "true");
+      if (selectedLocations.length > 0) queryParams.set("cities", selectedLocations.join(","));
+      if (debouncedPriceRange[0] > 0) queryParams.set("minPrice", debouncedPriceRange[0].toString());
+      if (debouncedPriceRange[1] < 1000000) queryParams.set("maxPrice", debouncedPriceRange[1].toString());
+      if (ratingFilter > 0) queryParams.set("minRating", ratingFilter.toString());
 
       try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`/api/vendor?${queryParams.toString()}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const result = await response.json();
-        console.log("API Response:", result); // Debug log: Check structure here
 
-        // Check for data presence instead of 'success' (assuming API always returns data on success)
-        if (result.data && Array.isArray(result.data)) {
+        if (result.success !== false && result.data && Array.isArray(result.data)) {
           const processedVendors = result.data.map((v) => ({
             ...v,
-            position: cityCoords[v.address?.city] || defaultCenter,
+            position: CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
           }));
           setVendors(processedVendors);
-          console.log("Fetched Vendors:", processedVendors);
-          setPaginationInfo(result.pagination || { totalPages: 1, totalVendors: 0 });
+          setPaginationInfo(result.pagination || { totalPages: 1, totalVendors: result.data.length });
+
+          if (result.filters?.availableCities) {
+            setAvailableCities(result.filters.availableCities);
+          } else {
+            const cities = [...new Set(processedVendors.map((v) => v.address?.city).filter(Boolean))].sort();
+            setAvailableCities(cities);
+          }
         } else {
-          // Handle non-success cases (e.g., empty data or error message)
-          const errorMsg = result.message || result.error || "No vendors found";
-          console.warn("API Warning:", errorMsg);
           setVendors([]);
           setPaginationInfo({ totalPages: 1, totalVendors: 0 });
         }
-      } catch (error) {
-        console.error("Failed to fetch vendors:", error);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to load vendors. Please try again.");
         setVendors([]);
-        setPaginationInfo({ totalPages: 1, totalVendors: 0 });
       } finally {
         setIsLoading(false);
       }
@@ -873,282 +2535,388 @@ export default function MarketplacePageWrapper() {
     selectedCategories,
     showFeaturedOnly,
     selectedLocations,
+    ratingFilter,
+    isOnline,
   ]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearchQuery, debouncedPriceRange, selectedCategories, showFeaturedOnly, selectedLocations, sortBy]);
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type, isVisible: true });
+  }, []);
 
-  useEffect(() => {
-    if (mobileFiltersOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-  }, [mobileFiltersOpen]);
+  const hideToast = useCallback(() => {
+    setToast((prev) => ({ ...prev, isVisible: false }));
+  }, []);
 
-  const toggleCompare = (vendor) => {
-    if (compareList.find((v) => v._id === vendor._id)) {
-      setCompareList((prev) => prev.filter((v) => v._id !== vendor._id));
-    } else if (compareList.length < 3) {
-      setCompareList((prev) => [...prev, vendor]);
-    }
-  };
-
-  const handleFavorite = (vendorId) => {
-    setFavorites((prev) => (prev.includes(vendorId) ? prev.filter((id) => id !== vendorId) : [...prev, vendorId]));
-  };
+  const handleFavorite = useCallback(
+    (vendorId) => {
+      haptic("medium");
+      setFavorites((prev) => {
+        const isFavorited = prev.includes(vendorId);
+        showToast(isFavorited ? "Removed from favorites" : "Added to favorites", "success");
+        return isFavorited ? prev.filter((id) => id !== vendorId) : [...prev, vendorId];
+      });
+    },
+    [haptic, setFavorites, showToast]
+  );
 
   const handleCategoryChange = useCallback((cat) => {
-    setSelectedCategories((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
+    if (cat === "__clear__") setSelectedCategories([]);
+    else setSelectedCategories((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
   }, []);
 
   const handleLocationChange = useCallback((city) => {
     setSelectedLocations((prev) => (prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city]));
   }, []);
 
+  const handleCompareToggle = useCallback(
+    (vendor) => {
+      haptic("medium");
+      setCompareList((prev) => {
+        const exists = prev.find((v) => v._id === vendor._id);
+        if (exists) return prev.filter((v) => v._id !== vendor._id);
+        if (prev.length >= MAX_COMPARE_ITEMS) {
+          showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
+          return prev;
+        }
+        return [...prev, vendor];
+      });
+    },
+    [haptic, showToast]
+  );
+
+  const handlePageChange = useCallback(
+    (page) => {
+      haptic("light");
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [haptic]
+  );
+
   const clearAllFilters = useCallback(() => {
+    haptic("medium");
     setSelectedCategories(pageCategory ? [pageCategory] : []);
     setPriceRange([0, 1000000]);
     setShowFeaturedOnly(false);
     setSelectedLocations([]);
     setSearchQuery("");
     setSortBy("rating");
+    setRatingFilter(0);
     setCurrentPage(1);
-  }, [pageCategory]);
+    showToast("All filters cleared", "info");
+  }, [pageCategory, haptic, showToast]);
 
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const handleSelectRecentSearch = useCallback((search) => {
+    setSearchQuery(search);
+    setIsSearchFocused(false);
+    searchInputRef.current?.blur();
   }, []);
 
-  const filterProps = {
-    showFeaturedOnly,
-    setShowFeaturedOnly,
-    vendorCategories,
-    selectedCategories,
-    handleCategoryChange,
-    priceRange,
-    setPriceRange,
-    availableCities,
-    selectedLocations,
-    handleLocationChange,
-    colorPrimary,
-  };
-
-  const handleCompareClear = () => {
-    setCompareList([]);
-    if (showCompare) setShowCompare(false);
-  };
-
-  const handleVendorSelectFromMap = (vendor) => {
-    setIsMapView(false);
-    setCompareMode(false);
-  };
-
-  const hasActiveFilters =
-    selectedCategories.length > 0 ||
-    showFeaturedOnly ||
-    selectedLocations.length > 0 ||
-    priceRange[0] > 0 ||
-    priceRange[1] < 1000000 ||
-    searchQuery;
+  const clearRecentSearches = useCallback(() => {
+    haptic("light");
+    setRecentSearches([]);
+    showToast("Search history cleared", "info");
+  }, [haptic, setRecentSearches, showToast]);
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gray-50 dark:bg-black pb-0">
+    <div className="min-h-screen bg-gray-50">
       <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar {
+        .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
-        .no-scrollbar {
+        .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+        .animate-shimmer {
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
       `}</style>
-      <div
-        className="absolute inset-0 z-0 pointer-events-none opacity-65 dark:opacity-10"
-        style={{
-          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px), radial-gradient(circle at 20px 20px, rgba(55, 65, 81, 0.12) 2px, transparent 2px), radial-gradient(circle at 40px 40px, rgba(55, 65, 81, 0.12) 2px, transparent 2px)`,
-          backgroundSize: "40px 40px, 40px 40px, 40px 40px, 40px 40px",
-        }}
-      />
-      <div className="sticky top-0 z-[50] bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-all">
-        <div className="px-4 pt-4 pb-2">
+
+      <OfflineBanner />
+      <PullToRefreshUI pullDistance={pullDistance} isRefreshing={isRefreshing} />
+      <Toast {...toast} onClose={hideToast} />
+      <ScrollToTopButton />
+
+      <motion.header
+        animate={{ y: scrollDirection === "down" && scrollY > 200 ? -60 : 0 }}
+        transition={TRANSITION.fast}
+        className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100"
+      >
+        <div className="px-4 pt-3 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-xl font-black text-gray-900 dark:text-white leading-none tracking-tight">
-                {"Marketplace"}
-              </h1>
-              <p className="text-[11px] text-gray-500 mt-1 font-bold uppercase tracking-wide">
-                {paginationInfo.totalVendors || 0} results found
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">Marketplace</h1>
+              <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide">
+                {isLoading ? "Loading..." : `${paginationInfo.totalVendors} vendors`}
               </p>
             </div>
+
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCompareMode(!compareMode)}
-                className={`p-2.5 rounded-xl transition-colors ${
-                  compareMode ? "text-white" : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("light");
+                  setCompareMode(!compareMode);
+                  if (compareMode) setCompareList([]);
+                }}
+                className={`p-2.5 rounded-xl transition-all ${
+                  compareMode ? "text-white shadow-md" : "bg-gray-100 text-gray-600"
                 }`}
-                style={compareMode ? { backgroundColor: colorPrimary } : {}}
+                style={compareMode ? { backgroundColor: COLORS.primary } : {}}
               >
                 <ArrowRightLeft size={20} />
-              </button>
-              <button
-                onClick={() => setViewMode(viewMode === "list" ? "grid" : "list")}
-                className="p-2.5 bg-gray-100 dark:bg-gray-900 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("light");
+                  setViewMode(viewMode === "list" ? "grid" : "list");
+                }}
+                className="p-2.5 bg-gray-100 rounded-xl text-gray-600"
               >
-                {viewMode === "list" ? (
-                  <LayoutGrid size={20} className="text-gray-700 dark:text-gray-300" />
-                ) : (
-                  <LayoutList size={20} className="text-gray-700 dark:text-gray-300" />
-                )}
-              </button>
-              <button
-                onClick={() => setIsMapView(!isMapView)}
-                className={`p-2.5 rounded-xl transition-colors ${
-                  isMapView ? "text-white" : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                {viewMode === "list" ? <LayoutGrid size={20} /> : <LayoutList size={20} />}
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("light");
+                  setIsMapView(!isMapView);
+                }}
+                className={`p-2.5 rounded-xl transition-all ${
+                  isMapView ? "text-white shadow-md" : "bg-gray-100 text-gray-600"
                 }`}
-                style={isMapView ? { backgroundColor: colorPrimary } : {}}
+                style={isMapView ? { backgroundColor: COLORS.primary } : {}}
               >
-                {isMapView ? (
-                  <LayoutList size={20} className="text-white" />
-                ) : (
-                  <MapIcon size={20} className="text-gray-700 dark:text-gray-300" />
-                )}
-              </button>
-              <button
-                onClick={() => setMobileFiltersOpen(true)}
-                className={`relative p-2.5 rounded-xl transition-colors ${
-                  hasActiveFilters ? "text-white" : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                <MapIcon size={20} />
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("light");
+                  setMobileFiltersOpen(true);
+                }}
+                className={`relative p-2.5 rounded-xl transition-all ${
+                  activeFilterCount > 0 ? "text-white shadow-md" : "bg-gray-100 text-gray-600"
                 }`}
-                style={hasActiveFilters ? { backgroundColor: colorPrimary } : {}}
+                style={activeFilterCount > 0 ? { backgroundColor: COLORS.primary } : {}}
               >
                 <SlidersHorizontal size={20} />
-                {hasActiveFilters && (
-                  <span
-                    className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-900"
-                    style={{ backgroundColor: colorPrimary }}
-                  />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
                 )}
-              </button>
+              </motion.button>
             </div>
           </div>
-          <div className="relative mb-2">
+
+          <div className="relative">
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, location..."
-              className="w-full pl-11 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900/50 rounded-2xl text-sm font-bold text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-black dark:focus:ring-white transition-all outline-none"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              placeholder="Search vendors, locations..."
+              className="w-full pl-11 pr-10 py-3 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
             />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} strokeWidth={2.5} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            {searchQuery && (
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 bg-gray-300 rounded-full"
+              >
+                <X size={12} className="text-gray-600" />
+              </motion.button>
+            )}
           </div>
         </div>
-        <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
-          {[
-            { id: "rating", label: "Top Rated", icon: Star },
-            { id: "price-asc", label: "Cheapest", icon: DollarSign },
-            { id: "bookings", label: "Popular", icon: TrendingUp },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => setSortBy(opt.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
-                sortBy === opt.id
-                  ? "text-white shadow-md"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800"
-              }`}
-              style={sortBy === opt.id ? { backgroundColor: colorPrimary, borderColor: colorPrimary } : {}}
-            >
-              <opt.icon size={12} className={sortBy === opt.id ? "fill-white" : ""} />
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="px-4 pt-4 relative z-10">
-        <div
-          className="absolute inset-0 z-0 pointer-events-none opacity-65 dark:opacity-10"
-          style={{
-            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px), radial-gradient(circle at 20px 20px, rgba(55, 65, 81, 0.12) 2px, transparent 2px), radial-gradient(circle at 40px 40px, rgba(55, 65, 81, 0.12) 2px, transparent 2px)`,
-            backgroundSize: "40px 40px, 40px 40px, 40px 40px, 40px 40px",
-          }}
-        />
-        <PromoCarousel colorPrimary={colorPrimary} colorSecondary={colorSecondary} />
-        <AnimatePresence mode="wait">
-          {!isMapView ? (
-            isLoading ? (
-              <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
-                {[1, 2, 3, 4].map((i) => (
-                  <CardSkeleton key={i} viewMode={viewMode} />
-                ))}
-              </div>
-            ) : vendors.length > 0 ? (
-              <div className="space-y-6">
-                <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
-                  {vendors.map((vendor) => (
-                    <UnifiedCard
-                      key={vendor._id}
-                      vendor={vendor}
-                      viewMode={viewMode}
-                      onFavorite={handleFavorite}
-                      isFavorite={favorites.includes(vendor._id)}
-                      isComparing={compareMode}
-                      onCompare={toggleCompare}
-                      isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
-                      colorPrimary={colorPrimary}
-                    />
-                  ))}
-                </div>
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={paginationInfo.totalPages}
-                  totalVendors={paginationInfo.totalVendors}
-                  onPageChange={handlePageChange}
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
-                  <Search size={40} className="text-gray-400" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
-                <p className="text-gray-500 max-w-xs mx-auto mb-6 text-sm">
-                  We couldn't find any vendors matching your specific filters. Try broadening your search.
-                </p>
-                <button
-                  onClick={clearAllFilters}
-                  className="px-8 py-3 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform"
-                  style={{ backgroundColor: colorPrimary }}
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )
-          ) : (
-            <MapView vendors={vendors} onVendorSelect={handleVendorSelectFromMap} center={defaultCenter} />
+
+        <AnimatePresence>
+          {isSearchFocused && recentSearches.length > 0 && !searchQuery && (
+            <RecentSearches
+              searches={recentSearches}
+              onSelect={handleSelectRecentSearch}
+              onClear={clearRecentSearches}
+              colorPrimary={COLORS.primary}
+            />
           )}
         </AnimatePresence>
-      </div>
+
+        <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic("light");
+              setSortSheetOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl text-xs font-semibold text-gray-700 border border-gray-200 whitespace-nowrap shadow-sm"
+          >
+            <Filter size={14} />
+            {currentSortLabel}
+            <ChevronDown size={14} className="text-gray-400" />
+          </motion.button>
+
+          {SORT_OPTIONS.slice(0, 4).map((opt) => {
+            const Icon = opt.icon;
+            const isSelected = sortBy === opt.id;
+            return (
+              <motion.button
+                key={opt.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  haptic("light");
+                  setSortBy(opt.id);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all ${
+                  isSelected ? "text-white border-transparent shadow-md" : "bg-white text-gray-600 border-gray-200"
+                }`}
+                style={isSelected ? { backgroundColor: COLORS.primary } : {}}
+              >
+                <Icon size={14} />
+                {opt.label}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.header>
+
+      <main className="px-4 pt-4">
+        <PromoCarousel colorPrimary={COLORS.primary} colorSecondary={COLORS.secondary} />
+        <CategoryChips
+          selectedCategories={selectedCategories}
+          onCategoryChange={handleCategoryChange}
+          colorPrimary={COLORS.primary}
+        />
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3"
+          >
+            <AlertCircle className="text-red-500 shrink-0" size={20} />
+            <div className="flex-1">
+              <p className="text-red-700 font-medium text-sm">{error}</p>
+            </div>
+            <button onClick={() => setError(null)} className="p-1 text-red-400 hover:text-red-600">
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
+
+        <AnimatePresence mode="wait">
+          {isMapView ? (
+            <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Suspense fallback={<MapLoadingPlaceholder />}>
+                <MapView vendors={vendors} onVendorSelect={() => setIsMapView(false)} center={DEFAULT_CENTER} />
+              </Suspense>
+            </motion.div>
+          ) : isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CardSkeleton key={i} viewMode={viewMode} />
+              ))}
+            </motion.div>
+          ) : vendors.length > 0 ? (
+            <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
+                {vendors.map((vendor) => (
+                  <VendorCard
+                    key={vendor._id}
+                    vendor={vendor}
+                    viewMode={viewMode}
+                    isFavorite={favorites.includes(vendor._id)}
+                    onFavorite={handleFavorite}
+                    isComparing={compareMode}
+                    isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
+                    onCompare={handleCompareToggle}
+                    colorPrimary={COLORS.primary}
+                    onShowToast={showToast}
+                  />
+                ))}
+              </div>
+
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={paginationInfo.totalPages}
+                onPageChange={handlePageChange}
+                colorPrimary={COLORS.primary}
+                isLoading={isLoading}
+              />
+            </motion.div>
+          ) : (
+            <EmptyState onClearFilters={clearAllFilters} colorPrimary={COLORS.primary} searchQuery={searchQuery} />
+          )}
+        </AnimatePresence>
+      </main>
+
       <CompareBar
         count={compareList.length}
-        onClear={handleCompareClear}
+        vendors={compareList}
+        onClear={() => setCompareList([])}
         onView={() => setShowCompare(true)}
-        colorPrimary={colorPrimary}
+        colorPrimary={COLORS.primary}
+      />
+      <SortSheet
+        isOpen={sortSheetOpen}
+        onClose={() => setSortSheetOpen(false)}
+        currentSort={sortBy}
+        onSortChange={setSortBy}
+        colorPrimary={COLORS.primary}
       />
       <FilterDrawer
         isOpen={mobileFiltersOpen}
         onClose={() => setMobileFiltersOpen(false)}
         onClear={clearAllFilters}
-        colorPrimary={colorPrimary}
+        colorPrimary={COLORS.primary}
+        activeFilterCount={activeFilterCount}
+        totalResults={paginationInfo.totalVendors}
       >
-        <FilterContent {...filterProps} />
+        <FilterContent
+          showFeaturedOnly={showFeaturedOnly}
+          setShowFeaturedOnly={setShowFeaturedOnly}
+          selectedCategories={selectedCategories}
+          handleCategoryChange={handleCategoryChange}
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          availableCities={availableCities}
+          selectedLocations={selectedLocations}
+          handleLocationChange={handleLocationChange}
+          colorPrimary={COLORS.primary}
+          ratingFilter={ratingFilter}
+          setRatingFilter={setRatingFilter}
+        />
       </FilterDrawer>
       <CompareModal
         isOpen={showCompare}
         onClose={() => setShowCompare(false)}
         vendors={compareList}
-        colorPrimary={colorPrimary}
+        colorPrimary={COLORS.primary}
       />
     </div>
   );
