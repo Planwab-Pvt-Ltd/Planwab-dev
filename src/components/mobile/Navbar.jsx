@@ -1265,7 +1265,7 @@ const MobileNavbar = () => {
   const haptic = useHapticFeedback();
 
   // Hide navbar on checkout page
-  if (pathname?.includes("/m/checkout") || pathname?.includes("/m/user/checkout")) return null;
+  if (pathname?.includes("/m/user/checkout")) return null;
 
   // --- Toast Handlers ---
   const showToast = useCallback((message, type = "success") => {
