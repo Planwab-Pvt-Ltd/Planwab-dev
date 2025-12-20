@@ -103,6 +103,7 @@ const SmartMedia = memo(
             loop
             playsInline
             poster={poster}
+            autoPlay
             preload={priority ? "auto" : "metadata"}
             // FIX: Add onCanPlay for better reliability
             onCanPlay={() => setIsLoaded(true)}

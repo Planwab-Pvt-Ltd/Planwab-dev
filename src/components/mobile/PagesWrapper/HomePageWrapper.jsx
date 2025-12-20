@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense, useMemo, memo } from "react";
+import React, { useState, useEffect, Suspense, useMemo, memo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +34,15 @@ const QUICK_LINKS = [
   { label: "Mehndi", icon: "🎨" },
   { label: "Decor", icon: "🌸" },
 ];
+
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10] };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
 
 // --- Sub-Components (Memoized for Stability) ---
 
@@ -96,6 +105,7 @@ const HeroSection = memo(() => {
 
 const MainContent = () => {
   const MotionLink = motion(Link);
+  const haptic = useHapticFeedback();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get("category") || "Default";
 
@@ -120,7 +130,11 @@ const MainContent = () => {
       {/* Static Banner 1 - High Priority */}
       <div className="mx-1 mt-2 px-2">
         <Link href={`/m/events/${currentCategory}`}>
-          <motion.div whileTap={{ scale: 0.98 }} className="w-full h-24 relative rounded-xl overflow-hidden">
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            onClick={() => haptic("medium")}
+            className="w-full h-24 relative rounded-xl overflow-hidden"
+          >
             <SmartMedia
               src={`/HeroNAP${currentCategory}.gif`}
               type="image"
@@ -145,6 +159,7 @@ const MainContent = () => {
           <Link href={`/m/events/${currentCategory}`}>
             <motion.div
               whileTap={{ scale: 0.98 }}
+              onClick={() => haptic("medium")}
               className="w-full aspect-[4/2.3] relative rounded-xl overflow-hidden"
             >
               <SmartMedia

@@ -64,7 +64,7 @@ const ServicesSteps = () => {
   const searchParams = useSearchParams();
   const rawCategory = searchParams.get("category");
   // Normalize category to lowercase to match keys, fallback to default
-  const categoryKey = rawCategory ? rawCategory.toLowerCase() : "default";
+  const categoryKey = rawCategory ? rawCategory : "default";
   const theme = themeConfig[categoryKey] || themeConfig?.default;
 
   return (

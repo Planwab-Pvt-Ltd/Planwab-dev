@@ -80,6 +80,15 @@ const TABS_CONFIG = [
   },
 ];
 
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10] };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
+
 // --- 2. OPTIMIZED SUB-COMPONENTS ---
 
 // A. Ticker Component (Isolates the 3-second re-render)
@@ -157,6 +166,7 @@ const HeaderLogic = () => {
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const haptic = useHapticFeedback();
   const { scrollY } = useScroll();
 
   // Optimized State
@@ -190,7 +200,7 @@ const HeaderLogic = () => {
   const handleCategoryClick = useCallback(
     (id) => {
       const targetCategory = id === activeTabId ? "Default" : id;
-
+      haptic("medium");
       startTransition(() => {
         router.push(`?category=${targetCategory}`, { scroll: false });
       });
@@ -251,7 +261,10 @@ const HeaderLogic = () => {
               {/* Address Pill */}
               <div className="px-3 mb-3">
                 <button
-                  onClick={() => setIsAddressDrawerOpen(true)}
+                  onClick={() => {
+                    setIsAddressDrawerOpen(true);
+                    haptic("medium");
+                  }}
                   className="w-full flex items-center gap-3 bg-white/10 rounded-2xl p-2 pr-4 backdrop-blur-md border border-white/10 active:scale-[0.98] transition-transform"
                 >
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">

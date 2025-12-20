@@ -190,10 +190,11 @@ const MostBooked = () => {
   const searchParams = useSearchParams();
   const rawCategory = searchParams.get("category");
   // Normalize category to lowercase for theme lookup
-  let categoryKey = rawCategory ? rawCategory.toLowerCase() : "default";
+  let categoryKey = rawCategory ? rawCategory : "default";
   if (categoryKey === "event") categoryKey = "wedding"; // Fallback mapping if needed
 
   const theme = themeConfig[categoryKey] || themeConfig.default;
+  console.log("MostBooked Theme Category:", categoryKey, theme);
 
   // State for active filter
   const [activeFilterId, setActiveFilterId] = useState("all");

@@ -2,9 +2,20 @@ import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import SmartMedia from "../SmartMediaLoader";
+import Link from "next/link";
+
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10] };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
 
 const CategoryGrid = ({ currentCategory }) => {
   const scrollRef = useRef(null);
+  const haptic = useHapticFeedback();
 
   // Initialize with safe defaults (Right is likely scrollable initially)
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -144,8 +155,22 @@ const CategoryGrid = ({ currentCategory }) => {
 
         {/* --- CONTROL BUTTONS --- */}
         <div className="flex gap-2">
-          <ScrollButton onClick={() => scroll("left")} disabled={!canScrollLeft} direction="left" />
-          <ScrollButton onClick={() => scroll("right")} disabled={!canScrollRight} direction="right" />
+          <ScrollButton
+            onClick={() => {
+              scroll("left");
+              haptic("light");
+            }}
+            disabled={!canScrollLeft}
+            direction="left"
+          />
+          <ScrollButton
+            onClick={() => {
+              scroll("right");
+              haptic("light");
+            }}
+            disabled={!canScrollRight}
+            direction="right"
+          />
         </div>
       </div>
 
@@ -161,7 +186,8 @@ const CategoryGrid = ({ currentCategory }) => {
         }}
       >
         {activeCategories.map((item, index) => (
-          <div
+          <Link
+            href={`/m/vendors/marketplace/${item?.name.replace(/\s+/g, "-").toLowerCase()}`}
             key={index} // Keys are stable since list doesn't re-sort
             className={`flex flex-col items-center shrink-0 ${
               item.span === 2 ? "row-span-1 col-span-2" : "col-span-1"
@@ -171,6 +197,7 @@ const CategoryGrid = ({ currentCategory }) => {
             <div
               className={`relative rounded-[12px] overflow-hidden bg-gray-100 mb-1.5 shadow-sm transition-transform active:scale-95 hover:scale-[1.02] ${item.widthClass}`}
               style={{ height: "80px" }}
+              onClick={() => haptic("medium")}
             >
               <SmartMedia
                 src={item.image}
@@ -187,7 +214,7 @@ const CategoryGrid = ({ currentCategory }) => {
             <p className="text-xs font-medium font-sans text-center text-gray-800 whitespace-nowrap leading-tight">
               {item.name}
             </p>
-          </div>
+          </Link>
         ))}
       </div>
 
