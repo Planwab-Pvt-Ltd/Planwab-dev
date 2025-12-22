@@ -1,8 +1,9 @@
 "use client";
 
-import React, { memo, useCallback, useState, useMemo } from "react";
+import React, { memo, useCallback, useState, useMemo, useRef, useEffect } from "react";
 import SmartMedia from "../SmartMediaLoader";
 import { useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // --- 1. STATIC DATA ---
 const FILTERS = [
@@ -13,7 +14,6 @@ const FILTERS = [
   { id: "laser", label: "Laser Treatments" },
 ];
 
-// Added 'category' field for filtering logic
 const SERVICES = [
   {
     id: 1,
@@ -127,11 +127,22 @@ const themeConfig = {
   },
 };
 
-// --- 3. SUB-COMPONENTS ---
+// --- 3. HELPER HOOKS ---
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50 };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
+
+// --- 4. SUB-COMPONENTS ---
 
 const ServiceCard = memo(({ service, onAdd, themeTextClass }) => {
+  const haptic = useHapticFeedback();
   return (
-    <div className="flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border border-gray-100 rounded-xl p-3 h-full relative min-h-[150px] max-h-[150px] shadow-sm transition-shadow hover:shadow-md animate-fade-in">
+    <div className="flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border border-gray-100 rounded-xl p-3 h-full relative min-h-[150px] max-h-[150px] shadow-sm transition-transform active:scale-98 animate-fade-in snap-center">
       <div className="w-[90px] h-[90px] flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden relative">
         <SmartMedia
           src={service.image}
@@ -160,8 +171,11 @@ const ServiceCard = memo(({ service, onAdd, themeTextClass }) => {
       </div>
 
       <button
-        onClick={() => onAdd(service.id)}
-        className={`absolute bottom-3 right-3 inline-flex items-center justify-center px-4 py-1.5 bg-white border border-gray-200 text-xs font-bold rounded-lg uppercase shadow-sm hover:bg-gray-50 active:scale-95 transition-all touch-manipulation ${themeTextClass}`}
+        onClick={() => {
+          haptic("medium");
+          onAdd(service.id);
+        }}
+        className={`absolute bottom-3 right-3 inline-flex items-center justify-center px-4 py-1.5 bg-white border border-gray-200 text-xs font-bold rounded-lg uppercase shadow-sm hover:bg-gray-50 active:scale-90 transition-all touch-manipulation ${themeTextClass}`}
         aria-label={`Add ${service.title}`}
       >
         Add
@@ -171,9 +185,13 @@ const ServiceCard = memo(({ service, onAdd, themeTextClass }) => {
 });
 
 const FilterPill = memo(({ filter, isActive, onClick, theme }) => {
+  const haptic = useHapticFeedback();
   return (
     <button
-      onClick={() => onClick(filter.id)}
+      onClick={() => {
+        haptic("light");
+        onClick(filter.id);
+      }}
       className={`
         p-2 px-3 rounded-lg cursor-pointer text-xs whitespace-nowrap font-medium transition-all duration-200 border active:scale-95
         ${isActive ? theme.pillActive : theme.pillInactive}
@@ -184,38 +202,116 @@ const FilterPill = memo(({ filter, isActive, onClick, theme }) => {
   );
 });
 
-// --- 4. MAIN COMPONENT ---
+// Memoize scroll buttons
+const ScrollButton = React.memo(({ onClick, disabled, direction }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`p-1.5 rounded-full transition-all duration-200 ${
+      disabled
+        ? "bg-gray-50 text-gray-300 cursor-not-allowed"
+        : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 active:scale-90"
+    }`}
+    aria-label={`Scroll ${direction}`}
+  >
+    {direction === "left" ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+  </button>
+));
+
+// --- 5. MAIN COMPONENT ---
 
 const MostBooked = () => {
   const searchParams = useSearchParams();
+  const haptic = useHapticFeedback();
   const rawCategory = searchParams.get("category");
-  // Normalize category to lowercase for theme lookup
+
+  // Theme Logic
   let categoryKey = rawCategory ? rawCategory : "default";
-  if (categoryKey === "event") categoryKey = "wedding"; // Fallback mapping if needed
-
+  if (categoryKey === "event") categoryKey = "wedding";
   const theme = themeConfig[categoryKey] || themeConfig.default;
-  console.log("MostBooked Theme Category:", categoryKey, theme);
 
-  // State for active filter
+  // State
   const [activeFilterId, setActiveFilterId] = useState("all");
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
+  // Handlers
   const handleFilterClick = useCallback((id) => {
     setActiveFilterId(id);
+    // Reset scroll when filter changes
+    if (scrollRef.current) scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
   }, []);
 
   const handleAdd = useCallback((id) => {
     console.log("Added item:", id);
   }, []);
 
-  // Filter Logic (Memoized for performance)
+  // Filter Logic
   const filteredServices = useMemo(() => {
     if (activeFilterId === "all") return SERVICES;
     return SERVICES.filter((service) => service.category === activeFilterId);
   }, [activeFilterId]);
 
+  // Scroll Logic (Copied from CategoryGrid)
+  const checkScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+
+    // Only update if changed to prevent re-renders
+    const newLeft = scrollLeft > 5;
+    const newRight = scrollLeft < scrollWidth - clientWidth - 5;
+
+    if (newLeft !== canScrollLeft) setCanScrollLeft(newLeft);
+    if (newRight !== canScrollRight) setCanScrollRight(newRight);
+  }, [canScrollLeft, canScrollRight]);
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    const ref = scrollRef.current;
+    if (ref) ref.addEventListener("scroll", checkScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("resize", checkScroll);
+      if (ref) ref.removeEventListener("scroll", checkScroll);
+    };
+  }, [checkScroll, filteredServices]); // Re-check when services change
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === "left" ? -300 : 300;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="p-4 pt-0 mt-1 bg-white mb-2 content-visibility-auto contain-intrinsic-size-[300px]">
-      <h2 className="text-xl font-semibold my-2 text-gray-900">Most Booked</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Most Booked</h2>
+
+        {/* Scroll Controls (Only show if scrollable) */}
+        {filteredServices.length > 0 && (
+          <div className="flex gap-2">
+            <ScrollButton
+              onClick={() => {
+                scroll("left");
+                haptic("light");
+              }}
+              disabled={!canScrollLeft}
+              direction="left"
+            />
+            <ScrollButton
+              onClick={() => {
+                scroll("right");
+                haptic("light");
+              }}
+              disabled={!canScrollRight}
+              direction="right"
+            />
+          </div>
+        )}
+      </div>
 
       {/* Filters Row */}
       <div className="flex gap-2 text-sm mb-4 overflow-x-auto scrollbar-hide pb-2 no-scrollbar touch-pan-x">
@@ -230,22 +326,26 @@ const MostBooked = () => {
         ))}
       </div>
 
-      {/* Services List */}
+      {/* Services List - Optimized Scroll Container */}
       <div
-        className="flex overflow-x-auto w-full gap-4 scrollbar-hide pb-4 no-scrollbar touch-pan-x will-change-scroll min-h-[170px]"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        ref={scrollRef}
+        className="flex overflow-x-auto w-full gap-4 scrollbar-hide pb-4 no-scrollbar touch-pan-x touch-pan-y will-change-scroll min-h-[170px] snap-x snap-mandatory"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          scrollBehavior: "smooth",
+        }}
       >
         {filteredServices.length > 0 ? (
           filteredServices.map((service) => (
             <ServiceCard key={service.id} service={service} onAdd={handleAdd} themeTextClass={theme.text} />
           ))
         ) : (
-          <div className="w-full flex items-center justify-center text-gray-400 text-sm italic">
+          <div className="w-full flex items-center justify-center text-gray-400 text-sm italic py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
             No services found for this category.
           </div>
         )}
 
-        {/* Spacer */}
+        {/* Spacer for right padding */}
         <div className="w-1 flex-shrink-0" />
       </div>
 

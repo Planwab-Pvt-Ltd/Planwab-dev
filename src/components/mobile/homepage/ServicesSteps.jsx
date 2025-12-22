@@ -70,7 +70,6 @@ const ServicesSteps = () => {
   return (
     <div
       className={`relative mx-4 rounded-3xl border backdrop-blur-sm transition-all duration-300 ${theme?.container}`}
-      style={{ contentVisibility: "auto", containIntrinsicSize: "400px" }}
     >
       <div className="flex flex-col lg:flex-row px-4 py-8 lg:px-12 lg:py-16 relative">
         {/* Left Content */}

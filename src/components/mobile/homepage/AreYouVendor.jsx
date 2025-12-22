@@ -8,8 +8,6 @@ const AreYouAVendorSection = () => {
     <section
       className="relative overflow-x-hidden px-3 pb-0 pt-2 md:px-0 md:py-12 !z-10 bg-transparent"
       id="are_you_a_vendor_section"
-      // Optimization: Skip rendering layout until scrolled into view
-      style={{ contentVisibility: "auto", containIntrinsicSize: "500px" }}
     >
       {/* Background Pattern Left - Decorative */}
       <div className="absolute left-0 top-0 z-0 w-[200px] -translate-x-1/2 md:w-[400px] pointer-events-none">

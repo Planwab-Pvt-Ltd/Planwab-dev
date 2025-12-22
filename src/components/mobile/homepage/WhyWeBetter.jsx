@@ -53,12 +53,7 @@ const BenefitCard = memo(({ data }) => (
 
 const WhyWeBetter = () => {
   return (
-    <section
-      className="w-full relative pb-4"
-      id="why_are_we_better_section"
-      // 3. Performance Magic: Skip layout calculation until needed
-      style={{ contentVisibility: "auto", containIntrinsicSize: "800px" }}
-    >
+    <section className="w-full relative pb-4" id="why_are_we_better_section">
       {/* Top Curve SVG - Pure decorative, standard img is fine but added lazy */}
       <div className="w-full overflow-hidden leading-none">
         <img
