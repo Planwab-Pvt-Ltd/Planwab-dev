@@ -494,7 +494,7 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const coupon = MOCK_COUPONS.find((c) => c.code.toLowerCase() === couponCode.trim().toLowerCase());
+    const coupon = MOCK_COUPONS.find((c) => c?.code?.toLowerCase() === couponCode?.trim()?.toLowerCase());
 
     if (!coupon) {
       setError("Invalid coupon code");

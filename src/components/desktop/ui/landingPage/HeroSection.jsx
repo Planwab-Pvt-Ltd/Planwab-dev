@@ -114,14 +114,10 @@ export default function HeroSection() {
     });
   };
   const filteredEventTypes = eventTypeInput
-    ? eventTypeSuggestions.filter((type) =>
-      type.name.toLowerCase().includes(eventTypeInput.toLowerCase()),
-    )
+    ? eventTypeSuggestions.filter((type) => type?.name?.toLowerCase()?.includes(eventTypeInput?.toLowerCase()))
     : eventTypeSuggestions;
   const filteredLocations = locationInput
-    ? allLocations.filter((loc) =>
-      loc.name.toLowerCase().includes(locationInput.toLowerCase()),
-    )
+    ? allLocations.filter((loc) => loc?.name?.toLowerCase()?.includes(locationInput?.toLowerCase()))
     : allLocations;
   const dropdownClasses = `absolute w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 z-50 max-h-80 overflow-y-auto bottom-full mb-2`;
 
@@ -187,18 +183,11 @@ export default function HeroSection() {
                 className="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 transition-colors"
               >
                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
-                  <Building2
-                    size={18}
-                    className="text-gray-600 dark:text-gray-300"
-                  />
+                  <Building2 size={18} className="text-gray-600 dark:text-gray-300" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-200">
-                    {loc.name}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {loc.state}
-                  </p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-200">{loc.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{loc.state}</p>
                 </div>
               </button>
             ))}
@@ -215,9 +204,7 @@ export default function HeroSection() {
           >
             <div className="p-3 space-y-4">
               <div className="flex justify-between items-center">
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                  Adults
-                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">Adults</p>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleGuestChange("adults", -1)}
@@ -238,9 +225,7 @@ export default function HeroSection() {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                  Children
-                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">Children</p>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleGuestChange("children", -1)}
@@ -279,43 +264,31 @@ export default function HeroSection() {
       <div
         className="absolute inset-0 -z-20 dark:hidden"
         style={{
-          background:
-            "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)",
+          background: "radial-gradient(125% 125% at 50% 10%, #fff 40%, #f59e0b 100%)",
         }}
       />
       <div
         className="absolute inset-0 -z-20 hidden dark:block"
         style={{
-          background:
-            "radial-gradient(125% 125% at 50% 10%, #0d1117 40%, #451a03 100%)",
+          background: "radial-gradient(125% 125% at 50% 10%, #0d1117 40%, #451a03 100%)",
         }}
       />
-      <motion.div
-        className="relative"
-        variants={heroVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <motion.div className="relative" variants={heroVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-10">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-gray-900 dark:text-gray-100">
-            Moments that Matter,{" "}
-            <span className="text-rose-500 dark:text-rose-400">
-              Made Simple.
-            </span>
+            Moments that Matter, <span className="text-rose-500 dark:text-rose-400">Made Simple.</span>
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg text-gray-600 dark:text-gray-400">
-            From intimate anniversaries to grand weddings, planWAB is your
-            trusted partner in crafting unforgettable celebrations.
+            From intimate anniversaries to grand weddings, planWAB is your trusted partner in crafting unforgettable
+            celebrations.
           </p>
         </motion.div>
 
-        <motion.div
-          ref={searchRef}
-          variants={itemVariants}
-          className="relative w-full max-w-4xl"
-        >
+        <motion.div ref={searchRef} variants={itemVariants} className="relative w-full max-w-4xl">
           <div
-            className={`bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 ${activeField ? "shadow-2xl" : ""}`}
+            className={`bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg p-4 rounded-3xl shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 ${
+              activeField ? "shadow-2xl" : ""
+            }`}
           >
             <div className="bg-white/50 dark:bg-gray-800/50 p-2 sm:rounded-full rounded-[26px] flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
               <div className="w-full sm:w-auto flex-1 relative">
@@ -324,9 +297,7 @@ export default function HeroSection() {
                   className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                 >
                   <div>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
-                      Event
-                    </p>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">Event</p>
                     <input
                       ref={activeField === "event" ? inputRef : null}
                       type="text"
@@ -337,9 +308,7 @@ export default function HeroSection() {
                     />
                   </div>
                 </div>
-                <AnimatePresence>
-                  {activeField === "event" && renderDropdown()}
-                </AnimatePresence>
+                <AnimatePresence>{activeField === "event" && renderDropdown()}</AnimatePresence>
               </div>
               <div className="hidden sm:block h-8 w-px bg-gray-200/50 dark:bg-gray-700/50"></div>
               <div className="w-full sm:w-auto flex-1 relative">
@@ -347,14 +316,9 @@ export default function HeroSection() {
                   onClick={() => handleFieldClick("location")}
                   className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                 >
-                  <MapPin
-                    className="text-rose-500 dark:text-rose-400 mr-3 hidden lg:block"
-                    size={20}
-                  />
+                  <MapPin className="text-rose-500 dark:text-rose-400 mr-3 hidden lg:block" size={20} />
                   <div>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
-                      Location
-                    </p>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">Location</p>
                     <input
                       ref={activeField === "location" ? inputRef : null}
                       type="text"
@@ -365,9 +329,7 @@ export default function HeroSection() {
                     />
                   </div>
                 </div>
-                <AnimatePresence>
-                  {activeField === "location" && renderDropdown()}
-                </AnimatePresence>
+                <AnimatePresence>{activeField === "location" && renderDropdown()}</AnimatePresence>
               </div>
               <div className="hidden sm:block h-8 w-px bg-gray-200/50 dark:bg-gray-700/50"></div>
               <div className="w-full sm:w-auto flex-1 relative">
@@ -375,22 +337,15 @@ export default function HeroSection() {
                   onClick={() => handleFieldClick("guests")}
                   className="w-full h-16 flex items-center text-left px-6 rounded-full hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
                 >
-                  <Users
-                    className="text-rose-500 dark:text-rose-400 mr-3 hidden lg:block"
-                    size={20}
-                  />
+                  <Users className="text-rose-500 dark:text-rose-400 mr-3 hidden lg:block" size={20} />
                   <div>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
-                      Guests
-                    </p>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">Guests</p>
                     <p className="text-base text-gray-600 dark:text-gray-300">
                       {totalGuests} guest{totalGuests !== 1 && "s"}
                     </p>
                   </div>
                 </button>
-                <AnimatePresence>
-                  {activeField === "guests" && renderDropdown()}
-                </AnimatePresence>
+                <AnimatePresence>{activeField === "guests" && renderDropdown()}</AnimatePresence>
               </div>
               <button
                 onClick={handleSearch}
@@ -407,7 +362,7 @@ export default function HeroSection() {
                   <Link
                     key={index}
                     className="relative group"
-                    href={`/vendors/marketplace/${vendor.name.toLowerCase()}`}
+                    href={`/vendors/marketplace/${vendor?.name?.toLowerCase()}`}
                   >
                     <div
                       key={vendor.id}

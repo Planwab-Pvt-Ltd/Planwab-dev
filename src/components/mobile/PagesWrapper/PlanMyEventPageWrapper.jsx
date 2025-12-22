@@ -303,7 +303,7 @@ const CustomDropdown = ({ label, value, onChange, options, placeholder, icon: Ic
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
   const filteredOptions = (options || []).filter((option) =>
-    String(option).toLowerCase().includes(searchTerm.toLowerCase())
+    String(option)?.toLowerCase().includes(searchTerm?.toLowerCase())
   );
   useEffect(() => {
     const handleClickOutside = (event) => {

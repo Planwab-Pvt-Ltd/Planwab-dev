@@ -375,7 +375,7 @@ const drawerConfigs = {
 
 // Map category names to drawer config keys
 const getCategoryDrawerKey = (categoryName) => {
-  const name = categoryName.toLowerCase();
+  const name = categoryName?.toLowerCase();
   if (name.includes("planner")) return "planner";
   if (name.includes("venue")) return "venues";
   if (name.includes("makeup")) return "makeup";
@@ -394,17 +394,17 @@ const CategoryDrawer = ({ isOpen, onClose, config, categoryName, haptic, current
     haptic("medium");
     // Handle the action based on card type
     if (card.action === "marketplace") {
-      const baseUrl = `/m/vendors/marketplace/${categoryName.replace(/\s+/g, "-").toLowerCase()}`;
+      const baseUrl = `/m/vendors/marketplace/${categoryName.replace(/\s+/g, "-")?.toLowerCase()}`;
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     } else if (card.action === "match") {
-      const url = `/m/events/${currentCategory.toLowerCase()}?filter=${categoryName
-        .replace(/\s+/g, "-")
-        .toLowerCase()}`;
+      const url = `/m/events/${currentCategory?.toLowerCase()}?filter=${categoryName
+        ?.replace(/\s+/g, "-")
+        ?.toLowerCase()}`;
       window.location.href = url;
       console.log("Opening matching flow for:", categoryName);
     } else if (card.action === "random") {
-      const baseUrl = `/m/vendors/marketplace/${categoryName.replace(/\s+/g, "-").toLowerCase()}`;
+      const baseUrl = `/m/vendors/marketplace/${categoryName.replace(/\s+/g, "-")?.toLowerCase()}`;
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     }
@@ -692,7 +692,7 @@ const CategoryGrid = ({ currentCategory }) => {
       >
         {activeCategories.map((item, index) => (
           <Link
-            href={`/m/vendors/marketplace/${item?.name.replace(/\s+/g, "-").toLowerCase()}`}
+            href={`/m/vendors/marketplace/${item?.name.replace(/\s+/g, "-")?.toLowerCase()}`}
             key={index} // Keys are stable since list doesn't re-sort
             className={`flex flex-col items-center shrink-0 ${
               item.span === 2 ? "row-span-1 col-span-2" : "col-span-1"

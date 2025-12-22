@@ -2877,7 +2877,7 @@ export default function MarketplacePageWrapper() {
   useEffect(() => {
     if (debouncedSearchQuery && debouncedSearchQuery.length > 2) {
       setRecentSearches((prev) => {
-        const filtered = prev.filter((s) => s.toLowerCase() !== debouncedSearchQuery.toLowerCase());
+        const filtered = prev.filter((s) => s?.toLowerCase() !== debouncedSearchQuery?.toLowerCase());
         return [debouncedSearchQuery, ...filtered].slice(0, MAX_RECENT_SEARCHES);
       });
     }

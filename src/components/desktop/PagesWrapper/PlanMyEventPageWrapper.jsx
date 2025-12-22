@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useUser } from '@clerk/nextjs';
+import { useUser } from "@clerk/nextjs";
 
 const categoryConfig = {
   wedding: {
@@ -47,15 +47,12 @@ const categoryConfig = {
     tagline: "Your Wedding Requirements",
     description:
       "Let's start with these details to help us create your personalized proposal, with venue suggestions, decor ideas and more.",
-    successMessage:
-      "Your personalized wedding proposal is being crafted with love and attention to detail.",
+    successMessage: "Your personalized wedding proposal is being crafted with love and attention to detail.",
     infoMessages: {
       city: "has amazing venues for memorable weddings.",
       date: "gives us great time to plan your special day.",
-      guests:
-        "This helps us recommend the perfect venue size and catering arrangements for your celebration.",
-      budget:
-        "We'll customize our recommendations to fit perfectly within your budget range.",
+      guests: "This helps us recommend the perfect venue size and catering arrangements for your celebration.",
+      budget: "We'll customize our recommendations to fit perfectly within your budget range.",
       name: "Your name helps us create a personalized proposal tailored just for you.",
     },
   },
@@ -83,13 +80,11 @@ const categoryConfig = {
     tagline: "Your Anniversary Celebration",
     description:
       "Plan a memorable anniversary celebration with personalized venue options, entertainment ideas, and special touches.",
-    successMessage:
-      "Your anniversary celebration proposal is being prepared with special care.",
+    successMessage: "Your anniversary celebration proposal is being prepared with special care.",
     infoMessages: {
       city: "is perfect for creating anniversary memories.",
       date: "is ideal for your anniversary celebration.",
-      guests:
-        "This helps us arrange the perfect intimate or grand celebration.",
+      guests: "This helps us arrange the perfect intimate or grand celebration.",
       budget: "We'll create something special within your budget.",
       name: "Your name helps us personalize your anniversary celebration.",
     },
@@ -118,8 +113,7 @@ const categoryConfig = {
     tagline: "Birthday Party Planning",
     description:
       "Create an unforgettable birthday celebration with customized themes, entertainment options, and party ideas.",
-    successMessage:
-      "Your birthday party proposal is being prepared with excitement and creativity.",
+    successMessage: "Your birthday party proposal is being prepared with excitement and creativity.",
     infoMessages: {
       city: "offers great venues for birthday celebrations.",
       date: "will be a perfect day for celebration.",
@@ -176,9 +170,7 @@ const LeftPanel = ({ category }) => {
               <span className="absolute top-1/2 block h-0.5 w-full -translate-y-1/2 bg-amber-200 dark:bg-amber-800"></span>
               <span className="absolute left-0 top-0 block aspect-square h-1.5 rounded-full bg-amber-300 dark:bg-amber-600"></span>
             </span>
-            <h4 className="font-serif text-xl font-semibold text-gray-800 dark:text-gray-100">
-              {config.tagline}
-            </h4>
+            <h4 className="font-serif text-xl font-semibold text-gray-800 dark:text-gray-100">{config.tagline}</h4>
             <span className="relative block h-1.5 w-10 rotate-180">
               <span className="absolute top-1/2 block h-0.5 w-full -translate-y-1/2 bg-amber-200 dark:bg-amber-800"></span>
               <span className="absolute left-0 top-0 block aspect-square h-1.5 rounded-full bg-amber-300 dark:bg-amber-600"></span>
@@ -197,9 +189,7 @@ const LeftPanel = ({ category }) => {
                 <span className="text-2xl">{config.featureIcons[index]}</span>
               </div>
             </div>
-            <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              {item}
-            </span>
+            <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">{item}</span>
           </div>
         ))}
       </div>
@@ -212,9 +202,7 @@ const MobileHeader = ({ category }) => {
   return (
     <div className="lg:hidden w-full p-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm fixed top-0 left-0 z-20">
       <div className="flex items-center justify-between">
-        <span className="text-amber-700 dark:text-amber-400 font-bold text-lg">
-          PlanWab
-        </span>
+        <span className="text-amber-700 dark:text-amber-400 font-bold text-lg">PlanWab</span>
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
           <span>{config.icon}</span>
           <span>{config.title}</span>
@@ -228,12 +216,8 @@ const ExitModal = ({ onConfirm, onCancel }) => (
   <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
       <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-        Are you sure?
-      </h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Your progress will be lost if you exit now.
-      </p>
+      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Are you sure?</h2>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">Your progress will be lost if you exit now.</p>
       <div className="flex justify-center gap-4">
         <button
           onClick={onCancel}
@@ -273,27 +257,17 @@ const StepHeader = ({ number, title, totalSteps = 5 }) => (
 
 const InfoBox = ({ text, icon: Icon = Lightbulb }) => (
   <div className="mt-8 flex items-start gap-3 p-4 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30 rounded-xl border border-amber-200 dark:border-amber-800/50 text-amber-700 dark:text-amber-300">
-    <Icon
-      size={16}
-      className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
-    />
+    <Icon size={16} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
     <span className="leading-relaxed text-sm">{text}</span>
   </div>
 );
 
-const CustomDropdown = ({
-  label,
-  value,
-  onChange,
-  options,
-  placeholder,
-  icon: Icon,
-}) => {
+const CustomDropdown = ({ label, value, onChange, options, placeholder, icon: Icon }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
   const filteredOptions = (options || []).filter((option) =>
-    String(option).toLowerCase().includes(searchTerm.toLowerCase()),
+    String(option)?.toLowerCase()?.includes(searchTerm?.toLowerCase())
   );
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -307,30 +281,20 @@ const CustomDropdown = ({
 
   return (
     <div ref={dropdownRef} className="relative">
-      <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">
-        {label}
-      </label>
+      <label className="block font-serif font-medium text-gray-700 dark:text-gray-300 mb-3 text-base">{label}</label>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full p-4 bg-white dark:bg-gray-700/50 border-2 border-gray-300 dark:border-gray-600 rounded-xl text-left focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 flex items-center justify-between hover:border-amber-400 shadow-sm hover:shadow-md"
       >
         <div className="flex items-center gap-3">
-          {Icon && (
-            <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          )}
+          {Icon && <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
           <span
-            className={`text-base ${value
-                ? "text-gray-800 dark:text-gray-100"
-                : "text-gray-400 dark:text-gray-500"
-              }`}
+            className={`text-base ${value ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}
           >
             {value || placeholder}
           </span>
         </div>
-        <ChevronDown
-          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""
-            }`}
-        />
+        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden">
@@ -354,15 +318,14 @@ const CustomDropdown = ({
                   setIsOpen(false);
                   setSearchTerm("");
                 }}
-                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-between group ${value === option
+                className={`w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-between group ${
+                  value === option
                     ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 font-medium"
                     : "text-gray-700 dark:text-gray-300"
-                  }`}
+                }`}
               >
                 {String(option)}
-                {value === option && (
-                  <Check className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                )}
+                {value === option && <Check className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
               </button>
             ))}
           </div>
@@ -392,15 +355,13 @@ const StepCity = ({ onNext, formData, category }) => {
           <button
             key={city.name}
             onClick={() => setSelectedCity(city.name)}
-            className={`p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-center hover:shadow-xl transform hover:-translate-y-1 ${selectedCity === city.name
+            className={`p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-center hover:shadow-xl transform hover:-translate-y-1 ${
+              selectedCity === city.name
                 ? "bg-gradient-to-br from-amber-600 to-amber-800 border-amber-800 shadow-xl text-white scale-105"
                 : "bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 text-gray-800 dark:text-gray-200"
-              }`}
+            }`}
           >
-            <div
-              className={`text-3xl mb-3 ${selectedCity === city.name ? "filter brightness-0 invert" : ""
-                }`}
-            >
+            <div className={`text-3xl mb-3 ${selectedCity === city.name ? "filter brightness-0 invert" : ""}`}>
               {city.icon}
             </div>
             <span className="font-medium text-xs sm:text-sm">{city.name}</span>
@@ -412,12 +373,7 @@ const StepCity = ({ onNext, formData, category }) => {
           </button>
         ))}
       </div>
-      {selectedCity && (
-        <InfoBox
-          text={`Great choice! ${selectedCity} ${config.infoMessages.city}`}
-          icon={MapPin}
-        />
-      )}
+      {selectedCity && <InfoBox text={`Great choice! ${selectedCity} ${config.infoMessages.city}`} icon={MapPin} />}
     </div>
   );
 };
@@ -472,12 +428,7 @@ const StepDate = ({ onNext, onPrev, formData, category }) => {
           *We will confirm the exact date and time within 48 hours
         </div>
       </div>
-      {year && month && (
-        <InfoBox
-          text={`Perfect! ${month} ${year} ${config.infoMessages.date}`}
-          icon={Calendar}
-        />
-      )}
+      {year && month && <InfoBox text={`Perfect! ${month} ${year} ${config.infoMessages.date}`} icon={Calendar} />}
       <div className="flex justify-between items-center pt-4">
         <button
           onClick={onPrev}
@@ -540,28 +491,20 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
         {guests && parseInt(guests) > 0 && (
           <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <div className="text-center">
-              <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {guests}
-              </p>
-              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Total Guests
-              </p>
+              <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">{guests}</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">Total Guests</p>
             </div>
             <div className="text-center">
               <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {Math.ceil(parseInt(guests) / 8)}
               </p>
-              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Tables Needed
-              </p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">Tables Needed</p>
             </div>
             <div className="text-center">
               <p className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
                 {Math.ceil(parseInt(guests) * 15)}
               </p>
-              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Sq.ft. Required
-              </p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 mt-1">Sq.ft. Required</p>
             </div>
           </div>
         )}
@@ -589,14 +532,11 @@ const StepGuests = ({ onNext, onPrev, formData, category }) => {
 
 const StepBudget = ({ onNext, onPrev, formData, category }) => {
   const [budget, setBudget] = useState(formData.budgetRange || 25);
-  const [paymentPreference, setPaymentPreference] = useState(
-    formData.paymentPreference || "",
-  );
+  const [paymentPreference, setPaymentPreference] = useState(formData.paymentPreference || "");
   const config = categoryConfig[category] || categoryConfig.wedding;
   const budgetValue = React.useMemo(() => {
     if (budget <= 50) return `${budget * 2} Lakhs`;
-    if (budget <= 75)
-      return `${(((budget - 50) / 25) * 4 + 1).toFixed(1)} Crores`;
+    if (budget <= 75) return `${(((budget - 50) / 25) * 4 + 1).toFixed(1)} Crores`;
     return `${(((budget - 75) / 25) * 4 + 5).toFixed(1)} Crores`;
   }, [budget]);
   const paymentOptions = ["Full Payment", "Installments", "Part Payment"];
@@ -660,14 +600,7 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
   );
 };
 
-const StepName = ({
-  onNext,
-  onPrev,
-  formData,
-  category,
-  isSubmitting,
-  submitError,
-}) => {
+const StepName = ({ onNext, onPrev, formData, category, isSubmitting, submitError }) => {
   const [name, setName] = useState(formData.name || "");
   const [email, setEmail] = useState(formData.email || "");
   const [phone, setPhone] = useState(formData.phone || "");
@@ -761,9 +694,7 @@ const DetailItem = ({ icon: Icon, label, value }) => {
       </div>
       <div>
         <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="font-semibold text-gray-800 dark:text-gray-100 text-base">
-          {value}
-        </p>
+        <p className="font-semibold text-gray-800 dark:text-gray-100 text-base">{value}</p>
       </div>
     </div>
   );
@@ -771,9 +702,7 @@ const DetailItem = ({ icon: Icon, label, value }) => {
 
 const StepSuccess = ({ category, formData, onPrev, onReset }) => {
   const config = categoryConfig[category] || categoryConfig.wedding;
-  const fullDate = [formData?.month, formData?.dateRange, formData?.year]
-    .filter(Boolean)
-    .join(", ");
+  const fullDate = [formData?.month, formData?.dateRange, formData?.year].filter(Boolean).join(", ");
 
   return (
     <div className="w-full max-w-4xl mx-auto text-center space-y-8 animate-slide-in">
@@ -782,12 +711,9 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
         Thank You, {formData?.name || "friend"}!
       </h2>
       <div className="space-y-2">
-        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-          {config.successMessage}
-        </p>
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">{config.successMessage}</p>
         <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
-          We&apos;ll be in touch within 24 hours. A summary of your request is
-          below.
+          We&apos;ll be in touch within 24 hours. A summary of your request is below.
         </p>
       </div>
       <div className="text-left bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
@@ -797,16 +723,8 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DetailItem icon={MapPin} label="City" value={formData?.city} />
           <DetailItem icon={Calendar} label="Event Date" value={fullDate} />
-          <DetailItem
-            icon={Users}
-            label="Number of Guests"
-            value={formData?.guests}
-          />
-          <DetailItem
-            icon={DollarSign}
-            label="Estimated Budget"
-            value={formData?.budget}
-          />
+          <DetailItem icon={Users} label="Number of Guests" value={formData?.guests} />
+          <DetailItem icon={DollarSign} label="Estimated Budget" value={formData?.budget} />
           <DetailItem icon={User} label="Contact Name" value={formData?.name} />
           <DetailItem icon={Gift} label="Event Type" value={config?.title} />
         </div>
@@ -883,9 +801,7 @@ export default function PlanMyEventPageWrapper() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(
-            errorData.message || "Failed to submit the proposal.",
-          );
+          throw new Error(errorData.message || "Failed to submit the proposal.");
         }
 
         setCurrentStep((prev) => prev + 1);
@@ -915,40 +831,13 @@ export default function PlanMyEventPageWrapper() {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <StepCity
-            onNext={handleNextStep}
-            formData={formData}
-            category={category}
-          />
-        );
+        return <StepCity onNext={handleNextStep} formData={formData} category={category} />;
       case 2:
-        return (
-          <StepDate
-            onNext={handleNextStep}
-            onPrev={handlePrevStep}
-            formData={formData}
-            category={category}
-          />
-        );
+        return <StepDate onNext={handleNextStep} onPrev={handlePrevStep} formData={formData} category={category} />;
       case 3:
-        return (
-          <StepGuests
-            onNext={handleNextStep}
-            onPrev={handlePrevStep}
-            formData={formData}
-            category={category}
-          />
-        );
+        return <StepGuests onNext={handleNextStep} onPrev={handlePrevStep} formData={formData} category={category} />;
       case 4:
-        return (
-          <StepBudget
-            onNext={handleNextStep}
-            onPrev={handlePrevStep}
-            formData={formData}
-            category={category}
-          />
-        );
+        return <StepBudget onNext={handleNextStep} onPrev={handlePrevStep} formData={formData} category={category} />;
       case 5:
         return (
           <StepName
@@ -961,22 +850,9 @@ export default function PlanMyEventPageWrapper() {
           />
         );
       case 6:
-        return (
-          <StepSuccess
-            category={category}
-            formData={formData}
-            onPrev={handlePrevStep}
-            onReset={handleReset}
-          />
-        );
+        return <StepSuccess category={category} formData={formData} onPrev={handlePrevStep} onReset={handleReset} />;
       default:
-        return (
-          <StepCity
-            onNext={handleNextStep}
-            formData={formData}
-            category={category}
-          />
-        );
+        return <StepCity onNext={handleNextStep} formData={formData} category={category} />;
     }
   };
 
@@ -995,12 +871,7 @@ export default function PlanMyEventPageWrapper() {
           {renderCurrentStep()}
         </div>
       </main>
-      {showExitModal && (
-        <ExitModal
-          onConfirm={handleExit}
-          onCancel={() => setShowExitModal(false)}
-        />
-      )}
+      {showExitModal && <ExitModal onConfirm={handleExit} onCancel={() => setShowExitModal(false)} />}
       <style jsx>{`
         .slider::-webkit-slider-thumb {
           appearance: none;

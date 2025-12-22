@@ -7,7 +7,7 @@ export async function generateMetadata({ params }) {
 
   return {
     title: `${formattedCategory} Planning Page | PlanWAB - Events Planning And Vendors Marketplace`,
-    description: `Plan your perfect ${formattedCategory.toLowerCase()} with PlanWAB. Find trusted vendors, manage tasks, and create unforgettable ${formattedCategory.toLowerCase()} events with ease. Start planning today!`,
+    description: `Plan your perfect ${formattedCategory?.toLowerCase()} with PlanWAB. Find trusted vendors, manage tasks, and create unforgettable ${formattedCategory?.toLowerCase()} events with ease. Start planning today!`,
   };
 }
 

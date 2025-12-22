@@ -91,159 +91,29 @@ export default function AddVendor() {
   });
 
   const fieldOptions = {
-    makeupServices: [
-      "Bridal Makeup",
-      "Party Makeup",
-      "Engagement Makeup",
-      "Airbrush Makeup",
-      "Hairstyling",
-    ],
-    makeupBrands: [
-      "MAC",
-      "Huda Beauty",
-      "Bobbi Brown",
-      "NARS",
-      "Dior",
-      "Chanel",
-      "Kryolan",
-    ],
-    plannerServices: [
-      "Full Wedding Planning",
-      "Partial Planning",
-      "Day-of Coordination",
-      "Destination Weddings",
-    ],
-    eventTypes: [
-      "Weddings",
-      "Corporate Events",
-      "Private Parties",
-      "Birthdays",
-    ],
-    clothingTypes: [
-      "Bridal Lehengas",
-      "Groom Sherwanis",
-      "Sarees",
-      "Suits",
-      "Indo-Western",
-    ],
-    mehendiTypes: [
-      "Traditional",
-      "Arabic",
-      "Bridal Mehendi",
-      "Glitter Mehendi",
-    ],
-    cakeFlavors: [
-      "Chocolate Truffle",
-      "Red Velvet",
-      "Pineapple",
-      "Black Forest",
-      "Butterscotch",
-      "Custom",
-    ],
+    makeupServices: ["Bridal Makeup", "Party Makeup", "Engagement Makeup", "Airbrush Makeup", "Hairstyling"],
+    makeupBrands: ["MAC", "Huda Beauty", "Bobbi Brown", "NARS", "Dior", "Chanel", "Kryolan"],
+    plannerServices: ["Full Wedding Planning", "Partial Planning", "Day-of Coordination", "Destination Weddings"],
+    eventTypes: ["Weddings", "Corporate Events", "Private Parties", "Birthdays"],
+    clothingTypes: ["Bridal Lehengas", "Groom Sherwanis", "Sarees", "Suits", "Indo-Western"],
+    mehendiTypes: ["Traditional", "Arabic", "Bridal Mehendi", "Glitter Mehendi"],
+    cakeFlavors: ["Chocolate Truffle", "Red Velvet", "Pineapple", "Black Forest", "Butterscotch", "Custom"],
     jewelleryTypes: ["For Rent", "For Purchase"],
-    jewelleryStyles: [
-      "Traditional Gold",
-      "Kundan",
-      "Polki",
-      "Diamond",
-      "Modern Designs",
-    ],
-    invitationTypes: [
-      "Digital E-vites",
-      "Printed Cards",
-      "Boxed Invitations",
-      "Luxury Invitations",
-    ],
+    jewelleryStyles: ["Traditional Gold", "Kundan", "Polki", "Diamond", "Modern Designs"],
+    invitationTypes: ["Digital E-vites", "Printed Cards", "Boxed Invitations", "Luxury Invitations"],
     djGenres: ["Bollywood", "Punjabi", "Hip Hop", "EDM", "Retro", "Commercial"],
-    hairstylingServices: [
-      "Bridal Hairstyling",
-      "Guest Hairstyling",
-      "Hair Extensions",
-      "Hair Treatments",
-    ],
-    cuisineTypes: [
-      "North Indian",
-      "South Indian",
-      "Chinese",
-      "Italian",
-      "Continental",
-      "Thai",
-      "Mexican",
-    ],
-    menuOptions: [
-      "Pure Vegetarian",
-      "Non-Vegetarian",
-      "Vegan",
-      "Jain Food",
-      "Gluten-Free",
-    ],
-    photographerServices: [
-      "Wedding Photography",
-      "Pre-Wedding Photoshoot",
-      "Candid Photography",
-      "Drone Shoots",
-    ],
-    photographerPackages: [
-      "Basic Package",
-      "Standard Package",
-      "Premium Package",
-      "Custom Packages",
-    ],
-    equipment: [
-      "Professional DSLR",
-      "Mirrorless Cameras",
-      "Drones",
-      "Gimbals",
-      "Professional Lighting",
-    ],
-    decoratorThemes: [
-      "Traditional",
-      "Modern",
-      "Rustic",
-      "Floral",
-      "Royal",
-      "Minimalist",
-    ],
-    designStyles: [
-      "Classic",
-      "Contemporary",
-      "Vintage",
-      "Bohemian",
-      "Luxurious",
-    ],
-    materialsUsed: [
-      "Fresh Flowers",
-      "Artificial Flowers",
-      "Fabric Draping",
-      "LED Lighting",
-      "Custom Props",
-    ],
-    amenities: [
-      "Air Conditioning",
-      "Parking",
-      "Valet Parking",
-      "Bridal Suite",
-      "Sound System",
-      "Wi-Fi",
-    ],
-    facilities: [
-      "Main Stage",
-      "Dance Floor",
-      "Green Room",
-      "Guest Restrooms",
-      "Outdoor Area",
-      "Swimming Pool",
-    ],
-    availableAreas: [
-      "Mumbai",
-      "Delhi NCR",
-      "Bangalore",
-      "Chennai",
-      "Kolkata",
-      "Hyderabad",
-      "Pune",
-      "Jaipur",
-    ],
+    hairstylingServices: ["Bridal Hairstyling", "Guest Hairstyling", "Hair Extensions", "Hair Treatments"],
+    cuisineTypes: ["North Indian", "South Indian", "Chinese", "Italian", "Continental", "Thai", "Mexican"],
+    menuOptions: ["Pure Vegetarian", "Non-Vegetarian", "Vegan", "Jain Food", "Gluten-Free"],
+    photographerServices: ["Wedding Photography", "Pre-Wedding Photoshoot", "Candid Photography", "Drone Shoots"],
+    photographerPackages: ["Basic Package", "Standard Package", "Premium Package", "Custom Packages"],
+    equipment: ["Professional DSLR", "Mirrorless Cameras", "Drones", "Gimbals", "Professional Lighting"],
+    decoratorThemes: ["Traditional", "Modern", "Rustic", "Floral", "Royal", "Minimalist"],
+    designStyles: ["Classic", "Contemporary", "Vintage", "Bohemian", "Luxurious"],
+    materialsUsed: ["Fresh Flowers", "Artificial Flowers", "Fabric Draping", "LED Lighting", "Custom Props"],
+    amenities: ["Air Conditioning", "Parking", "Valet Parking", "Bridal Suite", "Sound System", "Wi-Fi"],
+    facilities: ["Main Stage", "Dance Floor", "Green Room", "Guest Restrooms", "Outdoor Area", "Swimming Pool"],
+    availableAreas: ["Mumbai", "Delhi NCR", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Jaipur"],
   };
 
   const indianStates = [
@@ -293,12 +163,7 @@ export default function AddVendor() {
     setErrors({});
   };
 
-  const handleInputChange = (
-    field,
-    value,
-    isNested = false,
-    nestedField = "",
-  ) => {
+  const handleInputChange = (field, value, isNested = false, nestedField = "") => {
     setFormData((prev) => {
       if (isNested) {
         return { ...prev, [field]: { ...prev[field], [nestedField]: value } };
@@ -340,8 +205,7 @@ export default function AddVendor() {
     if (errors.images) setErrors((prev) => ({ ...prev, images: "" }));
   };
 
-  const removeFile = (index) =>
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (index) => setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -364,15 +228,13 @@ export default function AddVendor() {
       newErrors.name = "Business name must be at least 2 characters long";
     }
 
-    if (!formData.phoneNo.trim())
-      newErrors.phoneNo = "Phone number is required";
+    if (!formData.phoneNo.trim()) newErrors.phoneNo = "Phone number is required";
 
     if (!formData.username.trim()) newErrors.username = "Username is required";
 
     if (!formData.address.city.trim()) newErrors.city = "City is required";
 
-    if (uploadedFiles.length === 0)
-      newErrors.images = "At least one image is required";
+    if (uploadedFiles.length === 0) newErrors.images = "At least one image is required";
 
     const { categoryData } = formData;
 
@@ -421,17 +283,15 @@ export default function AddVendor() {
       const uploadPromises = uploadedFiles.map((file) => {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append(
-          "upload_preset",
-          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
-          "planWab",
-        );
+        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "planWab");
         return fetch(
-          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dkbbz4ev9"}/image/upload`,
+          `https://api.cloudinary.com/v1_1/${
+            process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dkbbz4ev9"
+          }/image/upload`,
           {
             method: "POST",
             body: formData,
-          },
+          }
         ).then((res) => res.json());
       });
 
@@ -462,16 +322,12 @@ export default function AddVendor() {
         result = JSON.parse(responseText);
       } catch (err) {
         console.error("Failed to parse JSON response:", responseText);
-        throw new Error(
-          `Server returned an invalid response (Status: ${response.status}).`,
-        );
+        throw new Error(`Server returned an invalid response (Status: ${response.status}).`);
       }
 
       if (!response.ok) {
         setErrors((prev) => ({ ...prev, ...result.errors }));
-        throw new Error(
-          result.message || "An error occurred during vendor registration.",
-        );
+        throw new Error(result.message || "An error occurred during vendor registration.");
       }
 
       setSubmitFeedback({
@@ -503,8 +359,8 @@ export default function AddVendor() {
               </h1>
             </div>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Join our premium network of wedding and event service providers.
-              Complete your professional profile to start receiving bookings.
+              Join our premium network of wedding and event service providers. Complete your professional profile to
+              start receiving bookings.
             </p>
           </div>
 
@@ -518,23 +374,21 @@ export default function AddVendor() {
                   key={cat.key}
                   type="button"
                   onClick={() => handleCategorySelect(cat.key)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl aspect-square transition-all duration-300 ${activeCategory === cat.key ? "bg-indigo-600 text-white shadow-lg" : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"}`}
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl aspect-square transition-all duration-300 ${
+                    activeCategory === cat.key
+                      ? "bg-indigo-600 text-white shadow-lg"
+                      : "bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  }`}
                 >
                   <cat.icon className="w-6 h-6 mb-1" />
-                  <span className="text-xs font-medium text-center">
-                    {cat.label}
-                  </span>
+                  <span className="text-xs font-medium text-center">{cat.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-12">
-            <Section
-              title="Business Information"
-              icon={Building}
-              iconColor="from-blue-500 to-blue-600"
-            >
+            <Section title="Business Information" icon={Building} iconColor="from-blue-500 to-blue-600">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <InputField
                   label="Business Name"
@@ -553,9 +407,7 @@ export default function AddVendor() {
                   placeholder="unique_business_handle"
                   required
                   value={formData.username}
-                  onChange={(e) =>
-                    handleInputChange("username", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("username", e.target.value)}
                   error={errors.username}
                   helper="This will be your unique identifier on the platform"
                 />
@@ -583,48 +435,26 @@ export default function AddVendor() {
               </div>
             </Section>
 
-            <Section
-              title="Primary Contact Person"
-              icon={User}
-              iconColor="from-green-500 to-green-600"
-            >
+            <Section title="Primary Contact Person" icon={User} iconColor="from-green-500 to-green-600">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <InputField
                   label="First Name"
                   id="contact-first-name"
                   placeholder="Rajesh"
                   value={formData.contactPerson.firstName}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "contactPerson",
-                      e.target.value,
-                      true,
-                      "firstName",
-                    )
-                  }
+                  onChange={(e) => handleInputChange("contactPerson", e.target.value, true, "firstName")}
                 />
                 <InputField
                   label="Last Name"
                   id="contact-last-name"
                   placeholder="Kumar"
                   value={formData.contactPerson.lastName}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "contactPerson",
-                      e.target.value,
-                      true,
-                      "lastName",
-                    )
-                  }
+                  onChange={(e) => handleInputChange("contactPerson", e.target.value, true, "lastName")}
                 />
               </div>
             </Section>
 
-            <Section
-              title="Business Address"
-              icon={MapPin}
-              iconColor="from-purple-500 to-purple-600"
-            >
+            <Section title="Business Address" icon={MapPin} iconColor="from-purple-500 to-purple-600">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="md:col-span-2">
                   <InputField
@@ -632,14 +462,7 @@ export default function AddVendor() {
                     id="street"
                     placeholder="123, MG Road, Near City Mall"
                     value={formData.address.street}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "address",
-                        e.target.value,
-                        true,
-                        "street",
-                      )
-                    }
+                    onChange={(e) => handleInputChange("address", e.target.value, true, "street")}
                   />
                 </div>
                 <InputField
@@ -648,9 +471,7 @@ export default function AddVendor() {
                   placeholder="Indore"
                   required
                   value={formData.address.city}
-                  onChange={(e) =>
-                    handleInputChange("address", e.target.value, true, "city")
-                  }
+                  onChange={(e) => handleInputChange("address", e.target.value, true, "city")}
                   error={errors.city}
                 />
                 <SearchableSelect
@@ -659,42 +480,27 @@ export default function AddVendor() {
                   options={indianStates}
                   placeholder="Select your state"
                   value={formData.address.state}
-                  onChange={(value) =>
-                    handleInputChange("address", value, true, "state")
-                  }
+                  onChange={(value) => handleInputChange("address", value, true, "state")}
                 />
                 <InputField
                   label="Postal Code"
                   id="postal-code"
                   placeholder="452001"
                   value={formData.address.postalCode}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "address",
-                      e.target.value,
-                      true,
-                      "postalCode",
-                    )
-                  }
+                  onChange={(e) => handleInputChange("address", e.target.value, true, "postalCode")}
                 />
                 <CustomSelect
                   label="Country"
                   id="country"
                   options={["India"]}
                   value={formData.address.country}
-                  onChange={(value) =>
-                    handleInputChange("address", value, true, "country")
-                  }
+                  onChange={(value) => handleInputChange("address", value, true, "country")}
                   disabled
                 />
               </div>
             </Section>
 
-            <Section
-              title="Service Information"
-              icon={Globe}
-              iconColor="from-orange-500 to-orange-600"
-            >
+            <Section title="Service Information" icon={Globe} iconColor="from-orange-500 to-orange-600">
               <div className="space-y-8">
                 <MultiSelect
                   label="Service Areas"
@@ -702,9 +508,7 @@ export default function AddVendor() {
                   options={fieldOptions.availableAreas}
                   placeholder="Select cities where you provide services"
                   value={formData.availableAreas}
-                  onChange={(value) =>
-                    handleInputChange("availableAreas", value)
-                  }
+                  onChange={(value) => handleInputChange("availableAreas", value)}
                   helper="Choose all cities where you can provide your services"
                 />
                 <div>
@@ -715,9 +519,7 @@ export default function AddVendor() {
                     rows={6}
                     placeholder="Describe your business, specialties, experience, and what makes you unique..."
                     value={formData.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("description", e.target.value)}
                     className="w-full px-6 py-4 bg-white dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -743,9 +545,7 @@ export default function AddVendor() {
                           minPlaceholder="Min"
                           maxPlaceholder="Max"
                           value={formData.categoryData.seating}
-                          onChange={(min, max) =>
-                            handleCategoryDataChange("seating", { min, max })
-                          }
+                          onChange={(min, max) => handleCategoryDataChange("seating", { min, max })}
                         />
                         <RangeField
                           label="Number of Rooms"
@@ -753,9 +553,7 @@ export default function AddVendor() {
                           minPlaceholder="Min"
                           maxPlaceholder="Max"
                           value={formData.categoryData.rooms}
-                          onChange={(min, max) =>
-                            handleCategoryDataChange("rooms", { min, max })
-                          }
+                          onChange={(min, max) => handleCategoryDataChange("rooms", { min, max })}
                         />
                       </div>
                       <InputField
@@ -763,9 +561,7 @@ export default function AddVendor() {
                         type="number"
                         min="0"
                         value={formData.categoryData.parking || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("parking", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("parking", e.target.value)}
                       />
                       <RangeField
                         label="Per Day Rental Price (₹)"
@@ -774,9 +570,7 @@ export default function AddVendor() {
                         minPlaceholder="Min Price"
                         maxPlaceholder="Max Price"
                         value={formData.categoryData.perDayPrice}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("perDayPrice", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("perDayPrice", { min, max })}
                         error={errors.perDayPrice}
                       />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -803,35 +597,27 @@ export default function AddVendor() {
                         label="Services Offered"
                         options={fieldOptions.photographerServices}
                         value={formData.categoryData.services || []}
-                        onChange={(v) =>
-                          handleCategoryDataChange("services", v)
-                        }
+                        onChange={(v) => handleCategoryDataChange("services", v)}
                       />
                       <MultiSelect
                         label="Packages"
                         options={fieldOptions.photographerPackages}
                         value={formData.categoryData.packages || []}
-                        onChange={(v) =>
-                          handleCategoryDataChange("packages", v)
-                        }
+                        onChange={(v) => handleCategoryDataChange("packages", v)}
                       />
                       <RangeField
                         label="Price Per Event (₹)"
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <InputField
                         label="Delivery Time (in days)"
                         type="number"
                         min="1"
                         value={formData.categoryData.delivery || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("delivery", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("delivery", e.target.value)}
                       />
                     </div>
                   </Section>
@@ -843,9 +629,7 @@ export default function AddVendor() {
                         label="Services Offered"
                         options={fieldOptions.makeupServices}
                         value={formData.categoryData.services || []}
-                        onChange={(v) =>
-                          handleCategoryDataChange("services", v)
-                        }
+                        onChange={(v) => handleCategoryDataChange("services", v)}
                       />
                       <MultiSelect
                         label="Brands Used"
@@ -858,18 +642,14 @@ export default function AddVendor() {
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <div className="flex items-center">
                         <input
                           type="checkbox"
                           id="trial"
                           checked={!!formData.categoryData.trial}
-                          onChange={(e) =>
-                            handleCategoryDataChange("trial", e.target.checked)
-                          }
+                          onChange={(e) => handleCategoryDataChange("trial", e.target.checked)}
                           className="h-4 w-4"
                         />
                         <label htmlFor="trial" className="ml-2">
@@ -886,9 +666,7 @@ export default function AddVendor() {
                         label="Planning Services"
                         options={fieldOptions.plannerServices}
                         value={formData.categoryData.services || []}
-                        onChange={(v) =>
-                          handleCategoryDataChange("services", v)
-                        }
+                        onChange={(v) => handleCategoryDataChange("services", v)}
                       />
                       <MultiSelect
                         label="Event Types Handled"
@@ -901,18 +679,14 @@ export default function AddVendor() {
                         type="number"
                         min="0"
                         value={formData.categoryData.experience || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("experience", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("experience", e.target.value)}
                       />
                       <RangeField
                         label="Service Fee (₹)"
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.fee}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("fee", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("fee", { min, max })}
                       />
                     </div>
                   </Section>
@@ -924,9 +698,7 @@ export default function AddVendor() {
                         label="Cuisine Types"
                         options={fieldOptions.cuisineTypes}
                         value={formData.categoryData.cuisines || []}
-                        onChange={(v) =>
-                          handleCategoryDataChange("cuisines", v)
-                        }
+                        onChange={(v) => handleCategoryDataChange("cuisines", v)}
                       />
                       <MultiSelect
                         label="Menu Options"
@@ -940,18 +712,14 @@ export default function AddVendor() {
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <InputField
                         label="Minimum Order (plates)"
                         type="number"
                         min="10"
                         value={formData.categoryData.minOrder || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("minOrder", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("minOrder", e.target.value)}
                       />
                     </div>
                   </Section>
@@ -970,18 +738,14 @@ export default function AddVendor() {
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <div className="flex items-center">
                         <input
                           type="checkbox"
                           id="custom"
                           checked={!!formData.categoryData.custom}
-                          onChange={(e) =>
-                            handleCategoryDataChange("custom", e.target.checked)
-                          }
+                          onChange={(e) => handleCategoryDataChange("custom", e.target.checked)}
                           className="h-4 w-4"
                         />
                         <label htmlFor="custom" className="ml-2">
@@ -1005,18 +769,14 @@ export default function AddVendor() {
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.bridalPrice}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("bridalPrice", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("bridalPrice", { min, max })}
                       />
                       <InputField
                         label="Price Per Hand (₹)"
                         type="number"
                         min="100"
                         value={formData.categoryData.perHand || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("perHand", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("perHand", e.target.value)}
                       />
                     </div>
                   </Section>
@@ -1035,9 +795,7 @@ export default function AddVendor() {
                         type="number"
                         min="500"
                         value={formData.categoryData.priceKg || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("priceKg", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("priceKg", e.target.value)}
                       />
                       <InputField
                         label="Minimum Weight (KG)"
@@ -1045,9 +803,7 @@ export default function AddVendor() {
                         min="0.5"
                         step="0.5"
                         value={formData.categoryData.minWeight || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("minWeight", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("minWeight", e.target.value)}
                       />
                     </div>
                   </Section>
@@ -1072,9 +828,7 @@ export default function AddVendor() {
                           type="checkbox"
                           id="customJewel"
                           checked={!!formData.categoryData.custom}
-                          onChange={(e) =>
-                            handleCategoryDataChange("custom", e.target.checked)
-                          }
+                          onChange={(e) => handleCategoryDataChange("custom", e.target.checked)}
                           className="h-4 w-4"
                         />
                         <label htmlFor="customJewel" className="ml-2">
@@ -1098,18 +852,14 @@ export default function AddVendor() {
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <InputField
                         label="Minimum Order Quantity"
                         type="number"
                         min="20"
                         value={formData.categoryData.minOrder || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("minOrder", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("minOrder", e.target.value)}
                       />
                     </div>
                   </Section>
@@ -1128,21 +878,14 @@ export default function AddVendor() {
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <div className="flex items-center">
                         <input
                           type="checkbox"
                           id="equipment"
                           checked={!!formData.categoryData.equipment}
-                          onChange={(e) =>
-                            handleCategoryDataChange(
-                              "equipment",
-                              e.target.checked,
-                            )
-                          }
+                          onChange={(e) => handleCategoryDataChange("equipment", e.target.checked)}
                           className="h-4 w-4"
                         />
                         <label htmlFor="equipment" className="ml-2">
@@ -1159,27 +902,21 @@ export default function AddVendor() {
                         label="Services Offered"
                         options={fieldOptions.hairstylingServices}
                         value={formData.categoryData.services || []}
-                        onChange={(v) =>
-                          handleCategoryDataChange("services", v)
-                        }
+                        onChange={(v) => handleCategoryDataChange("services", v)}
                       />
                       <RangeField
                         label="Price Per Session (₹)"
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                       <div className="flex items-center">
                         <input
                           type="checkbox"
                           id="hairTrial"
                           checked={!!formData.categoryData.trial}
-                          onChange={(e) =>
-                            handleCategoryDataChange("trial", e.target.checked)
-                          }
+                          onChange={(e) => handleCategoryDataChange("trial", e.target.checked)}
                           className="h-4 w-4"
                         />
                         <label htmlFor="hairTrial" className="ml-2">
@@ -1196,18 +933,14 @@ export default function AddVendor() {
                         label="Service Name"
                         required
                         value={formData.categoryData.name || ""}
-                        onChange={(e) =>
-                          handleCategoryDataChange("name", e.target.value)
-                        }
+                        onChange={(e) => handleCategoryDataChange("name", e.target.value)}
                       />
                       <RangeField
                         label="Price (₹)"
                         minPlaceholder="Min"
                         maxPlaceholder="Max"
                         value={formData.categoryData.price}
-                        onChange={(min, max) =>
-                          handleCategoryDataChange("price", { min, max })
-                        }
+                        onChange={(min, max) => handleCategoryDataChange("price", { min, max })}
                       />
                     </div>
                   </Section>
@@ -1215,13 +948,13 @@ export default function AddVendor() {
               }[activeCategory]
             }
 
-            <Section
-              title="Business Images"
-              icon={UploadCloud}
-              iconColor="from-red-500 to-orange-500"
-            >
+            <Section title="Business Images" icon={UploadCloud} iconColor="from-red-500 to-orange-500">
               <div
-                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${dragActive ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20" : "border-gray-300 dark:border-gray-600 hover:border-indigo-400"} ${errors.images ? "border-red-500" : ""}`}
+                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
+                  dragActive
+                    ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
+                    : "border-gray-300 dark:border-gray-600 hover:border-indigo-400"
+                } ${errors.images ? "border-red-500" : ""}`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -1242,15 +975,9 @@ export default function AddVendor() {
                     onChange={(e) => handleFileUpload(e.target.files)}
                   />
                 </label>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  or drag and drop
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">or drag and drop</p>
               </div>
-              {errors.images && (
-                <p className="mt-2 text-sm text-red-500 text-center">
-                  {errors.images}
-                </p>
-              )}
+              {errors.images && <p className="mt-2 text-sm text-red-500 text-center">{errors.images}</p>}
               {uploadedFiles.length > 0 && (
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {uploadedFiles.map((file, index) => (
@@ -1278,7 +1005,9 @@ export default function AddVendor() {
             <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
               {submitFeedback.message && (
                 <div
-                  className={`p-4 mb-4 rounded-lg text-center font-medium ${submitFeedback.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                  className={`p-4 mb-4 rounded-lg text-center font-medium ${
+                    submitFeedback.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                  }`}
                 >
                   {submitFeedback.message}
                 </div>
@@ -1322,28 +1051,14 @@ const Section = ({ title, icon: Icon, children, iconColor }) => (
       <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-md">
         <Icon className="w-6 h-6 text-white" />
       </div>
-      <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-        {title}
-      </h3>
+      <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{title}</h3>
     </div>
     {children}
   </div>
 );
-const InputField = ({
-  label,
-  id,
-  icon: Icon,
-  required,
-  className = "",
-  helper,
-  error,
-  ...props
-}) => (
+const InputField = ({ label, id, icon: Icon, required, className = "", helper, error, ...props }) => (
   <div>
-    <label
-      htmlFor={id}
-      className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
-    >
+    <label htmlFor={id} className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
     <div className="relative">
@@ -1356,47 +1071,37 @@ const InputField = ({
         id={id}
         {...props}
         required={required}
-        className={`w-full ${Icon ? "pl-11" : "pl-4"} pr-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl transition-all ${error ? "border-red-500 ring-red-500" : "border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500"} ${className}`}
+        className={`w-full ${
+          Icon ? "pl-11" : "pl-4"
+        } pr-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl transition-all ${
+          error
+            ? "border-red-500 ring-red-500"
+            : "border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500"
+        } ${className}`}
       />
     </div>
-    {helper && !error && (
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helper}</p>
-    )}
+    {helper && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helper}</p>}
     {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
   </div>
 );
-const CustomSelect = ({
-  label,
-  id,
-  options,
-  placeholder,
-  required,
-  value,
-  onChange,
-  disabled,
-}) => {
+const CustomSelect = ({ label, id, options, placeholder, required, value, onChange, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
-      >
+      <label htmlFor={id} className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div className="relative">
         <button
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
-          className={`w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl text-left flex items-center justify-between ${disabled ? "cursor-not-allowed bg-gray-100" : "border-gray-200 dark:border-gray-600"}`}
+          className={`w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl text-left flex items-center justify-between ${
+            disabled ? "cursor-not-allowed bg-gray-100" : "border-gray-200 dark:border-gray-600"
+          }`}
           disabled={disabled}
         >
-          <span className={value ? "" : "text-gray-500"}>
-            {value || placeholder}
-          </span>
-          <ChevronDown
-            className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
+          <span className={value ? "" : "text-gray-500"}>{value || placeholder}</span>
+          <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
         </button>
         {isOpen && !disabled && (
           <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border rounded-lg shadow-lg max-h-60 overflow-auto">
@@ -1419,20 +1124,10 @@ const CustomSelect = ({
     </div>
   );
 };
-const SearchableSelect = ({
-  label,
-  id,
-  options,
-  placeholder,
-  required,
-  value,
-  onChange,
-}) => {
+const SearchableSelect = ({ label, id, options, placeholder, required, value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredOptions = options.filter((o) =>
-    o.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredOptions = options.filter((o) => o?.toLowerCase().includes(searchTerm?.toLowerCase()));
   const handleSelect = (option) => {
     onChange(option);
     setIsOpen(false);
@@ -1440,10 +1135,7 @@ const SearchableSelect = ({
   };
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
-      >
+      <label htmlFor={id} className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div className="relative">
@@ -1452,12 +1144,8 @@ const SearchableSelect = ({
           onClick={() => setIsOpen(!isOpen)}
           className="w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-left flex items-center justify-between"
         >
-          <span className={value ? "" : "text-gray-500"}>
-            {value || placeholder}
-          </span>
-          <ChevronDown
-            className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
+          <span className={value ? "" : "text-gray-500"}>{value || placeholder}</span>
+          <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
         </button>
         {isOpen && (
           <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border rounded-lg shadow-lg">
@@ -1484,9 +1172,7 @@ const SearchableSelect = ({
                   </button>
                 ))
               ) : (
-                <div className="px-4 py-2 text-sm text-gray-500">
-                  No results
-                </div>
+                <div className="px-4 py-2 text-sm text-gray-500">No results</div>
               )}
             </div>
           </div>
@@ -1495,26 +1181,12 @@ const SearchableSelect = ({
     </div>
   );
 };
-const MultiSelect = ({
-  label,
-  options,
-  placeholder,
-  required,
-  value = [],
-  onChange,
-  helper,
-}) => {
+const MultiSelect = ({ label, options, placeholder, required, value = [], onChange, helper }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredOptions = options.filter((o) =>
-    o.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredOptions = options.filter((o) => o?.toLowerCase().includes(searchTerm?.toLowerCase()));
   const toggleOption = (option) =>
-    onChange(
-      value.includes(option)
-        ? value.filter((i) => i !== option)
-        : [...value, option],
-    );
+    onChange(value.includes(option) ? value.filter((i) => i !== option) : [...value, option]);
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -1529,9 +1201,7 @@ const MultiSelect = ({
           <span className={value.length > 0 ? "" : "text-gray-500"}>
             {value.length > 0 ? `${value.length} selected` : placeholder}
           </span>
-          <ChevronDown
-            className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
+          <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
         </button>
         {isOpen && (
           <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border rounded-lg shadow-xl">
@@ -1553,9 +1223,7 @@ const MultiSelect = ({
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-between"
                 >
                   <span>{o}</span>
-                  {value.includes(o) && (
-                    <Check className="w-4 h-4 text-indigo-600" />
-                  )}
+                  {value.includes(o) && <Check className="w-4 h-4 text-indigo-600" />}
                 </button>
               ))}
             </div>
@@ -1585,17 +1253,7 @@ const MultiSelect = ({
     </div>
   );
 };
-const RangeField = ({
-  label,
-  id,
-  minPlaceholder,
-  maxPlaceholder,
-  required,
-  onChange,
-  value = {},
-  helper,
-  error,
-}) => {
+const RangeField = ({ label, id, minPlaceholder, maxPlaceholder, required, onChange, value = {}, helper, error }) => {
   const [minValue, setMinValue] = useState(value.min ?? "");
   const [maxValue, setMaxValue] = useState(value.max ?? "");
   useEffect(() => {
@@ -1605,22 +1263,14 @@ const RangeField = ({
   const handleMinChange = (e) => {
     const val = e.target.value;
     setMinValue(val);
-    onChange?.(
-      val ? parseInt(val) : null,
-      maxValue ? parseInt(maxValue) : null,
-    );
+    onChange?.(val ? parseInt(val) : null, maxValue ? parseInt(maxValue) : null);
   };
   const handleMaxChange = (e) => {
     const val = e.target.value;
     setMaxValue(val);
-    onChange?.(
-      minValue ? parseInt(minValue) : null,
-      val ? parseInt(val) : null,
-    );
+    onChange?.(minValue ? parseInt(minValue) : null, val ? parseInt(val) : null);
   };
-  const hasError =
-    (minValue && maxValue && parseInt(minValue) > parseInt(maxValue)) ||
-    !!error;
+  const hasError = (minValue && maxValue && parseInt(minValue) > parseInt(maxValue)) || !!error;
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -1632,7 +1282,9 @@ const RangeField = ({
           placeholder={minPlaceholder}
           value={minValue}
           onChange={handleMinChange}
-          className={`w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl ${hasError ? "border-red-500" : "border-gray-200 dark:border-gray-600"}`}
+          className={`w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl ${
+            hasError ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+          }`}
           min="0"
         />
         <span className="text-gray-500">-</span>
@@ -1641,13 +1293,13 @@ const RangeField = ({
           placeholder={maxPlaceholder}
           value={maxValue}
           onChange={handleMaxChange}
-          className={`w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl ${hasError ? "border-red-500" : "border-gray-200 dark:border-gray-600"}`}
+          className={`w-full px-4 py-3 bg-white dark:bg-gray-700/50 border-2 rounded-xl ${
+            hasError ? "border-red-500" : "border-gray-200 dark:border-gray-600"
+          }`}
           min="0"
         />
       </div>
-      {helper && !error && (
-        <p className="mt-1 text-xs text-gray-500">{helper}</p>
-      )}
+      {helper && !error && <p className="mt-1 text-xs text-gray-500">{helper}</p>}
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
@@ -1672,9 +1324,7 @@ const TagInput = ({ label, value = [], onChange, helper }) => {
   };
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-        {label}
-      </label>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{label}</label>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {value.map((tag) => (
@@ -1683,11 +1333,7 @@ const TagInput = ({ label, value = [], onChange, helper }) => {
               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200"
             >
               {tag}
-              <button
-                type="button"
-                onClick={() => removeTag(tag)}
-                className="ml-2 hover:text-indigo-600"
-              >
+              <button type="button" onClick={() => removeTag(tag)} className="ml-2 hover:text-indigo-600">
                 <X className="w-3 h-3" />
               </button>
             </span>

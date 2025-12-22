@@ -152,7 +152,7 @@ const LocationDropdown = ({ isOpen, onClose }) => {
     "Vijayawada, Andhra Pradesh",
     "Madurai, Tamil Nadu",
   ];
-  const filteredCities = cities.filter((city) => city.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredCities = cities.filter((city) => city?.toLowerCase().includes(searchTerm?.toLowerCase()));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -356,7 +356,7 @@ const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) =>
     "Madurai, Tamil Nadu",
   ];
 
-  const filteredCities = cities.filter((city) => city.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredCities = cities.filter((city) => city?.toLowerCase().includes(searchTerm?.toLowerCase()));
 
   const menuItems = [
     { icon: User, label: "Profile", href: "/admin/settings" },
@@ -446,8 +446,8 @@ const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) =>
               </h3>
             </div>
             {categories.map((cat) => {
-              const categoryPath = `/events/${cat.name.toLowerCase()}`;
-              const isActive = pathname === categoryPath || pathname === `/plan-my-event/${cat.name.toLowerCase()}`;
+              const categoryPath = `/events/${cat?.name?.toLowerCase()}`;
+              const isActive = pathname === categoryPath || pathname === `/plan-my-event/${cat?.name?.toLowerCase()}`;
               return (
                 <Link href={categoryPath} key={cat.name} onClick={onClose}>
                   <div
@@ -746,8 +746,8 @@ export default function DesktopHeader() {
   useEffect(() => {
     const currentCategory = categories.find(
       (cat) =>
-        pathname.startsWith(`/events/${cat.name.toLowerCase()}`) ||
-        pathname.startsWith(`/plan-my-event/${cat.name.toLowerCase()}`)
+        pathname.startsWith(`/events/${cat?.name?.toLowerCase()}`) ||
+        pathname.startsWith(`/plan-my-event/${cat?.name?.toLowerCase()}`)
     );
     if (currentCategory) {
       setActiveCategory(currentCategory.name);
@@ -836,8 +836,9 @@ export default function DesktopHeader() {
                 className={`flex items-center bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1.5 shadow-inner border border-gray-200/50 dark:border-gray-700/50`}
               >
                 {categories.map((cat) => {
-                  const categoryPath = `/events/${cat.name.toLowerCase()}`;
-                  const isActive = pathname === categoryPath || pathname === `/plan-my-event/${cat.name.toLowerCase()}`;
+                  const categoryPath = `/events/${cat?.name?.toLowerCase()}`;
+                  const isActive =
+                    pathname === categoryPath || pathname === `/plan-my-event/${cat?.name?.toLowerCase()}`;
                   return (
                     <Link href={categoryPath} key={cat.name} passHref>
                       <CategoryButton category={cat.name} imageSrc={cat.image} active={isActive} />

@@ -325,7 +325,7 @@ export default function HowItWorksSection({ theme, category }) {
           transition={{ delay: 0.2 }}
           className="text-sm sm:text-base text-gray-500 max-w-md mx-auto"
         >
-          Plan your perfect {theme.name.toLowerCase()} in 4 easy steps
+          Plan your perfect {theme?.name?.toLowerCase()} in 4 easy steps
         </motion.p>
       </div>
 
