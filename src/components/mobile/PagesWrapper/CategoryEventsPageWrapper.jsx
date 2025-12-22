@@ -2859,7 +2859,7 @@ export default function CategoryEventsPageWrapper() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Get category from URL and normalize (handle Default/default cases)
-  const categoryParam = String(params?.category || "wedding").toLowerCase();
+  const categoryParam = (params?.category || "wedding").toLowerCase();
   const normalizedCategory = categoryParam === "default" ? "default" : categoryParam;
   const category = ["wedding", "anniversary", "birthday", "default"].includes(normalizedCategory)
     ? normalizedCategory
