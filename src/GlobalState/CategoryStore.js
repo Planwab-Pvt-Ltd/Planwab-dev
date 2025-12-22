@@ -1,6 +1,6 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export const useCategoryStore = create((set) => ({
-  activeCategory: '',
+  activeCategory: "Default",
   setActiveCategory: (category) => set({ activeCategory: category }),
 }));
