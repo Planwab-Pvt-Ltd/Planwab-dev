@@ -63,6 +63,7 @@ import {
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useCartStore } from "../../GlobalState/CartDataStore";
 
 // =============================================================================
 // CONSTANTS
@@ -92,99 +93,10 @@ const DRAWER_CATEGORIES = [
   { id: "all", label: "All", icon: Grid3X3, color: "#6b7280" },
   { id: "venues", label: "Venues", icon: Building, color: "#8b5cf6" },
   { id: "catering", label: "Catering", icon: Utensils, color: "#f97316" },
-  { id: "photography", label: "Photo", icon: Camera, color: "#ec4899" },
+  { id: "photographers", label: "Photo", icon: Camera, color: "#ec4899" },
   { id: "makeup", label: "Makeup", icon: Palette, color: "#f43f5e" },
   { id: "decor", label: "Decor", icon: Flower2, color: "#14b8a6" },
-  { id: "music", label: "Music", icon: Music, color: "#3b82f6" },
-];
-
-const VENDOR_ITEMS = [
-  {
-    id: 1,
-    name: "Grand Hyatt Ballroom",
-    category: "venues",
-    price: 250000,
-    originalPrice: 300000,
-    rating: 4.8,
-    reviews: 124,
-    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
-    location: "Mumbai",
-    isVerified: true,
-    isPopular: true,
-    capacity: "500 guests",
-    tags: ["Premium", "5-Star"],
-  },
-  {
-    id: 2,
-    name: "Royal Catering Services",
-    category: "catering",
-    price: 850,
-    originalPrice: 1000,
-    rating: 4.5,
-    reviews: 89,
-    img: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400",
-    location: "Delhi",
-    isVerified: true,
-    isPopular: false,
-    priceUnit: "per plate",
-    tags: ["Multi-cuisine"],
-  },
-  {
-    id: 3,
-    name: "Capture Moments Studio",
-    category: "photography",
-    price: 75000,
-    originalPrice: 85000,
-    rating: 4.9,
-    reviews: 156,
-    img: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400",
-    location: "Bangalore",
-    isVerified: true,
-    isPopular: true,
-    tags: ["Award Winning"],
-  },
-  {
-    id: 4,
-    name: "Glamour Makeup Artists",
-    category: "makeup",
-    price: 35000,
-    originalPrice: 40000,
-    rating: 4.7,
-    reviews: 78,
-    img: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400",
-    location: "Mumbai",
-    isVerified: false,
-    isPopular: false,
-    tags: ["Bridal Expert"],
-  },
-  {
-    id: 5,
-    name: "Dream Decor Studios",
-    category: "decor",
-    price: 120000,
-    originalPrice: 150000,
-    rating: 4.6,
-    reviews: 92,
-    img: "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=400",
-    location: "Chennai",
-    isVerified: true,
-    isPopular: true,
-    tags: ["Luxury", "Themed"],
-  },
-  {
-    id: 6,
-    name: "Beat Masters DJ",
-    category: "music",
-    price: 45000,
-    originalPrice: 50000,
-    rating: 4.4,
-    reviews: 67,
-    img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",
-    location: "Pune",
-    isVerified: true,
-    isPopular: false,
-    tags: ["Live Band Available"],
-  },
+  { id: "djs", label: "Music", icon: Music, color: "#3b82f6" },
 ];
 
 const MOCK_COUPONS = [
@@ -221,6 +133,24 @@ const formatPrice = (price) => {
 const formatFullPrice = (price) => {
   if (isNaN(price) || price === 0) return "0";
   return price.toLocaleString("en-IN");
+};
+
+const getVendorPrice = (vendor) => {
+  return (
+    vendor.normalizedPrice ||
+    vendor.perDayPrice?.min ||
+    vendor.basePrice ||
+    vendor.price?.min ||
+    vendor.startingPrice ||
+    0
+  );
+};
+
+const getVendorImage = (vendor) => {
+  const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
+  if (imgs.length > 0) return imgs[0];
+  if (vendor.defaultImage) return vendor.defaultImage;
+  return "/placeholder.jpg";
 };
 
 const copyToClipboard = async (text) => {
@@ -301,8 +231,10 @@ Toast.displayName = "Toast";
 // -----------------------------------------------------------------------------
 const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }) => {
   const haptic = useHapticFeedback();
-  const discount =
-    item.originalPrice > item.price ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100) : 0;
+  const price = getVendorPrice(item);
+  const originalPrice = item.originalPrice || price;
+  const discount = originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const img = getVendorImage(item);
 
   return (
     <motion.div
@@ -314,7 +246,7 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
     >
       {/* Image Section */}
       <div className="relative h-36">
-        <img src={item.img} className="w-full h-full object-cover" alt={item.name} loading="lazy" />
+        <img src={img} className="w-full h-full object-cover" alt={item.name} loading="lazy" />
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
@@ -322,12 +254,12 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
         {/* Top Badges */}
         <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
           <div className="flex gap-1.5">
-            {item.isPopular && (
+            {item.tags?.includes("Popular") && (
               <div className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
                 <Sparkles size={10} /> Popular
               </div>
             )}
-            {item.isVerified && (
+            {(item.isVerified || item.tags?.includes("Verified")) && (
               <div className="px-2 py-1 bg-blue-500 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
                 <BadgeCheck size={10} /> Verified
               </div>
@@ -338,7 +270,7 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
             onClick={(e) => {
               e.stopPropagation();
               haptic("medium");
-              onToggleFavorite(item.id);
+              onToggleFavorite(item._id);
             }}
             className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
           >
@@ -350,8 +282,8 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
         <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
           <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
             <Star size={12} className="fill-amber-400 text-amber-400" />
-            <span className="text-xs font-bold text-gray-800">{item.rating}</span>
-            <span className="text-[10px] text-gray-500">({item.reviews})</span>
+            <span className="text-xs font-bold text-gray-800">{item.rating?.toFixed(1) || "4.5"}</span>
+            <span className="text-[10px] text-gray-500">({item.reviews || item.totalReviews || 0})</span>
           </div>
           {discount > 0 && (
             <div className="px-2 py-1 bg-green-500 text-white text-[10px] font-bold rounded-md">{discount}% OFF</div>
@@ -366,12 +298,14 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
             <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
             <div className="flex items-center gap-1.5 mt-0.5">
               <MapPin size={11} className="text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-500 truncate">{item.location}</span>
-              {item.capacity && (
+              <span className="text-xs text-gray-500 truncate">
+                {item.address?.city || item.location || "Location"}
+              </span>
+              {(item.seating?.max || item.capacity) && (
                 <>
                   <span className="text-gray-300">•</span>
                   <Users size={11} className="text-gray-400 shrink-0" />
-                  <span className="text-xs text-gray-500">{item.capacity}</span>
+                  <span className="text-xs text-gray-500">{item.seating?.max || item.capacity} guests</span>
                 </>
               )}
             </div>
@@ -381,7 +315,7 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
           <div className="flex gap-1 mt-2 overflow-x-auto scrollbar-hide">
-            {item.tags.map((tag, idx) => (
+            {item.tags.slice(0, 3).map((tag, idx) => (
               <span
                 key={idx}
                 className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-medium rounded-md whitespace-nowrap"
@@ -396,11 +330,11 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-blue-600">₹{formatFullPrice(item.price)}</span>
+              <span className="text-lg font-bold text-blue-600">₹{formatFullPrice(price)}</span>
               {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
             </div>
-            {item.originalPrice > item.price && (
-              <span className="text-xs text-gray-400 line-through">₹{formatFullPrice(item.originalPrice)}</span>
+            {originalPrice > price && (
+              <span className="text-xs text-gray-400 line-through">₹{formatFullPrice(originalPrice)}</span>
             )}
           </div>
           <motion.button
@@ -435,7 +369,10 @@ VendorCard.displayName = "VendorCard";
 // -----------------------------------------------------------------------------
 const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
   const haptic = useHapticFeedback();
-  const discount = item.originalPrice > item.price ? item.originalPrice - item.price : 0;
+  const price = item.price || getVendorPrice(item);
+  const originalPrice = item.originalPrice || price;
+  const discount = originalPrice > price ? originalPrice - price : 0;
+  const img = item.image || getVendorImage(item);
 
   return (
     <motion.div
@@ -449,8 +386,8 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
       <div className="p-3 flex gap-3">
         {/* Image */}
         <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-          <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-          {item.isVerified && (
+          <img src={img} alt={item.name} className="w-full h-full object-cover" />
+          {(item.isVerified || item.tags?.includes("Verified")) && (
             <div className="absolute top-1 left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
               <BadgeCheck size={12} className="text-white" />
             </div>
@@ -465,8 +402,8 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
                 <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Star size={10} className="fill-amber-400 text-amber-400" />
-                  <span className="text-[10px] font-semibold text-gray-700">{item.rating}</span>
-                  <span className="text-[10px] text-gray-400">({item.reviews})</span>
+                  <span className="text-[10px] font-semibold text-gray-700">{item.rating?.toFixed(1) || "4.5"}</span>
+                  <span className="text-[10px] text-gray-400">({item.reviews || item.totalReviews || 0})</span>
                 </div>
               </div>
               <motion.button
@@ -488,7 +425,7 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
               </span>
               <div className="flex items-center gap-1 text-[10px] text-gray-400">
                 <MapPin size={10} />
-                {item.location}
+                {item.address?.city || item.location || "Location"}
               </div>
             </div>
           </div>
@@ -497,7 +434,7 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
           <div className="flex items-end justify-between mt-2">
             <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-bold text-blue-600">₹{formatFullPrice(item.price)}</span>
+                <span className="text-base font-bold text-blue-600">₹{formatFullPrice(price)}</span>
                 {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
               </div>
               {discount > 0 && (
@@ -510,7 +447,7 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                 <motion.button
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => onUpdateQuantity(item.id, (item.quantity || 1) - 1)}
+                  onClick={() => onUpdateQuantity(item._id, (item.quantity || 1) - 1)}
                   disabled={(item.quantity || 1) <= 1}
                   className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm disabled:opacity-50"
                 >
@@ -519,7 +456,7 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
                 <span className="text-sm font-bold text-gray-900 w-6 text-center">{item.quantity || 1}</span>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => onUpdateQuantity(item.id, (item.quantity || 1) + 1)}
+                  onClick={() => onUpdateQuantity(item._id, (item.quantity || 1) + 1)}
                   className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm"
                 >
                   <Plus size={14} className="text-gray-600" />
@@ -791,62 +728,91 @@ const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, 
 PriceBreakdown.displayName = "PriceBreakdown";
 
 // =============================================================================
-// ENHANCED EXPLORE DRAWER
+// ENHANCED EXPLORE DRAWER - NOW WITH DYNAMIC API DATA
 // =============================================================================
-const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => {
+const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast }) => {
   const [activeCat, setActiveCat] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("popular");
   const [favorites, setFavorites] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [vendors, setVendors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const haptic = useHapticFeedback();
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const filteredItems = useMemo(() => {
-    let filtered = [...items];
+  // Fetch vendors from API
+  useEffect(() => {
+    const fetchVendors = async () => {
+      setIsLoading(true);
+      setError(null);
 
-    // Filter by category
-    if (activeCat !== "all") {
-      filtered = filtered.filter((item) => item.category === activeCat);
-    }
+      const queryParams = new URLSearchParams({
+        limit: "20",
+        sortBy:
+          sortBy === "popular"
+            ? "bookings"
+            : sortBy === "rating"
+            ? "rating"
+            : sortBy === "price-low"
+            ? "price-asc"
+            : sortBy === "price-high"
+            ? "price-desc"
+            : "rating",
+      });
 
-    // Filter by search
-    if (debouncedSearch) {
-      const query = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.name.toLowerCase().includes(query) ||
-          item.category.toLowerCase().includes(query) ||
-          item.location.toLowerCase().includes(query)
-      );
-    }
+      if (debouncedSearch) {
+        queryParams.set("search", debouncedSearch);
+      }
 
-    // Sort
-    switch (sortBy) {
-      case "popular":
-        filtered.sort((a, b) => (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0));
-        break;
-      case "rating":
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case "price-low":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "price-high":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      default:
-        break;
-    }
+      if (activeCat !== "all") {
+        queryParams.set("categories", activeCat);
+      }
 
-    return filtered;
-  }, [items, activeCat, debouncedSearch, sortBy]);
+      try {
+        const response = await fetch(`/api/vendor?${queryParams.toString()}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const result = await response.json();
+
+        if (result.success !== false && result.data && Array.isArray(result.data)) {
+          const processedVendors = result.data.map((v) => ({
+            ...v,
+            // Normalize price for consistency
+            price: getVendorPrice(v),
+            originalPrice: v.originalPrice || getVendorPrice(v),
+          }));
+          setVendors(processedVendors);
+        } else {
+          setVendors([]);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to load vendors. Please try again.");
+        setVendors([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, [activeCat, debouncedSearch, sortBy]);
 
   const toggleFavorite = useCallback((id) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]));
   }, []);
 
-  const cartItemIds = useMemo(() => cartItems.map((item) => item.id), [cartItems]);
+  const cartItemIds = useMemo(() => cartItems.map((item) => item._id), [cartItems]);
+
+  const cartTotal = useMemo(
+    () => cartItems.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0),
+    [cartItems]
+  );
 
   return (
     <>
@@ -871,7 +837,9 @@ const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => 
           <div className="flex justify-between items-center mb-3">
             <div>
               <h2 className="text-xl font-black text-gray-900">Explore Vendors</h2>
-              <p className="text-xs text-gray-500 font-medium">{filteredItems.length} vendors found</p>
+              <p className="text-xs text-gray-500 font-medium">
+                {isLoading ? "Loading..." : `${vendors.length} vendors found`}
+              </p>
             </div>
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -969,7 +937,25 @@ const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {filteredItems.length === 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 size={40} className="text-blue-600 animate-spin mb-4" />
+              <p className="text-sm text-gray-500">Loading vendors...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <AlertCircle size={40} className="text-red-500 mb-4" />
+              <h3 className="text-lg font-bold text-gray-900 mb-1">Error</h3>
+              <p className="text-sm text-gray-500">{error}</p>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveCat(activeCat)}
+                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm"
+              >
+                Try Again
+              </motion.button>
+            </div>
+          ) : vendors.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
                 <Search size={32} className="text-gray-300" />
@@ -980,14 +966,14 @@ const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => 
           ) : (
             <div className="grid grid-cols-1 gap-4">
               <AnimatePresence mode="popLayout">
-                {filteredItems.map((item) => (
+                {vendors.map((item) => (
                   <VendorCard
-                    key={item.id}
+                    key={item._id}
                     item={item}
                     onAdd={onAdd}
-                    isInCart={cartItemIds.includes(item.id)}
+                    isInCart={cartItemIds.includes(item._id)}
                     onToggleFavorite={toggleFavorite}
-                    isFavorite={favorites.includes(item.id)}
+                    isFavorite={favorites.includes(item._id)}
                   />
                 ))}
               </AnimatePresence>
@@ -1006,9 +992,7 @@ const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500">{cartItems.length} items in cart</p>
-                <p className="text-lg font-black text-blue-600">
-                  ₹{formatFullPrice(cartItems.reduce((acc, item) => acc + item.price * (item.quantity || 1), 0))}
-                </p>
+                <p className="text-lg font-black text-blue-600">₹{formatFullPrice(cartTotal)}</p>
               </div>
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -1028,17 +1012,20 @@ const ExploreDrawer = memo(({ onClose, items, onAdd, cartItems, showToast }) => 
 ExploreDrawer.displayName = "ExploreDrawer";
 
 // =============================================================================
-// ENHANCED CART DRAWER
+// ENHANCED CART DRAWER - NOW SYNCED WITH GLOBAL STATE
 // =============================================================================
-const CartDrawer = memo(({ onClose, items, onToggle, onUpdateQuantity, total, onExplore, showToast }) => {
+const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore, showToast }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const haptic = useHapticFeedback();
 
   // Price calculations
   const priceDetails = useMemo(() => {
-    const subtotal = items.reduce((acc, item) => acc + item.price * (item.quantity || 1), 0);
-    const originalTotal = items.reduce((acc, item) => acc + item.originalPrice * (item.quantity || 1), 0);
+    const subtotal = items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0);
+    const originalTotal = items.reduce(
+      (acc, item) => acc + (item.originalPrice || item.price || 0) * (item.quantity || 1),
+      0
+    );
     const vendorDiscount = originalTotal - subtotal;
 
     let couponDiscount = 0;
@@ -1071,10 +1058,10 @@ const CartDrawer = memo(({ onClose, items, onToggle, onUpdateQuantity, total, on
   const handleRemoveItem = useCallback(
     (item) => {
       haptic("medium");
-      onToggle(item);
+      onRemove(item._id);
       showToast("Item removed from cart", "info");
     },
-    [onToggle, haptic, showToast]
+    [onRemove, haptic, showToast]
   );
 
   const handleApplyCoupon = useCallback((coupon) => {
@@ -1152,7 +1139,7 @@ const CartDrawer = memo(({ onClose, items, onToggle, onUpdateQuantity, total, on
                 <AnimatePresence mode="popLayout">
                   {items.map((item) => (
                     <CartItemCard
-                      key={item.id}
+                      key={item._id}
                       item={item}
                       onRemove={handleRemoveItem}
                       onUpdateQuantity={onUpdateQuantity}
@@ -1259,13 +1246,14 @@ const MobileNavbar = () => {
 
   const [isVisible, setIsVisible] = useState(true);
   const [activeDrawer, setActiveDrawer] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
   const [toast, setToast] = useState({ message: "", type: "success", isVisible: false });
 
   const haptic = useHapticFeedback();
 
-  // Hide navbar on checkout page
-  if (pathname?.includes("/m/user/checkout")) return null;
+  // --- GLOBAL CART STATE ---
+  const { cartItems, addToCart, removeFromCart, updateQuantity, getCartCount, openCartNavbar, setOpenCartNavbar } =
+    useCartStore();
+  const cartCount = getCartCount();
 
   // --- Toast Handlers ---
   const showToast = useCallback((message, type = "success") => {
@@ -1300,6 +1288,12 @@ const MobileNavbar = () => {
     []
   );
 
+  useEffect(() => {
+    if (openCartNavbar === "open") {
+      setActiveDrawer("cart");
+    }
+  }, [openCartNavbar]);
+
   const isTabActive = (route) => {
     if (route === "/m") return pathname === "/m";
     return pathname?.startsWith(route);
@@ -1331,28 +1325,44 @@ const MobileNavbar = () => {
     setPendingRoute(null);
   }, [pathname]);
 
-  const toggleCartItem = useCallback(
+  // --- CART HANDLERS USING GLOBAL STATE ---
+  const handleAddToCart = useCallback(
     (item) => {
-      setCartItems((prev) => {
-        const exists = prev.find((i) => i.id === item.id);
-        if (exists) {
-          return prev.filter((i) => i.id !== item.id);
-        }
+      const cartItem = {
+        _id: item._id,
+        name: item.name,
+        category: item.category,
+        price: item.price || getVendorPrice(item),
+        image: getVendorImage(item),
+        quantity: 1,
+        address: item.address,
+        rating: item.rating,
+        reviews: item.reviews || item.totalReviews,
+        tags: item.tags,
+        isVerified: item.isVerified,
+        originalPrice: item.originalPrice,
+        priceUnit: item.priceUnit,
+        location: item.address?.city || item.location,
+      };
+
+      const isAlreadyInCart = cartItems.some((i) => i._id === item._id);
+
+      if (isAlreadyInCart) {
+        removeFromCart(item._id);
+        showToast(`${item.name} removed from cart`, "info");
+      } else {
+        addToCart(cartItem);
         showToast(`${item.name} added to cart`, "success");
-        return [...prev, { ...item, quantity: 1 }];
-      });
+      }
     },
-    [showToast]
+    [cartItems, addToCart, removeFromCart, showToast]
   );
 
-  const updateItemQuantity = useCallback((id, quantity) => {
-    if (quantity < 1) return;
-    setCartItems((prev) => prev.map((item) => (item.id === id ? { ...item, quantity } : item)));
-  }, []);
-
-  const cartTotal = useMemo(
-    () => cartItems.reduce((acc, item) => acc + item.price * (item.quantity || 1), 0),
-    [cartItems]
+  const handleUpdateQuantity = useCallback(
+    (id, quantity) => {
+      updateQuantity(id, quantity);
+    },
+    [updateQuantity]
   );
 
   // Lock body scroll when drawer is open
@@ -1381,7 +1391,7 @@ const MobileNavbar = () => {
         <div className="flex items-end justify-between max-w-md mx-auto pb-1 relative">
           {navItems.map((item) => {
             if (item.type === "center") {
-              const hasItems = cartItems.length > 0;
+              const hasItems = cartCount > 0;
               return (
                 <div key={item.id} className="relative -top-1 flex justify-center w-full pointer-events-none z-50">
                   <motion.button
@@ -1410,7 +1420,7 @@ const MobileNavbar = () => {
                             exit={{ scale: 0 }}
                             className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#E5B80B] flex items-center justify-center border-2 border-white shadow-sm"
                           >
-                            <span className="text-[11px] font-black text-blue-900">{cartItems.length}</span>
+                            <span className="text-[11px] font-black text-blue-900">{cartCount}</span>
                           </motion.div>
                         ) : (
                           <motion.div
@@ -1484,19 +1494,20 @@ const MobileNavbar = () => {
         {activeDrawer === "explore" && (
           <ExploreDrawer
             onClose={() => setActiveDrawer(null)}
-            items={VENDOR_ITEMS}
-            onAdd={toggleCartItem}
+            onAdd={handleAddToCart}
             cartItems={cartItems}
             showToast={showToast}
           />
         )}
         {activeDrawer === "cart" && (
           <CartDrawer
-            onClose={() => setActiveDrawer(null)}
+            onClose={() => {
+              setActiveDrawer(null);
+              setOpenCartNavbar("close");
+            }}
             items={cartItems}
-            onToggle={toggleCartItem}
-            onUpdateQuantity={updateItemQuantity}
-            total={cartTotal}
+            onRemove={removeFromCart}
+            onUpdateQuantity={handleUpdateQuantity}
             onExplore={() => setActiveDrawer("explore")}
             showToast={showToast}
           />

@@ -44,6 +44,42 @@ function useHapticFeedback() {
   }, []);
 }
 
+function useScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(scrollPercent);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return progress;
+}
+
+const ScrollProgressBar = () => {
+  const progress = useScrollProgress();
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 z-[100]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: progress > 2 ? 1 : 0 }}
+    >
+      <motion.div
+        className={`h-full bg-gradient-to-r ${"from-blue-600 to-yellow-500"}`}
+        style={{ width: `${progress}%` }}
+        transition={{ duration: 0.1 }}
+      />
+    </motion.div>
+  );
+};
+
 // --- Sub-Components (Memoized for Stability) ---
 
 const OfferTicker = memo(() => {
@@ -115,6 +151,7 @@ const MainContent = () => {
 
   return (
     <div className="relative w-full min-h-screen bg-gray-50 text-slate-800 font-sans pb-12 mx-auto max-w-md overflow-hidden">
+      <ScrollProgressBar />
       <HeroSection />
 
       {/* Ticker Strip */}

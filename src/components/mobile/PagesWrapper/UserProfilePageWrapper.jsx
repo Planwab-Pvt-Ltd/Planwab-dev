@@ -54,6 +54,42 @@ const TRANSACTIONS = [
   { id: 3, title: "Referral Bonus", date: "12 Oct", amount: "+₹100", type: "credit" },
 ];
 
+function useScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(scrollPercent);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return progress;
+}
+
+const ScrollProgressBar = () => {
+  const progress = useScrollProgress();
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 z-[100]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: progress > 2 ? 1 : 0 }}
+    >
+      <motion.div
+        className={`h-full bg-gradient-to-r ${"from-blue-600 to-yellow-500"}`}
+        style={{ width: `${progress}%` }}
+        transition={{ duration: 0.1 }}
+      />
+    </motion.div>
+  );
+};
+
 // --- REUSABLE COMPONENTS ---
 
 // 1. Drawer Component
@@ -219,6 +255,7 @@ export default function UserProfilePageWrapper() {
   // 3. Logged In Dashboard
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black pb-32 overflow-x-hidden">
+      <ScrollProgressBar />
       {/* Header Profile Card */}
       <div className="relative bg-white dark:bg-gray-900 pb-10 pt-6 rounded-b-[3rem] shadow-sm overflow-hidden mb-6">
         <div className="absolute inset-0 bg-gradient-to-b from-violet-50/50 to-transparent dark:from-violet-950/20 dark:to-transparent pointer-events-none" />

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -108,6 +108,42 @@ const RECOMMENDED_VENDORS = [
     image: "https://images.unsplash.com/photo-1519225468359-299651df5252?q=80&w=800&auto=format&fit=crop",
   },
 ];
+
+function useScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(scrollPercent);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return progress;
+}
+
+const ScrollProgressBar = () => {
+  const progress = useScrollProgress();
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 z-[100]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: progress > 2 ? 1 : 0 }}
+    >
+      <motion.div
+        className={`h-full bg-gradient-to-r ${"from-blue-600 to-yellow-500"}`}
+        style={{ width: `${progress}%` }}
+        transition={{ duration: 0.1 }}
+      />
+    </motion.div>
+  );
+};
 
 // --- SUB-COMPONENTS ---
 
@@ -229,6 +265,7 @@ export default function UserBookingsPageWrapper() {
   // 3. Signed In (Dashboard)
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black pb-24 overflow-x-hidden">
+      <ScrollProgressBar />
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex justify-between items-center transition-all">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Bookings</h1>

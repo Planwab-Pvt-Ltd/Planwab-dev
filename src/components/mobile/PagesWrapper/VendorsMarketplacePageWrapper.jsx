@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense } from "react";
-import { motion, AnimatePresence, useSpring } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Star,
@@ -17,7 +17,7 @@ import {
   SlidersHorizontal,
   LayoutList,
   LayoutGrid,
-  ShoppingBag,
+  ShoppingCart,
   CheckCircle,
   Map as MapIcon,
   ArrowRightLeft,
@@ -29,7 +29,6 @@ import {
   RefreshCw,
   ChevronDown,
   Zap,
-  Award,
   Calendar,
   Info,
   Eye,
@@ -57,12 +56,17 @@ import {
   Trophy,
   Flame,
   BadgeCheck,
+  ShoppingBag,
+  Minus,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useCartStore } from "../../../GlobalState/CartDataStore";
 
 // =============================================================================
 // CONSTANTS
@@ -116,6 +120,89 @@ const VENDOR_CATEGORIES = [
   { id: "mehendi", label: "Mehendi", icon: Scissors, emoji: "🖐️", color: "#84cc16" },
   { id: "djs", label: "DJs", icon: Music, emoji: "🎵", color: "#3b82f6" },
 ];
+
+const SUBCATEGORIES = {
+  venues: [
+    { id: "banquet-halls", label: "Banquet Halls" },
+    { id: "farmhouses", label: "Farmhouses" },
+    { id: "hotels", label: "Hotels" },
+    { id: "resorts", label: "Resorts" },
+    { id: "lawns", label: "Lawns & Gardens" },
+    { id: "destination", label: "Destination Wedding" },
+    { id: "beach", label: "Beach Venues" },
+    { id: "palace", label: "Palace & Heritage" },
+  ],
+  photographers: [
+    { id: "wedding-photography", label: "Wedding Photography" },
+    { id: "pre-wedding", label: "Pre-Wedding Shoot" },
+    { id: "candid", label: "Candid Photography" },
+    { id: "traditional", label: "Traditional Photography" },
+    { id: "videography", label: "Videography" },
+    { id: "drone", label: "Drone Photography" },
+    { id: "album", label: "Album Design" },
+    { id: "photobooth", label: "Photo Booth" },
+  ],
+  makeup: [
+    { id: "bridal-makeup", label: "Bridal Makeup" },
+    { id: "party-makeup", label: "Party Makeup" },
+    { id: "airbrush", label: "Airbrush Makeup" },
+    { id: "hd-makeup", label: "HD Makeup" },
+    { id: "engagement", label: "Engagement Look" },
+    { id: "reception", label: "Reception Look" },
+    { id: "hair-styling", label: "Hair Styling" },
+    { id: "draping", label: "Saree Draping" },
+  ],
+  planners: [
+    { id: "full-planning", label: "Full Planning" },
+    { id: "partial-planning", label: "Partial Planning" },
+    { id: "day-coordination", label: "Day Coordination" },
+    { id: "destination-planning", label: "Destination Planning" },
+    { id: "budget-planning", label: "Budget Planning" },
+    { id: "vendor-management", label: "Vendor Management" },
+    { id: "guest-management", label: "Guest Management" },
+    { id: "theme-design", label: "Theme Design" },
+  ],
+  catering: [
+    { id: "vegetarian", label: "Vegetarian" },
+    { id: "non-vegetarian", label: "Non-Vegetarian" },
+    { id: "multi-cuisine", label: "Multi-Cuisine" },
+    { id: "south-indian", label: "South Indian" },
+    { id: "north-indian", label: "North Indian" },
+    { id: "chinese", label: "Chinese & Oriental" },
+    { id: "continental", label: "Continental" },
+    { id: "live-counters", label: "Live Counters" },
+  ],
+  clothes: [
+    { id: "bridal-lehenga", label: "Bridal Lehenga" },
+    { id: "groom-sherwani", label: "Groom Sherwani" },
+    { id: "designer-wear", label: "Designer Wear" },
+    { id: "rental", label: "Rental Services" },
+    { id: "accessories", label: "Accessories" },
+    { id: "jewelry", label: "Jewelry" },
+    { id: "footwear", label: "Footwear" },
+    { id: "trousseau", label: "Trousseau Packing" },
+  ],
+  mehendi: [
+    { id: "bridal-mehendi", label: "Bridal Mehendi" },
+    { id: "arabic", label: "Arabic Design" },
+    { id: "rajasthani", label: "Rajasthani Design" },
+    { id: "portrait", label: "Portrait Mehendi" },
+    { id: "minimal", label: "Minimal Design" },
+    { id: "glitter", label: "Glitter Mehendi" },
+    { id: "white-henna", label: "White Henna" },
+    { id: "nail-art", label: "Nail Art" },
+  ],
+  djs: [
+    { id: "wedding-dj", label: "Wedding DJ" },
+    { id: "sangeet-dj", label: "Sangeet DJ" },
+    { id: "cocktail", label: "Cocktail Party" },
+    { id: "live-band", label: "Live Band" },
+    { id: "dhol", label: "Dhol Players" },
+    { id: "sound-system", label: "Sound System" },
+    { id: "lighting", label: "Lighting & Effects" },
+    { id: "anchoring", label: "Anchoring & Emcee" },
+  ],
+};
 
 const SORT_OPTIONS = [
   { id: "rating", label: "Top Rated", icon: Star, description: "Highest rated first" },
@@ -217,7 +304,13 @@ function useInView(options = {}) {
 function useHapticFeedback() {
   return useCallback((type = "light") => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
-      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10], error: [50, 30, 50] };
+      const patterns = {
+        light: 10,
+        medium: 25,
+        heavy: 50,
+        success: [10, 50, 10],
+        error: [50, 30, 50],
+      };
       navigator.vibrate(patterns[type] || 10);
     }
   }, []);
@@ -327,6 +420,42 @@ const formatPrice = (price) => {
   return price.toLocaleString("en-IN");
 };
 
+function useScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setProgress(scrollPercent);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return progress;
+}
+
+const ScrollProgressBar = () => {
+  const progress = useScrollProgress();
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 z-[100]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: progress > 2 ? 1 : 0 }}
+    >
+      <motion.div
+        className={`h-full bg-gradient-to-r ${"from-blue-600 to-yellow-500"}`}
+        style={{ width: `${progress}%` }}
+        transition={{ duration: 0.1 }}
+      />
+    </motion.div>
+  );
+};
+
 const formatFullPrice = (price) => {
   if (isNaN(price) || price === 0) return "N/A";
   return price.toLocaleString("en-IN");
@@ -405,7 +534,7 @@ const OfflineBanner = memo(() => {
           className="bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium"
         >
           <AlertCircle size={16} />
-          <span>You're offline. Some features may be limited.</span>
+          <span>You&apos;re offline. Some features may be limited.</span>
         </motion.div>
       )}
     </AnimatePresence>
@@ -415,7 +544,6 @@ OfflineBanner.displayName = "OfflineBanner";
 
 const PullToRefreshUI = memo(({ pullDistance, isRefreshing, threshold = 80 }) => {
   const progress = Math.min(pullDistance / threshold, 1);
-  const rotation = useSpring(progress * 360, { stiffness: 300, damping: 30 });
 
   if (pullDistance === 0 && !isRefreshing) return null;
 
@@ -429,8 +557,8 @@ const PullToRefreshUI = memo(({ pullDistance, isRefreshing, threshold = 80 }) =>
         className="mt-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center"
       >
         <motion.div
-          animate={{ rotate: isRefreshing ? 360 : rotation.get() }}
-          transition={isRefreshing ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}
+          animate={{ rotate: isRefreshing ? 360 : progress * 360 }}
+          transition={isRefreshing ? { repeat: Infinity, duration: 1, ease: "linear" } : { duration: 0 }}
         >
           <RefreshCw size={24} style={{ color: COLORS.primary }} className={isRefreshing ? "animate-spin" : ""} />
         </motion.div>
@@ -517,6 +645,220 @@ const Toast = memo(({ message, type = "success", isVisible, onClose }) => {
 });
 Toast.displayName = "Toast";
 
+const ActiveFiltersDisplay = memo(
+  ({
+    searchQuery,
+    selectedCategories,
+    selectedSubcategory,
+    selectedLocations,
+    priceRange,
+    ratingFilter,
+    showFeaturedOnly,
+    onClearAll,
+    colorPrimary,
+  }) => {
+    const haptic = useHapticFeedback();
+    const filters = [];
+
+    if (searchQuery) filters.push(`Search: "${searchQuery}"`);
+    if (selectedCategories.length > 0) {
+      const categoryLabels = selectedCategories.map((id) => VENDOR_CATEGORIES.find((c) => c.id === id)?.label || id);
+      filters.push(`Categories: ${categoryLabels.join(", ")}`);
+    }
+    if (selectedSubcategory) {
+      const allSubcats = Object.values(SUBCATEGORIES).flat();
+      const subLabel = allSubcats.find((s) => s.id === selectedSubcategory)?.label || selectedSubcategory;
+      filters.push(`Type: ${subLabel}`);
+    }
+    if (selectedLocations.length > 0) filters.push(`Cities: ${selectedLocations.join(", ")}`);
+    if (priceRange[0] > 0 || priceRange[1] < 1000000) {
+      filters.push(`Budget: ₹${formatPrice(priceRange[0])} - ₹${formatPrice(priceRange[1])}`);
+    }
+    if (ratingFilter > 0) filters.push(`Rating: ${ratingFilter}+ stars`);
+    if (showFeaturedOnly) filters.push("Featured Only");
+
+    if (filters.length === 0) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Filter size={14} style={{ color: colorPrimary }} />
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Active Filters</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {filters.map((filter, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-1 bg-white rounded-lg text-xs font-medium text-gray-700 border border-blue-200 shadow-sm"
+                >
+                  {filter}
+                </span>
+              ))}
+            </div>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic("light");
+              onClearAll();
+            }}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+            style={{ color: colorPrimary, backgroundColor: `${colorPrimary}15` }}
+          >
+            Clear All
+          </motion.button>
+        </div>
+      </motion.div>
+    );
+  }
+);
+ActiveFiltersDisplay.displayName = "ActiveFiltersDisplay";
+
+const CartPreview = memo(({ colorPrimary }) => {
+  const { cartItems, getCartCount, getCartTotal, removeFromCart, updateQuantity, setOpenCartNavbar } = useCartStore();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const haptic = useHapticFeedback();
+  const cartCount = getCartCount();
+
+  if (cartCount === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="fixed bottom-20 left-3 right-3 z-[65]"
+    >
+      <motion.div
+        layout
+        className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+        style={{ boxShadow: "0 -4px 30px rgba(0,0,0,0.15)" }}
+      >
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            haptic("light");
+            setIsExpanded(!isExpanded);
+          }}
+          className="w-full p-4 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center relative"
+              style={{ backgroundColor: `${colorPrimary}15` }}
+            >
+              <ShoppingCart size={20} style={{ color: colorPrimary }} />
+              <span
+                className="absolute -top-1 -right-1 w-5 h-5 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+                style={{ backgroundColor: COLORS.error }}
+              >
+                {cartCount}
+              </span>
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-gray-900 text-sm">
+                {cartCount} item{cartCount > 1 ? "s" : ""} in cart
+              </p>
+              <p className="text-xs text-gray-500">Total: ₹{formatFullPrice(getCartTotal())}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+              <ChevronDown size={20} className="text-gray-400" />
+            </motion.div>
+          </div>
+        </motion.button>
+
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="border-t border-gray-100"
+            >
+              <div className="max-h-60 overflow-y-auto">
+                {cartItems.map((item) => (
+                  <div key={item._id} className="p-3 border-b border-gray-50 last:border-b-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                        <img
+                          src={item.image || "/placeholder.jpg"}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{item.name}</p>
+                        <p className="text-xs text-gray-500">{item.address?.city || "Location"}</p>
+                        <p className="text-sm font-bold" style={{ color: colorPrimary }}>
+                          ₹{formatPrice(item.price)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-lg">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              haptic("light");
+                              updateQuantity(item._id, item.quantity - 1);
+                            }}
+                            className="p-1.5 text-gray-600 hover:text-gray-900"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="text-sm font-semibold w-6 text-center">{item.quantity}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              haptic("light");
+                              updateQuantity(item._id, item.quantity + 1);
+                            }}
+                            className="p-1.5 text-gray-600 hover:text-gray-900"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            haptic("medium");
+                            removeFromCart(item._id);
+                          }}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3 bg-gray-50 flex gap-2">
+                <div
+                  onClick={() => setOpenCartNavbar("open")}
+                  className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm text-center shadow-md"
+                  style={{ backgroundColor: colorPrimary }}
+                >
+                  View Cart
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
+  );
+});
+CartPreview.displayName = "CartPreview";
+
 const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [copiedCode, setCopiedCode] = useState(null);
@@ -591,8 +933,9 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
   }, []);
 
   const handleScroll = useCallback((e) => {
-    const scrollLeft = e.target.scrollLeft;
-    const cardWidth = e.target.offsetWidth * 0.82 + 12;
+    const target = e.target;
+    const scrollLeft = target.scrollLeft;
+    const cardWidth = target.offsetWidth * 0.82 + 12;
     const newIndex = Math.round(scrollLeft / cardWidth);
     setActiveIndex(Math.min(newIndex, 3));
   }, []);
@@ -602,7 +945,9 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
       const nextIndex = (activeIndex + 1) % promos.length;
       scrollToIndex(nextIndex);
     }, 4000);
-    return () => clearInterval(autoScrollRef.current);
+    return () => {
+      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
+    };
   }, [activeIndex, promos.length, scrollToIndex]);
 
   return (
@@ -639,41 +984,24 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
           return (
             <motion.div
               key={promo.id}
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: index * 0.1, type: "spring", stiffness: 300, damping: 25 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.3 }}
               whileTap={{ scale: 0.98 }}
               className="min-w-[82%] h-36 rounded-2xl relative overflow-hidden snap-start cursor-pointer shadow-lg"
               style={{ background: promo.gradient }}
             >
-              <motion.div
-                className="absolute right-[-40px] bottom-[-40px] w-40 h-40 bg-white/10 rounded-full"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute left-[-30px] top-[-30px] w-32 h-32 bg-white/5 rounded-full"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              />
-              <motion.div
-                className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10"
-                animate={{ rotate: [0, 5, -5, 0], y: [0, -5, 5, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
+              <div className="absolute right-[-40px] bottom-[-40px] w-40 h-40 bg-white/10 rounded-full" />
+              <div className="absolute left-[-30px] top-[-30px] w-32 h-32 bg-white/5 rounded-full" />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
                 <IconComponent size={80} strokeWidth={1} />
-              </motion.div>
+              </div>
 
               <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
                 <div className="flex items-start justify-between">
-                  <motion.span
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: index * 0.1 + 0.2 }}
-                    className="px-2 py-1 bg-white/25 backdrop-blur-sm rounded-lg text-[10px] font-bold uppercase tracking-wider"
-                  >
+                  <span className="px-2 py-1 bg-white/25 backdrop-blur-sm rounded-lg text-[10px] font-bold uppercase tracking-wider">
                     {promo.badge}
-                  </motion.span>
+                  </span>
                   <span className="text-[10px] opacity-80 flex items-center gap-1">
                     <Clock size={10} />
                     Until {promo.validUntil}
@@ -681,40 +1009,20 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
                 </div>
 
                 <div>
-                  <motion.h3
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: index * 0.1 + 0.3 }}
-                    className="font-bold text-lg leading-tight mb-0.5"
-                  >
-                    {promo.title}
-                  </motion.h3>
-                  <motion.p
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: index * 0.1 + 0.4 }}
-                    className="text-xs opacity-90 mb-2"
-                  >
-                    {promo.subtitle}
-                  </motion.p>
+                  <h3 className="font-bold text-lg leading-tight mb-0.5">{promo.title}</h3>
+                  <p className="text-xs opacity-90 mb-2">{promo.subtitle}</p>
 
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    whileHover={{ scale: 1.02 }}
                     onClick={(e) => handleCopyCode(promo.code, e)}
                     className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-white/30"
                   >
                     <span className="font-mono tracking-wider">{promo.code}</span>
-                    <motion.div
-                      animate={copiedCode === promo.code ? { scale: [1, 1.2, 1] } : {}}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {copiedCode === promo.code ? (
-                        <Check size={12} className="text-green-300" />
-                      ) : (
-                        <Copy size={12} className="opacity-70" />
-                      )}
-                    </motion.div>
+                    {copiedCode === promo.code ? (
+                      <Check size={12} className="text-green-300" />
+                    ) : (
+                      <Copy size={12} className="opacity-70" />
+                    )}
                   </motion.button>
                 </div>
               </div>
@@ -746,7 +1054,7 @@ const CategoryChips = memo(({ selectedCategories, onCategoryChange, colorPrimary
   const haptic = useHapticFeedback();
 
   return (
-    <div className="mb-4">
+    <div className="mb-2">
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: "none" }}>
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -792,6 +1100,71 @@ const CategoryChips = memo(({ selectedCategories, onCategoryChange, colorPrimary
 });
 CategoryChips.displayName = "CategoryChips";
 
+const SubcategoryChips = memo(({ selectedCategory, selectedSubcategory, onSubcategoryChange, colorPrimary }) => {
+  const haptic = useHapticFeedback();
+  const subcategories = SUBCATEGORIES[selectedCategory] || [];
+  const categoryInfo = VENDOR_CATEGORIES.find((c) => c.id === selectedCategory);
+
+  if (subcategories.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="mb-4 overflow-hidden"
+    >
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <div
+          className="w-5 h-5 rounded-md flex items-center justify-center"
+          style={{ backgroundColor: `${categoryInfo?.color || colorPrimary}20` }}
+        >
+          {categoryInfo && <categoryInfo.icon size={12} style={{ color: categoryInfo.color }} />}
+        </div>
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">{categoryInfo?.label} Types</span>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: "none" }}>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            haptic("light");
+            onSubcategoryChange("");
+          }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+            selectedSubcategory === ""
+              ? "text-white border-transparent shadow-sm"
+              : "bg-gray-50 text-gray-600 border-gray-200"
+          }`}
+          style={selectedSubcategory === "" ? { backgroundColor: categoryInfo?.color || colorPrimary } : {}}
+        >
+          All {categoryInfo?.label}
+        </motion.button>
+        {subcategories.map((sub) => {
+          const isSelected = selectedSubcategory === sub.id;
+          return (
+            <motion.button
+              key={sub.id}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic("light");
+                onSubcategoryChange(sub.id);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                isSelected ? "text-white border-transparent shadow-sm" : "bg-gray-50 text-gray-600 border-gray-200"
+              }`}
+              style={isSelected ? { backgroundColor: categoryInfo?.color || colorPrimary } : {}}
+            >
+              {sub.label}
+            </motion.button>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+});
+SubcategoryChips.displayName = "SubcategoryChips";
+
 const RecentSearches = memo(({ searches, onSelect, onClear, colorPrimary }) => {
   const haptic = useHapticFeedback();
   if (!searches || searches.length === 0) return null;
@@ -835,22 +1208,22 @@ const CardSkeleton = memo(({ viewMode }) => {
   const isGrid = viewMode === "grid";
   return (
     <div className={`bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 ${isGrid ? "h-64" : ""}`}>
-      <div className={`bg-gray-200 animate-pulse ${isGrid ? "h-32" : "h-48"}`} />
+      <div className={`bg-gray-200 ${isGrid ? "h-32" : "h-48"}`} style={{ animation: "shimmer 1.5s infinite" }} />
       <div className={`p-3 space-y-2 ${isGrid ? "" : "p-4 space-y-3"}`}>
         <div className="flex justify-between">
-          <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-2/3 bg-gray-200 rounded" style={{ animation: "shimmer 1.5s infinite" }} />
+          <div className="h-4 w-12 bg-gray-200 rounded" style={{ animation: "shimmer 1.5s infinite" }} />
         </div>
-        <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
+        <div className="h-3 w-1/2 bg-gray-200 rounded" style={{ animation: "shimmer 1.5s infinite" }} />
         {!isGrid && (
           <>
             <div className="flex gap-2 pt-1">
-              <div className="h-6 w-20 bg-gray-200 rounded-md animate-pulse" />
-              <div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse" />
+              <div className="h-6 w-20 bg-gray-200 rounded-md" style={{ animation: "shimmer 1.5s infinite" }} />
+              <div className="h-6 w-24 bg-gray-200 rounded-md" style={{ animation: "shimmer 1.5s infinite" }} />
             </div>
             <div className="flex justify-between items-center pt-2">
-              <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
-              <div className="h-10 w-24 bg-gray-200 rounded-xl animate-pulse" />
+              <div className="h-6 w-24 bg-gray-200 rounded" style={{ animation: "shimmer 1.5s infinite" }} />
+              <div className="h-10 w-24 bg-gray-200 rounded-xl" style={{ animation: "shimmer 1.5s infinite" }} />
             </div>
           </>
         )}
@@ -911,7 +1284,7 @@ const ImageCarousel = memo(({ images, vendorName, isGrid, isFavorite, onFavorite
           initial="enter"
           animate="center"
           exit="exit"
-          transition={SPRING_CONFIG.stiff}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
           drag={hasMultipleImages ? "x" : false}
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.5}
@@ -926,7 +1299,7 @@ const ImageCarousel = memo(({ images, vendorName, isGrid, isFavorite, onFavorite
         />
       </AnimatePresence>
 
-      {!isLoaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+      {!isLoaded && <div className="absolute inset-0 bg-gray-200" style={{ animation: "shimmer 1.5s infinite" }} />}
 
       <AnimatePresence>
         {showHeart && (
@@ -946,22 +1319,14 @@ const ImageCarousel = memo(({ images, vendorName, isGrid, isFavorite, onFavorite
       <div className="absolute top-2 left-2 right-2 flex justify-between items-start z-10">
         <div className="flex gap-1.5">
           {tags?.includes("Popular") && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1"
-            >
+            <div className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
               <Sparkles size={10} /> Popular
-            </motion.div>
+            </div>
           )}
           {tags?.includes("Verified") && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="px-2 py-1 bg-blue-400 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1"
-            >
+            <div className="px-2 py-1 bg-blue-400 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
               <CheckCircle size={10} /> Verified
-            </motion.div>
+            </div>
           )}
         </div>
 
@@ -1071,6 +1436,9 @@ const VendorCard = memo(
     const haptic = useHapticFeedback();
     const isGrid = viewMode === "grid";
 
+    const { addToCart, isInCart, removeFromCart } = useCartStore();
+    const inCart = isInCart(vendor._id);
+
     const displayImages = useMemo(() => {
       const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
       if (imgs.length > 0) return imgs;
@@ -1134,6 +1502,30 @@ const VendorCard = memo(
       [vendor.phone, haptic, onShowToast]
     );
 
+    const handleAddToCart = useCallback(
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        haptic("medium");
+        if (inCart) {
+          removeFromCart(vendor._id);
+          onShowToast?.("Removed from cart", "info");
+        } else {
+          addToCart({
+            _id: vendor._id,
+            name: vendor.name,
+            category: vendor.category,
+            price: price,
+            image: displayImages[0],
+            quantity: 1,
+            address: vendor.address,
+          });
+          onShowToast?.("Added to cart!", "success");
+        }
+      },
+      [haptic, inCart, vendor, price, displayImages, addToCart, removeFromCart, onShowToast]
+    );
+
     if (!hasBeenInView) return <div ref={ref} className={isGrid ? "h-64" : "h-80"} />;
 
     return (
@@ -1142,6 +1534,7 @@ const VendorCard = memo(
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         whileTap={!isComparing ? { scale: 0.98 } : {}}
         className={`relative group bg-white rounded-2xl overflow-hidden shadow-sm border transition-all ${
           isSelectedForCompare ? "ring-2 ring-offset-2 border-transparent" : "border-gray-100"
@@ -1253,7 +1646,10 @@ const VendorCard = memo(
                 icon={Navigation}
                 label="Directions"
                 onClick={() => {
-                  window.open(`https://maps.google.com/?q=${vendor.address?.city || ""}`, "_blank");
+                  window.open(
+                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(vendor.address?.city || "")}`,
+                    "_blank"
+                  );
                 }}
                 color={COLORS.error}
               />
@@ -1297,19 +1693,23 @@ const VendorCard = memo(
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  haptic("medium");
-                  onShowToast?.("Added to inquiry list!", "success");
-                }}
-                className={`flex items-center justify-center gap-1.5 font-bold shadow-md transition-colors ${
-                  isGrid ? "p-2.5 rounded-xl bg-gray-900 text-white" : "px-5 py-2.5 rounded-xl text-white text-sm"
-                }`}
-                style={!isGrid ? { backgroundColor: colorPrimary } : {}}
+                onClick={handleAddToCart}
+                className={`flex items-center justify-center gap-1.5 font-bold shadow-md transition-all ${
+                  isGrid ? "p-2.5 rounded-xl" : "px-5 py-2.5 rounded-xl text-sm"
+                } ${inCart ? "bg-green-500 text-white" : isGrid ? "bg-gray-900 text-white" : "text-white"}`}
+                style={!inCart && !isGrid ? { backgroundColor: colorPrimary } : {}}
               >
-                <ShoppingBag size={isGrid ? 16 : 18} />
-                {!isGrid && "Get Quote"}
+                {inCart ? (
+                  <>
+                    <Check size={isGrid ? 16 : 18} />
+                    {!isGrid && "In Cart"}
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart size={isGrid ? 16 : 18} />
+                    {!isGrid && "Add to Cart"}
+                  </>
+                )}
               </motion.button>
             </div>
           </div>
@@ -1654,17 +2054,28 @@ const FilterContent = memo(
               max={1000000}
               step={10000}
               value={priceRange}
-              onChange={setPriceRange}
-              trackStyle={{ backgroundColor: colorPrimary, height: 6 }}
-              handleStyle={{
-                borderColor: colorPrimary,
-                backgroundColor: "white",
-                opacity: 1,
-                height: 24,
-                width: 24,
-                marginTop: -9,
-                boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-              }}
+              onChange={(val) => setPriceRange(val)}
+              trackStyle={[{ backgroundColor: colorPrimary, height: 6 }]}
+              handleStyle={[
+                {
+                  borderColor: colorPrimary,
+                  backgroundColor: "white",
+                  opacity: 1,
+                  height: 24,
+                  width: 24,
+                  marginTop: -9,
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+                },
+                {
+                  borderColor: colorPrimary,
+                  backgroundColor: "white",
+                  opacity: 1,
+                  height: 24,
+                  width: 24,
+                  marginTop: -9,
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+                },
+              ]}
               railStyle={{ backgroundColor: COLORS.gray[200], height: 6 }}
             />
           </div>
@@ -2390,7 +2801,6 @@ export default function MarketplacePageWrapper() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
-
   const [viewMode, setViewMode] = useLocalStorage("mp_viewMode", "list");
   const [isMapView, setIsMapView] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -2400,6 +2810,7 @@ export default function MarketplacePageWrapper() {
   const [sortBy, setSortBy] = useState("rating");
   const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -2421,6 +2832,8 @@ export default function MarketplacePageWrapper() {
   const debouncedSearchQuery = useDebounce(searchQuery, DEBOUNCE_DELAY);
   const debouncedPriceRange = useDebounce(priceRange, DEBOUNCE_DELAY);
 
+  const { setActiveCategory } = useCartStore();
+
   const handleRefresh = useCallback(async () => {
     setCurrentPage(1);
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -2431,18 +2844,22 @@ export default function MarketplacePageWrapper() {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (selectedCategories.length > 0) count++;
+    if (selectedSubcategory) count++;
     if (showFeaturedOnly) count++;
     if (selectedLocations.length > 0) count++;
     if (priceRange[0] > 0 || priceRange[1] < 1000000) count++;
     if (ratingFilter > 0) count++;
     return count;
-  }, [selectedCategories, showFeaturedOnly, selectedLocations, priceRange, ratingFilter]);
+  }, [selectedCategories, selectedSubcategory, showFeaturedOnly, selectedLocations, priceRange, ratingFilter]);
 
   const currentSortLabel = useMemo(() => SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Sort", [sortBy]);
 
   useEffect(() => {
-    if (pageCategory) setSelectedCategories([pageCategory]);
-  }, [pageCategory]);
+    if (pageCategory) {
+      setSelectedCategories([pageCategory]);
+      setActiveCategory(pageCategory);
+    }
+  }, [pageCategory, setActiveCategory]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -2450,6 +2867,7 @@ export default function MarketplacePageWrapper() {
     debouncedSearchQuery,
     debouncedPriceRange,
     selectedCategories,
+    selectedSubcategory,
     showFeaturedOnly,
     selectedLocations,
     sortBy,
@@ -2483,6 +2901,7 @@ export default function MarketplacePageWrapper() {
 
       if (debouncedSearchQuery) queryParams.set("search", debouncedSearchQuery);
       if (selectedCategories.length > 0) queryParams.set("categories", selectedCategories.join(","));
+      if (selectedSubcategory) queryParams.set("subcategory", selectedSubcategory);
       if (showFeaturedOnly) queryParams.set("featured", "true");
       if (selectedLocations.length > 0) queryParams.set("cities", selectedLocations.join(","));
       if (debouncedPriceRange[0] > 0) queryParams.set("minPrice", debouncedPriceRange[0].toString());
@@ -2533,6 +2952,7 @@ export default function MarketplacePageWrapper() {
     debouncedSearchQuery,
     debouncedPriceRange,
     selectedCategories,
+    selectedSubcategory,
     showFeaturedOnly,
     selectedLocations,
     ratingFilter,
@@ -2560,8 +2980,22 @@ export default function MarketplacePageWrapper() {
   );
 
   const handleCategoryChange = useCallback((cat) => {
-    if (cat === "__clear__") setSelectedCategories([]);
-    else setSelectedCategories((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
+    if (cat === "__clear__") {
+      setSelectedCategories([]);
+      setSelectedSubcategory("");
+    } else {
+      setSelectedCategories((prev) => {
+        const newCategories = prev.includes(cat) ? prev.filter((c) => c !== cat) : [cat];
+        if (!newCategories.includes(cat)) {
+          setSelectedSubcategory("");
+        }
+        return newCategories;
+      });
+    }
+  }, []);
+
+  const handleSubcategoryChange = useCallback((sub) => {
+    setSelectedSubcategory(sub);
   }, []);
 
   const handleLocationChange = useCallback((city) => {
@@ -2595,7 +3029,8 @@ export default function MarketplacePageWrapper() {
 
   const clearAllFilters = useCallback(() => {
     haptic("medium");
-    setSelectedCategories(pageCategory ? [pageCategory] : []);
+    setSelectedCategories([]);
+    setSelectedSubcategory("");
     setPriceRange([0, 1000000]);
     setShowFeaturedOnly(false);
     setSelectedLocations([]);
@@ -2618,8 +3053,19 @@ export default function MarketplacePageWrapper() {
     showToast("Search history cleared", "info");
   }, [haptic, setRecentSearches, showToast]);
 
+  const hasActiveFilters =
+    searchQuery ||
+    selectedCategories.length > 0 ||
+    selectedSubcategory ||
+    selectedLocations.length > 0 ||
+    priceRange[0] > 0 ||
+    priceRange[1] < 1000000 ||
+    ratingFilter > 0 ||
+    showFeaturedOnly;
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <ScrollProgressBar />
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -2647,6 +3093,7 @@ export default function MarketplacePageWrapper() {
       <PullToRefreshUI pullDistance={pullDistance} isRefreshing={isRefreshing} />
       <Toast {...toast} onClose={hideToast} />
       <ScrollToTopButton />
+      <CartPreview colorPrimary={COLORS.primary} />
 
       <motion.header
         animate={{ y: scrollDirection === "down" && scrollY > 200 ? -60 : 0 }}
@@ -2800,12 +3247,40 @@ export default function MarketplacePageWrapper() {
       </motion.header>
 
       <main className="px-4 pt-4">
+        <AnimatePresence>
+          {hasActiveFilters && (
+            <ActiveFiltersDisplay
+              searchQuery={searchQuery}
+              selectedCategories={selectedCategories}
+              selectedSubcategory={selectedSubcategory}
+              selectedLocations={selectedLocations}
+              priceRange={priceRange}
+              ratingFilter={ratingFilter}
+              showFeaturedOnly={showFeaturedOnly}
+              onClearAll={clearAllFilters}
+              colorPrimary={COLORS.primary}
+            />
+          )}
+        </AnimatePresence>
+
         <PromoCarousel colorPrimary={COLORS.primary} colorSecondary={COLORS.secondary} />
+
         <CategoryChips
           selectedCategories={selectedCategories}
           onCategoryChange={handleCategoryChange}
           colorPrimary={COLORS.primary}
         />
+
+        <AnimatePresence>
+          {selectedCategories.length === 1 && SUBCATEGORIES[selectedCategories[0]] && (
+            <SubcategoryChips
+              selectedCategory={selectedCategories[0]}
+              selectedSubcategory={selectedSubcategory}
+              onSubcategoryChange={handleSubcategoryChange}
+              colorPrimary={COLORS.primary}
+            />
+          )}
+        </AnimatePresence>
 
         {error && (
           <motion.div
