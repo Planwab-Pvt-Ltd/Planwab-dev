@@ -399,9 +399,8 @@ const CategoryDrawer = ({ isOpen, onClose, config, categoryName, haptic, current
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     } else if (card.action === "match") {
-      const url = `/m/events/${currentCategory?.toLowerCase()}?filter=${categoryName
-        ?.replace(/\s+/g, "-")
-        ?.toLowerCase()}`;
+      const category = currentCategory?.toLowerCase() === "default" ? "wedding" : currentCategory?.toLowerCase();
+      const url = `/m/events/${category}?filter=${categoryName?.replace(/\s+/g, "-")?.toLowerCase()}`;
       window.location.href = url;
       console.log("Opening matching flow for:", categoryName);
     } else if (card.action === "random") {
