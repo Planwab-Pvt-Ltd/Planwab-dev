@@ -19,6 +19,14 @@ export const metadata = {
   description: "Your one-stop solution for planning Weddings, Anniversaries, and Birthdays.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }) {
   return (
     <ThemeProvider>

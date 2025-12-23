@@ -1386,7 +1386,7 @@ const MobileNavbar = () => {
       <motion.div
         animate={{ y: isVisible ? 0 : 120 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-blue-100/50 pb-[env(safe-area-inset-bottom)] pt-0 px-0 shadow-lg rounded-t-2xl will-change-transform"
+        className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-blue-100/50 pb-[calc(env(safe-area-inset-bottom))] pt-0 px-0 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] rounded-t-2xl will-change-transform"
       >
         <div className="flex items-end justify-between max-w-md mx-auto pb-1 relative">
           {navItems.map((item) => {

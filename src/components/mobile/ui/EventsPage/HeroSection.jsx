@@ -20,6 +20,11 @@ const HeroSection = () => {
   const currentVideo = videoSources[categoryKey] || videoSources.wedding;
   const displayCategory = category === "Default" ? "Wedding" : category || "Wedding";
 
+  const dynamicLeft =
+    categoryKey === "wedding" ? "left-[229px]" : categoryKey === "anniversary" ? "left-[303px]" : "left-[220px]";
+  const dynamicLeftSmall =
+    categoryKey === "wedding" ? "left-[217px]" : categoryKey === "anniversary" ? "left-[290px]" : "left-[208px]";
+
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden" ref={heroRef}>
       {/* 1. Background Video via SmartMedia */}
@@ -48,7 +53,7 @@ const HeroSection = () => {
               <span className="text-5xl sm:text-6xl font-bold">{displayCategory}</span>
 
               {/* Original Decorative SVGs */}
-              <span className="absolute -top-1 right-auto left-[229px] h-6 w-6">
+              <span className={`absolute -top-1 right-auto ${dynamicLeft} h-6 w-6`}>
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
@@ -56,7 +61,7 @@ const HeroSection = () => {
                   />
                 </svg>
               </span>
-              <span className="absolute left-[217px] top-4 h-4 w-4">
+              <span className={`absolute ${dynamicLeftSmall} top-4 h-4 w-4`}>
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"

@@ -1625,7 +1625,7 @@ const VendorCard = memo(
             </div>
           )}
 
-          {!isGrid && (
+          {/* {!isGrid && (
             <div className="flex items-center gap-1 mb-3 -mx-1">
               <QuickActionButton icon={Phone} label="Call" onClick={handleCall} color={COLORS.success} />
               <QuickActionButton
@@ -1654,7 +1654,7 @@ const VendorCard = memo(
                 color={COLORS.error}
               />
             </div>
-          )}
+          )} */}
 
           <div
             className={`flex items-center justify-between ${isGrid ? "mt-2" : "mt-2 pt-3 border-t border-gray-100"}`}
