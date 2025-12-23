@@ -91,6 +91,7 @@ import {
 import HeroSection from "@/components/mobile/ui/EventsPage/HeroSection";
 import Banner1 from "@/components/mobile/ui/EventsPage/Banner1";
 import HowItWorksSection from "@/components/mobile/ui/EventsPage/HowItWorks";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 // =============================================================================
 // SPRING CONFIGURATIONS - Ultra Smooth
@@ -4563,6 +4564,7 @@ export default function CategoryEventsPageWrapper() {
   const [contactType, setContactType] = useState("chat");
   const [initialVendorCategory, setInitialVendorCategory] = useState(null);
   const [selectedVendorForModal, setSelectedVendorForModal] = useState(null);
+  const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
 
   // Get category from URL
   const categoryParam = (params?.category || "wedding").toLowerCase();
@@ -4587,34 +4589,43 @@ export default function CategoryEventsPageWrapper() {
     switch (action) {
       case "date":
         setIsDatePickerOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "guests":
         setIsGuestListOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "venue":
         setInitialVendorCategory("venues");
         setIsVendorBrowserOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "budget":
         setIsBudgetOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "checklist":
         setIsChecklistOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "vendors":
         setInitialVendorCategory(null);
         setIsVendorBrowserOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "gifts":
         setInitialVendorCategory("gifts");
         setIsVendorBrowserOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "cake":
         setInitialVendorCategory("catering");
         setIsVendorBrowserOpen(true);
+        setIsNavbarVisible(false);
         break;
       default:
         setIsVendorBrowserOpen(true);
+        setIsNavbarVisible(false);
     }
   }, []);
 
@@ -4624,18 +4635,22 @@ export default function CategoryEventsPageWrapper() {
       case "chat":
         setContactType("chat");
         setIsContactOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "call":
         setContactType("call");
         setIsContactOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "schedule":
         setContactType("call");
         setIsContactOpen(true);
+        setIsNavbarVisible(false);
         break;
       case "quote":
         setContactType("quote");
         setIsContactOpen(true);
+        setIsNavbarVisible(false);
         break;
     }
   }, []);
@@ -4644,6 +4659,7 @@ export default function CategoryEventsPageWrapper() {
   const handleViewVendors = useCallback((categoryId) => {
     setInitialVendorCategory(categoryId);
     setIsVendorBrowserOpen(true);
+    setIsNavbarVisible(false);
   }, []);
 
   // Handler for viewing a specific vendor
@@ -4651,6 +4667,7 @@ export default function CategoryEventsPageWrapper() {
     setSelectedVendorForModal(vendor);
     setInitialVendorCategory(null);
     setIsVendorBrowserOpen(true);
+    setIsNavbarVisible(false);
   }, []);
 
   // Handler for saving date
@@ -4697,7 +4714,14 @@ export default function CategoryEventsPageWrapper() {
 
         {/* Countdown Timer */}
         <AnimatedSection delay={0.08}>
-          <CountdownTimerSection theme={theme} category={category} onOpenDatePicker={() => setIsDatePickerOpen(true)} />
+          <CountdownTimerSection
+            theme={theme}
+            category={category}
+            onOpenDatePicker={() => {
+              setIsDatePickerOpen(true);
+              setIsNavbarVisible(false);
+            }}
+          />
         </AnimatedSection>
 
         {/* Vendor Categories */}
@@ -4720,13 +4744,23 @@ export default function CategoryEventsPageWrapper() {
           <ChecklistPreviewSection
             theme={theme}
             category={category}
-            onOpenFullChecklist={() => setIsChecklistOpen(true)}
+            onOpenFullChecklist={() => {
+              setIsChecklistOpen(true);
+              setIsNavbarVisible(false);
+            }}
           />
         </AnimatedSection>
 
         {/* Budget Preview */}
         <AnimatedSection delay={0.16}>
-          <BudgetPreviewSection theme={theme} category={category} onOpenFullBudget={() => setIsBudgetOpen(true)} />
+          <BudgetPreviewSection
+            theme={theme}
+            category={category}
+            onOpenFullBudget={() => {
+              setIsBudgetOpen(true);
+              setIsNavbarVisible(false);
+            }}
+          />
         </AnimatedSection>
 
         {/* Inspiration Gallery */}
@@ -4747,6 +4781,7 @@ export default function CategoryEventsPageWrapper() {
             onContactSupport={() => {
               setContactType("chat");
               setIsContactOpen(true);
+              setIsNavbarVisible(false);
             }}
           />
         </AnimatedSection>
@@ -4760,6 +4795,7 @@ export default function CategoryEventsPageWrapper() {
             onTalkToExpert={() => {
               setContactType("call");
               setIsContactOpen(true);
+              setIsNavbarVisible(false);
             }}
           />
         </AnimatedSection>
@@ -4779,7 +4815,10 @@ export default function CategoryEventsPageWrapper() {
       {/* Date Picker Modal */}
       <DatePickerModal
         isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
+        onClose={() => {
+          setIsDatePickerOpen(false);
+          setIsNavbarVisible(true);
+        }}
         onSave={handleSaveDate}
         currentDate={eventDate}
         theme={theme}
@@ -4789,18 +4828,32 @@ export default function CategoryEventsPageWrapper() {
       {/* Guest List Modal */}
       <GuestListModal
         isOpen={isGuestListOpen}
-        onClose={() => setIsGuestListOpen(false)}
+        onClose={() => {
+          setIsGuestListOpen(false);
+          setIsNavbarVisible(true);
+        }}
         theme={theme}
         category={category}
       />
 
       {/* Budget Modal */}
-      <BudgetModal isOpen={isBudgetOpen} onClose={() => setIsBudgetOpen(false)} theme={theme} category={category} />
+      <BudgetModal
+        isOpen={isBudgetOpen}
+        onClose={() => {
+          setIsBudgetOpen(false);
+          setIsNavbarVisible(true);
+        }}
+        theme={theme}
+        category={category}
+      />
 
       {/* Checklist Modal */}
       <ChecklistModal
         isOpen={isChecklistOpen}
-        onClose={() => setIsChecklistOpen(false)}
+        onClose={() => {
+          setIsChecklistOpen(false);
+          setIsNavbarVisible(true);
+        }}
         theme={theme}
         category={category}
       />
@@ -4812,6 +4865,7 @@ export default function CategoryEventsPageWrapper() {
           setIsVendorBrowserOpen(false);
           setInitialVendorCategory(null);
           setSelectedVendorForModal(null);
+          setIsNavbarVisible(true);
         }}
         theme={theme}
         category={category}
@@ -4821,7 +4875,10 @@ export default function CategoryEventsPageWrapper() {
       {/* Contact Modal */}
       <ContactModal
         isOpen={isContactOpen}
-        onClose={() => setIsContactOpen(false)}
+        onClose={() => {
+          setIsContactOpen(false);
+          setIsNavbarVisible(true);
+        }}
         theme={theme}
         contactType={contactType}
       />

@@ -67,6 +67,7 @@ import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 // =============================================================================
 // CONSTANTS
@@ -2180,7 +2181,7 @@ const FilterDrawer = memo(({ isOpen, onClose, children, onClear, colorPrimary, a
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={SPRING_CONFIG.gentle}
-            className="fixed bottom-0 left-0 right-0 h-[90vh] bg-gray-50 rounded-t-3xl z-[101] flex flex-col shadow-2xl"
+            className="fixed bottom-0 left-0 right-0 h-[80vh] bg-gray-50 rounded-t-3xl z-[101] flex flex-col shadow-2xl"
           >
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
             <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
@@ -2822,6 +2823,7 @@ export default function MarketplacePageWrapper() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareList, setCompareList] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
+  const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
 
   const [toast, setToast] = useState({ message: "", type: "success", isVisible: false });
 
@@ -3155,6 +3157,7 @@ export default function MarketplacePageWrapper() {
                 onClick={() => {
                   haptic("light");
                   setMobileFiltersOpen(true);
+                  setIsNavbarVisible(false);
                 }}
                 className={`relative p-2.5 rounded-xl transition-all ${
                   activeFilterCount > 0 ? "text-white shadow-md" : "bg-gray-100 text-gray-600"
@@ -3214,6 +3217,7 @@ export default function MarketplacePageWrapper() {
             onClick={() => {
               haptic("light");
               setSortSheetOpen(true);
+              setIsNavbarVisible(false);
             }}
             className="flex items-center gap-1.5 px-3 py-2 bg-white rounded-xl text-xs font-semibold text-gray-700 border border-gray-200 whitespace-nowrap shadow-sm"
           >
@@ -3354,19 +3358,28 @@ export default function MarketplacePageWrapper() {
         count={compareList.length}
         vendors={compareList}
         onClear={() => setCompareList([])}
-        onView={() => setShowCompare(true)}
+        onView={() => {
+          setShowCompare(true);
+          setIsNavbarVisible(false);
+        }}
         colorPrimary={COLORS.primary}
       />
       <SortSheet
         isOpen={sortSheetOpen}
-        onClose={() => setSortSheetOpen(false)}
+        onClose={() => {
+          setSortSheetOpen(false);
+          setIsNavbarVisible(true);
+        }}
         currentSort={sortBy}
         onSortChange={setSortBy}
         colorPrimary={COLORS.primary}
       />
       <FilterDrawer
         isOpen={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
+        onClose={() => {
+          setMobileFiltersOpen(false);
+          setIsNavbarVisible(true);
+        }}
         onClear={clearAllFilters}
         colorPrimary={COLORS.primary}
         activeFilterCount={activeFilterCount}
@@ -3389,7 +3402,10 @@ export default function MarketplacePageWrapper() {
       </FilterDrawer>
       <CompareModal
         isOpen={showCompare}
-        onClose={() => setShowCompare(false)}
+        onClose={() => {
+          setShowCompare(false);
+          setIsNavbarVisible(true);
+        }}
         vendors={compareList}
         colorPrimary={COLORS.primary}
       />

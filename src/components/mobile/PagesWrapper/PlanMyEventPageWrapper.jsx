@@ -21,6 +21,7 @@ import {
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { motion } from "framer-motion";
 
 const categoryConfig = {
   wedding: {

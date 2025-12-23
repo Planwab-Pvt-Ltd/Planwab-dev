@@ -1,10 +1,5 @@
 "use client";
 
-// =============================================================================
-// FILE: app/m/checkout/page.jsx
-// Mobile-Optimized Checkout Page for PlanWab - Events Planning Marketplace
-// =============================================================================
-
 import React, { useState, useMemo, useEffect, useCallback, useRef, memo, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -61,6 +56,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCartStore } from "../../../GlobalState/CartDataStore";
 
 // =============================================================================
 // CONSTANTS
@@ -255,79 +251,6 @@ const copyToClipboard = async (text) => {
   }
 };
 
-// =============================================================================
-// CHECKOUT CONTEXT
-// =============================================================================
-
-const CheckoutContext = createContext(null);
-
-const useCheckout = () => {
-  const context = useContext(CheckoutContext);
-  if (!context) {
-    throw new Error("useCheckout must be used within CheckoutProvider");
-  }
-  return context;
-};
-
-// =============================================================================
-// MOCK DATA - Replace with actual API data
-// =============================================================================
-
-const MOCK_CART_ITEMS = [
-  {
-    id: "v1",
-    vendorId: "vendor_123",
-    name: "Royal Palace Banquet Hall",
-    category: "venues",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400",
-    price: 150000,
-    originalPrice: 180000,
-    date: "2025-03-15",
-    timeSlot: "Evening (6PM - 11PM)",
-    guests: 250,
-    rating: 4.8,
-    reviews: 124,
-    isVerified: true,
-    addons: [
-      { id: "a1", name: "Valet Parking", price: 5000 },
-      { id: "a2", name: "DJ Setup", price: 15000 },
-    ],
-  },
-  {
-    id: "v2",
-    vendorId: "vendor_456",
-    name: "Capture Moments Photography",
-    category: "photographers",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400",
-    price: 75000,
-    originalPrice: 85000,
-    date: "2025-03-15",
-    package: "Premium Wedding Package",
-    deliverables: "500+ edited photos, 1 album",
-    rating: 4.9,
-    reviews: 89,
-    isVerified: true,
-    addons: [{ id: "a3", name: "Pre-wedding Shoot", price: 25000 }],
-  },
-  {
-    id: "v3",
-    vendorId: "vendor_789",
-    name: "Gourmet Delights Catering",
-    category: "catering",
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400",
-    price: 120000,
-    originalPrice: 120000,
-    date: "2025-03-15",
-    guests: 250,
-    pricePerPlate: 480,
-    menuType: "Multi-cuisine Buffet",
-    rating: 4.7,
-    reviews: 156,
-    isVerified: false,
-    addons: [],
-  },
-];
-
 const MOCK_COUPONS = [
   {
     code: "FIRST20",
@@ -494,7 +417,7 @@ const CartItemCard = memo(({ item, onRemove, onUpdateAddons, colorPrimary }) => 
                 whileTap={{ scale: 0.9 }}
                 onClick={() => {
                   haptic("medium");
-                  onRemove(item.id);
+                  onRemove(item?._id);
                 }}
                 className="p-2 bg-red-50 rounded-lg text-red-500"
               >
@@ -1633,13 +1556,13 @@ SecurityBadges.displayName = "SecurityBadges";
 // Step 1: Cart Review
 // -----------------------------------------------------------------------------
 const CartStep = memo(
-  ({ cartItems, setCartItems, appliedCoupon, setAppliedCoupon, priceDetails, colorPrimary, showToast }) => {
+  ({ cartItems, removeFromCart, appliedCoupon, setAppliedCoupon, priceDetails, colorPrimary, showToast }) => {
     const handleRemoveItem = useCallback(
       (itemId) => {
-        setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+        removeFromCart(itemId);
         showToast("Item removed from cart", "info");
       },
-      [setCartItems, showToast]
+      [removeFromCart, showToast]
     );
 
     if (cartItems.length === 0) {
@@ -1671,8 +1594,8 @@ const CartStep = memo(
         <div className="mb-4">
           <h2 className="text-sm font-bold text-gray-500 uppercase mb-3">Your Selection ({cartItems.length} items)</h2>
           <AnimatePresence>
-            {cartItems.map((item) => (
-              <CartItemCard key={item.id} item={item} onRemove={handleRemoveItem} colorPrimary={colorPrimary} />
+            {cartItems.map((item, index) => (
+              <CartItemCard key={index} item={item} onRemove={handleRemoveItem} colorPrimary={colorPrimary} />
             ))}
           </AnimatePresence>
         </div>
@@ -1908,7 +1831,7 @@ export default function CheckoutPageWrapper() {
   const [orderDetails, setOrderDetails] = useState(null);
 
   // Cart State
-  const [cartItems, setCartItems] = useState(MOCK_CART_ITEMS);
+  const { cartItems, removeFromCart } = useCartStore();
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   // Form States
@@ -2114,7 +2037,7 @@ export default function CheckoutPageWrapper() {
         return (
           <CartStep
             cartItems={cartItems}
-            setCartItems={setCartItems}
+            removeFromCart={removeFromCart}
             appliedCoupon={appliedCoupon}
             setAppliedCoupon={setAppliedCoupon}
             priceDetails={priceDetails}

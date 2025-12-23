@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import MobileNavbar from "@/components/mobile/Navbar";
+import dynamic from "next/dynamic";
+
+const MobileNavbar = dynamic(() => import("@/components/mobile/Navbar"), { ssr: false });
 
 export default function ConditionalNavbar() {
   const pathname = usePathname();
 
   const hiddenPaths = ["/m/user/checkout"];
-
   const shouldHide = hiddenPaths.some((path) => pathname.includes(path));
 
   if (shouldHide) return null;
