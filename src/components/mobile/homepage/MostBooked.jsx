@@ -286,7 +286,7 @@ const MostBooked = () => {
   };
 
   return (
-    <div className="p-4 pt-0 mt-1 bg-white mb-2 content-visibility-auto contain-intrinsic-size-[300px]">
+    <div className="p-4 pt-4 mt-1 bg-white mb-2 content-visibility-auto contain-intrinsic-size-[300px] rounded-2xl shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900">Most Booked</h2>
 

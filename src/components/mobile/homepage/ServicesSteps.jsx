@@ -18,7 +18,7 @@ const themeConfig = {
     listText: "text-blue-950 dark:text-blue-50",
     icon: "text-blue-800 dark:text-blue-400", // Icon matches primary
     button: "bg-blue-800 hover:bg-blue-900 text-white shadow-blue-200 dark:shadow-blue-900/20",
-    decoration: "border-blue-200 bg-white dark:bg-blue-950 dark:border-blue-800",
+    decoration: "bg-white dark:bg-blue-950",
   },
   // Anniversary: Pink-700
   Anniversary: {
@@ -28,7 +28,7 @@ const themeConfig = {
     listText: "text-pink-950 dark:text-pink-50",
     icon: "text-pink-700 dark:text-pink-400",
     button: "bg-pink-700 hover:bg-pink-800 text-white shadow-pink-200 dark:shadow-pink-900/20",
-    decoration: "border-pink-200 bg-white dark:bg-pink-950 dark:border-pink-800",
+    decoration: "bg-white dark:bg-pink-950",
   },
   // Birthday: Yellow-600
   Birthday: {
@@ -38,7 +38,7 @@ const themeConfig = {
     listText: "text-yellow-950 dark:text-yellow-50",
     icon: "text-yellow-600 dark:text-yellow-400",
     button: "bg-yellow-600 hover:bg-yellow-700 text-white shadow-yellow-200 dark:shadow-yellow-900/20",
-    decoration: "border-yellow-200 bg-white dark:bg-yellow-950 dark:border-yellow-800",
+    decoration: "bg-white dark:bg-yellow-950",
   },
   Default: {
     container: "bg-blue-50/80 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30",
@@ -47,7 +47,7 @@ const themeConfig = {
     listText: "text-blue-950 dark:text-blue-50",
     icon: "text-blue-800 dark:text-blue-400", // Icon matches primary
     button: "bg-blue-800 hover:bg-blue-900 text-white shadow-blue-200 dark:shadow-blue-900/20",
-    decoration: "border-blue-200 bg-white dark:bg-blue-950 dark:border-blue-800",
+    decoration: "bg-white dark:bg-blue-950",
   },
   default: {
     container: "bg-blue-50/80 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30",
@@ -56,7 +56,7 @@ const themeConfig = {
     listText: "text-blue-950 dark:text-blue-50",
     icon: "text-blue-800 dark:text-blue-400", // Icon matches primary
     button: "bg-blue-800 hover:bg-blue-900 text-white shadow-blue-200 dark:shadow-blue-900/20",
-    decoration: "border-blue-200 bg-white dark:bg-blue-950 dark:border-blue-800",
+    decoration: "bg-white dark:bg-blue-950",
   },
 };
 

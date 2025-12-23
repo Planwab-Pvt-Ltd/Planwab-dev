@@ -71,17 +71,24 @@ const SmartMedia = memo(
         {/* 1. DYNAMIC SHIMMER SKELETON */}
         {/* This overlay sits on top until the media is fully loaded. */}
         <div
-          className={`absolute inset-0 z-10 flex items-center justify-center bg-gray-200 transition-opacity duration-500 ${
+          className={`absolute inset-0 z-10 flex items-center justify-center bg-gray-200/90 backdrop-blur-sm transition-opacity duration-500 ${
             isLoaded ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
           aria-hidden="true"
         >
-          {/* The Shimmer Animation Layer */}
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          {/* Strong Primary Shimmer */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.8s_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent" />
 
-          {/* Subtle Type Icon (Centered) */}
-          <div className="relative z-20 text-gray-400 opacity-40">
-            {type === "video" ? <PlayCircle size={24} /> : <ImageIcon size={24} />}
+          {/* Secondary Soft Glow Shimmer */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.6s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent blur-md opacity-60" />
+
+          {/* Responsive Icon */}
+          <div className="relative z-20 text-gray-500 opacity-50 animate-pulse">
+            {type === "video" ? (
+              <PlayCircle className="w-[18%] h-[18%] max-w-12 max-h-12 min-w-6 min-h-6" />
+            ) : (
+              <ImageIcon className="w-[18%] h-[18%] max-w-12 max-h-12 min-w-6 min-h-6" />
+            )}
           </div>
         </div>
 

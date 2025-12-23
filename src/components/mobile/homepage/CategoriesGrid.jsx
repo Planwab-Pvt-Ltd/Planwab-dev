@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X, Sparkles, Shuffle, ArrowRight, MapPin, Us
 import { motion, AnimatePresence } from "framer-motion";
 import SmartMedia from "../SmartMediaLoader";
 import Link from "next/link";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 function useHapticFeedback() {
   return useCallback((type = "light") => {
@@ -498,6 +499,7 @@ const CategoryGrid = ({ currentCategory }) => {
   // Initialize with safe defaults (Right is likely scrollable initially)
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const { setIsNavbarVisible } = useNavbarVisibilityStore();
 
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -637,6 +639,7 @@ const CategoryGrid = ({ currentCategory }) => {
     if (drawerKey && drawerConfigs[drawerKey]) {
       e.preventDefault(); // Prevent navigation
       haptic("medium");
+      setIsNavbarVisible(false);
       setActiveDrawerConfig(drawerConfigs[drawerKey]);
       setActiveCategoryName(item.name);
       setDrawerOpen(true);
@@ -646,6 +649,7 @@ const CategoryGrid = ({ currentCategory }) => {
 
   const closeDrawer = () => {
     setDrawerOpen(false);
+    setIsNavbarVisible(true);
     setTimeout(() => {
       setActiveDrawerConfig(null);
       setActiveCategoryName("");
@@ -653,7 +657,7 @@ const CategoryGrid = ({ currentCategory }) => {
   };
 
   return (
-    <div className="p-4 py-2 bg-white mb-2">
+    <div className="p-4 py-2 pt-4 bg-white mb-2 rounded-2xl shadow-sm">
       <div className="flex items-center justify-between mb-4">
         {/* Render text as Priority */}
         <h2 className="text-xl font-semibold text-gray-900 leading-none">What are you looking for?</h2>

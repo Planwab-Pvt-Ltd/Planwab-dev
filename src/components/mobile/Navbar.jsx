@@ -64,6 +64,9 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "../../GlobalState/CartDataStore";
+import { set } from "mongoose";
+import { act } from "react";
+import { useNavbarVisibilityStore } from "../../GlobalState/navbarVisibilityStore";
 
 // =============================================================================
 // CONSTANTS
@@ -193,13 +196,13 @@ function useDebounce(value, delay) {
 // -----------------------------------------------------------------------------
 // Toast Component
 // -----------------------------------------------------------------------------
-const Toast = memo(({ message, type = "success", isVisible, onClose }) => {
+const Toast = memo(({ message, type = "success", isNavbarVisible, onClose }) => {
   useEffect(() => {
-    if (isVisible) {
+    if (isNavbarVisible) {
       const timer = setTimeout(onClose, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isVisible, onClose]);
+  }, [isNavbarVisible, onClose]);
 
   const icons = { success: CheckCircle, error: AlertCircle, info: Info, warning: AlertCircle };
   const Icon = icons[type];
@@ -207,7 +210,7 @@ const Toast = memo(({ message, type = "success", isVisible, onClose }) => {
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {isNavbarVisible && (
         <motion.div
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -730,7 +733,7 @@ PriceBreakdown.displayName = "PriceBreakdown";
 // =============================================================================
 // ENHANCED EXPLORE DRAWER - NOW WITH DYNAMIC API DATA
 // =============================================================================
-const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast }) => {
+const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDrawer }) => {
   const [activeCat, setActiveCat] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("popular");
@@ -828,7 +831,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast }) => {
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={SPRING_CONFIG.gentle}
-        className="fixed bottom-0 left-0 right-0 h-[90vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="fixed bottom-0 left-0 right-0 h-[80vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="bg-white px-4 pt-3 pb-3 shadow-sm z-10 sticky top-0 border-b border-gray-100">
@@ -996,7 +999,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast }) => {
               </div>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={onClose}
+                onClick={() => setActiveDrawer("cart")}
                 className="px-6 py-3 bg-yellow-400 text-blue-900 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2"
               >
                 <ShoppingBag size={18} />
@@ -1088,7 +1091,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={SPRING_CONFIG.gentle}
-        className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="fixed bottom-0 left-0 right-0 max-h-[80vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
       >
         {/* Header */}
         <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 sticky top-0 z-10">
@@ -1196,7 +1199,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="bg-white p-4 pb-6 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
+          <div className="bg-white p-4 pb-2 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-[10px] text-gray-400 uppercase font-semibold">Grand Total</p>
@@ -1243,10 +1246,9 @@ const MobileNavbar = () => {
   // --- OPTIMIZATION 1: useTransition for Instant Feedback ---
   const [isPending, startTransition] = useTransition();
   const [pendingRoute, setPendingRoute] = useState(null);
-
-  const [isVisible, setIsVisible] = useState(true);
+  const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
   const [activeDrawer, setActiveDrawer] = useState(null);
-  const [toast, setToast] = useState({ message: "", type: "success", isVisible: false });
+  const [toast, setToast] = useState({ message: "", type: "success", isNavbarVisible: false });
 
   const haptic = useHapticFeedback();
 
@@ -1257,11 +1259,11 @@ const MobileNavbar = () => {
 
   // --- Toast Handlers ---
   const showToast = useCallback((message, type = "success") => {
-    setToast({ message, type, isVisible: true });
+    setToast({ message, type, isNavbarVisible: true });
   }, []);
 
   const hideToast = useCallback(() => {
-    setToast((prev) => ({ ...prev, isVisible: false }));
+    setToast((prev) => ({ ...prev, isNavbarVisible: false }));
   }, []);
 
   // --- OPTIMIZATION 2: Throttled Scroll ---
@@ -1271,11 +1273,17 @@ const MobileNavbar = () => {
   useMotionValueEvent(scrollY, "change", (latest) => {
     const diff = latest - lastScrollY.current;
     if (Math.abs(diff) > 10) {
-      if (diff > 0 && latest > 100) setIsVisible(false);
-      else if (diff < 0) setIsVisible(true);
+      if (diff > 0 && latest > 100) setIsNavbarVisible(false);
+      else if (diff < 0) setIsNavbarVisible(true);
       lastScrollY.current = latest;
     }
   });
+
+  useEffect(() => {
+    if (activeDrawer === "cart" || activeDrawer === "explore") {
+      setIsNavbarVisible(false);
+    }
+  }, [isNavbarVisible, activeDrawer]);
 
   const navItems = useMemo(
     () => [
@@ -1384,7 +1392,7 @@ const MobileNavbar = () => {
 
       {/* Main Navbar */}
       <motion.div
-        animate={{ y: isVisible ? 0 : 120 }}
+        animate={{ y: isNavbarVisible ? 0 : 120 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
         className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-blue-100/50 pb-[calc(env(safe-area-inset-bottom))] pt-0 px-0 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] rounded-t-2xl will-change-transform"
       >
@@ -1493,10 +1501,14 @@ const MobileNavbar = () => {
       <AnimatePresence>
         {activeDrawer === "explore" && (
           <ExploreDrawer
-            onClose={() => setActiveDrawer(null)}
+            onClose={() => {
+              setActiveDrawer(null);
+              setIsNavbarVisible(true);
+            }}
             onAdd={handleAddToCart}
             cartItems={cartItems}
             showToast={showToast}
+            setActiveDrawer={setActiveDrawer}
           />
         )}
         {activeDrawer === "cart" && (
@@ -1504,6 +1516,7 @@ const MobileNavbar = () => {
             onClose={() => {
               setActiveDrawer(null);
               setOpenCartNavbar("close");
+              setIsNavbarVisible(true);
             }}
             items={cartItems}
             onRemove={removeFromCart}
