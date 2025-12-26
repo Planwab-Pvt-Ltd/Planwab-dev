@@ -155,7 +155,7 @@ const ServicesSteps = () => {
 // Extracted Component
 const CornerDecoration = ({ position, style }) => (
   <div
-    className={`absolute top-0 w-8 h-8 lg:w-12 lg:h-12 rounded-full border shadow-sm z-10
+    className={`absolute top-0 w-8 h-8 lg:w-12 lg:h-12 rounded-full z-10
     ${position === "left" ? "left-0 -translate-x-1/2 -translate-y-1/2" : "right-0 translate-x-1/2 -translate-y-1/2"}
     ${style}
     `}

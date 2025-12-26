@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ThemeClerkProvider from "../lib/ThemeClerkProvider";
 import NextTopLoader from "nextjs-toploader";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,6 +51,21 @@ export default function RootLayout({ children }) {
               showAtBottom={false}
             />
             {children}
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                style: {
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  padding: "16px",
+                  borderRadius: "12px",
+                },
+                className: "my-toast",
+                duration: 4000,
+              }}
+              richColors
+              closeButton
+            />
           </body>
         </html>
       </ThemeClerkProvider>

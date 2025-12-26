@@ -6,11 +6,11 @@ const BASE_URL = "https://www.theweddingcompany.com";
 const AreYouAVendorSection = () => {
   return (
     <section
-      className="relative overflow-x-hidden px-3 pb-0 pt-2 md:px-0 md:py-12 !z-10 bg-transparent"
+      className="relative overflow-x-hidden px-3 pt-2 md:px-0 md:py-12 !z-10 bg-white pb-12"
       id="are_you_a_vendor_section"
     >
       {/* Background Pattern Left - Decorative */}
-      <div className="absolute left-0 top-0 z-0 w-[200px] -translate-x-1/2 md:w-[400px] pointer-events-none">
+      <div className="absolute left-0 top-10 z-0 w-[200px] -translate-x-1/2 md:w-[400px] pointer-events-none">
         <SmartMedia
           src={`${BASE_URL}/images/HomePage/new/big-mandala.webp`}
           type="image"
@@ -23,7 +23,7 @@ const AreYouAVendorSection = () => {
       </div>
 
       {/* Background Pattern Right - Decorative */}
-      <div className="absolute right-0 top-0 z-0 w-[200px] translate-x-1/2 md:w-[400px] pointer-events-none">
+      <div className="absolute right-0 top-10 z-0 w-[200px] translate-x-1/2 md:w-[400px] pointer-events-none">
         <SmartMedia
           src={`${BASE_URL}/images/HomePage/new/big-mandala.webp`}
           type="image"

@@ -2184,7 +2184,7 @@ const FilterDrawer = memo(({ isOpen, onClose, children, onClear, colorPrimary, a
             className="fixed bottom-0 left-0 right-0 h-[80vh] bg-gray-50 rounded-t-3xl z-[101] flex flex-col shadow-2xl"
           >
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-transparent">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Filters</h2>
                 <p className="text-xs text-gray-500">
@@ -2206,7 +2206,7 @@ const FilterDrawer = memo(({ isOpen, onClose, children, onClear, colorPrimary, a
             </div>
             <div className="flex-1 overflow-y-auto p-5 pb-32">{children}</div>
             <div
-              className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3"
+              className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3 z-50"
               style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
             >
               <motion.button
@@ -3322,7 +3322,13 @@ export default function MarketplacePageWrapper() {
               ))}
             </motion.div>
           ) : vendors.length > 0 ? (
-            <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4, ease: [0.43, 0.13, 0.23, 0.96] }}
+            >
               <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
                 {vendors.map((vendor) => (
                   <VendorCard

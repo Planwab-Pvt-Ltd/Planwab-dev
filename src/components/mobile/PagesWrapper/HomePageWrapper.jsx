@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Sparkles } from "lucide-react";
 import SmartMedia from "./../SmartMediaLoader";
 import Link from "next/link";
+import QuickServices from "../homepage/QuickServices";
 
 // 1. Precise Skeletons: Match the EXACT height of your real components
 // to prevent "Content Layout Shift" (Jumping UI)
@@ -27,13 +28,6 @@ const WhyWeBetter = dynamic(() => import("../homepage/WhyWeBetter"));
 const AreYouAVendorSection = dynamic(() => import("../homepage/AreYouVendor"));
 
 const OFFERS = ["Get 10% OFF on all bookings", "Free Consultation", "Flat ₹500 OFF First Booking"];
-const QUICK_LINKS = [
-  { label: "Venues", icon: "🏰" },
-  { label: "Makeup", icon: "💄" },
-  { label: "Photo", icon: "📸" },
-  { label: "Mehndi", icon: "🎨" },
-  { label: "Decor", icon: "🌸" },
-];
 
 function useHapticFeedback() {
   return useCallback((type = "light") => {
@@ -150,7 +144,7 @@ const MainContent = () => {
   // Removing it saves significant main-thread resources during scrolling.
 
   return (
-    <div className="relative w-full min-h-screen bg-gray-50 text-slate-800 font-sans pb-12 mx-auto max-w-md overflow-hidden">
+    <div className="relative w-full min-h-screen bg-gray-50 text-slate-800 font-sans pb-0 mx-auto max-w-md overflow-hidden">
       <ScrollProgressBar />
       <HeroSection />
 
@@ -239,30 +233,7 @@ const MainContent = () => {
           />
         </div>
 
-        {/* Quick Services */}
-        <div className="px-4 mb-9 mt-8">
-          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <span className="w-1 h-5 bg-yellow-400 rounded-full" />
-            Quick Services
-          </h3>
-          {/* Horizontal Scroll Container */}
-          <div
-            className="flex justify-between overflow-x-auto scrollbar-hide gap-3 pb-2 touch-pan-x"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {QUICK_LINKS.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col items-center gap-2 min-w-[68px] active:scale-95 transition-transform"
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-blue-50 bg-blue-50">
-                  <span className="text-2xl drop-shadow-sm filter-none">{item.icon}</span>
-                </div>
-                <span className="text-[10px] font-bold text-blue-900">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <QuickServices />
 
         <WhyWeBetter />
 

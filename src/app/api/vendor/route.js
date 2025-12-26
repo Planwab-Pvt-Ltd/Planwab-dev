@@ -1,527 +1,408 @@
+// app/api/vendor/route.js
+
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../database/mongoose";
-import Vendor from "../../../database/models/VendorModel";
+import {
+  Vendor,
+  VenueVendor,
+  CatererVendor,
+  PhotographerVendor,
+  MakeupVendor,
+  PlannerVendor,
+  ClothesVendor,
+  MehendiVendor,
+  CakeVendor,
+  JewelleryVendor,
+  InvitationVendor,
+  DjVendor,
+  HairstylingVendor,
+  OtherVendor,
+} from "@/database/models/VendorModel";
+import { connectToDatabase } from "@/database/mongoose";
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+const cleanVendorData = (data) => {
+  const cleaned = { ...data };
+
+  // Clean perDayPrice
+  if (cleaned.perDayPrice) {
+    if (!cleaned.perDayPrice.min && !cleaned.perDayPrice.max) {
+      delete cleaned.perDayPrice;
+    } else {
+      if (cleaned.perDayPrice.min) cleaned.perDayPrice.min = Number(cleaned.perDayPrice.min);
+      if (cleaned.perDayPrice.max) cleaned.perDayPrice.max = Number(cleaned.perDayPrice.max);
+    }
+  }
+
+  // Ensure basePrice is a number
+  if (cleaned.basePrice) {
+    cleaned.basePrice = Number(cleaned.basePrice);
+  }
+
+  // Clean packages
+  if (cleaned.packages && cleaned.packages.length > 0) {
+    cleaned.packages = cleaned.packages.map((pkg) => ({
+      ...pkg,
+      price: Number(pkg.price) || 0,
+      originalPrice: pkg.originalPrice ? Number(pkg.originalPrice) : undefined,
+      savingsPercentage: pkg.savingsPercentage ? Number(pkg.savingsPercentage) : 0,
+      features: pkg.features?.filter((f) => f && f.trim() !== "") || [],
+      notIncluded: pkg.notIncluded?.filter((f) => f && f.trim() !== "") || [],
+    }));
+  }
+
+  // Clean stats
+  if (cleaned.stats && cleaned.stats.length > 0) {
+    cleaned.stats = cleaned.stats.filter((stat) => stat.label && stat.value);
+  }
+
+  // Clean highlights
+  if (cleaned.highlights && cleaned.highlights.length > 0) {
+    cleaned.highlights = cleaned.highlights.filter((h) => h.label && h.value);
+  }
+
+  // Clean operating hours
+  if (cleaned.operatingHours && cleaned.operatingHours.length > 0) {
+    cleaned.operatingHours = cleaned.operatingHours.filter((oh) => oh.day && oh.hours);
+  }
+
+  // Clean landmarks
+  if (cleaned.landmarks && cleaned.landmarks.length > 0) {
+    cleaned.landmarks = cleaned.landmarks.filter((lm) => lm.name);
+  }
+
+  // Clean directions
+  if (cleaned.directions && cleaned.directions.length > 0) {
+    cleaned.directions = cleaned.directions.filter((dir) => dir.type && dir.description);
+  }
+
+  // Clean policies
+  if (cleaned.policies && cleaned.policies.length > 0) {
+    cleaned.policies = cleaned.policies
+      .filter((policy) => policy.title)
+      .map((policy) => ({
+        ...policy,
+        details: policy.details?.filter((d) => d && d.trim() !== "") || [],
+      }));
+  }
+
+  // Clean FAQs
+  if (cleaned.faqs && cleaned.faqs.length > 0) {
+    cleaned.faqs = cleaned.faqs.filter((faq) => faq.question && faq.answer);
+  }
+
+  // Clean awards
+  if (cleaned.awards && cleaned.awards.length > 0) {
+    cleaned.awards = cleaned.awards.filter((award) => award.title);
+  }
+
+  // Clean special offers
+  if (cleaned.specialOffers && cleaned.specialOffers.length > 0) {
+    cleaned.specialOffers = cleaned.specialOffers.filter((offer) => offer.title);
+  }
+
+  // Clean empty arrays
+  const arrayFields = [
+    "tags",
+    "amenities",
+    "facilities",
+    "highlightPoints",
+    "eventTypes",
+    "paymentMethods",
+    "metaKeywords",
+    "images",
+    "gallery",
+  ];
+
+  arrayFields.forEach((field) => {
+    if (cleaned[field] && Array.isArray(cleaned[field])) {
+      cleaned[field] = cleaned[field].filter((item) => {
+        if (typeof item === "string") return item.trim() !== "";
+        return true;
+      });
+    }
+  });
+
+  // Ensure numeric fields are numbers
+  const numericFields = ["rating", "reviewCount", "reviews", "bookings", "yearsExperience"];
+  numericFields.forEach((field) => {
+    if (cleaned[field] !== undefined) {
+      cleaned[field] = Number(cleaned[field]) || 0;
+    }
+  });
+
+  // Clean category-specific nested numeric fields
+  if (cleaned.seating) {
+    if (cleaned.seating.min) cleaned.seating.min = Number(cleaned.seating.min);
+    if (cleaned.seating.max) cleaned.seating.max = Number(cleaned.seating.max);
+  }
+
+  if (cleaned.floating) {
+    if (cleaned.floating.min) cleaned.floating.min = Number(cleaned.floating.min);
+    if (cleaned.floating.max) cleaned.floating.max = Number(cleaned.floating.max);
+  }
+
+  if (cleaned.rooms) {
+    if (cleaned.rooms.count) cleaned.rooms.count = Number(cleaned.rooms.count);
+    if (cleaned.rooms.max) cleaned.rooms.max = Number(cleaned.rooms.max);
+  }
+
+  if (cleaned.parking) {
+    if (cleaned.parking.capacity) cleaned.parking.capacity = Number(cleaned.parking.capacity);
+  }
+
+  if (cleaned.pricePerPlate) {
+    if (cleaned.pricePerPlate.veg) cleaned.pricePerPlate.veg = Number(cleaned.pricePerPlate.veg);
+    if (cleaned.pricePerPlate.nonVeg) cleaned.pricePerPlate.nonVeg = Number(cleaned.pricePerPlate.nonVeg);
+  }
+
+  if (cleaned.trialPolicy) {
+    if (cleaned.trialPolicy.price) cleaned.trialPolicy.price = Number(cleaned.trialPolicy.price);
+  }
+
+  if (cleaned.budgetRange) {
+    if (cleaned.budgetRange.min) cleaned.budgetRange.min = Number(cleaned.budgetRange.min);
+    if (cleaned.budgetRange.max) cleaned.budgetRange.max = Number(cleaned.budgetRange.max);
+  }
+
+  const categoryNumericFields = [
+    "halls",
+    "deliveryTime",
+    "teamSize",
+    "minCapacity",
+    "maxCapacity",
+    "pricePerHand",
+    "bridalPackagePrice",
+    "pricePerKg",
+    "minOrderWeight",
+    "advanceBookingDays",
+    "minOrderQuantity",
+    "fittingSessions",
+    "vendorNetwork",
+  ];
+
+  categoryNumericFields.forEach((field) => {
+    if (cleaned[field] !== undefined && cleaned[field] !== "") {
+      cleaned[field] = Number(cleaned[field]) || 0;
+    }
+  });
+
+  return cleaned;
+};
+
+const verifyAdminPassword = (password) => {
+  const adminPassword = process.env.ADMIN_VENDOR_PASSWORD || "admin@vendor123";
+  return password === adminPassword;
+};
+
+// =============================================================================
+// GET - Fetch all vendors with pagination, filters, and search
+// =============================================================================
 
 export async function GET(request) {
   try {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const availability = searchParams.get("availability");
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
+    const vendorId = searchParams.get("id");
 
-    // =================================================================
-    // PAGINATION PARAMETERS
-    // =================================================================
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "12")));
+    // If specific vendor ID is provided, return that vendor
+    if (vendorId) {
+      const vendor = await Vendor.findById(vendorId).lean();
+      if (!vendor) {
+        return NextResponse.json({ success: false, message: "Vendor not found" }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, data: vendor });
+    }
+
+    // Build query
+    const query = {};
+
+    if (category && category !== "all") {
+      query.category = category;
+    }
+
+    if (availability && availability !== "all") {
+      query.availabilityStatus = availability;
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { username: { $regex: search, $options: "i" } },
+        { "address.city": { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Build sort
+    const sort = {};
+    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Execute query with pagination
     const skip = (page - 1) * limit;
-
-    // =================================================================
-    // FILTER PARAMETERS
-    // =================================================================
-    const sortBy = searchParams.get("sortBy") || "rating";
-    const searchQuery = searchParams.get("search")?.trim();
-    const categoriesParam = searchParams.get("categories");
-    const minPrice = parseFloat(searchParams.get("minPrice"));
-    const maxPrice = parseFloat(searchParams.get("maxPrice"));
-    const isFeatured = searchParams.get("featured") === "true";
-    const citiesParam = searchParams.get("cities");
-    const minRating = parseFloat(searchParams.get("minRating"));
-    const guestCapacity = parseInt(searchParams.get("guestCapacity"));
-    const amenitiesParam = searchParams.get("amenities");
-    const isVerified = searchParams.get("verified") === "true";
-    const hasDiscount = searchParams.get("hasDiscount") === "true";
-
-    // Parse comma-separated values
-    const categories = categoriesParam
-      ? categoriesParam
-          .split(",")
-          .map((c) => c.trim().toLowerCase())
-          .filter(Boolean)
-      : [];
-    const cities = citiesParam
-      ? citiesParam
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean)
-      : [];
-    const amenities = amenitiesParam
-      ? amenitiesParam
-          .split(",")
-          .map((a) => a.trim())
-          .filter(Boolean)
-      : [];
-
-    // =================================================================
-    // BUILD QUERY OBJECT
-    // =================================================================
-    let query = {};
-    let andConditions = [];
-
-    // -------------------------------------------------------------
-    // SEARCH QUERY - Full text search across multiple fields
-    // -------------------------------------------------------------
-    if (searchQuery && searchQuery.length > 0) {
-      const searchRegex = new RegExp(searchQuery, "i");
-      andConditions.push({
-        $or: [
-          { name: searchRegex },
-          { description: searchRegex },
-          { "address.city": searchRegex },
-          { "address.state": searchRegex },
-          { "address.area": searchRegex },
-          { "address.landmark": searchRegex },
-          { tags: { $in: [searchRegex] } },
-          { availableAreas: { $in: [searchRegex] } },
-          { category: searchRegex },
-          { specializations: { $in: [searchRegex] } },
-          { services: { $elemMatch: { name: searchRegex } } },
-        ],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // CATEGORY FILTER
-    // -------------------------------------------------------------
-    if (categories.length > 0) {
-      const categoryRegexes = categories.map((cat) => new RegExp(`^${cat}$`, "i"));
-      andConditions.push({
-        $or: categoryRegexes.map((regex) => ({ category: regex })),
-      });
-    }
-
-    // -------------------------------------------------------------
-    // FEATURED/POPULAR FILTER
-    // -------------------------------------------------------------
-    if (isFeatured) {
-      andConditions.push({
-        $or: [
-          { tags: { $in: ["Popular", "Featured", "Top Rated", "Trending"] } },
-          { isFeatured: true },
-          { rating: { $gte: 4.5 } },
-        ],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // VERIFIED FILTER
-    // -------------------------------------------------------------
-    if (isVerified) {
-      andConditions.push({
-        $or: [{ tags: { $in: ["Verified"] } }, { isVerified: true }],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // CITY FILTER
-    // -------------------------------------------------------------
-    if (cities.length > 0) {
-      const cityRegexes = cities.map((city) => new RegExp(city, "i"));
-      andConditions.push({
-        $or: [
-          { "address.city": { $in: cityRegexes } },
-          { availableAreas: { $in: cityRegexes } },
-          { serviceAreas: { $in: cityRegexes } },
-        ],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // PRICE FILTER - Handles different price fields based on category
-    // -------------------------------------------------------------
-    if (!isNaN(minPrice) || !isNaN(maxPrice)) {
-      const priceConditions = [];
-
-      const priceRange = {};
-      if (!isNaN(minPrice) && minPrice > 0) {
-        priceRange.$gte = minPrice;
-      }
-      if (!isNaN(maxPrice) && maxPrice < 10000000) {
-        priceRange.$lte = maxPrice;
-      }
-
-      if (Object.keys(priceRange).length > 0) {
-        priceConditions.push({ "perDayPrice.min": priceRange });
-        priceConditions.push({ "perDayPrice.max": priceRange });
-        priceConditions.push({ basePrice: priceRange });
-        priceConditions.push({ "price.min": priceRange });
-        priceConditions.push({ "price.max": priceRange });
-        priceConditions.push({ startingPrice: priceRange });
-        priceConditions.push({ pricePerDay: priceRange });
-        priceConditions.push({ pricePerEvent: priceRange });
-
-        andConditions.push({ $or: priceConditions });
-      }
-    }
-
-    // -------------------------------------------------------------
-    // RATING FILTER
-    // -------------------------------------------------------------
-    if (!isNaN(minRating) && minRating > 0) {
-      andConditions.push({
-        $or: [{ rating: { $gte: minRating } }, { averageRating: { $gte: minRating } }],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // GUEST CAPACITY FILTER (for venues)
-    // -------------------------------------------------------------
-    if (!isNaN(guestCapacity) && guestCapacity > 0) {
-      andConditions.push({
-        $or: [
-          {
-            $and: [{ "seating.min": { $lte: guestCapacity } }, { "seating.max": { $gte: guestCapacity } }],
-          },
-          { capacity: { $gte: guestCapacity } },
-          { maxCapacity: { $gte: guestCapacity } },
-          { guestCapacity: { $gte: guestCapacity } },
-        ],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // AMENITIES FILTER
-    // -------------------------------------------------------------
-    if (amenities.length > 0) {
-      const amenityRegexes = amenities.map((a) => new RegExp(a, "i"));
-      andConditions.push({
-        $or: [
-          { amenities: { $all: amenityRegexes } },
-          { facilities: { $all: amenityRegexes } },
-          { features: { $all: amenityRegexes } },
-        ],
-      });
-    }
-
-    // -------------------------------------------------------------
-    // DISCOUNT FILTER
-    // -------------------------------------------------------------
-    if (hasDiscount) {
-      andConditions.push({
-        $or: [{ discount: { $gt: 0 } }, { hasOffer: true }, { "offers.0": { $exists: true } }],
-      });
-    }
-
-    if (andConditions.length > 0) {
-      query.$and = andConditions;
-    }
-
-    // =================================================================
-    // BUILD SORT OPTIONS
-    // =================================================================
-    let sortOptions = {};
-
-    switch (sortBy) {
-      case "price-asc":
-        // Sort by lowest price first
-        sortOptions = {
-          "perDayPrice.min": 1,
-          basePrice: 1,
-          "price.min": 1,
-          startingPrice: 1,
-        };
-        break;
-
-      case "price-desc":
-        sortOptions = {
-          "perDayPrice.min": -1,
-          basePrice: -1,
-          "price.min": -1,
-          startingPrice: -1,
-        };
-        break;
-
-      case "bookings":
-        sortOptions = {
-          bookings: -1,
-          totalBookings: -1,
-          rating: -1,
-        };
-        break;
-
-      case "newest":
-        sortOptions = {
-          createdAt: -1,
-          _id: -1,
-        };
-        break;
-
-      case "reviews":
-        sortOptions = {
-          reviews: -1,
-          totalReviews: -1,
-          reviewCount: -1,
-          rating: -1,
-        };
-        break;
-
-      case "popularity":
-        sortOptions = {
-          popularityScore: -1,
-          bookings: -1,
-          views: -1,
-          rating: -1,
-        };
-        break;
-
-      case "rating":
-      default:
-        sortOptions = {
-          rating: -1,
-          averageRating: -1,
-          reviews: -1,
-        };
-        break;
-    }
-
-    // =================================================================
-    // EXECUTE DATABASE QUERIES
-    // =================================================================
-
-    const vendors = await Vendor.find(query)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limit)
-      .select({
-        name: 1,
-        category: 1,
-        description: 1,
-        images: 1,
-        defaultImage: 1,
-        coverImage: 1,
-        rating: 1,
-        averageRating: 1,
-        reviews: 1,
-        totalReviews: 1,
-        reviewCount: 1,
-        bookings: 1,
-        totalBookings: 1,
-        address: 1,
-        perDayPrice: 1,
-        basePrice: 1,
-        price: 1,
-        startingPrice: 1,
-        originalPrice: 1,
-        discount: 1,
-        tags: 1,
-        seating: 1,
-        capacity: 1,
-        amenities: 1,
-        facilities: 1,
-        phone: 1,
-        email: 1,
-        website: 1,
-        responseTime: 1,
-        isVerified: 1,
-        isFeatured: 1,
-        availableAreas: 1,
-        serviceAreas: 1,
-        specializations: 1,
-        experience: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      })
-      .lean();
-
-    const totalVendors = await Vendor.countDocuments(query);
-    const totalPages = Math.ceil(totalVendors / limit);
-
-    // =================================================================
-    // GET AGGREGATED DATA FOR FILTERS
-    // =================================================================
-
-    // Get available cities for filter options
-    const citiesAggregation = await Vendor.aggregate([
-      { $match: categories.length > 0 ? { category: { $in: categories.map((c) => new RegExp(`^${c}$`, "i")) } } : {} },
-      { $group: { _id: "$address.city" } },
-      { $match: { _id: { $ne: null, $ne: "" } } },
-      { $sort: { _id: 1 } },
-      { $limit: 50 },
+    const [vendors, total] = await Promise.all([
+      Vendor.find(query).sort(sort).skip(skip).limit(limit).select("-reviewsList -likedBy -bookmarkedBy").lean(),
+      Vendor.countDocuments(query),
     ]);
-    const availableCities = citiesAggregation.map((c) => c._id).filter(Boolean);
 
-    // Get price range for filter options
-    const priceAggregation = await Vendor.aggregate([
-      { $match: categories.length > 0 ? { category: { $in: categories.map((c) => new RegExp(`^${c}$`, "i")) } } : {} },
-      {
-        $group: {
-          _id: null,
-          minPrice: {
-            $min: {
-              $ifNull: ["$perDayPrice.min", { $ifNull: ["$basePrice", { $ifNull: ["$price.min", "$startingPrice"] }] }],
-            },
-          },
-          maxPrice: {
-            $max: {
-              $ifNull: ["$perDayPrice.max", { $ifNull: ["$basePrice", { $ifNull: ["$price.max", "$startingPrice"] }] }],
-            },
-          },
-        },
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      success: true,
+      data: vendors,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       },
-    ]);
-    const priceRange = priceAggregation[0] || { minPrice: 0, maxPrice: 1000000 };
-
-    // Get available categories
-    const categoriesAggregation = await Vendor.aggregate([
-      { $group: { _id: "$category" } },
-      { $match: { _id: { $ne: null, $ne: "" } } },
-      { $sort: { _id: 1 } },
-    ]);
-    const availableCategories = categoriesAggregation.map((c) => c._id).filter(Boolean);
-
-    // =================================================================
-    // PROCESS AND NORMALIZE VENDOR DATA
-    // =================================================================
-    const processedVendors = vendors.map((vendor) => {
-      // Normalize price field
-      const price = vendor.perDayPrice?.min || vendor.basePrice || vendor.price?.min || vendor.startingPrice || 0;
-
-      // Normalize images
-      const images =
-        vendor.images?.filter(Boolean) ||
-        (vendor.defaultImage ? [vendor.defaultImage] : []) ||
-        (vendor.coverImage ? [vendor.coverImage] : []);
-
-      // Normalize rating
-      const rating = vendor.rating || vendor.averageRating || 0;
-
-      // Normalize reviews count
-      const reviewCount = vendor.reviews || vendor.totalReviews || vendor.reviewCount || 0;
-
-      // Normalize bookings count
-      const bookingsCount = vendor.bookings || vendor.totalBookings || 0;
-
-      // Normalize capacity
-      const capacity = vendor.seating?.max || vendor.capacity || vendor.maxCapacity || null;
-
-      return {
-        ...vendor,
-        // Normalized fields
-        normalizedPrice: price,
-        normalizedRating: rating,
-        normalizedReviews: reviewCount,
-        normalizedBookings: bookingsCount,
-        normalizedCapacity: capacity,
-        normalizedImages: images,
-        // Ensure these fields exist
-        images: images.length > 0 ? images : ["/placeholder-vendor.jpg"],
-        rating: rating,
-        reviews: reviewCount,
-        bookings: bookingsCount,
-        // Add computed fields
-        priceDisplay: price > 0 ? `₹${price.toLocaleString("en-IN")}` : "Contact for price",
-        hasMultipleImages: images.length > 1,
-        isPopular: vendor.tags?.includes("Popular") || bookingsCount > 50,
-        isNew: vendor.createdAt && Date.now() - new Date(vendor.createdAt).getTime() < 30 * 24 * 60 * 60 * 1000,
-        isVerified: vendor.isVerified || vendor.tags?.includes("Verified"),
-      };
     });
-
-    // =================================================================
-    // RETURN RESPONSE
-    // =================================================================
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Vendors fetched successfully",
-        data: processedVendors,
-        pagination: {
-          totalVendors,
-          totalPages,
-          currentPage: page,
-          itemsPerPage: limit,
-          hasNextPage: page < totalPages,
-          hasPrevPage: page > 1,
-        },
-        filters: {
-          availableCities,
-          availableCategories,
-          priceRange: {
-            min: priceRange.minPrice || 0,
-            max: priceRange.maxPrice || 1000000,
-          },
-        },
-        appliedFilters: {
-          search: searchQuery || null,
-          categories: categories.length > 0 ? categories : null,
-          cities: cities.length > 0 ? cities : null,
-          priceRange: !isNaN(minPrice) || !isNaN(maxPrice) ? { min: minPrice, max: maxPrice } : null,
-          minRating: !isNaN(minRating) ? minRating : null,
-          featured: isFeatured || null,
-          sortBy,
-        },
-      },
-      { status: 200 }
-    );
   } catch (error) {
     console.error("Error fetching vendors:", error);
-
-    // Return detailed error in development
-    const errorMessage =
-      process.env.NODE_ENV === "development"
-        ? `Error: ${error.message}`
-        : "An unexpected error occurred while fetching vendors.";
-
     return NextResponse.json(
-      {
-        success: false,
-        message: errorMessage,
-        data: [],
-        pagination: {
-          totalVendors: 0,
-          totalPages: 0,
-          currentPage: 1,
-          itemsPerPage: 12,
-          hasNextPage: false,
-          hasPrevPage: false,
-        },
-      },
+      { success: false, message: "Failed to fetch vendors", error: error.message },
       { status: 500 }
     );
   }
 }
 
-/**
- * POST /api/vendor
- * Create a new vendor (if needed)
- */
-export async function POST(request) {
+// =============================================================================
+// PUT - Update vendor (requires admin password)
+// =============================================================================
+
+export async function PUT(request) {
   try {
     await connectToDatabase();
 
     const body = await request.json();
+    const { id, password, ...updateData } = body;
 
-    // Validate required fields
-    const requiredFields = ["name", "category"];
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: `Missing required field: ${field}`,
-          },
-          { status: 400 }
-        );
-      }
+    // Validate ID
+    if (!id) {
+      return NextResponse.json({ success: false, message: "Vendor ID is required" }, { status: 400 });
     }
 
-    const vendor = new Vendor(body);
-    await vendor.save();
+    // Verify admin password
+    if (!verifyAdminPassword(password)) {
+      return NextResponse.json({ success: false, message: "Invalid admin password" }, { status: 401 });
+    }
+
+    // Find existing vendor
+    const existingVendor = await Vendor.findById(id);
+    if (!existingVendor) {
+      return NextResponse.json({ success: false, message: "Vendor not found" }, { status: 404 });
+    }
+
+    // Clean and prepare update data
+    const cleanedData = cleanVendorData(updateData);
+
+    // Remove fields that shouldn't be updated
+    delete cleanedData._id;
+    delete cleanedData.createdAt;
+    delete cleanedData.category; // Category cannot be changed
+    delete cleanedData.__v;
+
+    // Update vendor
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
+      { $set: cleanedData, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    ).lean();
+
+    return NextResponse.json({
+      success: true,
+      message: "Vendor updated successfully!",
+      vendor: updatedVendor,
+    });
+  } catch (error) {
+    console.error("Error updating vendor:", error);
+
+    if (error.name === "ValidationError") {
+      const errors = {};
+      Object.keys(error.errors).forEach((key) => {
+        errors[key] = error.errors[key].message;
+      });
+      return NextResponse.json({ success: false, message: "Validation Error", errors }, { status: 400 });
+    }
+
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return NextResponse.json(
+        { success: false, message: `A vendor with this ${field} already exists.` },
+        { status: 409 }
+      );
+    }
+
+    if (error.name === "CastError") {
+      return NextResponse.json({ success: false, message: "Invalid vendor ID format" }, { status: 400 });
+    }
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "Vendor created successfully",
-        data: vendor,
-      },
-      { status: 201 }
+      { success: false, message: "Failed to update vendor", error: error.message },
+      { status: 500 }
     );
-  } catch (error) {
-    console.error("Error creating vendor:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to create vendor",
+  }
+}
+
+// =============================================================================
+// DELETE - Delete vendor (requires admin password)
+// =============================================================================
+
+export async function DELETE(request) {
+  try {
+    await connectToDatabase();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    const password = searchParams.get("password");
+
+    // Validate ID
+    if (!id) {
+      return NextResponse.json({ success: false, message: "Vendor ID is required" }, { status: 400 });
+    }
+
+    // Verify admin password
+    if (!verifyAdminPassword(password)) {
+      return NextResponse.json({ success: false, message: "Invalid admin password" }, { status: 401 });
+    }
+
+    // Find and delete vendor
+    const deletedVendor = await Vendor.findByIdAndDelete(id);
+
+    if (!deletedVendor) {
+      return NextResponse.json({ success: false, message: "Vendor not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Vendor deleted successfully!",
+      vendor: {
+        id: deletedVendor._id,
+        name: deletedVendor.name,
+        username: deletedVendor.username,
       },
+    });
+  } catch (error) {
+    console.error("Error deleting vendor:", error);
+
+    if (error.name === "CastError") {
+      return NextResponse.json({ success: false, message: "Invalid vendor ID format" }, { status: 400 });
+    }
+
+    return NextResponse.json(
+      { success: false, message: "Failed to delete vendor", error: error.message },
       { status: 500 }
     );
   }

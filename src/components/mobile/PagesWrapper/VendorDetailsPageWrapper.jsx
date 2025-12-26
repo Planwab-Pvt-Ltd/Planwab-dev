@@ -108,6 +108,7 @@ import {
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import ReviewSection from "../ReviewSection";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse" />,
@@ -1681,51 +1682,7 @@ const VendorDetailsPageWrapper = () => {
               {/* REVIEWS TAB */}
               {activeTab === "reviews" && (
                 <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-900 p-4 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <div className="text-3xl font-black text-gray-900 dark:text-white">{vendor.rating}</div>
-                        <div className="flex gap-0.5 justify-center text-yellow-500 my-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={12} className={i < Math.floor(vendor.rating) ? "fill-current" : ""} />
-                          ))}
-                        </div>
-                        <p className="text-[10px] text-gray-500">{vendor.reviews} reviews</p>
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        {[5, 4, 3, 2, 1].map((rating) => {
-                          const percentage =
-                            rating === 5 ? 65 : rating === 4 ? 22 : rating === 3 ? 8 : rating === 2 ? 3 : 2;
-                          return (
-                            <div key={rating} className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-gray-500 w-2">{rating}</span>
-                              <Star size={8} className="fill-yellow-500 text-yellow-500" />
-                              <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-yellow-500 rounded-full"
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              </div>
-                              <span className="text-[9px] text-gray-500 w-6">{percentage}%</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowReviewModal(true)}
-                    className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/30"
-                  >
-                    <Star size={14} />
-                    Write a Review
-                  </motion.button>
-
-                  {filteredReviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                  ))}
+                  <ReviewSection vendorId={id} vendorName={vendor?.businessName || vendor?.name || "this vendor"} />
                 </div>
               )}
 
