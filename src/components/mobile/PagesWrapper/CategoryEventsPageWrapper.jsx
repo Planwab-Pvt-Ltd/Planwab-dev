@@ -89,7 +89,6 @@ import {
 
 // Original Components
 import HeroSection from "@/components/mobile/ui/EventsPage/HeroSection";
-import Banner1 from "@/components/mobile/ui/EventsPage/Banner1";
 import HowItWorksSection from "@/components/mobile/ui/EventsPage/HowItWorks";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
@@ -4330,7 +4329,7 @@ const CTASectionComponent = memo(({ theme, category, onStartPlanning, onTalkToEx
   const haptic = useHapticFeedback();
 
   return (
-    <div className="px-4 sm:px-5 py-6">
+    <div className="px-4 sm:px-5 py-6 pb-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -4449,7 +4448,7 @@ const FloatingActionButtonComponent = memo(({ theme, onAction }) => {
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-28 right-4 z-[90] flex flex-col-reverse items-end gap-3">
+      <div className="fixed bottom-25 right-4 z-[40] flex flex-col-reverse items-end gap-3">
         <AnimatePresence>
           {isOpen &&
             actions.map((action, idx) => (
@@ -4533,7 +4532,7 @@ const ScrollToTopButton = memo(({ theme }) => {
           exit={{ scale: 0, opacity: 0 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollToTop}
-          className="fixed bottom-28 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border border-gray-200"
+          className="fixed bottom-25 left-4 z-50 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border border-gray-200"
           style={{ boxShadow: `0 4px 20px ${theme.glowColor}` }}
         >
           <ArrowUp size={20} style={{ color: theme.primary }} />
@@ -4553,6 +4552,11 @@ export default function CategoryEventsPageWrapper() {
   const params = useParams();
   const setActiveCategory = useCategoryStore((state) => state.setActiveCategory);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { scrollY } = useScroll();
+
+  const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+
+  const { toast, showToast, hideToast } = useToast();
 
   // Modal states
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -4693,25 +4697,38 @@ export default function CategoryEventsPageWrapper() {
   }
 
   return (
-    <main className="relative w-full min-h-screen overflow-x-hidden">
-      {/* Scroll Progress */}
+    <main className="relative w-full min-h-screen bg-gray-50">
       <ScrollProgressBar theme={theme} />
+      <Toast {...toast} onClose={hideToast} />
 
-      {/* Animated Background */}
-      <AnimatedBackground theme={theme} />
+      {/* --- PARALLAX HERO LAYER (Fixed/Sticky at back) --- */}
+      {/* h-[92vh] ensures it takes up most of screen but hints at content below */}
+      <motion.div
+        style={{ opacity: heroOpacity }} // Only opacity changes, position is fixed
+        className="fixed top-0 left-0 right-0 z-0 w-full h-screen overflow-hidden pointer-events-none"
+      >
+        <AnimatedBackground theme={theme} />
+        {/* Enable pointer events only for the hero content (buttons) */}
+        <div className="pointer-events-auto w-full h-full">
+          <HeroSection theme={theme} category={category} />
+        </div>
+      </motion.div>
 
-      {/* Main Content */}
-      <div className="relative z-10">
-        {/* Original Components */}
-        <HeroSection theme={theme} category={category} />
-        <Banner1 theme={theme} category={category} />
+      {/* --- SLIDING CONTENT LAYER (Slides over the Hero) --- */}
+      {/* -mt-20 pulls the card up to overlap the hero slightly initially */}
+      <div className="relative z-10 mt-[90vh] bg-white rounded-t-[2.5rem] border-t border-black/5 pb-6 border-b-0">
+        {" "}
+        {/* Decorative Handle */}
+        <div className="w-full flex justify-center pt-4 pb-2">
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+        </div>
+        {/* Content Sections */}
+        {/* Note: Banner1 and HowItWorks moved inside this white container */}
         <HowItWorksSection theme={theme} category={category} />
-
         {/* Quick Actions */}
         <AnimatedSection delay={0.05}>
           <QuickActionsSection theme={theme} category={category} onAction={handleQuickAction} />
         </AnimatedSection>
-
         {/* Countdown Timer */}
         <AnimatedSection delay={0.08}>
           <CountdownTimerSection
@@ -4723,12 +4740,10 @@ export default function CategoryEventsPageWrapper() {
             }}
           />
         </AnimatedSection>
-
         {/* Vendor Categories */}
         <AnimatedSection delay={0.1}>
           <VendorCategoriesSection theme={theme} category={category} onViewVendors={handleViewVendors} />
         </AnimatedSection>
-
         {/* Featured Vendors */}
         <AnimatedSection delay={0.12}>
           <FeaturedVendorsSection
@@ -4738,7 +4753,6 @@ export default function CategoryEventsPageWrapper() {
             onViewAll={() => handleViewVendors(null)}
           />
         </AnimatedSection>
-
         {/* Checklist Preview */}
         <AnimatedSection delay={0.14}>
           <ChecklistPreviewSection
@@ -4750,7 +4764,6 @@ export default function CategoryEventsPageWrapper() {
             }}
           />
         </AnimatedSection>
-
         {/* Budget Preview */}
         <AnimatedSection delay={0.16}>
           <BudgetPreviewSection
@@ -4762,17 +4775,14 @@ export default function CategoryEventsPageWrapper() {
             }}
           />
         </AnimatedSection>
-
         {/* Inspiration Gallery */}
         <AnimatedSection delay={0.18}>
           <InspirationGallerySection theme={theme} category={category} />
         </AnimatedSection>
-
         {/* Testimonials */}
         <AnimatedSection delay={0.2}>
           <TestimonialsSection theme={theme} category={category} />
         </AnimatedSection>
-
         {/* FAQ Section */}
         <AnimatedSection delay={0.22}>
           <FAQSectionComponent
@@ -4785,7 +4795,6 @@ export default function CategoryEventsPageWrapper() {
             }}
           />
         </AnimatedSection>
-
         {/* CTA Section */}
         <AnimatedSection delay={0.24}>
           <CTASectionComponent
@@ -4799,20 +4808,13 @@ export default function CategoryEventsPageWrapper() {
             }}
           />
         </AnimatedSection>
-
-        {/* Bottom Spacing */}
-        <div className="h-36" />
       </div>
 
-      {/* Floating Action Button */}
+      {/* Floating Elements (Keep z-index high) */}
       <FloatingActionButtonComponent theme={theme} onAction={handleFABAction} />
-
-      {/* Scroll to Top Button */}
       <ScrollToTopButton theme={theme} />
 
-      {/* MODALS */}
-
-      {/* Date Picker Modal */}
+      {/* --- MODALS (Unchanged logic, just ensure they are rendered) --- */}
       <DatePickerModal
         isOpen={isDatePickerOpen}
         onClose={() => {
@@ -4825,7 +4827,6 @@ export default function CategoryEventsPageWrapper() {
         eventType={theme.name}
       />
 
-      {/* Guest List Modal */}
       <GuestListModal
         isOpen={isGuestListOpen}
         onClose={() => {
@@ -4836,7 +4837,6 @@ export default function CategoryEventsPageWrapper() {
         category={category}
       />
 
-      {/* Budget Modal */}
       <BudgetModal
         isOpen={isBudgetOpen}
         onClose={() => {
@@ -4847,7 +4847,6 @@ export default function CategoryEventsPageWrapper() {
         category={category}
       />
 
-      {/* Checklist Modal */}
       <ChecklistModal
         isOpen={isChecklistOpen}
         onClose={() => {
@@ -4858,7 +4857,6 @@ export default function CategoryEventsPageWrapper() {
         category={category}
       />
 
-      {/* Vendor Browser Modal */}
       <VendorBrowserModal
         isOpen={isVendorBrowserOpen}
         onClose={() => {
@@ -4872,7 +4870,6 @@ export default function CategoryEventsPageWrapper() {
         initialCategory={initialVendorCategory}
       />
 
-      {/* Contact Modal */}
       <ContactModal
         isOpen={isContactOpen}
         onClose={() => {
@@ -4892,17 +4889,6 @@ export default function CategoryEventsPageWrapper() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-
-        @supports (padding: max(0px)) {
-          .safe-bottom {
-            padding-bottom: max(1rem, env(safe-area-inset-bottom));
-          }
-        }
-
-        * {
-          -webkit-tap-highlight-color: transparent;
-        }
-
         html {
           scroll-behavior: smooth;
         }

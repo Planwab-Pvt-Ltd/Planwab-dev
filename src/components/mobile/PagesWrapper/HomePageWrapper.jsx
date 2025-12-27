@@ -139,6 +139,13 @@ const MainContent = () => {
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get("category") || "Default";
 
+  const banner2Url = {
+    wedding: "banner10.png",
+    birthday: "banner7.png",
+    anniversary: "banner3.png",
+    default: "banner2.png",
+  };
+
   // Note: Removed the `useScroll` listener.
   // It was calculating `isNavVisible` but never using it.
   // Removing it saves significant main-thread resources during scrolling.
@@ -183,9 +190,28 @@ const MainContent = () => {
       {/* --- Lazy Loaded Sections (Below Fold) --- */}
       {/* 'contain-intrinsic-size' prevents scrollbar jumping before content loads */}
       <div style={{ contentVisibility: "auto", containIntrinsicSize: "1000px" }}>
+        {/* Static Banner 2 - High Priority */}
+        <div className="mx-1 mt-2 px-2 mb-6 pb-4">
+          <Link href={`/m/events/${currentCategory}`}>
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => haptic("medium")}
+              className="w-full aspect-[1/1.1] relative rounded-xl overflow-hidden"
+            >
+              <SmartMedia
+                src={`/Banners/banner8.gif`}
+                type="image"
+                className="w-full h-full object-cover object-center"
+                loaderImage="/GlowLoadingGif.gif"
+                priority={true}
+              />
+            </motion.div>
+          </Link>
+        </div>
+
         <MostBooked />
 
-        {/* Static Banner 2 - High Priority */}
+        {/* Static Banner 3 - High Priority */}
         <div className="mx-1 mt-2 px-2 mb-6 pb-4">
           <Link href={`/m/events/${currentCategory}`}>
             <motion.div
@@ -194,9 +220,7 @@ const MainContent = () => {
               className="w-full aspect-[4/2.3] relative rounded-xl overflow-hidden"
             >
               <SmartMedia
-                src={`/Banners/${
-                  currentCategory ? (currentCategory === "Wedding" ? "banner2.png" : "banner3.png") : "banner2.png"
-                }`}
+                src={`/Banners/${banner2Url[currentCategory] || "banner2.png"}`}
                 type="image"
                 className="w-full h-full object-cover object-center"
                 loaderImage="/GlowLoadingGif.gif"

@@ -27,6 +27,8 @@ import {
   Crown,
   Home,
   ArrowLeft,
+  ShoppingCart,
+  UserPlus,
   X,
   Facebook,
   Twitter,
@@ -109,6 +111,8 @@ import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import ReviewSection from "../ReviewSection";
+import { useCartStore } from "../../../GlobalState/CartDataStore";
+import { useRedirectWithReturn } from "../../../hooks/useNavigationWithReturn";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse" />,
@@ -576,8 +580,9 @@ PackageCard.displayName = "PackageCard";
 
 const VendorDetailsPageWrapper = () => {
   const { id } = useParams();
+  const redirectWithReturn = useRedirectWithReturn();
   const router = useRouter();
-  const { activeCategory } = useCategoryStore();
+  const { cartItems, addToCart, removeFromCart } = useCartStore();
 
   const containerRef = useRef(null);
   const carouselRef = useRef(null);
@@ -647,6 +652,31 @@ const VendorDetailsPageWrapper = () => {
     subject: "",
     message: "",
   });
+
+  const isInCart = useMemo(() => {
+    return vendor ? cartItems.some((item) => item._id === vendor._id) : false;
+  }, [cartItems, vendor]);
+
+  const handleCartToggle = useCallback(() => {
+    if (!vendor) return;
+    if (navigator.vibrate) navigator.vibrate(10);
+
+    if (isInCart) {
+      removeFromCart(vendor._id);
+    } else {
+      addToCart({
+        ...vendor,
+        price: vendor.perDayPrice?.min || 0,
+        image: vendor.images?.[0] || "",
+        quantity: 1,
+      });
+    }
+  }, [vendor, isInCart, addToCart, removeFromCart]);
+
+  const handleInviteTeam = useCallback(() => {
+    if (navigator.vibrate) navigator.vibrate(10);
+    redirectWithReturn("/m/plan-my-event/event");
+  }, [router]);
 
   const fetchVendor = useCallback(async () => {
     if (!id) return;
@@ -1070,7 +1100,7 @@ const VendorDetailsPageWrapper = () => {
   return (
     <main
       ref={containerRef}
-      className="min-h-screen bg-white dark:bg-black font-sans text-gray-900 dark:text-gray-100 overflow-x-hidden border-none shadow-none"
+      className="min-h-screen bg-white dark:bg-black font-sans text-gray-900 dark:text-gray-100 overflow-x-hidden border-none shadow-none pb-24"
     >
       <ScrollProgressBar />
       {/* STICKY HEADER */}
@@ -2521,6 +2551,58 @@ const VendorDetailsPageWrapper = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* FIXED BOTTOM ACTION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t border-blue-100/50 pb-[calc(env(safe-area-inset-bottom))] pt-0 px-0 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] rounded-t-2xl will-change-transform">
+        <div className="px-4 py-3 flex gap-3">
+          {/* Invite Team Button */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleInviteTeam}
+            className="flex-1 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <UserPlus size={16} className="text-blue-600 dark:text-blue-400" />
+            Invite Team
+          </motion.button>
+
+          {/* Dynamic Add to Cart Button */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleCartToggle}
+            className={`flex-[1.5] py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all duration-300 ${
+              isInCart
+                ? "bg-green-500 text-white shadow-green-500/25"
+                : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/25"
+            }`}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {isInCart ? (
+                <motion.div
+                  key="added"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle size={18} className="fill-white/20" />
+                  <span>Added to Cart</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="add"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingCart size={18} className="fill-white/20" />
+                  <span>Add to Cart</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      </div>
 
       {/* GLOBAL STYLES */}
       <style jsx global>{`

@@ -1,388 +1,651 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, Gift, Percent, Clock, Copy, Check, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
+import { useParams } from "next/navigation";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import { useCategoryStore } from "@/GlobalState/CategoryStore";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Wallet,
+  ClipboardList,
+  Camera,
+  Music,
+  Utensils,
+  Building,
+  Palette,
+  Scissors,
+  Crown,
+  Flower2,
+  Gift,
+  Star,
+  Heart,
+  ChevronRight,
+  ChevronDown,
+  ChevronLeft,
+  Check,
+  Plus,
+  Trash2,
+  Clock,
+  Edit2,
+  Edit3,
+  Bell,
+  Share2,
+  X,
+  Bookmark,
+  Quote,
+  HelpCircle,
+  MessageCircle,
+  Phone,
+  Sparkles,
+  ArrowRight,
+  ArrowUp,
+  PieChart,
+  AlertCircle,
+  CalendarDays,
+  PartyPopper,
+  Cake,
+  BadgeCheck,
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  Send,
+  Info,
+  CheckCircle,
+  XCircle,
+  Image as ImageIcon,
+} from "lucide-react";
 
-const BANNER_DATA = {
-  wedding: [
-    {
-      id: 1,
-      title: "Dream Wedding Sale",
-      subtitle: "Up to 30% off on premium venues",
-      code: "WEDDING30",
-      gradient: "from-rose-500 to-pink-600",
-      image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800",
-      validUntil: "Dec 31, 2024",
-      icon: Sparkles,
-    },
-    {
-      id: 2,
-      title: "Free Photography",
-      subtitle: "With venue bookings above ₹5L",
-      code: "FREEPHOTO",
-      gradient: "from-purple-500 to-indigo-600",
-      image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=800",
-      validUntil: "Jan 15, 2025",
-      icon: Gift,
-    },
-    {
-      id: 3,
-      title: "Early Bird Discount",
-      subtitle: "Book 6 months ahead, save 20%",
-      code: "EARLYBIRD20",
-      gradient: "from-amber-500 to-orange-600",
-      image: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800",
-      validUntil: "Ongoing",
-      icon: Percent,
-    },
-  ],
-  anniversary: [
-    {
-      id: 1,
-      title: "Anniversary Special",
-      subtitle: "20% off on romantic dinners",
-      code: "LOVE20",
-      gradient: "from-amber-500 to-orange-600",
-      image: "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=800",
-      validUntil: "Dec 31, 2024",
-      icon: Sparkles,
-    },
-    {
-      id: 2,
-      title: "Couple's Retreat",
-      subtitle: "Free spa with venue booking",
-      code: "RETREAT",
-      gradient: "from-pink-500 to-rose-600",
-      image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800",
-      validUntil: "Jan 31, 2025",
-      icon: Gift,
-    },
-  ],
-  birthday: [
-    {
-      id: 1,
-      title: "Birthday Bash Deal",
-      subtitle: "25% off on party venues",
-      code: "BDAY25",
-      gradient: "from-blue-500 to-indigo-600",
-      image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800",
-      validUntil: "Dec 31, 2024",
-      icon: Sparkles,
-    },
-    {
-      id: 2,
-      title: "Kids Party Special",
-      subtitle: "Free cake with packages above ₹25K",
-      code: "KIDSCAKE",
-      gradient: "from-cyan-500 to-blue-600",
-      image: "https://images.unsplash.com/photo-1558636508-e0db3814bd1d?w=800",
-      validUntil: "Ongoing",
-      icon: Gift,
-    },
-    {
-      id: 3,
-      title: "Milestone Birthday",
-      subtitle: "Extra 15% off on 50th/60th celebrations",
-      code: "MILESTONE15",
-      gradient: "from-violet-500 to-purple-600",
-      image: "https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=800",
-      validUntil: "Jan 31, 2025",
-      icon: Percent,
-    },
-  ],
+// Imports
+import HeroSection from "@/components/mobile/ui/EventsPage/HeroSection";
+import Banner1 from "@/components/mobile/ui/EventsPage/Banner1";
+import HowItWorksSection from "@/components/mobile/ui/EventsPage/HowItWorks";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
+
+// =============================================================================
+// OPTIMIZED CONFIGURATION
+// =============================================================================
+
+const ANIMATION_CONFIG = {
+  fadeIn: {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: "-50px" }, // Fixes "bad restart logic"
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
+  stagger: {
+    visible: { transition: { staggerChildren: 0.05 } },
+  },
+  tap: { scale: 0.95 },
 };
 
-// Optimized Spring Physics for "Buttery" Feel
-const smoothSpring = {
-  type: "spring",
-  stiffness: 250,
-  damping: 35,
-  mass: 0.8,
+const CATEGORY_THEMES = {
+  wedding: { name: "Wedding", emoji: "💒", primary: "#1e40af", bgSoft: "bg-blue-50/50", accent: "text-blue-600" },
+  anniversary: {
+    name: "Anniversary",
+    emoji: "💝",
+    primary: "#be185d",
+    bgSoft: "bg-pink-50/50",
+    accent: "text-pink-600",
+  },
+  birthday: { name: "Birthday", emoji: "🎂", primary: "#a16207", bgSoft: "bg-yellow-50/50", accent: "text-yellow-600" },
+  default: { name: "Event", emoji: "🎉", primary: "#1e40af", bgSoft: "bg-gray-50/50", accent: "text-blue-600" },
 };
 
-export default function Banner1({ theme, category }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [copiedCode, setCopiedCode] = useState(null);
-  const [isPaused, setIsPaused] = useState(false);
-  const scrollRef = useRef(null);
-  const autoScrollRef = useRef(null);
+// =============================================================================
+// ROBUST HOOKS
+// =============================================================================
 
-  const banners = BANNER_DATA[category] || BANNER_DATA.wedding;
-  const isFirst = activeIndex === 0;
-  const isLast = activeIndex === banners.length - 1;
+// Fixes Hydration Mismatch Errors
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(initialValue);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Auto-scroll Logic (Loops back to start)
   useEffect(() => {
-    if (isPaused) return;
-
-    autoScrollRef.current = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % banners.length);
-    }, 5000);
-
-    return () => {
-      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
-    };
-  }, [banners.length, isPaused]);
-
-  // Sync Scroll Position with Active Index
-  useEffect(() => {
-    if (scrollRef.current) {
-      const container = scrollRef.current;
-      const card = container.children[0]; // Get first card to measure width including margins
-      if (card) {
-        // Calculate dynamic width based on the actual rendered element
-        const scrollPos = activeIndex * (card.clientWidth + 16); // 16px is the gap-4
-
-        container.scrollTo({
-          left: scrollPos,
-          behavior: "smooth",
-        });
-      }
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) setStoredValue(JSON.parse(item));
+    } catch (error) {
+      console.warn(`LocalStorage Error: ${key}`, error);
     }
-  }, [activeIndex, banners.length]);
+    setIsHydrated(true);
+  }, [key]);
 
-  // Manual Scroll Handler (Updates Index on Swipe)
-  const handleScroll = useCallback(
-    (e) => {
-      const container = e.target;
-      const scrollLeft = container.scrollLeft;
-      const cardWidth = (container.children[0]?.clientWidth || 0) + 16; // Width + Gap
-
-      if (cardWidth > 16) {
-        const newIndex = Math.round(scrollLeft / cardWidth);
-        // Only update if index changed and is valid
-        if (newIndex !== activeIndex && newIndex >= 0 && newIndex < banners.length) {
-          setActiveIndex(newIndex);
+  const setValue = useCallback(
+    (value) => {
+      try {
+        const valueToStore = value instanceof Function ? value(storedValue) : value;
+        setStoredValue(valueToStore);
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
         }
+      } catch (error) {
+        console.warn(`LocalStorage Set Error: ${key}`, error);
       }
     },
-    [activeIndex, banners.length]
+    [key, storedValue]
   );
 
-  const copyCode = useCallback(async (code, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopiedCode(code);
-      if (typeof window !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate([10, 50, 10]);
-      }
-      setTimeout(() => setCopiedCode(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
+  return [storedValue, setValue, isHydrated];
+}
+
+function useHaptic() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(type === "medium" ? 20 : 10);
     }
   }, []);
+}
 
-  const goToPrev = useCallback(() => {
-    if (isFirst) return;
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(10);
-    }
-    setActiveIndex((prev) => Math.max(0, prev - 1));
-  }, [isFirst]);
+// =============================================================================
+// REUSABLE UI COMPONENTS
+// =============================================================================
 
-  const goToNext = useCallback(() => {
-    if (isLast) return;
-    if (typeof window !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(10);
-    }
-    setActiveIndex((prev) => Math.min(banners.length - 1, prev + 1));
-  }, [isLast, banners.length]);
-
-  return (
-    <section className="py-6 w-full max-w-md mx-auto flex flex-col gap-4">
-      {/* Header Section */}
-      <div className="flex items-center justify-between px-5">
-        <div className="flex items-center gap-3">
-          <motion.div
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border border-white/50"
-            style={{ backgroundColor: `${theme.primary}10` }}
-          >
-            <Gift size={18} style={{ color: theme.primary }} strokeWidth={2.5} />
-          </motion.div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 leading-none">Special Offers</h2>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">Exclusive deals for you</p>
-          </div>
-        </div>
-
-        {/* Navigation Buttons (Disabled Logic Applied) */}
-        {banners.length > 1 && (
-          <div className="flex gap-2">
-            <button
-              onClick={goToPrev}
-              disabled={isFirst}
-              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 ${
-                isFirst
-                  ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
-                  : "bg-white border-gray-200 text-gray-600 shadow-sm active:scale-95 active:bg-gray-50"
-              }`}
-              aria-label="Previous Offer"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={goToNext}
-              disabled={isLast}
-              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 ${
-                isLast
-                  ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
-                  : "bg-white border-gray-200 text-gray-600 shadow-sm active:scale-95 active:bg-gray-50"
-              }`}
-              aria-label="Next Offer"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Carousel Container */}
-      <div className="relative w-full">
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
-          className="flex gap-4 overflow-x-auto px-5 pb-4 scrollbar-hide snap-x snap-mandatory touch-pan-x"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {banners.map((banner, idx) => {
-            const IconComponent = banner.icon;
-            const isActive = activeIndex === idx;
-
-            return (
-              <motion.div
-                key={banner.id}
-                layout
-                animate={{
-                  opacity: isActive ? 1 : 0.7,
-                  scale: isActive ? 1 : 0.96,
-                }}
-                transition={smoothSpring}
-                className="relative min-w-[85%] aspect-[1.9/1] rounded-[2rem] overflow-hidden snap-center shadow-lg transform-gpu border border-white/20"
-              >
-                {/* Background Image */}
-                <div className="absolute inset-0 z-0">
-                  <img
-                    src={banner.image}
-                    alt={banner.title}
-                    className="w-full h-full object-cover transform scale-105"
-                    loading="lazy"
-                  />
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-r ${banner.gradient} opacity-90 mix-blend-multiply`}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                </div>
-
-                {/* Animated Background Shapes */}
-                <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
-                  <motion.div
-                    className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-2xl"
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                  />
-                  <motion.div
-                    className="absolute -left-12 -bottom-12 w-40 h-40 bg-white/10 rounded-full blur-2xl"
-                    animate={{ scale: [1.2, 1, 1.2], opacity: [0.15, 0.1, 0.15] }}
-                    transition={{ duration: 5, repeat: Infinity }}
-                  />
-                </div>
-
-                {/* Content */}
-                <div className="relative z-10 h-full p-5 sm:p-6 flex flex-col justify-between text-white">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md shadow-sm border border-white/10">
-                        <IconComponent size={14} className="text-white" strokeWidth={3} />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-bold bg-black/20 px-2.5 py-1 rounded-full backdrop-blur-md border border-white/10 flex items-center gap-1.5 tracking-wide">
-                        <Clock size={10} /> {banner.validUntil}
-                      </span>
-                    </div>
-
-                    <h3 className="text-xl sm:text-2xl font-black leading-tight mb-1.5 tracking-tight drop-shadow-md">
-                      {banner.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-white/90 font-medium line-clamp-2 max-w-[90%]">
-                      {banner.subtitle}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-between gap-3 mt-2">
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => copyCode(banner.code, e)}
-                      className="flex-1 flex items-center justify-between gap-3 bg-white/10 backdrop-blur-xs border border-white/20 px-3.5 py-2.5 rounded-xl group hover:bg-white/20 transition-colors"
-                    >
-                      <div className="flex flex-col items-start">
-                        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/70 font-bold">
-                          Code
-                        </span>
-                        <span className="font-mono text-sm sm:text-base font-bold tracking-widest">{banner.code}</span>
-                      </div>
-                      <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center group-active:scale-90 transition-transform">
-                        <AnimatePresence mode="wait">
-                          {copiedCode === banner.code ? (
-                            <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                              <Check size={16} className="text-green-300" strokeWidth={3} />
-                            </motion.div>
-                          ) : (
-                            <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                              <Copy size={16} className="text-white" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.button>
-
-                    <Link
-                      href="/m/vendors/marketplace"
-                      className="flex items-center justify-center w-12 h-12 bg-white text-gray-900 rounded-xl shadow-lg active:scale-90 transition-transform"
-                      aria-label="Shop Now"
-                    >
-                      <ArrowRight size={20} strokeWidth={2.5} />
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-
-          {/* Spacer to allow last item to be fully visible/centered if needed */}
-          <div className="w-1 shrink-0" />
-        </div>
-      </div>
-
-      {/* Pagination Indicators */}
-      {banners.length > 1 && (
-        <div className="flex justify-center gap-1.5">
-          {banners.map((_, idx) => (
-            <motion.button
-              key={idx}
-              onClick={() => {
-                if (typeof window !== "undefined" && "vibrate" in navigator) {
-                  navigator.vibrate(10);
-                }
-                setActiveIndex(idx);
-              }}
-              className="h-1.5 rounded-full transition-colors duration-300"
-              animate={{
-                width: idx === activeIndex ? 24 : 6,
-                backgroundColor: idx === activeIndex ? theme.primary : "#e5e7eb",
-                opacity: idx === activeIndex ? 1 : 0.5,
-              }}
-            />
-          ))}
+const SectionHeader = memo(({ title, subtitle, icon: Icon, theme, actionLabel, onAction }) => (
+  <div className="flex items-end justify-between mb-5 px-1">
+    <div className="flex items-center gap-3">
+      {Icon && (
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${theme.bgSoft}`}>
+          <Icon size={20} style={{ color: theme.primary }} />
         </div>
       )}
-    </section>
+      <div>
+        <h2 className="text-lg font-bold text-gray-900 leading-none">{title}</h2>
+        {subtitle && <p className="text-xs text-gray-500 mt-1.5 font-medium">{subtitle}</p>}
+      </div>
+    </div>
+    {actionLabel && (
+      <motion.button
+        whileTap={ANIMATION_CONFIG.tap}
+        onClick={onAction}
+        className="text-xs font-bold flex items-center gap-1 py-1.5 px-3 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+      >
+        {actionLabel} <ChevronRight size={14} />
+      </motion.button>
+    )}
+  </div>
+));
+
+const ModalOverlay = memo(({ isOpen, onClose, title, children }) => {
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-[101] bg-white rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-2xl"
+          >
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+              <button onClick={onClose} className="p-2 bg-gray-100 rounded-full text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-6 pb-safe">{children}</div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+});
+
+// =============================================================================
+// SUB-COMPONENTS (Refined Spacing & Animation)
+// =============================================================================
+
+const QuickActions = memo(({ theme, onAction }) => {
+  const actions = [
+    { icon: Calendar, label: "Set Date", action: "date", color: "#e11d48" },
+    { icon: Users, label: "Guests", action: "guests", color: "#7c3aed" },
+    { icon: Wallet, label: "Budget", action: "budget", color: "#059669" },
+    { icon: ClipboardList, label: "Checklist", action: "checklist", color: "#d97706" },
+    { icon: Camera, label: "Photos", action: "vendors", color: "#db2777" },
+    { icon: Music, label: "Music", action: "vendors", color: "#2563eb" },
+    { icon: Utensils, label: "Food", action: "vendors", color: "#ea580c" },
+    { icon: Gift, label: "Gifts", action: "gifts", color: "#c026d3" },
+  ];
+
+  return (
+    <div className="px-5 py-6">
+      <SectionHeader title="Quick Actions" subtitle="Start planning here" icon={Sparkles} theme={theme} />
+      <div className="grid grid-cols-4 gap-4">
+        {actions.map((item, idx) => (
+          <motion.button
+            key={idx}
+            {...ANIMATION_CONFIG.fadeIn}
+            transition={{ delay: idx * 0.05 }}
+            whileTap={ANIMATION_CONFIG.tap}
+            onClick={() => onAction(item.action)}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-gray-100 group-active:scale-95 transition-transform">
+              <item.icon size={24} style={{ color: item.color }} />
+            </div>
+            <span className="text-[11px] font-semibold text-gray-600 text-center leading-tight">{item.label}</span>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const CountdownTimer = memo(({ theme, onOpenDatePicker, eventDate }) => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0 });
+
+  useEffect(() => {
+    if (!eventDate) return;
+    const calc = () => {
+      const diff = new Date(eventDate) - new Date();
+      if (diff <= 0) return setTimeLeft({ days: 0, hours: 0 });
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      });
+    };
+    calc();
+    const timer = setInterval(calc, 60000);
+    return () => clearInterval(timer);
+  }, [eventDate]);
+
+  if (!eventDate) {
+    return (
+      <div className="px-5 pb-6">
+        <motion.button
+          whileTap={ANIMATION_CONFIG.tap}
+          onClick={onOpenDatePicker}
+          className="w-full p-6 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+        >
+          <CalendarDays size={32} className="text-gray-400 mb-1" />
+          <p className="font-bold text-gray-900">Set Event Date</p>
+          <p className="text-xs text-gray-500">Enable countdown & reminders</p>
+        </motion.button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-5 pb-6">
+      <div className="relative overflow-hidden rounded-3xl p-6 shadow-sm border border-gray-100 bg-white">
+        <div
+          className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${theme.bgSoft} rounded-bl-full opacity-50 pointer-events-none`}
+        />
+
+        <div className="relative flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Time Remaining</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-black text-gray-900 tracking-tighter">{timeLeft.days}</span>
+              <span className="text-sm font-bold text-gray-500 mr-2">days</span>
+              <span className="text-2xl font-bold text-gray-400">{timeLeft.hours}</span>
+              <span className="text-xs font-semibold text-gray-400">hrs</span>
+            </div>
+          </div>
+          <motion.button
+            whileTap={ANIMATION_CONFIG.tap}
+            onClick={onOpenDatePicker}
+            className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-600 border border-gray-100"
+          >
+            <Edit2 size={18} />
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const VendorCategories = memo(({ theme, onViewVendors }) => {
+  const categories = [
+    { id: "venues", label: "Venues", icon: Building, color: "#7c3aed" },
+    { id: "photographers", label: "Photos", icon: Camera, color: "#db2777" },
+    { id: "catering", label: "Food", icon: Utensils, color: "#ea580c" },
+    { id: "makeup", label: "Makeup", icon: Palette, color: "#e11d48" },
+    { id: "decor", label: "Decor", icon: Flower2, color: "#0d9488" },
+  ];
+
+  return (
+    <div className="py-6 border-t border-gray-100">
+      <div className="px-5">
+        <SectionHeader
+          title="Find Vendors"
+          subtitle="Explore categories"
+          icon={Building}
+          theme={theme}
+          actionLabel="See All"
+          onAction={() => onViewVendors(null)}
+        />
+      </div>
+      <div className="flex gap-4 overflow-x-auto px-5 pb-4 scrollbar-hide snap-x snap-mandatory">
+        {categories.map((cat, idx) => (
+          <motion.button
+            key={cat.id}
+            {...ANIMATION_CONFIG.fadeIn}
+            transition={{ delay: idx * 0.05 }}
+            whileTap={ANIMATION_CONFIG.tap}
+            onClick={() => onViewVendors(cat.id)}
+            className="flex-shrink-0 snap-start flex flex-col items-center gap-3 w-20"
+          >
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 bg-white">
+              <cat.icon size={24} style={{ color: cat.color }} />
+            </div>
+            <span className="text-xs font-medium text-gray-700">{cat.label}</span>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const FeaturedVendors = memo(({ theme, onViewVendor }) => {
+  // Sample Data (kept minimal for display)
+  const vendors = [
+    {
+      id: 1,
+      name: "Royal Palace",
+      role: "Venue",
+      rating: 4.9,
+      img: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400",
+    },
+    {
+      id: 2,
+      name: "Lens Magic",
+      role: "Photo",
+      rating: 4.8,
+      img: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400",
+    },
+    {
+      id: 3,
+      name: "Tasty Bites",
+      role: "Food",
+      rating: 4.7,
+      img: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400",
+    },
+  ];
+
+  return (
+    <div className="py-6 bg-gray-50/50">
+      <div className="px-5">
+        <SectionHeader title="Top Picks" subtitle="Trending near you" icon={Star} theme={theme} />
+      </div>
+      <div className="flex gap-4 overflow-x-auto px-5 pb-4 scrollbar-hide snap-x snap-mandatory">
+        {vendors.map((v, idx) => (
+          <motion.div
+            key={v.id}
+            {...ANIMATION_CONFIG.fadeIn}
+            transition={{ delay: idx * 0.1 }}
+            className="w-60 flex-shrink-0 snap-start bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            onClick={() => onViewVendor(v)}
+          >
+            <div className="h-32 bg-gray-200 relative">
+              <img src={v.img} alt={v.name} className="w-full h-full object-cover" />
+              <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
+                <Star size={10} className="fill-amber-400 text-amber-400" /> {v.rating}
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900">{v.name}</h3>
+              <p className="text-xs text-gray-500">{v.role} • Mumbai</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const ChecklistPreview = memo(({ theme, onClick }) => (
+  <div className="px-5 py-6 border-t border-gray-100">
+    <div
+      onClick={onClick}
+      className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 active:scale-[0.99] transition-transform"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-xl ${theme.bgSoft}`}>
+            <ClipboardList size={22} style={{ color: theme.primary }} />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900 leading-tight">Checklist</h3>
+            <p className="text-xs text-gray-500">Keep track of tasks</p>
+          </div>
+        </div>
+        <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 rounded-full text-gray-600">0/8 Done</span>
+      </div>
+      <div className="space-y-3">
+        {["Set Date", "Book Venue", "Send Invites"].map((task, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
+            <span className="text-sm text-gray-600">{task}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+));
+
+const BudgetPreview = memo(({ theme, onClick }) => (
+  <div className="px-5 py-6">
+    <div
+      onClick={onClick}
+      className="bg-gray-900 rounded-3xl shadow-lg p-6 text-white active:scale-[0.99] transition-transform relative overflow-hidden"
+    >
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full pointer-events-none" />
+
+      <div className="flex justify-between items-center mb-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm">
+            <Wallet size={22} className="text-white" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white leading-tight">Budget</h3>
+            <p className="text-xs text-white/60">Track expenses</p>
+          </div>
+        </div>
+        <ChevronRight size={20} className="text-white/40" />
+      </div>
+
+      <div className="space-y-4 relative z-10">
+        <div className="flex justify-between items-end">
+          <div>
+            <p className="text-xs text-white/60 mb-1">Total Budget</p>
+            <p className="text-2xl font-bold">₹1,50,000</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-white/60 mb-1">Spent</p>
+            <p className="text-xl font-semibold text-white/90">₹0</p>
+          </div>
+        </div>
+        <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+          <div className="h-full bg-white w-[5%]" />
+        </div>
+      </div>
+    </div>
+  </div>
+));
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export default function CategoryEventsPageWrapper() {
+  const params = useParams();
+  const { setIsNavbarVisible } = useNavbarVisibilityStore();
+  const setActiveCategory = useCategoryStore((state) => state.setActiveCategory);
+
+  // State
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [toastState, setToastState] = useState({ isVisible: false, message: "", type: "success" });
+
+  // Modals State
+  const [activeModal, setActiveModal] = useState(null); // 'date', 'guests', 'budget', 'checklist', 'vendors', 'contact'
+
+  // Extract Category
+  const categoryParam = (params?.category || "wedding").toLowerCase();
+  const category = ["wedding", "anniversary", "birthday", "default"].includes(categoryParam)
+    ? categoryParam
+    : "default";
+
+  const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.default;
+  const [eventDate, setEventDate, isHydrated] = useLocalStorage(`${category}_event_date`, null);
+
+  // Initialize
+  useEffect(() => {
+    setActiveCategory(theme.name);
+    // Smooth loading transition
+    const timer = setTimeout(() => setIsLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, [category, setActiveCategory, theme.name]);
+
+  // Modal Handlers
+  const openModal = (modalName) => {
+    setActiveModal(modalName);
+    setIsNavbarVisible(false);
+  };
+
+  const closeModal = () => {
+    setActiveModal(null);
+    setIsNavbarVisible(true);
+  };
+
+  const handleQuickAction = (action) => {
+    const map = {
+      date: "date",
+      guests: "guests",
+      budget: "budget",
+      checklist: "checklist",
+      vendors: "vendors",
+    };
+    if (map[action]) openModal(map[action]);
+  };
+
+  // Loading Skeleton
+  if (!isLoaded || !isHydrated) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-gray-100 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <main className="relative w-full min-h-screen bg-white pb-safe">
+      <Toast {...toastState} onClose={() => setToastState((p) => ({ ...p, isVisible: false }))} />
+
+      {/* Static Components (Assuming these are optimized internally) */}
+      <HeroSection theme={theme} category={category} />
+      <Banner1 theme={theme} category={category} />
+      <HowItWorksSection theme={theme} category={category} />
+
+      {/* Main Interactive Flow */}
+      <div className="flex flex-col">
+        {/* Quick Actions */}
+        <QuickActions theme={theme} onAction={handleQuickAction} />
+
+        {/* Countdown */}
+        <CountdownTimer theme={theme} eventDate={eventDate} onOpenDatePicker={() => openModal("date")} />
+
+        {/* Categories - Horizontal Scroll */}
+        <VendorCategories theme={theme} onViewVendors={() => openModal("vendors")} />
+
+        {/* Featured - Horizontal Scroll */}
+        <FeaturedVendors theme={theme} onViewVendor={() => openModal("vendors")} />
+
+        {/* Planning Tools */}
+        <ChecklistPreview theme={theme} onClick={() => openModal("checklist")} />
+        <BudgetPreview theme={theme} onClick={() => openModal("budget")} />
+
+        {/* Inspiration */}
+        <div className="px-5 py-6">
+          <SectionHeader title="Inspiration" subtitle="Ideas for you" icon={ImageIcon} theme={theme} />
+          <div className="grid grid-cols-2 gap-3 h-48">
+            <div className="bg-gray-100 rounded-2xl h-full w-full animate-pulse" />
+            <div className="bg-gray-100 rounded-2xl h-full w-full animate-pulse" />
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="px-5 py-6 mb-24">
+          <SectionHeader title="FAQ" subtitle="Common questions" icon={HelpCircle} theme={theme} />
+          <div className="space-y-3">
+            <div className="p-4 bg-gray-50 rounded-2xl text-sm font-medium text-gray-700 flex justify-between">
+              How do I book? <ChevronDown size={16} />
+            </div>
+            <div className="p-4 bg-gray-50 rounded-2xl text-sm font-medium text-gray-700 flex justify-between">
+              Is payment secure? <ChevronDown size={16} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => openModal("contact")}
+        className="fixed bottom-6 right-5 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white"
+        style={{ backgroundColor: theme.primary }}
+      >
+        <MessageCircle size={26} fill="currentColor" />
+      </motion.button>
+
+      {/* ----------- MODALS ----------- */}
+
+      <ModalOverlay isOpen={activeModal === "date"} onClose={closeModal} title="Event Date">
+        <div className="space-y-6">
+          <p className="text-gray-500 text-sm">When is the big day?</p>
+          <input
+            type="date"
+            className="w-full p-4 bg-gray-50 rounded-2xl font-bold text-lg outline-none focus:ring-2 ring-blue-500"
+            onChange={(e) => setEventDate(e.target.value)}
+            value={eventDate || ""}
+          />
+          <button onClick={closeModal} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold">
+            Save Date
+          </button>
+        </div>
+      </ModalOverlay>
+
+      <ModalOverlay isOpen={activeModal === "checklist"} onClose={closeModal} title="Checklist">
+        <div className="text-center py-12 text-gray-400">Full Checklist Component Here</div>
+      </ModalOverlay>
+
+      <ModalOverlay isOpen={activeModal === "budget"} onClose={closeModal} title="Budget">
+        <div className="text-center py-12 text-gray-400">Full Budget Component Here</div>
+      </ModalOverlay>
+
+      {/* Add other modals similarly */}
+
+      <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .pb-safe {
+          padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+      `}</style>
+    </main>
   );
 }

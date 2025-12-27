@@ -2926,8 +2926,11 @@ export default function MarketplacePageWrapper() {
             position: CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
           }));
           setVendors(processedVendors);
-          setPaginationInfo(result.pagination || { totalPages: 1, totalVendors: result.data.length });
-
+          console.log(result.data.length, "vendors fetched");
+          setPaginationInfo({
+            totalPages: result.pagination?.totalPages || 1,
+            totalVendors: result.pagination?.total || 0,
+          });
           if (result.filters?.availableCities) {
             setAvailableCities(result.filters.availableCities);
           } else {
@@ -3107,7 +3110,7 @@ export default function MarketplacePageWrapper() {
             <div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight">Marketplace</h1>
               <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide">
-                {isLoading ? "Loading..." : `${paginationInfo.totalVendors} vendors`}
+                {isLoading ? "Loading..." : `${paginationInfo?.totalVendors || 0} vendors`}
               </p>
             </div>
 

@@ -1288,7 +1288,7 @@ const MobileNavbar = () => {
   const navItems = useMemo(
     () => [
       { id: "home", label: "Home", icon: Home, route: "/m" },
-      { id: "categories", label: "Categories", icon: ChartBarStacked, route: "/m/vendors/marketplace/venues" },
+      { id: "marketplace", label: "Marketplace", icon: ChartBarStacked, route: "/m/vendors/marketplace/venues" },
       { id: "center_fab", type: "center" },
       { id: "bookings", label: "Bookings", icon: Calendar, route: "/m/user/bookings" },
       { id: "profile", label: "Profile", icon: User, route: "/m/user/profile" },

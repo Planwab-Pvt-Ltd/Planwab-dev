@@ -25,11 +25,12 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
+import { useReturnBack } from "../../../hooks/useNavigationWithReturn";
 
 // =============================================================================
 // SPRING CONFIGURATIONS
@@ -256,6 +257,40 @@ const categoryConfig = {
       budget: "We'll make your birthday special within your budget.",
       name: "This helps us create a personalized birthday experience.",
       location: "Your location helps us find the best local vendors and services.",
+    },
+  },
+  event: {
+    title: "Event",
+    icon: "🎉",
+    primaryIcon: "🎊",
+    primary: "#065f46",
+    cities: [
+      { name: "Delhi NCR", icon: "🏛️" },
+      { name: "Bengaluru", icon: "🏢" },
+      { name: "Goa", icon: "🏖️" },
+      { name: "Udaipur", icon: "🕌" },
+      { name: "Jaipur", icon: "🏰" },
+      { name: "Jim Corbett", icon: "🐅" },
+    ],
+    features: ["Venues", "Decor", "Catering"],
+    featureIcons: ["🏛️", "🎨", "🍽️"],
+    questions: {
+      city: "Where do you want to host your event?",
+      date: "When do you plan to have your event?",
+      budget: "What is your estimated overall budget?",
+      name: "What shall we call you?",
+      location: "Where are you currently located?",
+    },
+    tagline: "Your Event Requirements",
+    description:
+      "Let's start with these details to help us create your personalized proposal, with venue suggestions, decor ideas and more.",
+    successMessage: "Your personalized event proposal is being crafted with love and attention to detail.",
+    infoMessages: {
+      city: "has amazing venues for memorable events.",
+      date: "gives us great time to plan your special day.",
+      budget: "We'll customize our recommendations to fit perfectly within your budget range.",
+      name: "Your name helps us create a personalized proposal tailored just for you.",
+      location: "Your location helps us assign the nearest planning team for better coordination.",
     },
   },
 };
@@ -2430,7 +2465,8 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
 export default function PlanMyEventPageWrapper() {
   const { user } = useUser();
   const params = useParams();
-  const category = params?.category || "wedding";
+  const goBack = useReturnBack("/");
+  const category = params?.category === "default" ? "event" : params?.category || "event";
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({});
   const [showExitModal, setShowExitModal] = useState(false);
@@ -2508,12 +2544,6 @@ export default function PlanMyEventPageWrapper() {
     setCurrentStep(1);
   };
 
-  const handleExit = () => {
-    if (typeof window !== "undefined") {
-      window.location.href = "/";
-    }
-  };
-
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
@@ -2577,7 +2607,7 @@ export default function PlanMyEventPageWrapper() {
           {renderCurrentStep()}
         </div>
       </main>
-      {showExitModal && <ExitModal onConfirm={handleExit} onCancel={() => setShowExitModal(false)} />}
+      {showExitModal && <ExitModal onConfirm={goBack} onCancel={() => setShowExitModal(false)} />}
       <style jsx>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
