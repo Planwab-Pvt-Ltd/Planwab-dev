@@ -109,16 +109,12 @@ const SmartMedia = memo(
             muted
             loop
             playsInline
-            poster={poster} // Ensure a lightweight poster image is always provided
-            // FIX: Only auto-load if it's a priority video (LCP), otherwise save bandwidth
-            preload={priority ? "auto" : "none"}
-            // FIX: Native autoplay attribute for priority videos helps browser optimize
-            autoPlay={priority}
-            // Event Handlers for reliability
-            onLoadedData={() => setIsLoaded(true)}
+            poster={poster}
+            autoPlay
+            preload={priority ? "auto" : "metadata"}
+            // FIX: Add onCanPlay for better reliability
             onCanPlay={() => setIsLoaded(true)}
-            onWaiting={() => setIsLoaded(false)} // Show shimmer if buffering
-            onPlaying={() => setIsLoaded(true)}
+            onLoadedData={() => setIsLoaded(true)}
             onError={() => setHasError(true)}
           />
         ) : (

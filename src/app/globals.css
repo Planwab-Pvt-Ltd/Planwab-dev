@@ -156,3 +156,9 @@ body {
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* Thumb Color | Track Color */
   }
 }
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

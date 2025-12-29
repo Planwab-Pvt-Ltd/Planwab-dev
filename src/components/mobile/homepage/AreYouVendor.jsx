@@ -1,9 +1,11 @@
 import React, { memo } from "react";
 import SmartMedia from "../SmartMediaLoader";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 const BASE_URL = "https://www.theweddingcompany.com";
 
-const AreYouAVendorSection = () => {
+const AreYouAVendorSection = ({ haptic }) => {
   return (
     <section
       className="relative overflow-x-hidden px-3 pt-2 md:px-0 md:py-12 !z-10 bg-white pb-12"
@@ -124,6 +126,25 @@ const AreYouAVendorSection = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Static Banner 2 - High Priority */}
+      <div className="mx-1 mt-3 px-2 mb-6">
+        <Link href={`/m/vendors/explore/wedding`}>
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            onClick={() => haptic("medium")}
+            className="w-full aspect-[1/1.1] relative rounded-xl overflow-hidden"
+          >
+            <SmartMedia
+              src={`/Banners/banner5.gif`}
+              type="image"
+              className="w-full h-full object-cover object-center"
+              loaderImage="/GlowLoadingGif.gif"
+              priority={true}
+            />
+          </motion.div>
+        </Link>
       </div>
     </section>
   );

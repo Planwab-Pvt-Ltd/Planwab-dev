@@ -90,7 +90,7 @@ const SampleProposal = () => {
 
   return (
     <div
-      className="py-12 pb-0 pt-8 bg-gradient-to-b from-transparent via-[#FFEFF4]/70 to-[#FFEFF4]/70 relative overflow-hidden"
+      className="py-12 pb-0 pt-2 bg-gradient-to-b from-transparent via-[#FFEFF4]/70 to-[#FFEFF4]/70 relative overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
