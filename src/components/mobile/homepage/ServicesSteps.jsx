@@ -67,6 +67,8 @@ const ServicesSteps = () => {
   const categoryKey = rawCategory ? rawCategory : "default";
   const theme = themeConfig[categoryKey] || themeConfig?.default;
 
+  FEATURES[0] = categoryKey === "default" ? "Event planning" : `${categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1)} planning`;
+
   return (
     <div
       className={`relative mx-4 rounded-3xl border backdrop-blur-sm transition-all duration-300 ${theme?.container}`}
@@ -80,7 +82,7 @@ const ServicesSteps = () => {
               End-to-end services
             </h2>
             <p className={`text-base lg:text-lg leading-relaxed font-medium ${theme?.subtext}`}>
-              Your one-stop solution for {categoryKey === "default" ? "events" : categoryKey}s.
+              Your one-stop solution for {categoryKey === "default" ? "events" : categoryKey}s.&nbsp;
               <span className="hidden lg:inline">{"\n"}</span>
               From planning to execution.
             </p>

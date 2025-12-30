@@ -1753,7 +1753,6 @@ VendorCard.displayName = "VendorCard";
 
 const PaginationControls = memo(({ currentPage, totalPages, onPageChange, colorPrimary, isLoading }) => {
   const haptic = useHapticFeedback();
-  if (totalPages <= 1) return null;
 
   const pages = useMemo(() => {
     const result = [];
@@ -1764,6 +1763,8 @@ const PaginationControls = memo(({ currentPage, totalPages, onPageChange, colorP
     for (let i = start; i <= end; i++) result.push(i);
     return result;
   }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
 
   return (
     <div className="flex flex-col items-center gap-4 py-6 pb-12">

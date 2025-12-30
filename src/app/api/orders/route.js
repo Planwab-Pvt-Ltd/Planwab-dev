@@ -6,7 +6,7 @@ import { connectToDatabase } from "../../../database/mongoose";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_LIVE_KEY_ID,
-  key_secret: process.env.RAZORRPAY_LIVE_KEY_SECRET,
+  key_secret: process.env.RAZORPAY_LIVE_KEY_SECRET,
 });
 
 export async function POST(req) {
@@ -60,6 +60,8 @@ export async function POST(req) {
       paymentMethod: paymentMethod,
       razorpay: {
         orderId: razorpayOrder ? razorpayOrder.id : null,
+        paymentId: "pending",
+        signature: "pending",
       },
       paymentStatus: "PENDING",
     });

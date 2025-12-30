@@ -836,18 +836,6 @@ const SectionHeader = memo(({ title, subtitle, icon: Icon, color, onViewAll }) =
           <p className="text-[10px] text-gray-500">{subtitle}</p>
         </div>
       </div>
-
-      <button
-        onClick={() => {
-          haptic("light");
-          onViewAll?.();
-        }}
-        className="flex items-center gap-0.5 text-xs font-semibold transition-colors"
-        style={{ color }}
-      >
-        See All
-        <ArrowRight size={14} />
-      </button>
     </div>
   );
 });

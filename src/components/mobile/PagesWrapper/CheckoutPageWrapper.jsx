@@ -481,7 +481,7 @@ const CartStep = ({
 );
 
 const DetailsStep = ({ eventDetails, setEventDetails, contactDetails, setContactDetails, errors, colorPrimary }) => (
-  <div className="px-4 py-4 space-y-4">
+  <div className="px-4 py-4 space-y-4 overflow-x-hidden">
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
       <h3 className="font-bold mb-4 flex gap-2 items-center">
         <Calendar size={18} style={{ color: colorPrimary }} /> Event Details
@@ -820,6 +820,16 @@ export default function CheckoutPageWrapper() {
         name: "PlanWale",
         description: `Order #${orderData.orderId}`,
         order_id: orderData.razorpayOrderId,
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false); // Stop the loader
+            setToast({
+              isVisible: true,
+              message: "Payment Cancelled. You can try again.",
+              type: "warning", // Orange warning color
+            });
+          },
+        },
         handler: async function (response) {
           // 3. Verify Payment
           try {

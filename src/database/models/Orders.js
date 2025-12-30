@@ -46,8 +46,8 @@ const OrderSchema = new mongoose.Schema(
     paymentMethod: { type: String, required: true },
     razorpay: {
       orderId: { type: String, required: true },
-      paymentId: { type: String, required: true },
-      signature: { type: String, required: true },
+      paymentId: { type: String },
+      signature: { type: String },
     },
     orderStatus: {
       type: String,

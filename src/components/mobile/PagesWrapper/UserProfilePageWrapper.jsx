@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo, useCallback } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -10,10 +10,13 @@ import {
   Heart,
   Calendar,
   CreditCard,
+  Star,
   HelpCircle,
   LogOut,
   ChevronRight,
   User,
+  Share2,
+  Bookmark,
   Shield,
   Bell,
   Sparkles,
@@ -33,7 +36,6 @@ import {
   MessageCircle,
   ArrowRight,
   Copy,
-  Share2,
 } from "lucide-react";
 
 // --- MOCK DATA ---
@@ -174,6 +176,144 @@ const Toggle = ({ label, checked, onChange }) => (
   </div>
 );
 
+// --- CAROUSEL SUB-COMPONENTS ---
+
+const SectionHeader = ({ title, subtitle, icon: Icon, color, onViewAll }) => (
+  <div className="flex items-center justify-between px-4 mb-4">
+    <div className="flex items-center gap-3">
+      <div className={`p-2 rounded-xl ${color} bg-opacity-10`}>
+        <Icon size={18} className={color.replace("bg-", "text-")} />
+      </div>
+      <div>
+        <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{title}</h3>
+        {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>}
+      </div>
+    </div>
+  </div>
+);
+
+const ProfileVendorCard = ({ vendor }) => (
+  <Link href={`/m/vendor/${vendor.category}/${vendor._id}`} className="min-w-[200px] w-[200px] snap-start">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm h-full active:scale-95 transition-transform">
+      <div className="h-28 w-full bg-gray-200 relative">
+        <img src={vendor.images?.[0] || "/placeholder.jpg"} alt={vendor.name} className="w-full h-full object-cover" />
+        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-0.5 shadow-sm">
+          <Star size={8} className="fill-yellow-500 text-yellow-500" /> {vendor.rating || 0}
+        </div>
+      </div>
+      <div className="p-3">
+        <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate mb-0.5">{vendor.name}</h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1 mb-2">
+          <MapPin size={10} /> {vendor.address?.city || "City"}
+        </p>
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+          <p className="text-xs font-bold text-violet-600 dark:text-violet-400">
+            ₹{vendor.perDayPrice?.min?.toLocaleString("en-IN") || "N/A"}
+          </p>
+          <div className="p-1 bg-violet-50 dark:bg-violet-900/30 rounded-full">
+            <ChevronRight size={12} className="text-violet-600 dark:text-violet-400" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </Link>
+);
+
+const ViewMoreCard = ({ count, icon: Icon, color }) => (
+  <div className="min-w-[100px] flex flex-col items-center justify-center gap-2 pr-4 snap-start cursor-pointer active:opacity-70">
+    <div className={`w-12 h-12 rounded-full ${color} bg-opacity-10 flex items-center justify-center`}>
+      <ArrowRight size={20} className={color.replace("bg-", "text-")} />
+    </div>
+    <span className="text-xs font-bold text-gray-500">View {count}+</span>
+  </div>
+);
+
+const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, color, emptyText = "No items found" }) => {
+  const scrollRef = React.useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false); // Default to false to prevent flash
+
+  const checkScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    // Tolerance of 5px for scroll math
+    setCanScrollLeft(scrollLeft > 5);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+  }, []);
+
+  useEffect(() => {
+    const ref = scrollRef.current;
+    if (ref) {
+      checkScroll(); // Check immediately on mount
+      ref.addEventListener("scroll", checkScroll);
+      window.addEventListener("resize", checkScroll);
+    }
+    return () => {
+      ref?.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [checkScroll, vendors]); // Re-run when vendors change
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === "left" ? -200 : 200;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <section className="py-2 mb-4">
+      <SectionHeader title={title} subtitle={subtitle} icon={Icon} color={color} onViewAll={() => {}} />
+
+      {!vendors || vendors.length === 0 ? (
+        // --- NEW: Fallback Empty State ---
+        <div className="px-4">
+          <div className="flex flex-col items-center justify-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-700">
+            <div className={`p-3 rounded-full bg-white dark:bg-gray-800 mb-2 shadow-sm`}>
+              <Icon size={20} className="text-gray-400" />
+            </div>
+            <p className="text-xs text-gray-500 font-medium">{emptyText}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="relative group">
+          {/* Left Button - Hidden if disabled (at start) */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll("left")}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center border border-gray-100 dark:border-gray-700 hover:scale-110 transition-transform"
+            >
+              <ChevronLeft size={16} className="text-gray-600 dark:text-gray-300" />
+            </button>
+          )}
+
+          {/* Right Button - Hidden if disabled (at end) */}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll("right")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center border border-gray-100 dark:border-gray-700 hover:scale-110 transition-transform"
+            >
+              <ChevronRight size={16} className="text-gray-600 dark:text-gray-300" />
+            </button>
+          )}
+
+          <div
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto px-4 pb-4 no-scrollbar snap-x snap-mandatory"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {vendors.map((vendor) => (
+              <ProfileVendorCard key={vendor._id} vendor={vendor} />
+            ))}
+            {vendors.length > 3 && <ViewMoreCard count={vendors.length} icon={Icon} color={color} />}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+});
+VendorCarousel.displayName = "VendorCarousel";
+
 // --- MAIN PAGE ---
 
 export default function UserProfilePageWrapper() {
@@ -187,6 +327,50 @@ export default function UserProfilePageWrapper() {
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({ push: true, email: true, promo: false });
   const [copied, setCopied] = useState(false);
+
+  const [likedVendors, setLikedVendors] = useState([]);
+  const [bookmarkedVendors, setBookmarkedVendors] = useState([]);
+  const [loadingLists, setLoadingLists] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+
+      try {
+        // 1. Get User Data (likedVendors array, watchlist array)
+        // Ensure you have an endpoint like this, or use the one you built
+        const userRes = await fetch(`/api/user/me`);
+        if (!userRes.ok) return;
+        const userData = await userRes.json();
+
+        const likedIds = userData.likedVendors || [];
+        const savedIds = userData.watchlist || [];
+        const allIds = [...new Set([...likedIds, ...savedIds])];
+
+        if (allIds.length > 0) {
+          // 2. Bulk Fetch Vendor Details
+          const vendorsRes = await fetch("/api/vendor/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: allIds }),
+          });
+
+          if (vendorsRes.ok) {
+            const vendorsData = await vendorsRes.json();
+            // Separate them back
+            setLikedVendors(vendorsData.filter((v) => likedIds.includes(v._id)));
+            setBookmarkedVendors(vendorsData.filter((v) => savedIds.includes(v._id)));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch lists", error);
+      } finally {
+        setLoadingLists(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText("PLANWAB20");
@@ -332,6 +516,32 @@ export default function UserProfilePageWrapper() {
             <MenuItem icon={Lock} label="Security & Password" onClick={() => setActiveDrawer("security")} />
           </div>
         </div>
+
+        {!loadingLists && (
+          <div className="space-y-2 mt-6">
+            <VendorCarousel
+              title="Liked Vendors"
+              subtitle={
+                likedVendors.length > 0 ? `${likedVendors.length} venues & services you love` : "Your favorites list"
+              }
+              vendors={likedVendors}
+              icon={Heart}
+              color="text-rose-500"
+              emptyText="No liked vendors yet" // <--- Custom Fallback Text
+            />
+
+            <VendorCarousel
+              title="Watchlist"
+              subtitle={
+                bookmarkedVendors.length > 0 ? `${bookmarkedVendors.length} saved for later` : "Items saved for later"
+              }
+              vendors={bookmarkedVendors}
+              icon={Bookmark}
+              color="text-blue-500"
+              emptyText="Your watchlist is empty" // <--- Custom Fallback Text
+            />
+          </div>
+        )}
 
         {/* PREFERENCES */}
         <div>

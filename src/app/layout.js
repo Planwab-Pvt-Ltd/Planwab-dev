@@ -160,13 +160,12 @@ export default function RootLayout({ children }) {
             <NextTopLoader
               color="#2563eb"
               height={3}
-              crawl={true}
+              crawl={false}
               showSpinner={false}
-              easing="ease"
-              speed={200}
-              shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+              easing="linear"
+              speed={300}
+              shadow={false}
               zIndex={1600}
-              showAtBottom={false}
             />
             {children}
             <Toaster

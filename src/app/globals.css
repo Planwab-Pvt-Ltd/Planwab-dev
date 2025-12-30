@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -161,4 +160,10 @@ body {
   100% {
     transform: translateX(100%);
   }
+}
+
+html,
+body {
+  filter: none !important;
+  backdrop-filter: none !important;
 }

@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import {
   MapPin,
   Star,
@@ -14,7 +13,12 @@ import {
   Mail,
   Calendar,
   Share2,
+  Minus,
+  Plus,
+  Tag,
+  RefreshCw,
   Check,
+  ShoppingBag,
   Map as MapIcon,
   Wifi,
   Car,
@@ -63,6 +67,7 @@ import {
   ZoomOut,
   Play,
   Pause,
+  Trash2,
   Tv,
   Coffee,
   Flower2,
@@ -106,6 +111,8 @@ import {
   Headphones,
   Smartphone,
   ArrowRight,
+  Loader2,
+  Lock,
 } from "lucide-react";
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
@@ -113,6 +120,8 @@ import dynamic from "next/dynamic";
 import ReviewSection from "../ReviewSection";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useRedirectWithReturn } from "../../../hooks/useNavigationWithReturn";
+import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse" />,
@@ -168,6 +177,32 @@ const TAB_CONFIG = [
   { id: "location", label: "Location", icon: MapPin },
 ];
 
+const SPRING_CONFIG = {
+  stiff: { type: "spring", stiffness: 400, damping: 30 },
+  gentle: { type: "spring", stiffness: 200, damping: 25 },
+  bouncy: { type: "spring", stiffness: 300, damping: 20 },
+};
+
+const MOCK_COUPONS = [
+  {
+    code: "FIRST20",
+    discount: 20,
+    type: "percent",
+    maxDiscount: 25000,
+    minOrder: 100000,
+    description: "20% off on first booking",
+  },
+  {
+    code: "WEDDING10",
+    discount: 10,
+    type: "percent",
+    maxDiscount: 15000,
+    minOrder: 50000,
+    description: "10% off on wedding bookings",
+  },
+  { code: "FLAT5K", discount: 5000, type: "flat", minOrder: 75000, description: "Flat ₹5,000 off" },
+];
+
 const slideVariants = {
   enter: (direction) => ({
     x: direction > 0 ? "100%" : "-100%",
@@ -198,6 +233,38 @@ const modalTransition = {
 const backdropTransition = {
   duration: 0.2,
   ease: "easeOut",
+};
+
+function useHapticFeedback() {
+  return useCallback((type = "light") => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10] };
+      navigator.vibrate(patterns[type] || 10);
+    }
+  }, []);
+}
+
+const formatFullPrice = (price) => {
+  if (isNaN(price) || price === 0) return "0";
+  return price.toLocaleString("en-IN");
+};
+
+const getVendorPrice = (vendor) => {
+  return (
+    vendor.normalizedPrice ||
+    vendor.perDayPrice?.min ||
+    vendor.basePrice ||
+    vendor.price?.min ||
+    vendor.startingPrice ||
+    0
+  );
+};
+
+const getVendorImage = (vendor) => {
+  const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
+  if (imgs.length > 0) return imgs[0];
+  if (vendor.defaultImage) return vendor.defaultImage;
+  return "/placeholder.jpg";
 };
 
 function useScrollProgress() {
@@ -578,11 +645,583 @@ const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
 
 PackageCard.displayName = "PackageCard";
 
+// -----------------------------------------------------------------------------
+// Cart Item Card
+// -----------------------------------------------------------------------------
+const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
+  const haptic = useHapticFeedback();
+  const price = item.price || getVendorPrice(item);
+  const originalPrice = item.originalPrice || price;
+  const discount = originalPrice > price ? originalPrice - price : 0;
+  const img = item.image || getVendorImage(item);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
+      transition={SPRING_CONFIG.gentle}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-3"
+    >
+      <div className="p-3 flex gap-3">
+        {/* Image */}
+        <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+          <img src={img} alt={item.name} className="w-full h-full object-cover" />
+          {(item.isVerified || item.tags?.includes("Verified")) && (
+            <div className="absolute top-1 left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <BadgeCheck size={12} className="text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Star size={10} className="fill-amber-400 text-amber-400" />
+                  <span className="text-[10px] font-semibold text-gray-700">{item.rating?.toFixed(1) || "4.5"}</span>
+                  <span className="text-[10px] text-gray-400">({item.reviews || item.totalReviews || 0})</span>
+                </div>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  haptic("medium");
+                  onRemove(item);
+                }}
+                className="p-2 bg-red-50 rounded-lg text-red-500 hover:bg-red-100 transition-colors"
+              >
+                <Trash2 size={14} />
+              </motion.button>
+            </div>
+
+            {/* Location & Category */}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-gray-600 capitalize">
+                {item.category}
+              </span>
+              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                <MapPin size={10} />
+                {item.address?.city || item.location || "Location"}
+              </div>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-end justify-between mt-2">
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-bold text-blue-600">₹{formatFullPrice(price)}</span>
+                {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
+              </div>
+              {discount > 0 && (
+                <span className="text-[10px] font-medium text-green-600">Save ₹{formatFullPrice(discount)}</span>
+              )}
+            </div>
+
+            {/* Quantity Control (if applicable) */}
+            {item.priceUnit && (
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => onUpdateQuantity(item._id, (item.quantity || 1) - 1)}
+                  disabled={(item.quantity || 1) <= 1}
+                  className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm disabled:opacity-50"
+                >
+                  <Minus size={14} className="text-gray-600" />
+                </motion.button>
+                <span className="text-sm font-bold text-gray-900 w-6 text-center">{item.quantity || 1}</span>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => onUpdateQuantity(item._id, (item.quantity || 1) + 1)}
+                  className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm"
+                >
+                  <Plus size={14} className="text-gray-600" />
+                </motion.button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+CartItemCard.displayName = "CartItemCard";
+
+// -----------------------------------------------------------------------------
+// Coupon Section
+// -----------------------------------------------------------------------------
+const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subtotal, showToast }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const haptic = useHapticFeedback();
+
+  const handleApplyCoupon = useCallback(async () => {
+    if (!couponCode.trim()) {
+      setError("Please enter a coupon code");
+      return;
+    }
+
+    haptic("light");
+    setIsLoading(true);
+    setError("");
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const coupon = MOCK_COUPONS.find((c) => c?.code?.toLowerCase() === couponCode?.trim()?.toLowerCase());
+
+    if (!coupon) {
+      setError("Invalid coupon code");
+      setIsLoading(false);
+      return;
+    }
+
+    if (subtotal < coupon.minOrder) {
+      setError(`Minimum order of ₹${formatFullPrice(coupon.minOrder)} required`);
+      setIsLoading(false);
+      return;
+    }
+
+    haptic("success");
+    onApplyCoupon(coupon);
+    setCouponCode("");
+    setIsExpanded(false);
+    setIsLoading(false);
+    showToast("Coupon applied successfully!", "success");
+  }, [couponCode, subtotal, onApplyCoupon, haptic, showToast]);
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {appliedCoupon ? (
+        <div className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Tag size={18} className="text-green-600" />
+              </div>
+              <div>
+                <p className="font-bold text-green-600 text-sm">{appliedCoupon.code}</p>
+                <p className="text-[10px] text-gray-500">{appliedCoupon.description}</p>
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                haptic("light");
+                onRemoveCoupon();
+              }}
+              className="p-2 text-gray-400 hover:text-red-500"
+            >
+              <X size={16} />
+            </motion.button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              haptic("light");
+              setIsExpanded(!isExpanded);
+            }}
+            className="w-full p-3 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Percent size={18} className="text-orange-500" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-gray-900 text-sm">Apply Coupon</p>
+                <p className="text-[10px] text-gray-500">{MOCK_COUPONS.length} coupons available</p>
+              </div>
+            </div>
+            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
+              <ChevronDown size={18} className="text-gray-400" />
+            </motion.div>
+          </motion.button>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={SPRING_CONFIG.gentle}
+                className="border-t border-gray-100 overflow-hidden"
+              >
+                <div className="p-3 space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase());
+                        setError("");
+                      }}
+                      placeholder="Enter code"
+                      className="flex-1 px-3 py-2.5 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleApplyCoupon}
+                      disabled={isLoading}
+                      className="px-4 py-2.5 rounded-xl text-white font-bold text-sm bg-blue-600 disabled:opacity-60"
+                    >
+                      {isLoading ? <RefreshCw size={16} className="animate-spin" /> : "Apply"}
+                    </motion.button>
+                  </div>
+
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-xs text-red-500 font-medium flex items-center gap-1"
+                    >
+                      <AlertCircle size={12} /> {error}
+                    </motion.p>
+                  )}
+
+                  <div className="space-y-2">
+                    {MOCK_COUPONS.map((coupon) => (
+                      <motion.button
+                        key={coupon.code}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setCouponCode(coupon.code);
+                          setError("");
+                        }}
+                        className="w-full p-2.5 bg-gray-50 rounded-xl flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Tag size={14} className="text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{coupon.code}</p>
+                            <p className="text-[10px] text-gray-500">{coupon.description}</p>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-400" />
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+    </div>
+  );
+});
+CouponSection.displayName = "CouponSection";
+
+// -----------------------------------------------------------------------------
+// Price Breakdown
+// -----------------------------------------------------------------------------
+const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, platformFee, total }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const haptic = useHapticFeedback();
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-gray-900 text-sm">Price Details</h3>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            haptic("light");
+            setShowDetails(!showDetails);
+          }}
+          className="text-[10px] font-semibold text-blue-600 flex items-center gap-1"
+        >
+          {showDetails ? "Hide" : "View"} breakdown
+          <motion.div animate={{ rotate: showDetails ? 180 : 0 }}>
+            <ChevronDown size={12} />
+          </motion.div>
+        </motion.button>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Subtotal</span>
+          <span className="font-medium text-gray-900">₹{formatFullPrice(subtotal)}</span>
+        </div>
+
+        {vendorDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600">Vendor Discount</span>
+            <span className="font-medium text-green-600">-₹{formatFullPrice(vendorDiscount)}</span>
+          </div>
+        )}
+
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600">Coupon Discount</span>
+            <span className="font-medium text-green-600">-₹{formatFullPrice(couponDiscount)}</span>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="space-y-2 pt-2 border-t border-dashed border-gray-200 overflow-hidden"
+            >
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Platform Fee</span>
+                <span className="font-medium text-gray-600">₹{formatFullPrice(platformFee)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">GST (18%)</span>
+                <span className="font-medium text-gray-600">₹{formatFullPrice(taxes)}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+          <span className="font-bold text-gray-900">Total</span>
+          <span className="text-xl font-black text-blue-600">₹{formatFullPrice(total)}</span>
+        </div>
+
+        {(vendorDiscount > 0 || couponDiscount > 0) && (
+          <div className="mt-2 p-2.5 bg-green-50 rounded-xl">
+            <p className="text-xs font-bold text-green-700 flex items-center gap-1.5">
+              <Sparkles size={14} />
+              You save ₹{formatFullPrice(vendorDiscount + couponDiscount)} on this order!
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+PriceBreakdown.displayName = "PriceBreakdown";
+
+// =============================================================================
+// ENHANCED CART DRAWER - NOW SYNCED WITH GLOBAL STATE
+// =============================================================================
+const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, showToast }) => {
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const haptic = useHapticFeedback();
+
+  useEffect(() => {
+    if (items.length === 0) {
+      setAppliedCoupon(null);
+      onClose();
+    }
+  }, [items]);
+
+  // Price calculations
+  const priceDetails = useMemo(() => {
+    const subtotal = items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0);
+    const originalTotal = items.reduce(
+      (acc, item) => acc + (item.originalPrice || item.price || 0) * (item.quantity || 1),
+      0
+    );
+    const vendorDiscount = originalTotal - subtotal;
+
+    let couponDiscount = 0;
+    if (appliedCoupon) {
+      if (appliedCoupon.type === "percent") {
+        couponDiscount = Math.min(
+          Math.round((subtotal * appliedCoupon.discount) / 100),
+          appliedCoupon.maxDiscount || Infinity
+        );
+      } else {
+        couponDiscount = appliedCoupon.discount;
+      }
+    }
+
+    const afterDiscount = subtotal - couponDiscount;
+    const platformFee = Math.round(subtotal * 0.02);
+    const taxes = Math.round(afterDiscount * 0.18);
+    const grandTotal = afterDiscount + taxes + platformFee;
+
+    return {
+      subtotal,
+      vendorDiscount,
+      couponDiscount,
+      platformFee,
+      taxes,
+      total: grandTotal,
+    };
+  }, [items, appliedCoupon]);
+
+  const handleRemoveItem = useCallback(
+    (item) => {
+      haptic("medium");
+      onRemove(item._id);
+      showToast("Item removed from cart", "info");
+    },
+    [onRemove, haptic, showToast]
+  );
+
+  const handleApplyCoupon = useCallback((coupon) => {
+    setAppliedCoupon(coupon);
+  }, []);
+
+  const handleRemoveCoupon = useCallback(() => {
+    haptic("light");
+    setAppliedCoupon(null);
+    showToast("Coupon removed", "info");
+  }, [haptic, showToast]);
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={SPRING_CONFIG.gentle}
+        className="fixed bottom-0 left-0 right-0 max-h-[80vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+      >
+        {/* Header */}
+        <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 sticky top-0 z-10">
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3" />
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="text-blue-600" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-gray-900">Your Cart</h2>
+                <p className="text-xs text-gray-500">
+                  {items.length} {items.length === 1 ? "item" : "items"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16"></div>
+          ) : (
+            <>
+              {/* Cart Items */}
+              <div className="mb-4">
+                <AnimatePresence mode="popLayout">
+                  {items.map((item) => (
+                    <CartItemCard
+                      key={item._id}
+                      item={item}
+                      onRemove={handleRemoveItem}
+                      onUpdateQuantity={onUpdateQuantity}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Coupon Section */}
+              <div className="mb-4">
+                <CouponSection
+                  appliedCoupon={appliedCoupon}
+                  onApplyCoupon={handleApplyCoupon}
+                  onRemoveCoupon={handleRemoveCoupon}
+                  subtotal={priceDetails.subtotal}
+                  showToast={showToast}
+                />
+              </div>
+
+              {/* Price Breakdown */}
+              <PriceBreakdown
+                subtotal={priceDetails.subtotal}
+                vendorDiscount={priceDetails.vendorDiscount}
+                couponDiscount={priceDetails.couponDiscount}
+                taxes={priceDetails.taxes}
+                platformFee={priceDetails.platformFee}
+                total={priceDetails.total}
+              />
+
+              {/* Trust Badges */}
+              <div className="mt-4 p-3 bg-white rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-around">
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <Shield size={14} className="text-green-500" />
+                    <span className="text-[10px] font-medium">Secure</span>
+                  </div>
+                  <div className="w-px h-4 bg-gray-200" />
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <BadgeCheck size={14} className="text-blue-500" />
+                    <span className="text-[10px] font-medium">Verified</span>
+                  </div>
+                  <div className="w-px h-4 bg-gray-200" />
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <Clock size={14} className="text-amber-500" />
+                    <span className="text-[10px] font-medium">24/7 Support</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-32" />
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        {items.length > 0 && (
+          <div className="bg-white p-4 pb-2 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase font-semibold">Grand Total</p>
+                <p className="text-2xl font-black text-blue-600">₹{formatFullPrice(priceDetails.total)}</p>
+              </div>
+              {(priceDetails.vendorDiscount > 0 || priceDetails.couponDiscount > 0) && (
+                <div className="px-3 py-1.5 bg-green-100 rounded-xl">
+                  <p className="text-xs font-bold text-green-700">
+                    Save ₹{formatFullPrice(priceDetails.vendorDiscount + priceDetails.couponDiscount)}
+                  </p>
+                </div>
+              )}
+            </div>
+            <Link
+              href="/m/user/checkout"
+              onClick={() => {
+                haptic("medium");
+                onClose();
+              }}
+              className="w-full bg-[#E5B80B] text-blue-900 py-4 rounded-2xl font-bold text-base shadow-lg shadow-yellow-200/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              <Lock size={18} />
+              Proceed to Checkout
+              <ArrowRight size={18} />
+            </Link>
+            <p className="text-center text-[10px] text-gray-400 mt-2 flex items-center justify-center gap-1">
+              <Lock size={10} /> Secured by 256-bit SSL encryption
+            </p>
+          </div>
+        )}
+      </motion.div>
+    </>
+  );
+});
+CartDrawer.displayName = "CartDrawer";
+
 const VendorDetailsPageWrapper = () => {
   const { id } = useParams();
   const redirectWithReturn = useRedirectWithReturn();
   const router = useRouter();
-  const { cartItems, addToCart, removeFromCart } = useCartStore();
+  const { cartItems, addToCart, removeFromCart, updateQuantity } = useCartStore();
 
   const containerRef = useRef(null);
   const carouselRef = useRef(null);
@@ -600,6 +1239,7 @@ const VendorDetailsPageWrapper = () => {
   const carouselOpacity = useTransform(scrollY, [0, 400], [1, 0.3]);
 
   const [vendor, setVendor] = useState(null);
+  const [activeDrawer, setActiveDrawer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [similarVendors, setSimilarVendors] = useState([]);
@@ -632,6 +1272,109 @@ const VendorDetailsPageWrapper = () => {
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [activeGalleryFilter, setActiveGalleryFilter] = useState("all");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const { user, isLoaded: isAuthLoaded } = useUser();
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [likingLoading, setLikingLoading] = useState(false);
+  const [bookmarkingLoading, setBookmarkingLoading] = useState(false);
+  const [toast, setToast] = useState({ message: "", type: "success", isNavbarVisible: false });
+
+  const handleUpdateQuantity = useCallback(
+    (id, quantity) => {
+      updateQuantity(id, quantity);
+    },
+    [updateQuantity]
+  );
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type, isNavbarVisible: true });
+  }, []);
+
+  useEffect(() => {
+    if (!user || !vendor?._id) return;
+    setStatusLoading(true);
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(`/api/user/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vendorId: vendor._id, userId: user.id }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setIsLiked(data.isLiked);
+          setIsBookmarked(data.isBookmarked);
+          setStatusLoading(false);
+        }
+      } catch (error) {
+        console.error("Error fetching interaction status:", error);
+      }
+      setStatusLoading(false);
+    };
+
+    fetchStatus();
+  }, [user, vendor?._id]);
+
+  const handleToggleLike = async () => {
+    if (!isAuthLoaded) return;
+    if (!user) {
+      toast.error("Please login to like vendors");
+      return;
+    }
+    setLikingLoading(true);
+    const prevLiked = isLiked;
+    setIsLiked(!prevLiked);
+    if (navigator.vibrate) navigator.vibrate(10);
+
+    try {
+      const res = await fetch("/api/user/toggle-like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId: vendor._id }),
+      });
+
+      if (!res.ok) throw new Error("Failed");
+
+      const data = await res.json();
+      toast.success(data.message);
+      setLikingLoading(false);
+    } catch (error) {
+      setIsLiked(prevLiked);
+      toast.error("Something went wrong");
+    }
+    setLikingLoading(false);
+  };
+
+  const handleToggleBookmark = async () => {
+    if (!isAuthLoaded) return;
+    if (!user) {
+      toast.error("Please login to bookmark vendors");
+      return;
+    }
+    setBookmarkingLoading(true);
+    const prevBookmarked = isBookmarked;
+    setIsBookmarked(!prevBookmarked);
+    if (navigator.vibrate) navigator.vibrate(10);
+
+    try {
+      const res = await fetch("/api/user/toggle-watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId: vendor._id }),
+      });
+
+      if (!res.ok) throw new Error("Failed");
+
+      const data = await res.json();
+      toast.success(data.message);
+      setBookmarkingLoading(false);
+    } catch (error) {
+      setIsBookmarked(prevBookmarked);
+      toast.error("Something went wrong");
+    }
+    setBookmarkingLoading(false);
+  };
 
   const [bookingForm, setBookingForm] = useState({
     name: "",
@@ -662,7 +1405,8 @@ const VendorDetailsPageWrapper = () => {
     if (navigator.vibrate) navigator.vibrate(10);
 
     if (isInCart) {
-      removeFromCart(vendor._id);
+      setActiveDrawer("cart");
+      return;
     } else {
       addToCart({
         ...vendor,
@@ -1066,11 +1810,59 @@ const VendorDetailsPageWrapper = () => {
     setInquiryForm({ name: "", phone: "", email: "", subject: "", message: "" });
   }, []);
 
-  const handleReviewSubmit = useCallback(() => {
-    setShowReviewModal(false);
-    setReviewRating(0);
-    setReviewText("");
-  }, []);
+  const handleReviewSubmit = async () => {
+    if (!isAuthLoaded) return;
+    if (!user) {
+      toast.error("Please login to write a review");
+      return;
+    }
+
+    if (reviewRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    if (!reviewText.trim()) {
+      toast.error("Please write your experience");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+
+    try {
+      const res = await fetch(`/api/vendor/${id}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating: reviewRating,
+          text: reviewText,
+          // You can add title or eventType if you add fields for them in the modal
+          title: "Vendor Review",
+          eventType: bookingForm.eventType || "Other",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to post review");
+      }
+
+      toast.success("Review posted successfully!");
+      setShowReviewModal(false);
+      setReviewRating(0);
+      setReviewText("");
+
+      // Optional: If you want to refresh the reviews list immediately,
+      // you would need to trigger a refetch in your ReviewSection component here.
+      // For now, a page refresh or re-navigation works.
+    } catch (error) {
+      console.error("Review Error:", error);
+      toast.error(error.message);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handlePackageSelect = useCallback((pkgId) => {
     setSelectedPackage(pkgId);
@@ -1115,28 +1907,45 @@ const VendorDetailsPageWrapper = () => {
           </motion.button>
 
           <div className="flex gap-1">
+            {/* --- WATCHLIST BUTTON --- */}
             <motion.button
               whileTap={{ scale: 0.85 }}
-              onClick={() => setIsBookmarked(!isBookmarked)}
-              className={`p-1.5 rounded-full transition-all ${
+              onClick={handleToggleBookmark}
+              disabled={statusLoading || bookmarkingLoading}
+              className={`p-1.5 rounded-full transition-all relative ${
                 isBookmarked
                   ? "bg-blue-50 dark:bg-blue-900/30 text-blue-500"
                   : "active:bg-gray-100 dark:active:bg-gray-800 text-gray-600 dark:text-gray-300"
               }`}
             >
-              <Bookmark size={20} className={isBookmarked ? "fill-current" : ""} />
+              {statusLoading || bookmarkingLoading ? (
+                // Tailwind Loader (Spinning Circle)
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Bookmark size={20} className={isBookmarked ? "fill-current" : ""} />
+              )}
             </motion.button>
+
+            {/* --- LIKE BUTTON --- */}
             <motion.button
               whileTap={{ scale: 0.85 }}
-              onClick={() => setIsLiked(!isLiked)}
-              className={`p-1.5 rounded-full transition-all ${
+              onClick={handleToggleLike}
+              disabled={statusLoading || likingLoading}
+              className={`p-1.5 rounded-full transition-all relative ${
                 isLiked
                   ? "bg-rose-50 dark:bg-rose-900/30 text-rose-500"
                   : "active:bg-gray-100 dark:active:bg-gray-800 text-gray-600 dark:text-gray-300"
               }`}
             >
-              <Heart size={20} className={isLiked ? "fill-current" : ""} />
+              {statusLoading || likingLoading ? (
+                // Tailwind Loader (Spinning Circle)
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Heart size={20} className={isLiked ? "fill-current" : ""} />
+              )}
             </motion.button>
+
+            {/* --- SHARE BUTTON --- */}
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={() => setShowShareModal(true)}
@@ -1177,6 +1986,10 @@ const VendorDetailsPageWrapper = () => {
                 src={images[currentImageIndex]}
                 type="image"
                 priority={true}
+                sizes="100vw"
+                quality={100} // Crank quality to max
+                useSkeleton={false} // DISABLE the blur/shimmer animation
+                unoptimized={true}
                 className="w-full h-full object-cover"
                 loaderImage="/GlowLoadingGif.gif"
               />
@@ -1263,6 +2076,14 @@ const VendorDetailsPageWrapper = () => {
             <ImageIcon size={12} />
             {images.length} Photos
           </motion.button>
+
+          {/* --- ADD THIS BLOCK HERE --- */}
+          {/* Hidden Preloader: Forces all images into memory immediately */}
+          <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none">
+            {images.map((img, i) => (
+              <SmartMedia key={i} src={img} type="image" priority={true} sizes="100vw" />
+            ))}
+          </div>
         </div>
       </motion.div>
 
@@ -2458,14 +3279,21 @@ const VendorDetailsPageWrapper = () => {
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={handleReviewSubmit}
-                disabled={reviewRating === 0}
-                className={`w-full py-3 rounded-xl font-bold text-[11px] ${
-                  reviewRating > 0
+                disabled={reviewRating === 0 || isSubmittingReview}
+                className={`w-full py-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2 ${
+                  reviewRating > 0 && !isSubmittingReview
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                Submit Review
+                {isSubmittingReview ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Posting...
+                  </>
+                ) : (
+                  "Submit Review"
+                )}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -2585,7 +3413,7 @@ const VendorDetailsPageWrapper = () => {
                   className="flex items-center gap-2"
                 >
                   <CheckCircle size={18} className="fill-white/20" />
-                  <span>Added to Cart</span>
+                  <span>View Cart</span>
                 </motion.div>
               ) : (
                 <motion.div
@@ -2603,6 +3431,18 @@ const VendorDetailsPageWrapper = () => {
           </motion.button>
         </div>
       </div>
+
+      {activeDrawer === "cart" && (
+        <CartDrawer
+          onClose={() => {
+            setActiveDrawer(null);
+          }}
+          items={cartItems}
+          onRemove={removeFromCart}
+          onUpdateQuantity={handleUpdateQuantity}
+          showToast={showToast}
+        />
+      )}
 
       {/* GLOBAL STYLES */}
       <style jsx global>{`

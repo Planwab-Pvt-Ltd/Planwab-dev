@@ -22,8 +22,12 @@ const SmartMedia = memo(
     autoPlay = true,
     priority = false, // True for LCP (Hero images)
     objectFit = "cover", // 'cover' | 'contain'
+    sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+    quality = 90,
+    unoptimized = false, // Use this to force original quality
+    useSkeleton = true,
   }) => {
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(!useSkeleton);
     const [hasError, setHasError] = useState(false);
     const videoRef = useRef(null);
 
@@ -62,8 +66,8 @@ const SmartMedia = memo(
 
     // --- STYLES ---
     const containerClass = `relative overflow-hidden bg-transparent ${className}`;
-    const mediaClass = `duration-700 ease-out transition-all ${
-      isLoaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-105 blur-lg"
+    const mediaClass = `transition-all duration-700 ease-out ${
+      isLoaded || !useSkeleton ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-105 blur-lg"
     }`;
 
     return (
@@ -122,7 +126,9 @@ const SmartMedia = memo(
             src={safeSrc}
             alt={alt}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes={sizes}
+            quality={quality}
+            unoptimized={unoptimized}
             priority={priority}
             className={`object-${objectFit} ${mediaClass}`}
             onLoad={() => setIsLoaded(true)}

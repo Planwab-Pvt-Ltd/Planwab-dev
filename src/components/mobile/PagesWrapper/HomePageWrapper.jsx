@@ -322,7 +322,7 @@ const MainContent = () => {
       <CategoryGrid currentCategory={currentCategory} />
 
       <VendorCarousel
-        title="Top Wedding Planners"
+        title={`Top ${currentCategory === "Default" ? "Event" : currentCategory} Planners`}
         subtitle="Make your dream wedding happen"
         vendors={TOP_PLANNERS}
         icon={Calendar}
@@ -387,7 +387,7 @@ const MainContent = () => {
         </div>
 
         <VendorCarousel
-          title="Trending Now"
+          title={`Trending ${currentCategory === "Default" ? "Event" : currentCategory} Vendors`}
           subtitle="What's hot right now"
           vendors={TRENDING}
           icon={Zap}
