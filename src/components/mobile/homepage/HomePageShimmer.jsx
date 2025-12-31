@@ -10,7 +10,7 @@ const ShimmerBlock = ({ className }) => (
 
 const HomePageShimmer = () => {
   return (
-    <div className="w-full min-h-screen bg-gray-50 max-w-md mx-auto overflow-hidden">
+    <div className="w-full min-h-screen bg-gray-50 max-w-md mx-auto overflow-hidden pb-4">
       {/* Hero */}
       <ShimmerBlock className="h-[55vh] w-full rounded-none" />
 

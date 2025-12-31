@@ -10,6 +10,9 @@ import Link from "next/link";
 import QuickServices from "../homepage/QuickServices";
 import { VendorCarousel } from "./FindAVendorPageWrapper";
 import HomePageShimmer from "../homepage/HomePageShimmer";
+import { VendorOnboardingDrawer } from "../homepage/AreYouVendor";
+import { set } from "mongoose";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 // 1. Precise Skeletons: Match the EXACT height of your real components
 // to prevent "Content Layout Shift" (Jumping UI)
@@ -65,7 +68,7 @@ const ScrollProgressBar = () => {
   return (
     <motion.div
       className="fixed top-0 left-0 right-0 h-1 z-[100]"
-      initial={mounted ? { opacity: 0 } : false}
+      initial={false}
       animate={{ opacity: progress > 2 ? 1 : 0 }}
     >
       <motion.div
@@ -225,7 +228,7 @@ const OfferTicker = memo(() => {
       <AnimatePresence mode="wait">
         <motion.p
           key={index}
-          initial={mounted ? { opacity: 0 } : false}
+          initial={false}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -20, opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
@@ -257,7 +260,6 @@ const HeroSection = memo(() => {
         type="video"
         className="w-full h-full object-cover object-center will-change-transform"
         alt={`${category} Hero Video`}
-        loaderImage="/GlowLoadingGif.gif"
         priority={true}
       />
     </div>
@@ -272,6 +274,15 @@ const MainContent = () => {
   const haptic = useHapticFeedback();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get("category") || "Default";
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { setIsNavbarVisible } = useNavbarVisibilityStore();
+
+  const handleCloseDrawer = () => {
+    haptic("light");
+    setIsDrawerOpen(false);
+    setIsNavbarVisible(true);
+  };
 
   const banner2Url = {
     wedding: "banner10.png",
@@ -311,7 +322,6 @@ const MainContent = () => {
               src={`/HeroNAP${currentCategory}.gif`}
               type="image"
               className="w-full h-full object-cover object-center"
-              loaderImage="/GlowLoadingGif.gif"
               priority={true}
             />
           </motion.div>
@@ -331,7 +341,7 @@ const MainContent = () => {
 
       {/* --- Lazy Loaded Sections (Below Fold) --- */}
       {/* 'contain-intrinsic-size' prevents scrollbar jumping before content loads */}
-      <div style={mounted ? { contentVisibility: "auto", containIntrinsicSize: "1000px" } : {}}>
+      <div style={mounted ? { contain: "layout paint" } : {}}>
         {/* Static Banner 2 - High Priority */}
         <div className="mx-1 mt-2 px-2 mb-6 pb-4">
           <Link href={`/m/events/${currentCategory}`}>
@@ -344,7 +354,6 @@ const MainContent = () => {
                 src={`/Banners/banner8.gif`}
                 type="image"
                 className="w-full h-full object-cover object-center"
-                loaderImage="/GlowLoadingGif.gif"
                 priority={true}
               />
             </motion.div>
@@ -365,7 +374,6 @@ const MainContent = () => {
                 src={`/Banners/${banner2Url[currentCategory?.toLowerCase()] || "banner2.png"}`}
                 type="image"
                 className="w-full h-full object-cover object-center"
-                loaderImage="/GlowLoadingGif.gif"
                 priority={true}
               />
             </motion.div>
@@ -380,7 +388,6 @@ const MainContent = () => {
               src={`/Banners/banner1.png`}
               type="image"
               className="w-full h-full object-cover object-center"
-              loaderImage="/GlowLoadingGif.gif"
               loading="lazy"
             />
           </div>
@@ -411,8 +418,10 @@ const MainContent = () => {
 
         <WhyWeBetter />
 
-        <AreYouAVendorSection haptic={haptic} />
+        <AreYouAVendorSection haptic={haptic} setIsDrawerOpen={setIsDrawerOpen} />
       </div>
+
+      <VendorOnboardingDrawer isOpen={isDrawerOpen} onClose={handleCloseDrawer} haptic={haptic} />
 
       <style jsx global>{`
         /* Critical CSS for Mobile Performance */

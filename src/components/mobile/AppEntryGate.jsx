@@ -32,33 +32,20 @@ export default function AppEntryGate({ children }) {
 
   return (
     <>
-      {/* 3. The "Paint-Underneath" Strategy
-         We render 'children' immediately. This allows React to 
-         build the DOM, load images, and run effects in the background.
-         
-         'aria-hidden' ensures screen readers don't announce the app 
-         content while the loader is still visible.
-      */}
       <div
         aria-hidden={showLoader}
         className={
           showLoader
-            ? "pointer-events-none select-none filter blur-[1px] opacity-90 transition-all duration-500"
-            : "opacity-100 blur-0 transition-all duration-500"
+            ? "pointer-events-none select-none opacity-90 transition-all duration-500"
+            : "opacity-100 transition-all duration-500"
         }
       >
         {children}
       </div>
-
-      {/* 4. The Loader Portal
-         Rendered conditionally. When onComplete fires, we unmount it.
-      */}
       {showLoader && (
         <PlanWABLoader
           videoSrc="/Loading/loading1.mp4"
           onComplete={() => {
-            // Optional: You can add a tiny delay here if you want to overlap
-            // the door opening with the scroll unlock
             setShowLoader(false);
           }}
         />

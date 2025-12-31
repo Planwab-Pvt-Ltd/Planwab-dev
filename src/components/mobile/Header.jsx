@@ -226,7 +226,7 @@ const HeaderLogic = () => {
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
               className="relative flex items-center justify-center w-full h-full max-w-md max-h-md"
             >
-              <video src="/Loading/loading1.mp4" alt="PlanWAB Loader" width={280} height={280} autoPlay muted loop />
+              <video src="/Loading/loading1.mp4" alt="PlanWAB Loader" width={200} height={200} autoPlay muted loop />
             </motion.div>
           </motion.div>
         )}

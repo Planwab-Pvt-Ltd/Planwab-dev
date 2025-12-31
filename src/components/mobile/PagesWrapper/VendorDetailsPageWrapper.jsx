@@ -1278,8 +1278,7 @@ const VendorDetailsPageWrapper = () => {
   const [statusLoading, setStatusLoading] = useState(false);
   const [likingLoading, setLikingLoading] = useState(false);
   const [bookmarkingLoading, setBookmarkingLoading] = useState(false);
-  const [toast, setToast] = useState({ message: "", type: "success", isNavbarVisible: false });
-
+  const [toastState, setToastState] = useState({ message: "", type: "success", isNavbarVisible: false });
   const handleUpdateQuantity = useCallback(
     (id, quantity) => {
       updateQuantity(id, quantity);
@@ -1309,8 +1308,9 @@ const VendorDetailsPageWrapper = () => {
         }
       } catch (error) {
         console.error("Error fetching interaction status:", error);
+      } finally {
+        setStatusLoading(false);
       }
-      setStatusLoading(false);
     };
 
     fetchStatus();
@@ -1342,8 +1342,9 @@ const VendorDetailsPageWrapper = () => {
     } catch (error) {
       setIsLiked(prevLiked);
       toast.error("Something went wrong");
+    } finally {
+      setStatusLoading(false);
     }
-    setLikingLoading(false);
   };
 
   const handleToggleBookmark = async () => {
@@ -1372,8 +1373,9 @@ const VendorDetailsPageWrapper = () => {
     } catch (error) {
       setIsBookmarked(prevBookmarked);
       toast.error("Something went wrong");
+    } finally {
+      setStatusLoading(false);
     }
-    setBookmarkingLoading(false);
   };
 
   const [bookingForm, setBookingForm] = useState({
@@ -1892,7 +1894,7 @@ const VendorDetailsPageWrapper = () => {
   return (
     <main
       ref={containerRef}
-      className="min-h-screen bg-white dark:bg-black font-sans text-gray-900 dark:text-gray-100 overflow-x-hidden border-none shadow-none pb-24"
+      className="min-h-screen bg-white dark:bg-black font-sans text-gray-900 dark:text-gray-100 overflow-x-hidden border-none shadow-none pb-0"
     >
       <ScrollProgressBar />
       {/* STICKY HEADER */}
@@ -2774,6 +2776,11 @@ const VendorDetailsPageWrapper = () => {
               <p className="text-[9px] font-bold text-blue-700 dark:text-blue-300">Email</p>
             </a>
           </div>
+        </div>
+
+        {/* REVIEWS SUMMARY */}
+        <div className="space-y-3">
+          <ReviewSection vendorId={id} vendorName={vendor?.businessName || vendor?.name || "this vendor"} />
         </div>
 
         {/* AWARDS */}

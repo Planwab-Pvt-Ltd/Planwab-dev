@@ -1943,13 +1943,23 @@ const StepDate = ({ onNext, onPrev, formData, category, setIsNavbarVisible }) =>
 // =============================================================================
 
 const StepBudget = ({ onNext, onPrev, formData, category }) => {
-  const [budget, setBudget] = useState(formData.budgetRange || 25);
+  const [budget, setBudget] = useState(formData.budgetRange || 20);
   const [paymentPreference, setPaymentPreference] = useState(formData.paymentPreference || "");
   const config = categoryConfig[category] || categoryConfig.wedding;
   const budgetValue = React.useMemo(() => {
-    if (budget <= 50) return `${budget * 2} Lakhs`;
-    if (budget <= 75) return `${(((budget - 50) / 25) * 4 + 1).toFixed(1)} Crores`;
-    return `${(((budget - 75) / 25) * 4 + 5).toFixed(1)} Crores`;
+    // Range: 0 to 100
+    // 0-40: 5k to 10 Lakhs (Increment by 25k)
+    if (budget <= 40) {
+      const val = 5000 + budget * 24875; // Linear approx
+      if (val < 100000) return `${(val / 1000).toFixed(0)} Thousand`;
+      return `${(val / 100000).toFixed(1)} Lakhs`;
+    }
+    // 41-70: 10 Lakhs to 1 Crore (Increment by 3 Lakhs)
+    if (budget <= 70) {
+      return `${(10 + (budget - 40) * 3).toFixed(0)} Lakhs`;
+    }
+    // 71-100: 1 Crore to 5 Crores (Increment by 13.3 Lakhs)
+    return `${(1 + (budget - 70) * 0.133).toFixed(1)} Crores`;
   }, [budget]);
   const paymentOptions = ["Full Payment", "Installments", "Part Payment"];
 
@@ -1963,15 +1973,16 @@ const StepBudget = ({ onNext, onPrev, formData, category }) => {
           </p>
           <input
             type="range"
-            min="5"
+            min="0"
             max="100"
             value={budget}
             onChange={(e) => setBudget(parseInt(e.target.value))}
             className="w-full h-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg appearance-none cursor-pointer slider"
           />
           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-4">
-            <span>₹10 Lakhs</span>
-            <span>₹9 Crores+</span>
+            <span>₹5,000</span>
+            <span>₹1 Crore</span>
+            <span>₹5 Crores+</span>
           </div>
         </div>
         <div>

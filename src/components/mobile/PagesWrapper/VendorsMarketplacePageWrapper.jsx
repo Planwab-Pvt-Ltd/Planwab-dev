@@ -236,7 +236,7 @@ const CITY_COORDS = {
   Goa: { lat: 15.2993, lng: 74.124 },
 };
 
-const DEFAULT_CENTER = CITY_COORDS.Mumbai;
+const DEFAULT_CENTER = CITY_COORDS.Delhi;
 const ITEMS_PER_PAGE = 12;
 const MAX_COMPARE_ITEMS = 3;
 const DEBOUNCE_DELAY = 350;
@@ -2922,10 +2922,16 @@ export default function MarketplacePageWrapper() {
         const result = await response.json();
 
         if (result.success !== false && result.data && Array.isArray(result.data)) {
-          const processedVendors = result.data.map((v) => ({
-            ...v,
-            position: CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
-          }));
+          const processedVendors = result.data.map((v) => {
+            const coords = v.location?.coordinates
+              ? { lat: v.location.coordinates[1], lng: v.location.coordinates[0] }
+              : CITY_COORDS[v.address?.city] || DEFAULT_CENTER;
+
+            return {
+              ...v,
+              position: coords,
+            };
+          });
           setVendors(processedVendors);
           console.log(result.data.length, "vendors fetched");
           setPaginationInfo({

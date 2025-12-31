@@ -53,7 +53,7 @@ export default function PlanWABLoader({ videoSrc = "", onComplete = () => {} }) 
                 muted
                 playsInline
                 onEnded={handleVideoComplete}
-                className="w-full object-contain max-h-[50vh]"
+                className="w-full object-contain max-h-[25vh]"
               />
             ) : (
               <h1 className="text-4xl font-bold text-blue-900 animate-pulse">PlanWAB</h1>

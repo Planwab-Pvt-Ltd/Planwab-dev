@@ -3,19 +3,21 @@
 import React, { useRef, useState, useEffect, useCallback, memo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+import Link from "next/link";
 
 // --- 1. DATA ---
 const QUICK_LINKS = [
-  { label: "Venues", icon: "🏰" },
-  { label: "Makeup", icon: "💄" },
-  { label: "Photo", icon: "📸" },
-  { label: "Mehndi", icon: "🎨" },
-  { label: "Decor", icon: "🌸" },
-  { label: "Catering", icon: "🍽️" },
-  { label: "DJ & Music", icon: "🎵" },
-  { label: "Cakes", icon: "🎂" },
-  { label: "Pandit", icon: "🔥" },
-  { label: "Invites", icon: "💌" },
+  { label: "Venues", key: "venues", src: `venueQS.png` },
+  { label: "Makeup", key: "makeup", src: `makeupQS.png` },
+  { label: "Photo", key: "photographer", src: `photographerQS.png` },
+  { label: "Mehndi", key: "mehndi", src: `mehndiQS.png` },
+  { label: "Decor", key: "decor", src: `decorQS.png` },
+  { label: "Catering", key: "cateror", src: `caterorQS.png` },
+  { label: "DJ & Music", key: "dj", src: `djQS.png` },
+  { label: "Cakes", key: "cake", src: `cakesQS.png` },
+  { label: "Pandit", key: "pandit", src: `panditQS.png` },
+  { label: "Dhol", key: "dhol", src: `dholQS.png` },
+  { label: "Planner", key: "planner", src: `plannerQS.png` },
 ];
 
 // --- 2. HELPER HOOKS ---
@@ -90,7 +92,7 @@ const QuickServices = () => {
   const BASE_URL = "https://www.theweddingcompany.com";
 
   return (
-    <section className="relative px-4 py-4 mt-2 mb-8 bg-transparent rounded-2xl">
+    <section className="relative px-4 py-4 pt-1 mt-2 mb-4 bg-transparent rounded-2xl">
       {/* Background Pattern Left - Decorative */}
       <div className="absolute left-0 top-0 z-0 w-[200px] -translate-x-1/2 md:w-[400px] pointer-events-none">
         <SmartMedia
@@ -99,6 +101,7 @@ const QuickServices = () => {
           alt="" // Empty alt for decorative images
           className="aspect-square w-full h-full opacity-50"
           width={400}
+          useSkeleton={false}
           height={400}
           loading="lazy"
         />
@@ -112,6 +115,7 @@ const QuickServices = () => {
           alt=""
           className="aspect-square w-full h-full opacity-50"
           width={400}
+          useSkeleton={false}
           height={400}
           loading="lazy"
         />
@@ -148,25 +152,34 @@ const QuickServices = () => {
       {/* Horizontal Scroll Container */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 no-scrollbar touch-pan-x touch-pan-y will-change-scroll"
+        className="flex gap-6 overflow-x-auto scrollbar-hide pb-2 no-scrollbar touch-pan-x touch-pan-y will-change-scroll"
         style={{
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch", // Momentum scrolling
         }}
       >
         {QUICK_LINKS.map((item, idx) => (
-          <div
+          <Link
+            href={`/m/vendors/marketplace/${item.key.toLowerCase()}`}
             key={idx}
             onClick={() => haptic("light")}
-            className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group active:scale-95 transition-transform duration-200"
+            className="flex flex-col items-center gap-[16px] min-w-[90px] cursor-pointer group active:scale-95 transition-transform duration-200"
           >
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm border border-blue-50 bg-blue-50 group-hover:bg-blue-100 transition-colors">
-              <span className="text-3xl drop-shadow-sm filter-none select-none">{item.icon}</span>
+            <div className="w-28 h-28 rounded-2xl overflow-hidden flex items-center justify-center group-hover:bg-blue-100 transition-colors p-1">
+              <SmartMedia
+                src={`/quickServicesPhotos/${item.src}`}
+                type="image"
+                alt={item.label}
+                className="w-full h-full object-cove rounded-xl"
+                width={112}
+                height={112}
+                loading="lazy"
+              />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 whitespace-nowrap group-hover:text-blue-700 transition-colors">
+            <span className="text-xs font-bold text-slate-700 whitespace-nowrap group-hover:text-blue-700 transition-colors text-center">
               {item.label}
             </span>
-          </div>
+          </Link>
         ))}
 
         {/* Spacer for right padding */}
