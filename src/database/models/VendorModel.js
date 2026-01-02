@@ -200,6 +200,7 @@ const VendorBaseSchema = new Schema(
       default: "Available",
       enum: ["Available", "Busy", "Unavailable", "Closed"],
     },
+    subcategory: { type: String, index: true },
 
     // --- Content & Media ---
     description: { type: String, maxlength: 5000 },

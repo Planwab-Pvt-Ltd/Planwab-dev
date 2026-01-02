@@ -276,6 +276,10 @@ const MainContent = () => {
   const currentCategory = searchParams.get("category") || "Default";
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [planners, setPlanners] = useState([]);
+  const [trendingVendors, setTrendingVendors] = useState([]);
+  const [isPlannersLoading, setIsPlannersLoading] = useState(true);
+  const [isTrendingLoading, setIsTrendingLoading] = useState(true);
   const { setIsNavbarVisible } = useNavbarVisibilityStore();
 
   const handleCloseDrawer = () => {
@@ -290,6 +294,44 @@ const MainContent = () => {
     anniversary: "banner7.png",
     default: "banner10.png",
   };
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchDynamicData = async () => {
+      try {
+        // 1. Fetch Top Planners (Filtering by Category 'planners' and sorted by Rating)
+        const plannerParams = new URLSearchParams({
+          categories: "planners",
+          sortBy: "rating",
+          limit: "5",
+        });
+
+        const plannersRes = await fetch(`/api/vendor?${plannerParams.toString()}`, { signal: controller.signal });
+        const plannersData = await plannersRes.json();
+        if (plannersData.success) setPlanners(plannersData.data);
+
+        // 2. Fetch Trending Vendors (Featured vendors or sorted by Bookings)
+        const trendingParams = new URLSearchParams({
+          featured: "true",
+          sortBy: "bookings",
+          limit: "5",
+        });
+
+        const trendingRes = await fetch(`/api/vendor?${trendingParams.toString()}`, { signal: controller.signal });
+        const trendingData = await trendingRes.json();
+        if (trendingData.success) setTrendingVendors(trendingData.data);
+      } catch (err) {
+        if (err.name !== "AbortError") console.error("Home dynamic fetch error:", err);
+      } finally {
+        setIsPlannersLoading(false);
+        setIsTrendingLoading(false);
+      }
+    };
+
+    fetchDynamicData();
+    return () => controller.abort();
+  }, []);
 
   // Note: Removed the `useScroll` listener.
   // It was calculating `isNavVisible` but never using it.
@@ -334,9 +376,10 @@ const MainContent = () => {
       <VendorCarousel
         title={`Top ${currentCategory === "Default" ? "Event" : currentCategory} Planners`}
         subtitle="Make your dream wedding happen"
-        vendors={TOP_PLANNERS}
+        vendors={planners}
         icon={Calendar}
         color="#8b5cf6"
+        isLoading={isPlannersLoading}
       />
 
       {/* --- Lazy Loaded Sections (Below Fold) --- */}
@@ -396,9 +439,10 @@ const MainContent = () => {
         <VendorCarousel
           title={`Trending ${currentCategory === "Default" ? "Event" : currentCategory} Vendors`}
           subtitle="What's hot right now"
-          vendors={TRENDING}
+          vendors={trendingVendors} // Changed from TRENDING to dynamic state
           icon={Zap}
           color="#f97316"
+          isLoading={isTrendingLoading} // Optional: Pass loading state
         />
 
         <SampleProposal />

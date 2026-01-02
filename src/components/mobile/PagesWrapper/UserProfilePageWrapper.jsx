@@ -31,6 +31,7 @@ import {
   Gift,
   Wallet,
   CheckCircle2,
+  ChevronLeft,
   Plus,
   Crown,
   MessageCircle,

@@ -522,7 +522,7 @@ const CategoryGrid = ({ currentCategory }) => {
         widthClass: "w-20",
         pixelWidth: 80,
       },
-      { name: "Mehndi", image: "/CardsCatPhotos/MehndiCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      { name: "mehendi", image: "/CardsCatPhotos/MehndiCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       { name: "MakeUp", image: "/CardsCatPhotos/MakeUpCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       {
         name: `${currentCategory} Venues`,
@@ -535,8 +535,6 @@ const CategoryGrid = ({ currentCategory }) => {
       { name: "DJs & Sound", image: "/CardsCatPhotos/DJCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       { name: "Dhol", image: "/CardsCatPhotos/DholCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
       { name: "Caterers", image: "/CardsCatPhotos/CaterorsCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
-      { name: "Decor", image: "/CardsCatPhotos/MakeUpCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 }, // Fixed duplicate Name
-      { name: "Pandit", image: "/CardsCatPhotos/MehndiCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 }, // Fixed duplicate Name
     ],
     [currentCategory]
   );

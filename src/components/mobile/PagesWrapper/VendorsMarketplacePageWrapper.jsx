@@ -63,11 +63,13 @@ import {
 } from "lucide-react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
+import { useUser } from "@clerk/clerk-react";
+import { set } from "mongoose";
 
 // =============================================================================
 // CONSTANTS
@@ -1430,9 +1432,12 @@ const VendorCard = memo(
     onCompare,
     colorPrimary,
     onShowToast,
+    setCompareMode,
+    setCompareList,
   }) => {
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [showActions, setShowActions] = useState(false);
+    const { user, isLoaded: isAuthLoaded } = useUser();
     const { ref, hasBeenInView } = useInView();
     const haptic = useHapticFeedback();
     const isGrid = viewMode === "grid";
@@ -1456,10 +1461,18 @@ const VendorCard = memo(
       [vendor.category]
     );
 
+    const handleCompare = useCallback(
+      async (e) => {
+        haptic("medium");
+        onCompare?.(vendor);
+        setCompareMode(!isComparing);
+        if (isComparing) setCompareList([]);
+      },
+      [vendor, haptic, onCompare, isComparing, setCompareMode, setCompareList]
+    );
+
     const handleShare = useCallback(
       async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
         haptic("light");
         const shareData = {
           title: vendor.name,
@@ -1481,32 +1494,17 @@ const VendorCard = memo(
       [vendor, fullPrice, haptic, onShowToast]
     );
 
-    const handleBookmark = useCallback(
-      (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        haptic("medium");
-        setIsBookmarked((prev) => !prev);
-        onShowToast?.(isBookmarked ? "Removed from saved" : "Saved for later", "success");
-      },
-      [haptic, isBookmarked, onShowToast]
-    );
-
     const handleCall = useCallback(
       (e) => {
-        e.preventDefault();
-        e.stopPropagation();
         haptic("medium");
-        if (vendor.phone) window.location.href = `tel:${vendor.phone}`;
+        if (vendor.phoneNo) window.location.href = `tel:${vendor.phoneNo}`;
         else onShowToast?.("Phone number not available", "info");
       },
-      [vendor.phone, haptic, onShowToast]
+      [vendor.phoneNo, haptic, onShowToast]
     );
 
     const handleAddToCart = useCallback(
       (e) => {
-        e.preventDefault();
-        e.stopPropagation();
         haptic("medium");
         if (inCart) {
           removeFromCart(vendor._id);
@@ -1626,37 +1624,6 @@ const VendorCard = memo(
             </div>
           )}
 
-          {/* {!isGrid && (
-            <div className="flex items-center gap-1 mb-3 -mx-1">
-              <QuickActionButton icon={Phone} label="Call" onClick={handleCall} color={COLORS.success} />
-              <QuickActionButton
-                icon={MessageCircle}
-                label="Chat"
-                onClick={() => onShowToast?.("Chat coming soon!", "info")}
-                color={colorPrimary}
-              />
-              <QuickActionButton
-                icon={Bookmark}
-                label="Save"
-                onClick={handleBookmark}
-                isActive={isBookmarked}
-                color={COLORS.secondary}
-              />
-              <QuickActionButton icon={Share2} label="Share" onClick={handleShare} color={COLORS.info} />
-              <QuickActionButton
-                icon={Navigation}
-                label="Directions"
-                onClick={() => {
-                  window.open(
-                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(vendor.address?.city || "")}`,
-                    "_blank"
-                  );
-                }}
-                color={COLORS.error}
-              />
-            </div>
-          )} */}
-
           <div
             className={`flex items-center justify-between ${isGrid ? "mt-2" : "mt-2 pt-3 border-t border-gray-100"}`}
           >
@@ -1725,22 +1692,22 @@ const VendorCard = memo(
               className="border-t border-gray-100 overflow-hidden"
             >
               <div className="p-3 grid grid-cols-4 gap-2">
-                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
-                  <Calendar size={18} className="text-gray-500" />
-                  <span className="text-[10px] text-gray-500">Check Dates</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
-                  <Eye size={18} className="text-gray-500" />
-                  <span className="text-[10px] text-gray-500">View Gallery</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
-                  <ArrowRightLeft size={18} className="text-gray-500" />
-                  <span className="text-[10px] text-gray-500">Compare</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 p-2 rounded-xl active:bg-gray-50">
-                  <ExternalLink size={18} className="text-gray-500" />
-                  <span className="text-[10px] text-gray-500">Website</span>
-                </button>
+                <QuickActionButton icon={Phone} label="Call" onClick={handleCall} color={COLORS.success} />
+                <QuickActionButton icon={Share2} label="Share" onClick={handleShare} color={COLORS.secondary} />
+                <QuickActionButton
+                  icon={ArrowRightLeft}
+                  label="Compare"
+                  onClick={handleCompare}
+                  color={COLORS.primary}
+                />
+                <QuickActionButton
+                  icon={Navigation}
+                  label="Directions"
+                  onClick={() => {
+                    window.open(vendor?.address?.googleMapUrl, "_blank");
+                  }}
+                  color={COLORS.error}
+                />
               </div>
             </motion.div>
           )}
@@ -2798,6 +2765,12 @@ export default function MarketplacePageWrapper() {
   const pageCategory = params?.category || "";
   const searchInputRef = useRef(null);
 
+  const isInitialMount = useRef(true);
+  const hasInitializedFromUrl = useRef(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [vendors, setVendors] = useState([]);
   const [paginationInfo, setPaginationInfo] = useState({ totalPages: 1, totalVendors: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -2857,25 +2830,60 @@ export default function MarketplacePageWrapper() {
 
   const currentSortLabel = useMemo(() => SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Sort", [sortBy]);
 
-  useEffect(() => {
-    if (pageCategory) {
-      setSelectedCategories([pageCategory]);
-      setActiveCategory(pageCategory);
+  // Replace the buildUrlWithParams function with this optimized version:
+  const buildUrlWithParams = useCallback((params) => {
+    const url = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value === null || value === undefined || value === "") continue;
+
+      if (Array.isArray(value)) {
+        if (value.length > 0) url.set(key, value.join(","));
+      } else {
+        url.set(key, value.toString());
+      }
     }
-  }, [pageCategory, setActiveCategory]);
+
+    return url.toString();
+  }, []);
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    debouncedSearchQuery,
-    debouncedPriceRange,
-    selectedCategories,
-    selectedSubcategory,
-    showFeaturedOnly,
-    selectedLocations,
-    sortBy,
-    ratingFilter,
-  ]);
+    if (hasInitializedFromUrl.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    // 1. Logic: Path Category has absolute priority on refresh/load
+    let finalCategories = [];
+    if (pageCategory) {
+      finalCategories = [pageCategory];
+    } else {
+      const urlCats = params.get("categories");
+      if (urlCats) finalCategories = urlCats.split(",");
+    }
+
+    // 2. Batch Update all states
+    // This ensures React only renders once for all these updates
+    setSelectedCategories(finalCategories);
+    setSearchQuery(params.get("search") || "");
+    setSortBy(params.get("sortBy") || "rating");
+    setSelectedSubcategory(params.get("subcategory") || "");
+    setRatingFilter(parseFloat(params.get("minRating")) || 0);
+    setShowFeaturedOnly(params.get("featured") === "true");
+    setCurrentPage(parseInt(params.get("page")) || 1);
+
+    const minP = params.get("minPrice");
+    const maxP = params.get("maxPrice");
+    setPriceRange([minP ? parseInt(minP) : 0, maxP ? parseInt(maxP) : 1000000]);
+
+    const cities = params.get("cities");
+    if (cities) setSelectedLocations(cities.split(","));
+
+    // 3. Mark as initialized
+    hasInitializedFromUrl.current = true;
+
+    // 4. Sync global store once
+    if (pageCategory) setActiveCategory(pageCategory);
+  }, [pageCategory, setActiveCategory]); // Reduced dependencies to prevent re-runs
 
   useEffect(() => {
     if (debouncedSearchQuery && debouncedSearchQuery.length > 2) {
@@ -2887,12 +2895,12 @@ export default function MarketplacePageWrapper() {
   }, [debouncedSearchQuery, setRecentSearches]);
 
   useEffect(() => {
-    const fetchVendors = async () => {
-      if (!isOnline) {
-        setError("You're offline. Please check your connection.");
-        return;
-      }
+    // Only fetch if Step 1 is finished
+    if (!hasInitializedFromUrl.current) return;
 
+    const controller = new AbortController();
+
+    const fetchVendors = async () => {
       setIsLoading(true);
       setError(null);
 
@@ -2913,51 +2921,37 @@ export default function MarketplacePageWrapper() {
 
       try {
         const response = await fetch(`/api/vendor?${queryParams.toString()}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
+          signal: controller.signal, // Professional way to cancel duplicate calls
         });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
         const result = await response.json();
 
-        if (result.success !== false && result.data && Array.isArray(result.data)) {
-          const processedVendors = result.data.map((v) => {
-            const coords = v.location?.coordinates
-              ? { lat: v.location.coordinates[1], lng: v.location.coordinates[0] }
-              : CITY_COORDS[v.address?.city] || DEFAULT_CENTER;
-
-            return {
+        if (result.success) {
+          setVendors(
+            result.data.map((v) => ({
               ...v,
-              position: coords,
-            };
-          });
-          setVendors(processedVendors);
-          console.log(result.data.length, "vendors fetched");
+              position: v.location?.coordinates
+                ? { lat: v.location.coordinates[1], lng: v.location.coordinates[0] }
+                : CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
+            }))
+          );
           setPaginationInfo({
             totalPages: result.pagination?.totalPages || 1,
             totalVendors: result.pagination?.total || 0,
           });
-          if (result.filters?.availableCities) {
-            setAvailableCities(result.filters.availableCities);
-          } else {
-            const cities = [...new Set(processedVendors.map((v) => v.address?.city).filter(Boolean))].sort();
-            setAvailableCities(cities);
-          }
-        } else {
-          setVendors([]);
-          setPaginationInfo({ totalPages: 1, totalVendors: 0 });
         }
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError("Failed to load vendors. Please try again.");
-        setVendors([]);
+        if (err.name !== "AbortError") {
+          setError("Failed to load vendors.");
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchVendors();
+
+    // Cleanup function: This kills any pending request if a new one starts
+    return () => controller.abort();
   }, [
     currentPage,
     sortBy,
@@ -2969,6 +2963,48 @@ export default function MarketplacePageWrapper() {
     selectedLocations,
     ratingFilter,
     isOnline,
+    // Note: hasInitializedFromUrl.current is not in deps because it's a ref
+  ]);
+
+  useEffect(() => {
+    if (!hasInitializedFromUrl.current) return;
+
+    const timeoutId = setTimeout(() => {
+      const params = {};
+
+      // Logic: If multiple categories are selected, or the selection differs
+      // from the path, we sync them to the query string.
+      const isOnlyPath = selectedCategories.length === 1 && selectedCategories[0] === pageCategory;
+
+      if (selectedCategories.length > 0 && !isOnlyPath) {
+        params.categories = selectedCategories.join(",");
+      }
+
+      // ... (rest of your params mapping) ...
+
+      const queryString = buildUrlWithParams(params);
+
+      // If user cleared categories, ensure they aren't stuck on a category subpath
+      const base = selectedCategories.length === 0 ? "/m/vendors/marketplace" : window.location.pathname;
+      const newUrl = queryString ? `${base}?${queryString}` : base;
+
+      if (window.location.search !== (queryString ? `?${queryString}` : "")) {
+        router.replace(newUrl, { scroll: false });
+      }
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    selectedCategories,
+    debouncedSearchQuery,
+    sortBy,
+    currentPage,
+    priceRange,
+    selectedLocations,
+    selectedSubcategory,
+    ratingFilter,
+    showFeaturedOnly,
+    pageCategory,
   ]);
 
   const showToast = useCallback((message, type = "success") => {
@@ -2991,20 +3027,28 @@ export default function MarketplacePageWrapper() {
     [haptic, setFavorites, showToast]
   );
 
-  const handleCategoryChange = useCallback((cat) => {
-    if (cat === "__clear__") {
-      setSelectedCategories([]);
-      setSelectedSubcategory("");
-    } else {
-      setSelectedCategories((prev) => {
-        const newCategories = prev.includes(cat) ? prev.filter((c) => c !== cat) : [cat];
-        if (!newCategories.includes(cat)) {
-          setSelectedSubcategory("");
+  const handleCategoryChange = useCallback(
+    (cat) => {
+      haptic("light");
+      if (cat === "__clear__") {
+        setSelectedCategories([]);
+        setSelectedSubcategory("");
+        if (pageCategory) {
+          router.push("/m/vendors/marketplace");
         }
-        return newCategories;
-      });
-    }
-  }, []);
+      } else {
+        setSelectedCategories((prev) => {
+          const newCategories = prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat];
+
+          if (!newCategories.includes(cat) && selectedSubcategory) {
+            setSelectedSubcategory("");
+          }
+          return newCategories;
+        });
+      }
+    },
+    [pageCategory, selectedSubcategory, router, haptic]
+  );
 
   const handleSubcategoryChange = useCallback((sub) => {
     setSelectedSubcategory(sub);
@@ -3352,6 +3396,8 @@ export default function MarketplacePageWrapper() {
                     onCompare={handleCompareToggle}
                     colorPrimary={COLORS.primary}
                     onShowToast={showToast}
+                    setCompareMode={setCompareMode}
+                    setCompareList={setCompareList}
                   />
                 ))}
               </div>
@@ -3373,10 +3419,19 @@ export default function MarketplacePageWrapper() {
       <CompareBar
         count={compareList.length}
         vendors={compareList}
-        onClear={() => setCompareList([])}
+        onClear={() => {
+          setCompareList([]);
+          setCompareMode(false);
+          haptic("light");
+        }}
         onView={() => {
-          setShowCompare(true);
-          setIsNavbarVisible(false);
+          if (compareList.length < 2) {
+            showToast("Select at least 2 vendors to compare", "info");
+            return;
+          } else {
+            setShowCompare(true);
+            setIsNavbarVisible(false);
+          }
         }}
         colorPrimary={COLORS.primary}
       />

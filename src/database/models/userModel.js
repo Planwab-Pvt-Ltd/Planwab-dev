@@ -35,6 +35,15 @@ const UserSchema = new Schema(
       type: Number,
       default: 10,
     },
+    userType: {
+      type: String,
+      enum: ["regular", "vendor", "admin"],
+      default: "regular",
+    },
+    vendorDetails: {
+      type: Object,
+      default: null,
+    },
     likedVendors: {
       type: [String],
       default: [],

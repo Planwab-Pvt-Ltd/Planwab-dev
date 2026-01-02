@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import Link from "next/link";
+import SmartMedia from "../SmartMediaLoader";
 
 // =============================================================================
 // THEME
@@ -640,6 +641,36 @@ HeroCarousel.displayName = "HeroCarousel";
 // VENDOR CARD - Compact Design
 // =============================================================================
 
+const VendorCardSkeleton = memo(() => (
+  <div className="flex-shrink-0 w-44 bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+    {/* 1. Image Area - Darker base */}
+    <div className="h-28 bg-gray-200 animate-glass-shimmer" />
+
+    <div className="p-3 space-y-3">
+      {/* 2. Title and Verified Badge */}
+      <div className="flex justify-between items-start">
+        <div className="h-3.5 w-3/4 rounded-full bg-gray-200 animate-glass-shimmer" />
+        <div className="h-3.5 w-3.5 rounded-full bg-gray-100 animate-glass-shimmer" />
+      </div>
+
+      {/* 3. Category & Rating - Lighter base */}
+      <div className="space-y-2">
+        <div className="h-2 w-1/2 rounded-full bg-gray-100 animate-glass-shimmer" />
+        <div className="h-2 w-1/3 rounded-full bg-gray-50 animate-glass-shimmer" />
+      </div>
+
+      {/* 4. Price & CTA Section - Soft Border Top */}
+      <div className="flex justify-between items-center pt-3 border-t border-gray-50">
+        <div className="space-y-1">
+          <div className="h-3 w-10 rounded-full bg-gray-200 animate-glass-shimmer" />
+          <div className="h-2 w-6 rounded-full bg-gray-50 animate-glass-shimmer" />
+        </div>
+        <div className="h-7 w-12 rounded-lg bg-gray-200 animate-glass-shimmer" />
+      </div>
+    </div>
+  </div>
+));
+
 const VendorCard = memo(({ vendor }) => {
   const { addToCart, removeFromCart, cartItems } = useCartStore();
   const [liked, setLiked] = useState(false);
@@ -662,47 +693,30 @@ const VendorCard = memo(({ vendor }) => {
     >
       {/* Image */}
       <div className="relative h-28 bg-gray-100 overflow-hidden">
-        <img
-          src={vendor.image}
-          alt={vendor.name}
-          onLoad={() => setImageLoaded(true)}
-          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
-            imageLoaded ? "opacity-100" : "opacity-0"
-          }`}
+        <SmartMedia
+          src={vendor?.defaultImage || vendor.images[1]}
+          type="image"
+          className="w-full h-full object-cover object-center"
+          loading="lazy"
         />
 
         {/* Badge */}
-        {vendor.badge && (
+        {vendor.tags && (
           <span
             className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded text-white"
             style={{ backgroundColor: vendor.badgeColor || THEME.accent }}
           >
-            {vendor.badge}
+            {vendor.tags[0]}
           </span>
         )}
 
-        {/* Like Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            haptic("light");
-            setLiked(!liked);
-          }}
-          className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md active:scale-90 transition-all duration-200 ${
-            liked ? "bg-red-500" : "bg-white/95"
-          }`}
-        >
-          <Heart size={12} className={liked ? "fill-white text-white" : "text-gray-500"} />
-        </button>
-
         {/* Discount Tag */}
-        {vendor.originalPrice && (
+        {vendor?.perDayPrice?.max && (
           <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-green-500 rounded">
             <span className="text-[9px] font-bold text-white">
               {Math.round(
-                ((parseInt(vendor.originalPrice.replace(/[^0-9]/g, "")) -
-                  parseInt(vendor.price.replace(/[^0-9]/g, ""))) /
-                  parseInt(vendor.originalPrice.replace(/[^0-9]/g, ""))) *
+                ((parseInt(vendor?.budgetRange?.max) - parseInt(vendor?.budgetRange?.min)) /
+                  parseInt(vendor?.budgetRange?.max)) *
                   100
               )}
               % OFF
@@ -724,7 +738,7 @@ const VendorCard = memo(({ vendor }) => {
         </div>
 
         {/* Category */}
-        <p className="text-[10px] text-gray-500 mb-1.5">{vendor.category}</p>
+        <p className="text-[10px] text-gray-500 mb-1.5">{vendor?.category}</p>
 
         {/* Rating & Location */}
         <div className="flex items-center gap-2 mb-2">
@@ -733,17 +747,13 @@ const VendorCard = memo(({ vendor }) => {
             <span className="text-[10px] font-bold text-gray-700">{vendor.rating}</span>
             <span className="text-[9px] text-gray-400">({vendor.reviews})</span>
           </div>
-          <div className="flex items-center gap-0.5 text-gray-400">
-            <MapPin size={9} />
-            <span className="text-[9px]">{vendor.location}</span>
-          </div>
         </div>
 
         {/* Response Time */}
         {vendor.responseTime && (
           <div className="flex items-center gap-1 mb-2 text-gray-400">
             <Clock size={9} />
-            <span className="text-[9px]">Responds in {vendor.responseTime}</span>
+            <span className="text-[9px]">Responds in {vendor?.responseTime}</span>
           </div>
         )}
 
@@ -846,7 +856,7 @@ SectionHeader.displayName = "SectionHeader";
 // VENDOR CAROUSEL - Adjusted Spacing
 // =============================================================================
 
-export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, color }) => {
+export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, color, isLoading }) => {
   const haptic = useHapticFeedback();
   const router = useRouter();
   const scrollRef = useRef(null);
@@ -949,7 +959,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
           )}
         </AnimatePresence>
 
-        {/* Cards - Reduced gap */}
+        {/* Cards Container */}
         <div
           ref={scrollRef}
           className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory scroll-smooth"
@@ -959,19 +969,41 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {vendors.map((vendor, index) => (
-            <motion.div
-              key={vendor.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <VendorCard vendor={vendor} />
-            </motion.div>
-          ))}
+          {isLoading ? (
+            // Show 4 skeleton cards while loading
+            [...Array(4)].map((_, i) => (
+              <motion.div
+                key={`skeleton-${i}`}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  delay: i * 0.1,
+                  duration: 0.5,
+                  ease: "easeOut",
+                }}
+              >
+                <VendorCardSkeleton />
+              </motion.div>
+            ))
+          ) : (
+            <>
+              {vendors.map((vendor, index) => (
+                <motion.div
+                  key={vendor._id || vendor?.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <VendorCard vendor={vendor} />
+                </motion.div>
+              ))}
 
-          {/* View More Card */}
-          <ViewMoreCard title={title.split(" ").pop()} count={vendors.length * 10} icon={Icon} color={color} />
+              {/* Only show View More if there are vendors */}
+              {vendors.length > 0 && (
+                <ViewMoreCard title={title.split(" ").pop()} count={vendors.length * 10} icon={Icon} color={color} />
+              )}
+            </>
+          )}
 
           {/* Spacer */}
           <div className="w-1 flex-shrink-0" />
