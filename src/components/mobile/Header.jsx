@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import SmartMedia from "./SmartMediaLoader";
+import { toast } from "sonner";
+import { useNavbarVisibilityStore } from "../../GlobalState/navbarVisibilityStore";
 
 // --- 1. STATIC DATA (Moved Outside to prevent Re-allocation) ---
 const POPULAR_CITIES = [
@@ -78,6 +80,14 @@ const TABS_CONFIG = [
     src: "/BirthdayHeaderCard.png",
     placeholders: ["Birthday Cakes", "Party Decor", "Event Planners"],
   },
+];
+
+const SORT_OPTIONS = [
+  { id: "rating", label: "Top Rated", description: "Highest rated first", icon: "⭐" },
+  { id: "price-asc", label: "Budget Friendly", description: "Lowest price first", icon: "💰" },
+  { id: "price-desc", label: "Premium", description: "Highest price first", icon: "👑" },
+  { id: "bookings", label: "Most Popular", description: "Most booked", icon: "🔥" },
+  { id: "newest", label: "Newly Added", description: "Recently listed", icon: "✨" },
 ];
 
 function useHapticFeedback() {
@@ -169,16 +179,80 @@ const HeaderLogic = () => {
   const haptic = useHapticFeedback();
   const { scrollY } = useScroll();
 
+  const { setIsNavbarVisible } = useNavbarVisibilityStore();
+
   // Optimized State
   const [isStickyVisible, setIsStickyVisible] = useState(false);
   const [isAddressDrawerOpen, setIsAddressDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAddress, setSelectedAddress] = useState(SAVED_ADDRESSES[0]);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [selectedSort, setSelectedSort] = useState("rating");
 
   // Derived State
   const activeTabId = searchParams.get("category");
   const currentTab = useMemo(() => TABS_CONFIG.find((t) => t.id === activeTabId) || TABS_CONFIG[0], [activeTabId]);
   const isHomePage = pathname === "/m" || pathname === "/"; // Adjust based on your route
+
+  // Add this unified URL builder function
+  const buildMarketplaceUrl = useCallback(
+    (includeSearch = true, includeSort = true) => {
+      const params = new URLSearchParams();
+
+      // Add search query if present and requested
+      if (includeSearch && searchQuery.trim()) {
+        params.set("search", encodeURIComponent(searchQuery.trim()));
+      }
+
+      // Add sort filter if not default and requested
+      if (includeSort && selectedSort && selectedSort !== "rating") {
+        params.set("sortBy", selectedSort);
+      }
+
+      const queryString = params.toString();
+      return queryString ? `/m/vendors/marketplace?${queryString}` : "/m/vendors/marketplace";
+    },
+    [searchQuery, selectedSort]
+  );
+
+  // REPLACE the existing handleSearchSubmit with this:
+  const handleSearchSubmit = useCallback(
+    (e) => {
+      e?.preventDefault();
+
+      if (!searchQuery.trim()) {
+        toast.error("Search is empty", {
+          description: "Please enter something to search",
+        });
+        return;
+      }
+
+      haptic("medium");
+
+      // Build URL with both search query AND current filter
+      toast.loading("Searching...", { id: "search-loading" });
+      const redirectUrl = buildMarketplaceUrl(true, true);
+      router.push(redirectUrl);
+
+      setTimeout(() => {
+        toast.dismiss("search-loading");
+      }, 500);
+    },
+    [searchQuery, router, haptic, buildMarketplaceUrl]
+  );
+
+  // REPLACE the handleApplyFilters with this:
+  const handleApplyFilters = useCallback(() => {
+    haptic("success");
+    setIsFilterModalOpen(false);
+
+    // Show Sonner toast
+    const selectedOption = SORT_OPTIONS.find((opt) => opt.id === selectedSort);
+    toast.success("Filter Applied", {
+      description: `Sorted by: ${selectedOption?.label || "Default"}`,
+      duration: 2000,
+    });
+  }, [haptic, selectedSort]);
 
   // --- SCROLL LOGIC (Optimized) ---
   // "Disappear when scrolled up, appear only when scroll downwards, after 200px"
@@ -286,24 +360,53 @@ const HeaderLogic = () => {
 
               {/* Search Bar */}
               <div className="px-3 flex items-center gap-3">
-                <div className="flex-1 h-12 bg-white/15 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center px-4 relative active:scale-[0.99] transition-transform">
+                <form
+                  onSubmit={handleSearchSubmit}
+                  className="flex-1 h-12 bg-white/15 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center px-4 relative active:scale-[0.99] transition-transform"
+                >
                   <Search className="text-white/70 w-5 h-5 mr-3 shrink-0" strokeWidth={2.5} />
                   <div className="relative flex-1 h-full">
                     {!searchQuery && <SearchPlaceholderTicker placeholders={currentTab.placeholders} />}
                     <input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
                       className="w-full h-full bg-transparent border-none outline-none text-sm text-white font-semibold relative z-10 placeholder-transparent"
                     />
                   </div>
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery("")} className="p-1 bg-white/20 rounded-full z-10">
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="p-1 bg-white/20 rounded-full z-10"
+                    >
                       <X size={12} className="text-white" />
                     </button>
                   )}
-                </div>
-                <button className="h-12 w-12 bg-white/15 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 text-white active:scale-95 transition-transform">
+                </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFilterModalOpen(true);
+                    setIsNavbarVisible(false);
+                    haptic("medium");
+                  }}
+                  className={`relative h-12 w-12 backdrop-blur-xl rounded-2xl flex items-center justify-center border text-white active:scale-95 transition-transform ${
+                    selectedSort !== "rating"
+                      ? "bg-blue-500 border-blue-400 shadow-lg shadow-blue-500/30"
+                      : "bg-white/15 border-white/20"
+                  }`}
+                >
                   <SlidersHorizontal size={20} strokeWidth={2.5} />
+                  {selectedSort !== "rating" && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg"
+                    >
+                      1
+                    </motion.span>
+                  )}
                 </button>
               </div>
             </div>
@@ -336,15 +439,43 @@ const HeaderLogic = () => {
 
               {/* Compact Search & Location */}
               <div className="flex items-center gap-2 px-1">
-                <div className="flex-1 h-10 bg-gray-100 rounded-xl flex items-center px-3 relative">
+                <form
+                  onSubmit={handleSearchSubmit}
+                  className="flex-1 h-10 bg-gray-100 rounded-xl flex items-center px-3 relative"
+                >
                   <Search className="text-gray-400 w-4 h-4 mr-2" />
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
                     placeholder={`Search ${currentTab.label}...`}
                     className="w-full h-full bg-transparent border-none outline-none text-xs text-gray-800 font-medium placeholder-gray-400"
                   />
-                </div>
+                </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFilterModalOpen(true);
+                    setIsNavbarVisible(false);
+                    haptic("medium");
+                  }}
+                  className={`relative h-10 w-10 rounded-xl flex items-center justify-center active:scale-95 transition-all border ${
+                    selectedSort !== "rating"
+                      ? "bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-500/30"
+                      : "bg-blue-50 text-blue-600 border-blue-100"
+                  }`}
+                >
+                  <SlidersHorizontal size={16} />
+                  {selectedSort !== "rating" && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                    >
+                      1
+                    </motion.span>
+                  )}
+                </button>
                 <button
                   onClick={() => setIsAddressDrawerOpen(true)}
                   className="h-10 px-3 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl flex items-center gap-1.5 active:scale-95 transition-transform"
@@ -363,6 +494,19 @@ const HeaderLogic = () => {
         isOpen={isAddressDrawerOpen}
         onClose={() => setIsAddressDrawerOpen(false)}
         onSelect={(addr) => setSelectedAddress(addr)}
+      />
+
+      {/* --- FILTER MODAL --- */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => {
+          setIsFilterModalOpen(false);
+          setIsNavbarVisible(true);
+        }}
+        selectedSort={selectedSort}
+        onSortChange={setSelectedSort}
+        onApply={handleApplyFilters}
+        sortOptions={SORT_OPTIONS}
       />
 
       <style jsx global>{`
@@ -490,6 +634,144 @@ const AddressDrawer = memo(({ isOpen, onClose, onSelect }) => {
     </AnimatePresence>
   );
 });
+
+// Filter Modal Component
+const FilterModal = memo(({ isOpen, onClose, selectedSort, onSortChange, onApply, sortOptions }) => {
+  const haptic = useHapticFeedback();
+
+  const SORT_OPTIONS = [
+    { id: "rating", label: "Top Rated", description: "Highest rated first", icon: "⭐" },
+    { id: "price-asc", label: "Budget Friendly", description: "Lowest price first", icon: "💰" },
+    { id: "price-desc", label: "Premium", description: "Highest price first", icon: "👑" },
+    { id: "bookings", label: "Most Popular", description: "Most booked", icon: "🔥" },
+    { id: "newest", label: "Newly Added", description: "Recently listed", icon: "✨" },
+  ];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 z-[70] backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-[80] max-h-[70vh] flex flex-col shadow-2xl"
+          >
+            {/* Header */}
+            <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+              <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4" />
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">Sort & Filter</h3>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Choose your preference</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedSort !== "rating" && (
+                    <button
+                      onClick={() => {
+                        haptic("light");
+                        onSortChange("rating");
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 active:scale-95 transition-all"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+                  >
+                    <X size={20} className="text-gray-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Sort By</p>
+              <div className="space-y-2">
+                {sortOptions.map((option) => (
+                  <motion.button
+                    key={option.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      haptic("light");
+                      onSortChange(option.id);
+                    }}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                      selectedSort === option.id
+                        ? "bg-blue-50 border-blue-500 shadow-sm"
+                        : "bg-white border-gray-100 hover:border-gray-200"
+                    }`}
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all ${
+                        selectedSort === option.id ? "bg-blue-100 scale-110" : "bg-gray-50"
+                      }`}
+                    >
+                      {option.icon}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p
+                        className={`font-bold text-sm ${
+                          selectedSort === option.id ? "text-blue-900" : "text-gray-900"
+                        }`}
+                      >
+                        {option.label}
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium mt-0.5">{option.description}</p>
+                    </div>
+                    {selectedSort === option.id && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </motion.div>
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50">
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  haptic("success");
+                  onApply();
+                }}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-500/30 active:shadow-blue-500/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span>Apply Filter</span>
+                {selectedSort !== "rating" && (
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                    {sortOptions.find((opt) => opt.id === selectedSort)?.label}
+                  </span>
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+});
+
+FilterModal.displayName = "FilterModal";
 
 // --- 5. WRAPPER FOR NEXT.JS ROUTER SUSPENSE ---
 const MobileHeader = () => {

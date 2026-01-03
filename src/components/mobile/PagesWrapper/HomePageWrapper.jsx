@@ -296,33 +296,49 @@ const MainContent = () => {
   };
 
   useEffect(() => {
-    const controller = new AbortController();
-
     const fetchDynamicData = async () => {
+      const startTime = Date.now(); // ✅ ADD: Track start time
+
       try {
-        // 1. Fetch Top Planners (Filtering by Category 'planners' and sorted by Rating)
+        // 1. Fetch Top Planners
         const plannerParams = new URLSearchParams({
           categories: "planners",
           sortBy: "rating",
           limit: "5",
         });
 
-        const plannersRes = await fetch(`/api/vendor?${plannerParams.toString()}`, { signal: controller.signal });
+        const plannersRes = await fetch(`/api/vendor?${plannerParams.toString()}`);
         const plannersData = await plannersRes.json();
         if (plannersData.success) setPlanners(plannersData.data);
 
-        // 2. Fetch Trending Vendors (Featured vendors or sorted by Bookings)
+        // 2. Fetch Trending Vendors
         const trendingParams = new URLSearchParams({
           featured: "true",
           sortBy: "bookings",
           limit: "5",
         });
 
-        const trendingRes = await fetch(`/api/vendor?${trendingParams.toString()}`, { signal: controller.signal });
+        const trendingRes = await fetch(`/api/vendor?${trendingParams.toString()}`);
         const trendingData = await trendingRes.json();
         if (trendingData.success) setTrendingVendors(trendingData.data);
+
+        // ✅ ADD: Ensure minimum 500ms loading time for skeleton visibility
+        const elapsedTime = Date.now() - startTime;
+        const minimumLoadingTime = 500; // milliseconds
+
+        if (elapsedTime < minimumLoadingTime) {
+          await new Promise((resolve) => setTimeout(resolve, minimumLoadingTime - elapsedTime));
+        }
+
+        setIsPlannersLoading(false);
+        setIsTrendingLoading(false);
       } catch (err) {
         if (err.name !== "AbortError") console.error("Home dynamic fetch error:", err);
+        // ✅ CHANGE: Still maintain minimum loading time on error
+        const elapsedTime = Date.now() - startTime;
+        if (elapsedTime < 500) {
+          await new Promise((resolve) => setTimeout(resolve, 500 - elapsedTime));
+        }
       } finally {
         setIsPlannersLoading(false);
         setIsTrendingLoading(false);
@@ -330,7 +346,6 @@ const MainContent = () => {
     };
 
     fetchDynamicData();
-    return () => controller.abort();
   }, []);
 
   // Note: Removed the `useScroll` listener.
@@ -374,6 +389,7 @@ const MainContent = () => {
       <CategoryGrid currentCategory={currentCategory} />
 
       <VendorCarousel
+        key={`planners-${isPlannersLoading}`}
         title={`Top ${currentCategory === "Default" ? "Event" : currentCategory} Planners`}
         subtitle="Make your dream wedding happen"
         vendors={planners}
@@ -437,6 +453,7 @@ const MainContent = () => {
         </div>
 
         <VendorCarousel
+          key={`trending-${isTrendingLoading}`}
           title={`Trending ${currentCategory === "Default" ? "Event" : currentCategory} Vendors`}
           subtitle="What's hot right now"
           vendors={trendingVendors} // Changed from TRENDING to dynamic state

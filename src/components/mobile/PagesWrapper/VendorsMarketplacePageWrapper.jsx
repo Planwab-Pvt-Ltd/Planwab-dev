@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -272,15 +272,17 @@ function useLocalStorage(key, initialValue) {
 
   const setValue = useCallback(
     (value) => {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      try {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error);
-      }
+      setStoredValue((prevValue) => {
+        const valueToStore = value instanceof Function ? value(prevValue) : value;
+        try {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        } catch (error) {
+          console.warn(`Error setting localStorage key "${key}":`, error);
+        }
+        return valueToStore;
+      });
     },
-    [key, storedValue]
+    [key]
   );
 
   return [storedValue, setValue, isHydrated];
@@ -590,7 +592,7 @@ const ScrollToTopButton = memo(() => {
           exit={{ scale: 0, opacity: 0 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollToTop}
-          className="fixed bottom-32 right-4 z-40 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200"
+          className="fixed bottom-17 right-4 z-40 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200"
           style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}
         >
           <ArrowUp size={20} style={{ color: COLORS.primary }} />
@@ -657,30 +659,71 @@ const ActiveFiltersDisplay = memo(
     priceRange,
     ratingFilter,
     showFeaturedOnly,
+    sortBy,
+    sortOrder,
     onClearAll,
     colorPrimary,
   }) => {
     const haptic = useHapticFeedback();
     const filters = [];
 
+    // Search Query
     if (searchQuery) filters.push(`Search: "${searchQuery}"`);
+
+    // Categories
     if (selectedCategories.length > 0) {
       const categoryLabels = selectedCategories.map((id) => VENDOR_CATEGORIES.find((c) => c.id === id)?.label || id);
       filters.push(`Categories: ${categoryLabels.join(", ")}`);
     }
+
+    // Subcategory
     if (selectedSubcategory) {
       const allSubcats = Object.values(SUBCATEGORIES).flat();
       const subLabel = allSubcats.find((s) => s.id === selectedSubcategory)?.label || selectedSubcategory;
       filters.push(`Type: ${subLabel}`);
     }
+
+    // Locations
     if (selectedLocations.length > 0) filters.push(`Cities: ${selectedLocations.join(", ")}`);
+
+    // Price Range
     if (priceRange[0] > 0 || priceRange[1] < 1000000) {
       filters.push(`Budget: ₹${formatPrice(priceRange[0])} - ₹${formatPrice(priceRange[1])}`);
     }
+
+    // Rating Filter
     if (ratingFilter > 0) filters.push(`Rating: ${ratingFilter}+ stars`);
+
+    // Featured Only
     if (showFeaturedOnly) filters.push("Featured Only");
 
-    if (filters.length === 0) return null;
+    // Sort By (only if not default)
+    if (sortBy && sortBy !== "rating") {
+      const sortOption = SORT_OPTIONS.find((opt) => opt.id === sortBy);
+      filters.push(`Sort: ${sortOption?.label || sortBy}`);
+    }
+
+    // Sort Order (only if not default)
+    if (sortOrder && sortOrder !== "desc") {
+      filters.push(`Order: ${sortOrder === "asc" ? "Low to High" : "High to Low"}`);
+    }
+
+    // If no filters are applied, show a message
+    if (filters.length === 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="mb-4 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200"
+        >
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-gray-400" />
+            <span className="text-xs font-medium text-gray-500">No filters applied - Showing all vendors</span>
+          </div>
+        </motion.div>
+      );
+    }
 
     return (
       <motion.div
@@ -693,7 +736,9 @@ const ActiveFiltersDisplay = memo(
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <Filter size={14} style={{ color: colorPrimary }} />
-              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Active Filters</span>
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Active Filters ({filters.length})
+              </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {filters.map((filter, idx) => (
@@ -967,13 +1012,6 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
           </motion.div>
           Exclusive Deals
         </h2>
-        <button
-          className="text-xs font-semibold flex items-center gap-1 active:opacity-70"
-          style={{ color: colorPrimary }}
-        >
-          View All
-          <ChevronRight size={14} />
-        </button>
       </div>
 
       <div
@@ -1837,72 +1875,110 @@ const EmptyState = memo(({ onClearFilters, colorPrimary, searchQuery }) => (
 ));
 EmptyState.displayName = "EmptyState";
 
-const SortSheet = memo(({ isOpen, onClose, currentSort, onSortChange, colorPrimary }) => {
-  const haptic = useHapticFeedback();
+const SortSheet = memo(
+  ({ isOpen, onClose, currentSort, currentSortOrder, onSortChange, onSortOrderChange, colorPrimary }) => {
+    const haptic = useHapticFeedback();
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
-          />
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={SPRING_CONFIG.gentle}
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[101] shadow-2xl"
-          >
-            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3" />
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">Sort By</h3>
-            </div>
-            <div className="p-4 space-y-2 pb-8">
-              {SORT_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                const isSelected = currentSort === option.id;
-                return (
-                  <motion.button
-                    key={option.id}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      haptic("light");
-                      onSortChange(option.id);
-                      onClose();
-                    }}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${
-                      isSelected ? "bg-gray-100" : "active:bg-gray-50"
-                    }`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        isSelected ? "bg-white shadow-sm" : "bg-gray-100"
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={SPRING_CONFIG.gentle}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[101] shadow-2xl"
+            >
+              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3" />
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900">Sort By</h3>
+              </div>
+              <div className="p-4 space-y-2 pb-8">
+                {SORT_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = currentSort === option.id;
+                  return (
+                    <motion.button
+                      key={option.id}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        haptic("light");
+                        onSortChange(option.id);
+                        onClose();
+                      }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${
+                        isSelected ? "bg-gray-100" : "active:bg-gray-50"
                       }`}
                     >
-                      <Icon size={20} style={{ color: isSelected ? colorPrimary : COLORS.gray[400] }} />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className={`font-semibold ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
-                        {option.label}
-                      </p>
-                      <p className="text-xs text-gray-500">{option.description}</p>
-                    </div>
-                    {isSelected && <CheckCircle size={20} style={{ color: colorPrimary }} />}
-                  </motion.button>
-                );
-              })}
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          isSelected ? "bg-white shadow-sm" : "bg-gray-100"
+                        }`}
+                      >
+                        <Icon size={20} style={{ color: isSelected ? colorPrimary : COLORS.gray[400] }} />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className={`font-semibold ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
+                          {option.label}
+                        </p>
+                        <p className="text-xs text-gray-500">{option.description}</p>
+                      </div>
+                      {isSelected && <CheckCircle size={20} style={{ color: colorPrimary }} />}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+            {/* ✅ ADD: Sort Order Toggle */}
+            <div className="px-5 py-3 border-t border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sort Order</p>
+              <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("light");
+                    onSortOrderChange("desc");
+                  }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                    currentSortOrder === "desc"
+                      ? "text-white border-transparent shadow-sm"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                  style={currentSortOrder === "desc" ? { backgroundColor: colorPrimary } : {}}
+                >
+                  High to Low
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("light");
+                    onSortOrderChange("asc");
+                  }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                    currentSortOrder === "asc"
+                      ? "text-white border-transparent shadow-sm"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                  style={currentSortOrder === "asc" ? { backgroundColor: colorPrimary } : {}}
+                >
+                  Low to High
+                </motion.button>
+              </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-});
+          </>
+        )}
+      </AnimatePresence>
+    );
+  }
+);
 SortSheet.displayName = "SortSheet";
 
 const FilterContent = memo(
@@ -1919,6 +1995,11 @@ const FilterContent = memo(
     colorPrimary,
     ratingFilter,
     setRatingFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setCurrentPage,
+    setSortOrder,
   }) => {
     const haptic = useHapticFeedback();
 
@@ -1943,6 +2024,7 @@ const FilterContent = memo(
               onClick={() => {
                 haptic("light");
                 setShowFeaturedOnly(!showFeaturedOnly);
+                setCurrentPage(1);
               }}
               className={`w-14 h-8 rounded-full p-1 transition-colors ${showFeaturedOnly ? "" : "bg-gray-200"}`}
               style={showFeaturedOnly ? { backgroundColor: colorPrimary } : {}}
@@ -1953,30 +2035,6 @@ const FilterContent = memo(
                 className="w-6 h-6 bg-white rounded-full shadow-md"
               />
             </motion.button>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Minimum Rating</h3>
-          <div className="flex gap-2">
-            {[0, 3, 3.5, 4, 4.5].map((rating) => (
-              <motion.button
-                key={rating}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  haptic("light");
-                  setRatingFilter(rating);
-                }}
-                className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors ${
-                  ratingFilter === rating
-                    ? "text-white border-transparent shadow-md"
-                    : "bg-white text-gray-600 border-gray-200"
-                }`}
-                style={ratingFilter === rating ? { backgroundColor: colorPrimary } : {}}
-              >
-                {rating === 0 ? "Any" : `${rating}+`}
-              </motion.button>
-            ))}
           </div>
         </div>
 
@@ -1993,6 +2051,7 @@ const FilterContent = memo(
                   onClick={() => {
                     haptic("light");
                     handleCategoryChange(cat.id);
+                    setCurrentPage(1);
                   }}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                     isSelected ? "border-transparent shadow-md" : "bg-white border-gray-200"
@@ -2015,6 +2074,109 @@ const FilterContent = memo(
         </div>
 
         <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Sort By</h3>
+          <div className="space-y-2">
+            {SORT_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              const isSelected = sortBy === option.id;
+              return (
+                <motion.button
+                  key={option.id}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    haptic("light");
+                    setSortBy(option.id);
+                    setCurrentPage(1);
+                  }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                    isSelected ? "border-transparent shadow-md" : "bg-white border-gray-200"
+                  }`}
+                  style={isSelected ? { backgroundColor: `${colorPrimary}15`, borderColor: colorPrimary } : {}}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: isSelected ? colorPrimary : COLORS.gray[100] }}
+                  >
+                    <Icon size={16} className={isSelected ? "text-white" : "text-gray-500"} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className={`text-sm font-semibold ${isSelected ? "text-gray-900" : "text-gray-600"}`}>
+                      {option.label}
+                    </p>
+                    <p className="text-xs text-gray-400">{option.description}</p>
+                  </div>
+                  {isSelected && <CheckCircle size={18} style={{ color: colorPrimary }} />}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* **NEW: Sort Order Toggle** */}
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Sort Order</h3>
+          <div className="flex gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic("light");
+                setSortOrder("desc");
+                setCurrentPage(1);
+              }}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors ${
+                sortOrder === "desc"
+                  ? "text-white border-transparent shadow-md"
+                  : "bg-white text-gray-600 border-gray-200"
+              }`}
+              style={sortOrder === "desc" ? { backgroundColor: colorPrimary } : {}}
+            >
+              High to Low
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic("light");
+                setSortOrder("asc");
+                setCurrentPage(1);
+              }}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors ${
+                sortOrder === "asc"
+                  ? "text-white border-transparent shadow-md"
+                  : "bg-white text-gray-600 border-gray-200"
+              }`}
+              style={sortOrder === "asc" ? { backgroundColor: colorPrimary } : {}}
+            >
+              Low to High
+            </motion.button>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Minimum Rating</h3>
+          <div className="flex gap-2">
+            {[0, 3, 3.5, 4, 4.5].map((rating) => (
+              <motion.button
+                key={rating}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  haptic("light");
+                  setRatingFilter(rating);
+                  setCurrentPage(1);
+                }}
+                className={`flex-1 py-3 rounded-xl font-semibold text-sm border transition-colors ${
+                  ratingFilter === rating
+                    ? "text-white border-transparent shadow-md"
+                    : "bg-white text-gray-600 border-gray-200"
+                }`}
+                style={ratingFilter === rating ? { backgroundColor: colorPrimary } : {}}
+              >
+                {rating === 0 ? "Any" : `${rating}+`}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        <div>
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-1">Budget Range</h3>
           <div className="px-3 mb-4">
             <Slider
@@ -2023,7 +2185,12 @@ const FilterContent = memo(
               max={1000000}
               step={10000}
               value={priceRange}
-              onChange={(val) => setPriceRange(val)}
+              onChange={(val) => {
+                setPriceRange(val);
+              }}
+              onAfterChange={(val) => {
+                setCurrentPage(1);
+              }}
               trackStyle={[{ backgroundColor: colorPrimary, height: 6 }]}
               handleStyle={[
                 {
@@ -2094,6 +2261,7 @@ const FilterContent = memo(
                     onClick={() => {
                       haptic("light");
                       handleLocationChange(city);
+                      setCurrentPage(1);
                     }}
                     className={`w-full flex items-center justify-between p-4 transition-colors ${
                       idx !== availableCities.length - 1 ? "border-b border-gray-100" : ""
@@ -2767,6 +2935,7 @@ export default function MarketplacePageWrapper() {
 
   const isInitialMount = useRef(true);
   const hasInitializedFromUrl = useRef(false);
+  const prevVendorCountRef = useRef(0);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -2774,6 +2943,7 @@ export default function MarketplacePageWrapper() {
   const [vendors, setVendors] = useState([]);
   const [paginationInfo, setPaginationInfo] = useState({ totalPages: 1, totalVendors: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useLocalStorage("mp_viewMode", "list");
@@ -2791,6 +2961,7 @@ export default function MarketplacePageWrapper() {
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState(0);
   const [availableCities, setAvailableCities] = useState([]);
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const [favorites, setFavorites] = useLocalStorage("mp_favorites", []);
   const [recentSearches, setRecentSearches] = useLocalStorage("mp_recentSearches", []);
@@ -2807,6 +2978,7 @@ export default function MarketplacePageWrapper() {
 
   const debouncedSearchQuery = useDebounce(searchQuery, DEBOUNCE_DELAY);
   const debouncedPriceRange = useDebounce(priceRange, DEBOUNCE_DELAY);
+  const debouncedSortOrder = useDebounce(sortOrder, 150);
 
   const { setActiveCategory } = useCartStore();
 
@@ -2825,8 +2997,19 @@ export default function MarketplacePageWrapper() {
     if (selectedLocations.length > 0) count++;
     if (priceRange[0] > 0 || priceRange[1] < 1000000) count++;
     if (ratingFilter > 0) count++;
+    if (sortBy && sortBy !== "rating") count++; // ✅ ADD: Sort filter
+    if (sortOrder && sortOrder !== "desc") count++; // ✅ ADD: Sort order filter
     return count;
-  }, [selectedCategories, selectedSubcategory, showFeaturedOnly, selectedLocations, priceRange, ratingFilter]);
+  }, [
+    selectedCategories,
+    selectedSubcategory,
+    showFeaturedOnly,
+    selectedLocations,
+    priceRange,
+    ratingFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const currentSortLabel = useMemo(() => SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Sort", [sortBy]);
 
@@ -2850,39 +3033,45 @@ export default function MarketplacePageWrapper() {
   useEffect(() => {
     if (hasInitializedFromUrl.current) return;
 
-    const params = new URLSearchParams(window.location.search);
+    // Use a function to batch all state updates
+    const initializeFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
 
-    // 1. Logic: Path Category has absolute priority on refresh/load
-    let finalCategories = [];
-    if (pageCategory) {
-      finalCategories = [pageCategory];
-    } else {
-      const urlCats = params.get("categories");
-      if (urlCats) finalCategories = urlCats.split(",");
-    }
+      // Determine final categories
+      let finalCategories = [];
+      if (pageCategory) {
+        finalCategories = [pageCategory];
+      } else {
+        const urlCats = params.get("categories");
+        if (urlCats) finalCategories = urlCats.split(",").filter(Boolean);
+      }
 
-    // 2. Batch Update all states
-    // This ensures React only renders once for all these updates
-    setSelectedCategories(finalCategories);
-    setSearchQuery(params.get("search") || "");
-    setSortBy(params.get("sortBy") || "rating");
-    setSelectedSubcategory(params.get("subcategory") || "");
-    setRatingFilter(parseFloat(params.get("minRating")) || 0);
-    setShowFeaturedOnly(params.get("featured") === "true");
-    setCurrentPage(parseInt(params.get("page")) || 1);
+      const minP = params.get("minPrice");
+      const maxP = params.get("maxPrice");
+      const cities = params.get("cities");
 
-    const minP = params.get("minPrice");
-    const maxP = params.get("maxPrice");
-    setPriceRange([minP ? parseInt(minP) : 0, maxP ? parseInt(maxP) : 1000000]);
+      // Batch all state updates in a single microtask
+      Promise.resolve().then(() => {
+        setSelectedCategories(finalCategories);
+        setSearchQuery(params.get("search") || "");
+        setSortBy(params.get("sortBy") || "rating");
+        setSortOrder(params.get("sortOrder") || "desc");
+        setSelectedSubcategory(params.get("subcategory") || "");
+        setRatingFilter(parseFloat(params.get("minRating")) || 0);
+        setShowFeaturedOnly(params.get("featured") === "true");
+        setCurrentPage(parseInt(params.get("page")) || 1);
+        setPriceRange([minP ? parseInt(minP) : 0, maxP ? parseInt(maxP) : 1000000]);
+        if (cities) setSelectedLocations(cities.split(",").filter(Boolean));
 
-    const cities = params.get("cities");
-    if (cities) setSelectedLocations(cities.split(","));
+        // Sync global store
+        if (pageCategory) setActiveCategory(pageCategory);
 
-    // 3. Mark as initialized
-    hasInitializedFromUrl.current = true;
+        // Mark as initialized AFTER all states are set
+        hasInitializedFromUrl.current = true;
+      });
+    };
 
-    // 4. Sync global store once
-    if (pageCategory) setActiveCategory(pageCategory);
+    initializeFromUrl();
   }, [pageCategory, setActiveCategory]); // Reduced dependencies to prevent re-runs
 
   useEffect(() => {
@@ -2895,23 +3084,30 @@ export default function MarketplacePageWrapper() {
   }, [debouncedSearchQuery, setRecentSearches]);
 
   useEffect(() => {
-    // Only fetch if Step 1 is finished
     if (!hasInitializedFromUrl.current) return;
 
     const controller = new AbortController();
 
     const fetchVendors = async () => {
-      setIsLoading(true);
+      // Only set loading if we're past initial load
+      if (isInitialLoadDone) {
+        setIsLoading(true);
+      }
+
       setError(null);
 
       const queryParams = new URLSearchParams({
         page: currentPage.toString(),
         limit: ITEMS_PER_PAGE.toString(),
         sortBy,
+        sortOrder: debouncedSortOrder || sortOrder || "desc",
       });
 
+      // Add filters
       if (debouncedSearchQuery) queryParams.set("search", debouncedSearchQuery);
-      if (selectedCategories.length > 0) queryParams.set("categories", selectedCategories.join(","));
+      if (selectedCategories.length > 0) {
+        queryParams.set("categories", selectedCategories.join(","));
+      }
       if (selectedSubcategory) queryParams.set("subcategory", selectedSubcategory);
       if (showFeaturedOnly) queryParams.set("featured", "true");
       if (selectedLocations.length > 0) queryParams.set("cities", selectedLocations.join(","));
@@ -2921,27 +3117,63 @@ export default function MarketplacePageWrapper() {
 
       try {
         const response = await fetch(`/api/vendor?${queryParams.toString()}`, {
-          signal: controller.signal, // Professional way to cancel duplicate calls
+          signal: controller.signal,
         });
         const result = await response.json();
 
         if (result.success) {
-          setVendors(
-            result.data.map((v) => ({
-              ...v,
-              position: v.location?.coordinates
-                ? { lat: v.location.coordinates[1], lng: v.location.coordinates[0] }
-                : CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
-            }))
-          );
-          setPaginationInfo({
+          const mappedVendors = result.data.map((v) => ({
+            ...v,
+            position: v.location?.coordinates
+              ? { lat: v.location.coordinates[1], lng: v.location.coordinates[0] }
+              : CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
+          }));
+
+          const paginationData = {
             totalPages: result.pagination?.totalPages || 1,
             totalVendors: result.pagination?.total || 0,
-          });
+          };
+
+          // CRITICAL: Batch state updates together
+          setVendors(mappedVendors);
+          setPaginationInfo(paginationData);
+
+          // Extract unique cities
+          const cities = [...new Set(result.data.map((v) => v.address?.city).filter(Boolean))];
+          setAvailableCities(cities);
+
+          // ✅ CHANGE: Only reset if results changed
+          if (
+            mappedVendors.length < ITEMS_PER_PAGE &&
+            currentPage > 1 &&
+            prevVendorCountRef.current !== mappedVendors.length
+          ) {
+            prevVendorCountRef.current = mappedVendors.length;
+            setCurrentPage(1);
+          } else {
+            prevVendorCountRef.current = mappedVendors.length;
+          }
+
+          // Mark as done AFTER all data is set
+          if (!isInitialLoadDone) {
+            setIsInitialLoadDone(true);
+          }
+        } else {
+          // Handle API error response
+          setVendors([]);
+          setPaginationInfo({ totalPages: 1, totalVendors: 0 });
+          if (!isInitialLoadDone) {
+            setIsInitialLoadDone(true);
+          }
         }
       } catch (err) {
         if (err.name !== "AbortError") {
           setError("Failed to load vendors.");
+          setVendors([]);
+          setPaginationInfo({ totalPages: 1, totalVendors: 0 });
+          if (!isInitialLoadDone) {
+            setIsInitialLoadDone(true);
+          }
         }
       } finally {
         setIsLoading(false);
@@ -2949,12 +3181,12 @@ export default function MarketplacePageWrapper() {
     };
 
     fetchVendors();
-
-    // Cleanup function: This kills any pending request if a new one starts
     return () => controller.abort();
   }, [
     currentPage,
     sortBy,
+    sortOrder,
+    debouncedSortOrder,
     debouncedSearchQuery,
     debouncedPriceRange,
     selectedCategories,
@@ -2962,33 +3194,38 @@ export default function MarketplacePageWrapper() {
     showFeaturedOnly,
     selectedLocations,
     ratingFilter,
-    isOnline,
-    // Note: hasInitializedFromUrl.current is not in deps because it's a ref
+    isInitialLoadDone,
   ]);
 
   useEffect(() => {
-    if (!hasInitializedFromUrl.current) return;
+    if (!hasInitializedFromUrl.current || !isInitialLoadDone) return;
 
     const timeoutId = setTimeout(() => {
       const params = {};
 
-      // Logic: If multiple categories are selected, or the selection differs
-      // from the path, we sync them to the query string.
       const isOnlyPath = selectedCategories.length === 1 && selectedCategories[0] === pageCategory;
 
       if (selectedCategories.length > 0 && !isOnlyPath) {
         params.categories = selectedCategories.join(",");
       }
-
-      // ... (rest of your params mapping) ...
+      if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+      if (sortBy !== "rating") params.sortBy = sortBy;
+      if (debouncedSortOrder !== "desc") params.sortOrder = debouncedSortOrder;
+      if (selectedSubcategory) params.subcategory = selectedSubcategory;
+      if (currentPage > 1) params.page = currentPage;
+      if (priceRange[0] > 0) params.minPrice = priceRange[0];
+      if (priceRange[1] < 1000000) params.maxPrice = priceRange[1];
+      if (selectedLocations.length > 0) params.cities = selectedLocations.join(",");
+      if (ratingFilter > 0) params.minRating = ratingFilter;
+      if (showFeaturedOnly) params.featured = "true";
 
       const queryString = buildUrlWithParams(params);
-
-      // If user cleared categories, ensure they aren't stuck on a category subpath
       const base = selectedCategories.length === 0 ? "/m/vendors/marketplace" : window.location.pathname;
       const newUrl = queryString ? `${base}?${queryString}` : base;
+      const currentSearch = window.location.search;
+      const newSearch = queryString ? `?${queryString}` : "";
 
-      if (window.location.search !== (queryString ? `?${queryString}` : "")) {
+      if (currentSearch !== newSearch) {
         router.replace(newUrl, { scroll: false });
       }
     }, 400);
@@ -2998,6 +3235,8 @@ export default function MarketplacePageWrapper() {
     selectedCategories,
     debouncedSearchQuery,
     sortBy,
+    sortOrder,
+    debouncedSortOrder,
     currentPage,
     priceRange,
     selectedLocations,
@@ -3005,6 +3244,9 @@ export default function MarketplacePageWrapper() {
     ratingFilter,
     showFeaturedOnly,
     pageCategory,
+    router,
+    buildUrlWithParams,
+    isInitialLoadDone,
   ]);
 
   const showToast = useCallback((message, type = "success") => {
@@ -3033,29 +3275,55 @@ export default function MarketplacePageWrapper() {
       if (cat === "__clear__") {
         setSelectedCategories([]);
         setSelectedSubcategory("");
+        setCurrentPage(1); // ✅ ADD: Reset to page 1
         if (pageCategory) {
           router.push("/m/vendors/marketplace");
         }
       } else {
-        setSelectedCategories((prev) => {
-          const newCategories = prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat];
+        const isCurrentlySelected = selectedCategories.includes(cat);
 
-          if (!newCategories.includes(cat) && selectedSubcategory) {
-            setSelectedSubcategory("");
-          }
-          return newCategories;
-        });
+        if (isCurrentlySelected) {
+          setSelectedCategories([]);
+          setSelectedSubcategory("");
+        } else {
+          setSelectedCategories([cat]);
+          setSelectedSubcategory("");
+        }
+        setCurrentPage(1); // ✅ ADD: Reset to page 1
       }
     },
-    [pageCategory, selectedSubcategory, router, haptic]
+    [pageCategory, selectedCategories, router, haptic]
+  );
+
+  const handleFilterPanelCategoryChange = useCallback(
+    (cat) => {
+      haptic("light");
+      setSelectedCategories((prev) => {
+        const newCategories = prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat];
+
+        // Clear subcategory if no categories match it
+        if (!newCategories.includes(cat) && selectedSubcategory) {
+          const subcategoryBelongsToSelected = newCategories.some((catId) =>
+            SUBCATEGORIES[catId]?.some((sub) => sub.id === selectedSubcategory)
+          );
+          if (!subcategoryBelongsToSelected) {
+            setSelectedSubcategory("");
+          }
+        }
+        return newCategories;
+      });
+    },
+    [selectedSubcategory, haptic]
   );
 
   const handleSubcategoryChange = useCallback((sub) => {
     setSelectedSubcategory(sub);
+    setCurrentPage(1); // ✅ ADD: Reset to page 1
   }, []);
 
   const handleLocationChange = useCallback((city) => {
     setSelectedLocations((prev) => (prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city]));
+    setCurrentPage(1); // ✅ ADD: Reset to page 1
   }, []);
 
   const handleCompareToggle = useCallback(
@@ -3085,17 +3353,23 @@ export default function MarketplacePageWrapper() {
 
   const clearAllFilters = useCallback(() => {
     haptic("medium");
-    setSelectedCategories([]);
-    setSelectedSubcategory("");
-    setPriceRange([0, 1000000]);
-    setShowFeaturedOnly(false);
-    setSelectedLocations([]);
-    setSearchQuery("");
-    setSortBy("rating");
-    setRatingFilter(0);
-    setCurrentPage(1);
+
+    // ✅ CHANGE: Batch all state updates in transition
+    startTransition(() => {
+      setSelectedCategories([]);
+      setSelectedSubcategory("");
+      setPriceRange([0, 1000000]);
+      setShowFeaturedOnly(false);
+      setSelectedLocations([]);
+      setSearchQuery("");
+      setSortBy("rating");
+      setSortOrder("desc"); // ✅ ADD: Reset sort order too
+      setRatingFilter(0);
+      setCurrentPage(1);
+    });
+
     showToast("All filters cleared", "info");
-  }, [pageCategory, haptic, showToast]);
+  }, [haptic, showToast]);
 
   const handleSelectRecentSearch = useCallback((search) => {
     setSearchQuery(search);
@@ -3117,7 +3391,9 @@ export default function MarketplacePageWrapper() {
     priceRange[0] > 0 ||
     priceRange[1] < 1000000 ||
     ratingFilter > 0 ||
-    showFeaturedOnly;
+    showFeaturedOnly ||
+    (sortBy && sortBy !== "rating") ||
+    (sortOrder && sortOrder !== "desc");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -3289,7 +3565,8 @@ export default function MarketplacePageWrapper() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   haptic("light");
-                  setSortBy(opt.id);
+                  setSortBy(opt.id); // ✓ This already works
+                  setCurrentPage(1);
                 }}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all ${
                   isSelected ? "text-white border-transparent shadow-md" : "bg-white text-gray-600 border-gray-200"
@@ -3306,19 +3583,19 @@ export default function MarketplacePageWrapper() {
 
       <main className="px-4 pt-4">
         <AnimatePresence>
-          {hasActiveFilters && (
-            <ActiveFiltersDisplay
-              searchQuery={searchQuery}
-              selectedCategories={selectedCategories}
-              selectedSubcategory={selectedSubcategory}
-              selectedLocations={selectedLocations}
-              priceRange={priceRange}
-              ratingFilter={ratingFilter}
-              showFeaturedOnly={showFeaturedOnly}
-              onClearAll={clearAllFilters}
-              colorPrimary={COLORS.primary}
-            />
-          )}
+          <ActiveFiltersDisplay
+            searchQuery={searchQuery}
+            selectedCategories={selectedCategories}
+            selectedSubcategory={selectedSubcategory}
+            selectedLocations={selectedLocations}
+            priceRange={priceRange}
+            ratingFilter={ratingFilter}
+            showFeaturedOnly={showFeaturedOnly}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onClearAll={clearAllFilters}
+            colorPrimary={COLORS.primary}
+          />
         </AnimatePresence>
 
         <PromoCarousel colorPrimary={COLORS.primary} colorSecondary={COLORS.secondary} />
@@ -3363,9 +3640,10 @@ export default function MarketplacePageWrapper() {
                 <MapView vendors={vendors} onVendorSelect={() => setIsMapView(false)} center={DEFAULT_CENTER} />
               </Suspense>
             </motion.div>
-          ) : isLoading ? (
+          ) : !isInitialLoadDone ? (
+            /* PHASE 1: Initial Loading - Show skeletons until first fetch completes */
             <motion.div
-              key="loading"
+              key="initial-loading"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -3375,43 +3653,57 @@ export default function MarketplacePageWrapper() {
                 <CardSkeleton key={i} viewMode={viewMode} />
               ))}
             </motion.div>
-          ) : vendors.length > 0 ? (
-            <motion.div
-              key="content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: [0.43, 0.13, 0.23, 0.96] }}
-            >
-              <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
-                {vendors.map((vendor) => (
-                  <VendorCard
-                    key={vendor._id}
-                    vendor={vendor}
-                    viewMode={viewMode}
-                    isFavorite={favorites.includes(vendor._id)}
-                    onFavorite={handleFavorite}
-                    isComparing={compareMode}
-                    isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
-                    onCompare={handleCompareToggle}
-                    colorPrimary={COLORS.primary}
-                    onShowToast={showToast}
-                    setCompareMode={setCompareMode}
-                    setCompareList={setCompareList}
-                  />
-                ))}
-              </div>
-
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={paginationInfo.totalPages}
-                onPageChange={handlePageChange}
-                colorPrimary={COLORS.primary}
-                isLoading={isLoading}
-              />
-            </motion.div>
           ) : (
-            <EmptyState onClearFilters={clearAllFilters} colorPrimary={COLORS.primary} searchQuery={searchQuery} />
+            /* PHASE 2: Data Loaded State - Now show data or empty state */
+            <motion.div
+              key="data-content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {isLoading ? (
+                /* Subsequent loading (pagination, filters) - subtle loading */
+                <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"} opacity-60`}>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <CardSkeleton key={i} viewMode={viewMode} />
+                  ))}
+                </div>
+              ) : vendors.length > 0 ? (
+                /* Sub-Phase A: Results found */
+                <>
+                  <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
+                    {vendors.map((vendor) => (
+                      <VendorCard
+                        key={vendor._id}
+                        vendor={vendor}
+                        viewMode={viewMode}
+                        isFavorite={favorites.includes(vendor._id)}
+                        onFavorite={handleFavorite}
+                        isComparing={compareMode}
+                        isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
+                        onCompare={handleCompareToggle}
+                        colorPrimary={COLORS.primary}
+                        onShowToast={showToast}
+                        setCompareMode={setCompareMode}
+                        setCompareList={setCompareList}
+                      />
+                    ))}
+                  </div>
+
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={paginationInfo.totalPages}
+                    onPageChange={handlePageChange}
+                    colorPrimary={COLORS.primary}
+                    isLoading={isLoading}
+                  />
+                </>
+              ) : (
+                /* Sub-Phase B: No results */
+                <EmptyState onClearFilters={clearAllFilters} colorPrimary={COLORS.primary} searchQuery={searchQuery} />
+              )}
+            </motion.div>
           )}
         </AnimatePresence>
       </main>
@@ -3443,6 +3735,8 @@ export default function MarketplacePageWrapper() {
         }}
         currentSort={sortBy}
         onSortChange={setSortBy}
+        onSortOrderChange={setSortOrder}
+        currentSortOrder={sortOrder}
         colorPrimary={COLORS.primary}
       />
       <FilterDrawer
@@ -3460,7 +3754,7 @@ export default function MarketplacePageWrapper() {
           showFeaturedOnly={showFeaturedOnly}
           setShowFeaturedOnly={setShowFeaturedOnly}
           selectedCategories={selectedCategories}
-          handleCategoryChange={handleCategoryChange}
+          handleCategoryChange={handleFilterPanelCategoryChange}
           priceRange={priceRange}
           setPriceRange={setPriceRange}
           availableCities={availableCities}
@@ -3469,6 +3763,11 @@ export default function MarketplacePageWrapper() {
           colorPrimary={COLORS.primary}
           ratingFilter={ratingFilter}
           setRatingFilter={setRatingFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          setCurrentPage={setCurrentPage}
         />
       </FilterDrawer>
       <CompareModal

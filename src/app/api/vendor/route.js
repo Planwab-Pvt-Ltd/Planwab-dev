@@ -470,7 +470,26 @@ export async function GET(request) {
     // =============================================================================
     // BUILD SORT OBJECT
     // =============================================================================
-    const sort = SORT_MAPPINGS[sortBy] || { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+    let sort = {};
+
+    if (SORT_MAPPINGS[sortBy]) {
+      // Use predefined sort mapping
+      sort = { ...SORT_MAPPINGS[sortBy] };
+
+      // Apply sortOrder to the primary sort field only if it's not a compound sort
+      if (sortOrder === "asc" && Object.keys(sort).length === 1) {
+        const primaryField = Object.keys(sort)[0];
+        sort[primaryField] = 1;
+      }
+    } else {
+      // Fallback: sort by the field name with given order
+      sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+    }
+
+    // Always add _id as secondary sort for consistency
+    if (!sort._id) {
+      sort._id = -1;
+    }
 
     // =============================================================================
     // PAGINATION CALCULATION
@@ -511,6 +530,7 @@ export async function GET(request) {
         .skip(skip)
         .limit(limit)
         .select("-reviewsList -likedBy -bookmarkedBy") // Exclude large arrays
+        .collation({ locale: "en", strength: 2 }) // Case-insensitive sorting for text fields
         .lean()
         .exec(),
 
@@ -522,6 +542,15 @@ export async function GET(request) {
         "address.city": undefined, // Remove city filter to get all available cities
       }).exec(),
     ]);
+
+    const processedVendors = vendors.map((vendor) => ({
+      ...vendor,
+      bookings: vendor.bookings || vendor.totalBookings || 0,
+      reviews: vendor.reviews || vendor.reviewCount || vendor.totalReviews || 0,
+      rating: vendor.rating || vendor.averageRating || 0,
+    }));
+
+    console.log(`Query returned ${processedVendors.length} vendors out of ${total} total`);
 
     // =============================================================================
     // CALCULATE PAGINATION METADATA
@@ -535,9 +564,33 @@ export async function GET(request) {
     // =============================================================================
     console.log(`Query returned ${vendors.length} vendors out of ${total} total`);
 
+    console.log("=== VENDOR API DEBUG ===");
+    console.log("Request URL:", request.url);
+    console.log("Query Parameters:", {
+      page,
+      limit,
+      category,
+      categories,
+      subcategory,
+      featured,
+      cities,
+      minPrice,
+      maxPrice,
+      minRating,
+      search,
+      sortBy,
+      sortOrder, // **ADD THIS**
+      availability,
+    });
+    console.log("MongoDB Query:", JSON.stringify(query, null, 2));
+    console.log("MongoDB Sort:", JSON.stringify(sort, null, 2)); // **ENSURE THIS EXISTS**
+    console.log("Sort Mapping Used:", sortBy, "->", SORT_MAPPINGS[sortBy] ? "Custom" : "Dynamic"); // **ADD THIS**
+    console.log("Pagination:", { skip, limit });
+    console.log("=======================");
+
     return NextResponse.json({
       success: true,
-      data: vendors,
+      data: processedVendors,
       pagination: {
         page,
         limit,
@@ -546,7 +599,7 @@ export async function GET(request) {
         hasNext,
         hasPrev,
         currentPage: page,
-        resultsOnPage: vendors.length,
+        resultsOnPage: processedVendors.length,
       },
       filters: {
         availableCities: availableCities.filter(Boolean).sort(),
@@ -566,6 +619,12 @@ export async function GET(request) {
       meta: {
         timestamp: new Date().toISOString(),
         queryExecutionTime: Date.now(),
+        sortApplied: {
+          // **ADD THIS**
+          sortBy,
+          sortOrder,
+          sortMapping: SORT_MAPPINGS[sortBy] ? "predefined" : "dynamic",
+        },
       },
     });
   } catch (error) {

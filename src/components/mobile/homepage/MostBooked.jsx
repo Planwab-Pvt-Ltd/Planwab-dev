@@ -2,258 +2,25 @@
 
 import React, { memo, useCallback, useState, useMemo, useRef, useEffect } from "react";
 import SmartMedia from "../SmartMediaLoader";
-import { useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { useCartStore } from "../../../GlobalState/CartDataStore";
 
-// --- 1. STATIC DATA ---
 const FILTERS = [
-  { id: "all", label: "All Vendors" },
-  { id: "planner", label: "Wedding Planners" },
-  { id: "photographer", label: "Photographers" },
-  { id: "makeup", label: "Makeup Artists" },
-  { id: "caterer", label: "Caterers" },
-  { id: "venue", label: "Venues" },
-  { id: "decor", label: "Decorators" },
+  { id: "all", label: "All Vendors", apiQuery: { featured: "true", sortBy: "rating", limit: "8" } },
+  { id: "venues", label: "Venues", apiQuery: { categories: "venues", sortBy: "rating", limit: "8" } },
+  { id: "planners", label: "Planners", apiQuery: { categories: "planners", sortBy: "rating", limit: "8" } },
+  {
+    id: "photographers",
+    label: "Photographers",
+    apiQuery: { categories: "photographers", sortBy: "rating", limit: "8" },
+  },
+  { id: "djs", label: "DJs", apiQuery: { categories: "djs", sortBy: "rating", limit: "8" } },
+  { id: "makeup", label: "Makeup Artists", apiQuery: { categories: "makeup", sortBy: "rating", limit: "8" } },
+  { id: "caterers", label: "Caterers", apiQuery: { categories: "caterers", sortBy: "rating", limit: "8" } },
 ];
 
-const SERVICES = [
-  // --- Wedding Planners ---
-  {
-    id: 1,
-    category: "planner",
-    title: "Royal Knot Wedding Planners",
-    description: "End-to-end wedding planning",
-    price: "₹3,50,000 onwards",
-    duration: "Full Event",
-    image: "https://images.unsplash.com/photo-1529634896-269f4d0b9b6b",
-  },
-  {
-    id: 2,
-    category: "planner",
-    title: "Shaadi Sutra Events",
-    description: "Luxury & destination weddings",
-    price: "₹4,20,000 onwards",
-    duration: "Full Event",
-    image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed",
-  },
-  {
-    id: 3,
-    category: "planner",
-    title: "The Wedding Files",
-    description: "Theme-based weddings",
-    price: "₹2,80,000 onwards",
-    duration: "Full Event",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552",
-  },
-  {
-    id: 4,
-    category: "planner",
-    title: "Vivah Creations",
-    description: "Traditional & modern weddings",
-    price: "₹2,50,000 onwards",
-    duration: "Full Event",
-    image: "https://images.unsplash.com/photo-1508672019048-805c876b67e2",
-  },
-  {
-    id: 5,
-    category: "planner",
-    title: "DreamShaadi Planners",
-    description: "Budget-friendly planning",
-    price: "₹1,90,000 onwards",
-    duration: "Full Event",
-    image: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91",
-  },
-
-  // --- Photographers ---
-  {
-    id: 6,
-    category: "photographer",
-    title: "Wedding Saga Studios",
-    description: "Candid & cinematic photography",
-    price: "₹1,20,000 onwards",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e",
-  },
-  {
-    id: 7,
-    category: "photographer",
-    title: "Lens Queen Photography",
-    description: "Luxury wedding shoots",
-    price: "₹1,80,000 onwards",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e",
-  },
-  {
-    id: 8,
-    category: "photographer",
-    title: "Candid Clicks",
-    description: "Natural storytelling moments",
-    price: "₹95,000 onwards",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1525253086316-d0c936c814f8",
-  },
-  {
-    id: 9,
-    category: "photographer",
-    title: "Frame Story Films",
-    description: "Photo + video packages",
-    price: "₹1,50,000 onwards",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-  },
-  {
-    id: 10,
-    category: "photographer",
-    title: "Golden Hour Studios",
-    description: "Destination weddings",
-    price: "₹2,00,000 onwards",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1521334884684-d80222895322",
-  },
-
-  // --- Makeup Artists ---
-  {
-    id: 11,
-    category: "makeup",
-    title: "Glam by Neha",
-    description: "HD bridal makeup",
-    price: "₹25,000",
-    duration: "Per Look",
-    image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15",
-  },
-  {
-    id: 12,
-    category: "makeup",
-    title: "Makeup Diaries",
-    description: "Airbrush bridal looks",
-    price: "₹30,000",
-    duration: "Per Look",
-    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
-  },
-  {
-    id: 13,
-    category: "makeup",
-    title: "Blush & Glow Studio",
-    description: "Natural glam specialist",
-    price: "₹18,000",
-    duration: "Per Look",
-    image: "https://images.unsplash.com/photo-1526045612212-70caf35c14df",
-  },
-  {
-    id: 14,
-    category: "makeup",
-    title: "Makeover by Riya",
-    description: "Bridal & party makeup",
-    price: "₹20,000",
-    duration: "Per Look",
-    image: "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-  },
-  {
-    id: 15,
-    category: "makeup",
-    title: "The Glam Room",
-    description: "Celebrity-style makeup",
-    price: "₹35,000",
-    duration: "Per Look",
-    image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c",
-  },
-
-  // --- Caterers ---
-  {
-    id: 16,
-    category: "caterer",
-    title: "Royal Feast Caterers",
-    description: "Multi-cuisine premium catering",
-    price: "₹1,200 / plate",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1600891964599-f61ba0e24092",
-  },
-  {
-    id: 17,
-    category: "caterer",
-    title: "Spice Route Catering",
-    description: "North & South Indian",
-    price: "₹850 / plate",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1543353071-873f17a7a088",
-  },
-  {
-    id: 18,
-    category: "caterer",
-    title: "Taste Buds Events",
-    description: "Live counters & fusion",
-    price: "₹1,000 / plate",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1",
-  },
-  {
-    id: 19,
-    category: "caterer",
-    title: "Wedding Thalis",
-    description: "Traditional wedding meals",
-    price: "₹700 / plate",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445",
-  },
-  {
-    id: 20,
-    category: "caterer",
-    title: "Elite Banquets",
-    description: "Luxury buffet setup",
-    price: "₹1,500 / plate",
-    duration: "Per Event",
-    image: "https://images.unsplash.com/photo-1555243896-c709bfa0b564",
-  },
-
-  // --- Venues ---
-  {
-    id: 21,
-    category: "venue",
-    title: "Grand Palace Lawns",
-    description: "Outdoor luxury venue",
-    price: "₹2,50,000",
-    duration: "Per Day",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3",
-  },
-  {
-    id: 22,
-    category: "venue",
-    title: "Royal Orchid Banquet",
-    description: "Indoor AC banquet hall",
-    price: "₹1,80,000",
-    duration: "Per Day",
-    image: "https://images.unsplash.com/photo-1503424886307-b090341d25d1",
-  },
-  {
-    id: 23,
-    category: "venue",
-    title: "Lakeside Resort",
-    description: "Destination wedding venue",
-    price: "₹4,00,000",
-    duration: "Per Day",
-    image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511",
-  },
-  {
-    id: 24,
-    category: "venue",
-    title: "Urban Grand Ballroom",
-    description: "Premium city venue",
-    price: "₹3,00,000",
-    duration: "Per Day",
-    image: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5",
-  },
-  {
-    id: 25,
-    category: "venue",
-    title: "Heritage Haveli",
-    description: "Royal heritage weddings",
-    price: "₹5,50,000",
-    duration: "Per Day",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267",
-  },
-];
-
-// --- 2. THEME CONFIGURATION ---
 const themeConfig = {
   Wedding: {
     text: "text-blue-800",
@@ -282,7 +49,6 @@ const themeConfig = {
   },
 };
 
-// --- 3. HELPER HOOKS ---
 function useHapticFeedback() {
   return useCallback((type = "light") => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
@@ -292,50 +58,142 @@ function useHapticFeedback() {
   }, []);
 }
 
-// --- 4. SUB-COMPONENTS ---
+const ServiceCardSkeleton = memo(() => (
+  <div className="flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border border-gray-100 rounded-xl p-3 h-full relative min-h-[150px] max-h-[150px] shadow-sm snap-center">
+    <div className="w-[90px] h-[90px] flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden relative animate-shimmer" />
+    <div className="flex flex-col justify-center flex-1 min-w-0 pr-2 pb-8 space-y-2">
+      <div className="h-4 w-3/4 bg-gray-200 rounded animate-shimmer" />
+      <div className="h-3 w-1/2 bg-gray-100 rounded animate-shimmer" />
+      <div className="flex items-center space-x-2 mt-1.5">
+        <div className="h-4 w-16 bg-gray-200 rounded animate-shimmer" />
+        <span className="w-1 h-1 bg-gray-300 rounded-full" />
+        <div className="h-3 w-12 bg-gray-100 rounded animate-shimmer" />
+      </div>
+    </div>
+    <div className="absolute bottom-3 right-3 h-7 w-14 bg-gray-200 rounded-lg animate-shimmer" />
+  </div>
+));
 
-const ServiceCard = memo(({ service, onAdd, themeTextClass }) => {
+const ServiceCard = memo(({ service, themeTextClass, theme }) => {
+  const { addToCart, removeFromCart, cartItems } = useCartStore();
   const haptic = useHapticFeedback();
+
+  if (!service || !service._id) {
+    return null;
+  }
+
+  const vendorId = service._id || service.id;
+
+  const inCart = useMemo(
+    () => cartItems?.some((item) => (item._id || item.id) === vendorId) || false,
+    [cartItems, vendorId]
+  );
+
+  const handleCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    haptic("medium");
+
+    if (inCart) {
+      removeFromCart(vendorId);
+    } else {
+      const cartItem = {
+        _id: vendorId,
+        id: vendorId,
+        name: service.name,
+        category: service.category,
+        price: service.perDayPrice?.min || (typeof service.basePrice === "number" ? service.basePrice : 0),
+        image: service.defaultImage || service.images?.[0] || "",
+        quantity: 1,
+        address: service.address,
+        rating: service.rating,
+        reviews: service.reviews,
+        verified: service.verified,
+      };
+      addToCart(cartItem);
+    }
+  };
+
+  const borderColorClass = useMemo(() => {
+    const colorMap = {
+      "text-blue-800": "border-blue-200",
+      "text-pink-700": "border-pink-200",
+      "text-yellow-700": "border-yellow-200",
+    };
+    return colorMap[themeTextClass] || "border-gray-100";
+  }, [themeTextClass]);
+
+  const buttonColorClass = useMemo(() => {
+    if (inCart) return "bg-green-500 text-white border-green-600";
+
+    const colorMap = {
+      "text-blue-800": "bg-blue-600 text-white hover:bg-blue-700 border-blue-700",
+      "text-pink-700": "bg-pink-600 text-white hover:bg-pink-700 border-pink-700",
+      "text-yellow-700": "bg-yellow-600 text-white hover:bg-yellow-700 border-yellow-700",
+    };
+    return colorMap[themeTextClass] || "bg-gray-900 text-white hover:bg-gray-800 border-gray-900";
+  }, [inCart, themeTextClass]);
+
+  const vendorUrl = useMemo(() => {
+    if (!service?._id) return "#";
+    const category = service?.category?.toLowerCase().replace(/\s+/g, "-") || "vendors";
+    return `/m/vendor/${category}/${service._id}`;
+  }, [service?._id, service?.category]);
+
   return (
-    <div className="flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border border-gray-100 rounded-xl p-3 h-full relative min-h-[150px] max-h-[150px] shadow-sm transition-transform active:scale-98 animate-fade-in snap-center">
-      <div className="w-[90px] h-[90px] flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden relative">
+    <Link
+      href={vendorUrl}
+      onClick={() => haptic("medium")}
+      className={`flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border rounded-xl p-3 h-full relative min-h-[150px] max-h-[150px] shadow-sm transition-transform active:scale-98 animate-fade-in snap-center ${borderColorClass}`}
+    >
+      <div className="w-[90px] h-[130px] flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden relative">
         <SmartMedia
-          src={service.image}
+          src={service.defaultImage || service.images?.[0] || ""}
           type="image"
           className="w-full h-full object-cover"
           loaderImage="/GlowLoadingGif.gif"
           width={90}
           height={90}
-          alt={service.title}
+          alt={service.name}
           loading="lazy"
         />
       </div>
 
       <div className="flex flex-col justify-center flex-1 min-w-0 pr-2 pb-8">
-        <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">{service.title}</p>
-        {service.description ? (
-          <p className="text-gray-500 text-[10px] mt-1 line-clamp-1">{service.description}</p>
+        <p className={`text-sm font-semibold line-clamp-2 leading-tight ${themeTextClass}`}>{service.name}</p>
+        {service.category ? (
+          <p className="text-gray-500 text-[10px] mt-1 line-clamp-1">{service?.category}</p>
         ) : (
           <div className="h-4" />
         )}
         <div className="flex items-center space-x-2 mt-1.5">
-          <p className="text-sm font-bold text-gray-900">{service.price}</p>
+          <p className="text-sm font-bold text-gray-900">
+            {service?.perDayPrice?.min
+              ? `₹${service?.perDayPrice.min}`
+              : typeof service?.basePrice === "string" || typeof service?.basePrice === "number"
+              ? service?.basePrice
+              : "Contact"}
+          </p>
           <span className="w-1 h-1 bg-gray-300 rounded-full" />
-          <p className="text-[10px] text-gray-500">{service.duration}</p>
+          <p className="text-[10px] text-gray-500">Per Event</p>
         </div>
       </div>
 
       <button
-        onClick={() => {
-          haptic("medium");
-          onAdd(service.id);
-        }}
-        className={`absolute bottom-3 right-3 inline-flex items-center justify-center px-4 py-1.5 bg-white border border-gray-200 text-xs font-bold rounded-lg uppercase shadow-sm hover:bg-gray-50 active:scale-90 transition-all touch-manipulation ${themeTextClass}`}
-        aria-label={`Add ${service.title}`}
+        onClick={handleCart}
+        className={`absolute bottom-3 right-3 inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold gap-1 transition-all active:scale-90 border ${buttonColorClass}`}
       >
-        Add
+        {inCart ? (
+          <>
+            <Check size={10} /> Added
+          </>
+        ) : (
+          <>
+            <Plus size={10} /> Add
+          </>
+        )}
       </button>
-    </div>
+    </Link>
   );
 });
 
@@ -357,7 +215,6 @@ const FilterPill = memo(({ filter, isActive, onClick, theme }) => {
   );
 });
 
-// Memoize scroll buttons
 const ScrollButton = React.memo(({ onClick, disabled, direction }) => (
   <button
     onClick={onClick}
@@ -373,47 +230,85 @@ const ScrollButton = React.memo(({ onClick, disabled, direction }) => (
   </button>
 ));
 
-// --- 5. MAIN COMPONENT ---
-
 const MostBooked = () => {
   const searchParams = useSearchParams();
   const haptic = useHapticFeedback();
   const rawCategory = searchParams.get("category");
 
-  // Theme Logic
   let categoryKey = rawCategory ? rawCategory : "default";
   if (categoryKey === "event") categoryKey = "wedding";
   const theme = themeConfig[categoryKey] || themeConfig.default;
 
-  // State
-  const [activeFilterId, setActiveFilterId] = useState("all");
+  const filterParam = searchParams.get("filter") || "all";
+  const [activeFilterId, setActiveFilterId] = useState(filterParam);
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // Handlers
+  const currentFilter = useMemo(() => FILTERS.find((f) => f.id === activeFilterId), [activeFilterId]);
+
+  useEffect(() => {
+    const filterParam = searchParams.get("filter");
+    if (filterParam && FILTERS.some((f) => f.id === filterParam)) {
+      setActiveFilterId(filterParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const filterParam = params.get("filter") || "all";
+      if (FILTERS.some((f) => f.id === filterParam)) {
+        setActiveFilterId(filterParam);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams(currentFilter.apiQuery);
+        const response = await fetch(`/api/vendor?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setServices(data.data);
+        } else {
+          setServices([]);
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        setServices([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, [currentFilter]);
+
   const handleFilterClick = useCallback((id) => {
     setActiveFilterId(id);
-    // Reset scroll when filter changes
+
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.set("filter", id);
+    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+
+    window.history.pushState({ filter: id }, "", newUrl);
+
     if (scrollRef.current) scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
   }, []);
 
-  const handleAdd = useCallback((id) => {
-    console.log("Added item:", id);
-  }, []);
-
-  // Filter Logic
-  const filteredServices = useMemo(() => {
-    if (activeFilterId === "all") return SERVICES;
-    return SERVICES.filter((service) => service.category === activeFilterId);
-  }, [activeFilterId]);
-
-  // Scroll Logic (Copied from CategoryGrid)
   const checkScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
 
-    // Only update if changed to prevent re-renders
     const newLeft = scrollLeft > 5;
     const newRight = scrollLeft < scrollWidth - clientWidth - 5;
 
@@ -431,7 +326,7 @@ const MostBooked = () => {
       window.removeEventListener("resize", checkScroll);
       if (ref) ref.removeEventListener("scroll", checkScroll);
     };
-  }, [checkScroll, filteredServices]); // Re-check when services change
+  }, [checkScroll, services]);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -445,8 +340,7 @@ const MostBooked = () => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900">Most Booked</h2>
 
-        {/* Scroll Controls (Only show if scrollable) */}
-        {filteredServices.length > 0 && (
+        {(services.length > 0 || isLoading) && (
           <div className="flex gap-2">
             <ScrollButton
               onClick={() => {
@@ -468,7 +362,6 @@ const MostBooked = () => {
         )}
       </div>
 
-      {/* Filters Row */}
       <div className="flex gap-2 text-sm mb-4 overflow-x-auto scrollbar-hide pb-2 no-scrollbar touch-pan-x">
         {FILTERS.map((filter) => (
           <FilterPill
@@ -481,7 +374,6 @@ const MostBooked = () => {
         ))}
       </div>
 
-      {/* Services List - Optimized Scroll Container */}
       <div
         ref={scrollRef}
         className="flex overflow-x-auto w-full gap-4 scrollbar-hide pb-4 no-scrollbar touch-pan-x touch-pan-y will-change-scroll min-h-[170px] snap-x snap-mandatory"
@@ -490,9 +382,16 @@ const MostBooked = () => {
           scrollBehavior: "smooth",
         }}
       >
-        {filteredServices.length > 0 ? (
-          filteredServices.map((service) => (
-            <ServiceCard key={service.id} service={service} onAdd={handleAdd} themeTextClass={theme.text} />
+        {isLoading ? (
+          [...Array(4)].map((_, i) => <ServiceCardSkeleton key={`skeleton-${i}`} />)
+        ) : services.length > 0 ? (
+          services.map((service, index) => (
+            <ServiceCard
+              key={service._id || service.id || `service-${index}`}
+              service={service}
+              themeTextClass={theme.text}
+              theme={theme}
+            />
           ))
         ) : (
           <div className="w-full flex items-center justify-center text-gray-400 text-sm italic py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -500,7 +399,6 @@ const MostBooked = () => {
           </div>
         )}
 
-        {/* Spacer for right padding */}
         <div className="w-1 flex-shrink-0" />
       </div>
 
@@ -523,6 +421,19 @@ const MostBooked = () => {
         }
         .animate-fade-in {
           animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: -400px 0;
+          }
+          100% {
+            background-position: 400px 0;
+          }
+        }
+        .animate-shimmer {
+          background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+          background-size: 800px 100%;
+          animation: shimmer 1.5s ease-in-out infinite;
         }
       `}</style>
     </div>

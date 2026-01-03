@@ -27,6 +27,73 @@ import Link from "next/link";
 import SmartMedia from "../SmartMediaLoader";
 
 // =============================================================================
+// DATA
+// =============================================================================
+
+const HERO_CATEGORIES = [
+  {
+    id: 1,
+    name: "Makeup Artists",
+    image: "/quickServicesPhotos/makeupQS.png",
+    count: "456",
+  },
+  {
+    id: 2,
+    name: "Planners",
+    image: "/quickServicesPhotos/plannerQS.png",
+    count: "145",
+  },
+  {
+    id: 3,
+    name: "Decorators",
+    image: "/quickServicesPhotos/decorQS.png",
+    count: "267",
+  },
+  {
+    id: 4,
+    name: "Photographers",
+    image: "/quickServicesPhotos/photographerQS.png",
+    count: "198",
+  },
+  {
+    id: 5,
+    name: "Venues",
+    image: "/quickServicesPhotos/venueQS.png",
+    count: "476",
+  },
+  {
+    id: 6,
+    name: "Mehendi",
+    image: "/quickServicesPhotos/mehndiQS.png",
+    count: "156",
+  },
+  {
+    id: 7,
+    name: "Caterers",
+    image: "/quickServicesPhotos/caterorQS.png",
+    count: "189",
+  },
+  {
+    id: 8,
+    name: "DJ & Music",
+    image: "/quickServicesPhotos/djQS.png",
+    count: "97",
+  },
+  {
+    id: 9,
+    name: "Florists",
+    image: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=400&h=500&fit=crop",
+    count: "0",
+  },
+  {
+    id: 10,
+    name: "Choreographers",
+    image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400&h=500&fit=crop",
+    count: "0",
+  },
+];
+
+// =============================================================================
 // THEME
 // =============================================================================
 
@@ -43,445 +110,6 @@ const THEME = {
   background: "#ffffff",
   backgroundAlt: "#f8fafc",
 };
-
-// =============================================================================
-// DATA
-// =============================================================================
-
-const HERO_CATEGORIES = [
-  {
-    id: 1,
-    name: "Makeup Artists",
-    image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=500&fit=crop",
-    count: "25,616",
-  },
-  {
-    id: 2,
-    name: "Planners",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=500&fit=crop",
-    count: "3,598",
-  },
-  {
-    id: 3,
-    name: "Decorators",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=500&fit=crop",
-    count: "8,234",
-  },
-  {
-    id: 4,
-    name: "Photographers",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=500&fit=crop",
-    count: "23,443",
-  },
-  {
-    id: 5,
-    name: "Venues",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=500&fit=crop",
-    count: "50,659",
-  },
-  {
-    id: 6,
-    name: "Mehendi",
-    image: "https://images.unsplash.com/photo-1595424064782-dce6974d0ad7?w=400&h=500&fit=crop",
-    count: "12,456",
-  },
-  {
-    id: 7,
-    name: "Caterers",
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400&h=500&fit=crop",
-    count: "9,876",
-  },
-  {
-    id: 8,
-    name: "DJ & Music",
-    image: "https://images.unsplash.com/photo-1571266028243-3716f02d9ae3?w=400&h=500&fit=crop",
-    count: "5,432",
-  },
-  {
-    id: 9,
-    name: "Florists",
-    image: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=400&h=500&fit=crop",
-    count: "4,567",
-  },
-  {
-    id: 10,
-    name: "Choreographers",
-    image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400&h=500&fit=crop",
-    count: "2,345",
-  },
-];
-
-const FEATURED_VENDORS = [
-  {
-    id: 101,
-    name: "Elite Makeup Studio",
-    category: "Makeup Artist",
-    rating: 4.9,
-    reviews: 234,
-    price: "₹15,000",
-    originalPrice: "₹20,000",
-    location: "Mumbai",
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop",
-    badge: "Top Rated",
-    badgeColor: "#ef4444",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 102,
-    name: "Captured Moments",
-    category: "Photographer",
-    rating: 4.8,
-    reviews: 189,
-    price: "₹25,000",
-    location: "Delhi",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=300&fit=crop",
-    badge: "Featured",
-    badgeColor: "#6366f1",
-    verified: true,
-    responseTime: "2 hours",
-  },
-  {
-    id: 103,
-    name: "Royal Events",
-    category: "Planner",
-    rating: 4.7,
-    reviews: 156,
-    price: "₹50,000",
-    location: "Bangalore",
-    image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "30 mins",
-  },
-  {
-    id: 104,
-    name: "Dream Decorators",
-    category: "Decorator",
-    rating: 4.9,
-    reviews: 312,
-    price: "₹35,000",
-    location: "Jaipur",
-    image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400&h=300&fit=crop",
-    badge: "Premium",
-    badgeColor: "#f59e0b",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 105,
-    name: "Shutter Stories",
-    category: "Photographer",
-    rating: 4.8,
-    reviews: 178,
-    price: "₹30,000",
-    location: "Pune",
-    image: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=300&fit=crop",
-    verified: false,
-    responseTime: "3 hours",
-  },
-];
-
-const TOP_PLANNERS = [
-  {
-    id: 201,
-    name: "Eventique India",
-    category: "Wedding Planner",
-    rating: 4.9,
-    reviews: 456,
-    price: "₹75,000",
-    originalPrice: "₹90,000",
-    location: "Mumbai",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop",
-    badge: "Elite",
-    badgeColor: "#8b5cf6",
-    verified: true,
-    responseTime: "30 mins",
-  },
-  {
-    id: 202,
-    name: "Dream Weddings",
-    category: "Wedding Planner",
-    rating: 4.8,
-    reviews: 289,
-    price: "₹60,000",
-    location: "Delhi",
-    image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 203,
-    name: "The Big Fat Indian",
-    category: "Wedding Planner",
-    rating: 4.7,
-    reviews: 178,
-    price: "₹1,00,000",
-    location: "Jaipur",
-    image: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400&h=300&fit=crop",
-    badge: "Luxury",
-    badgeColor: "#f59e0b",
-    verified: true,
-    responseTime: "2 hours",
-  },
-  {
-    id: 204,
-    name: "Shaadi Squad",
-    category: "Wedding Planner",
-    rating: 4.6,
-    reviews: 234,
-    price: "₹45,000",
-    location: "Pune",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=300&fit=crop",
-    verified: false,
-    responseTime: "4 hours",
-  },
-  {
-    id: 205,
-    name: "Perfect Moments",
-    category: "Wedding Planner",
-    rating: 4.8,
-    reviews: 189,
-    price: "₹55,000",
-    location: "Chennai",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "1 hour",
-  },
-];
-
-const MOST_BOOKED = [
-  {
-    id: 301,
-    name: "Divine Clicks",
-    category: "Photographer",
-    rating: 4.8,
-    reviews: 567,
-    price: "₹30,000",
-    location: "Mumbai",
-    image: "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=400&h=300&fit=crop",
-    badge: "Popular",
-    badgeColor: "#10b981",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 302,
-    name: "Glow Goddess",
-    category: "Makeup Artist",
-    rating: 4.9,
-    reviews: 445,
-    price: "₹20,000",
-    location: "Delhi",
-    image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "2 hours",
-  },
-  {
-    id: 303,
-    name: "Grand Caterers",
-    category: "Catering",
-    rating: 4.7,
-    reviews: 389,
-    price: "₹900/plate",
-    location: "Bangalore",
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400&h=300&fit=crop",
-    badge: "Best Seller",
-    badgeColor: "#f97316",
-    verified: true,
-    responseTime: "30 mins",
-  },
-  {
-    id: 304,
-    name: "Royal Decor",
-    category: "Decorator",
-    rating: 4.8,
-    reviews: 278,
-    price: "₹50,000",
-    location: "Chennai",
-    image: "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=400&h=300&fit=crop",
-    verified: false,
-    responseTime: "3 hours",
-  },
-  {
-    id: 305,
-    name: "Candid Crew",
-    category: "Photographer",
-    rating: 4.9,
-    reviews: 356,
-    price: "₹35,000",
-    location: "Hyderabad",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "1 hour",
-  },
-];
-
-const TOP_PHOTOGRAPHERS = [
-  {
-    id: 401,
-    name: "Lens Masters",
-    category: "Photographer",
-    rating: 4.9,
-    reviews: 678,
-    price: "₹40,000",
-    originalPrice: "₹50,000",
-    location: "Mumbai",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=300&fit=crop",
-    badge: "Award Winner",
-    badgeColor: "#f59e0b",
-    verified: true,
-    responseTime: "30 mins",
-  },
-  {
-    id: 402,
-    name: "Shutter Stories",
-    category: "Photographer",
-    rating: 4.8,
-    reviews: 534,
-    price: "₹35,000",
-    location: "Delhi",
-    image: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 403,
-    name: "Picture Perfect",
-    category: "Photographer",
-    rating: 4.7,
-    reviews: 412,
-    price: "₹28,000",
-    location: "Bangalore",
-    image: "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=400&h=300&fit=crop",
-    badge: "Top Choice",
-    badgeColor: "#3b82f6",
-    verified: true,
-    responseTime: "2 hours",
-  },
-  {
-    id: 404,
-    name: "Memory Makers",
-    category: "Photographer",
-    rating: 4.8,
-    reviews: 298,
-    price: "₹32,000",
-    location: "Pune",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "1 hour",
-  },
-];
-
-const TOP_MAKEUP = [
-  {
-    id: 601,
-    name: "Glamour Studio",
-    category: "Bridal Makeup",
-    rating: 4.9,
-    reviews: 567,
-    price: "₹25,000",
-    originalPrice: "₹32,000",
-    location: "Mumbai",
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop",
-    badge: "Celebrity MUA",
-    badgeColor: "#ec4899",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 602,
-    name: "Beauty Bliss",
-    category: "Bridal Makeup",
-    rating: 4.8,
-    reviews: 445,
-    price: "₹18,000",
-    location: "Delhi",
-    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "2 hours",
-  },
-  {
-    id: 603,
-    name: "Radiant Looks",
-    category: "Bridal Makeup",
-    rating: 4.7,
-    reviews: 378,
-    price: "₹22,000",
-    location: "Bangalore",
-    image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=300&fit=crop",
-    badge: "Top Rated",
-    badgeColor: "#10b981",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 604,
-    name: "Bridal Glow",
-    category: "Bridal Makeup",
-    rating: 4.9,
-    reviews: 312,
-    price: "₹30,000",
-    location: "Hyderabad",
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop",
-    verified: false,
-    responseTime: "3 hours",
-  },
-];
-
-const TRENDING = [
-  {
-    id: 501,
-    name: "Mehendi Magic",
-    category: "Mehendi Artist",
-    rating: 4.8,
-    reviews: 234,
-    price: "₹5,000",
-    location: "Ahmedabad",
-    image: "https://images.unsplash.com/photo-1595424064782-dce6974d0ad7?w=400&h=300&fit=crop",
-    badge: "Trending",
-    badgeColor: "#ef4444",
-    verified: true,
-    responseTime: "1 hour",
-  },
-  {
-    id: 502,
-    name: "DJ Beats Pro",
-    category: "DJ & Music",
-    rating: 4.7,
-    reviews: 189,
-    price: "₹25,000",
-    location: "Mumbai",
-    image: "https://images.unsplash.com/photo-1571266028243-3716f02d9ae3?w=400&h=300&fit=crop",
-    verified: true,
-    responseTime: "2 hours",
-  },
-  {
-    id: 503,
-    name: "Floral Fantasy",
-    category: "Florist",
-    rating: 4.9,
-    reviews: 156,
-    price: "₹15,000",
-    location: "Delhi",
-    image: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=400&h=300&fit=crop",
-    badge: "Hot",
-    badgeColor: "#f97316",
-    verified: true,
-    responseTime: "30 mins",
-  },
-  {
-    id: 504,
-    name: "Dance Diva",
-    category: "Choreographer",
-    rating: 4.6,
-    reviews: 123,
-    price: "₹18,000",
-    location: "Pune",
-    image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400&h=300&fit=crop",
-    verified: false,
-    responseTime: "4 hours",
-  },
-];
 
 // =============================================================================
 // HELPER HOOKS
@@ -514,7 +142,7 @@ const HeroCarousel = memo(() => {
   const handleCategoryClick = (item) => {
     if (isDragging) return;
     haptic("medium");
-    router.push(`/vendors/${item.name.toLowerCase().replace(/\s+/g, "-")}`);
+    router.push(`/m/vendors/marketplace/${item.name.toLowerCase().replace(/\s+/g, "-")}`);
   };
 
   // Track scroll position and update current page
@@ -553,7 +181,7 @@ const HeroCarousel = memo(() => {
   };
 
   return (
-    <div className="mb-6 bg-blue-100 rounded-2xl py-3">
+    <div className="mb-6 bg-blue-100/25 rounded-4xl py-3">
       {/* Section Title */}
       <h2 className="text-lg font-bold text-gray-900 px-4 mb-4">Vendor categories</h2>
 
@@ -589,7 +217,7 @@ const HeroCarousel = memo(() => {
             whileTap={{ scale: 0.98 }}
           >
             {/* Image Card */}
-            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-gray-100 mb-2 shadow-sm">
+            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm">
               <motion.img
                 src={item.image}
                 alt={item.name}
@@ -673,35 +301,82 @@ const VendorCardSkeleton = memo(() => (
 
 const VendorCard = memo(({ vendor }) => {
   const { addToCart, removeFromCart, cartItems } = useCartStore();
-  const [liked, setLiked] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const haptic = useHapticFeedback();
+  const router = useRouter();
 
-  const inCart = useMemo(() => cartItems?.some((item) => item.id === vendor.id) || false, [cartItems, vendor.id]);
+  if (!vendor || !vendor._id) {
+    return null;
+  }
+
+  const vendorId = vendor._id || vendor.id;
+
+  const inCart = useMemo(
+    () => cartItems?.some((item) => (item._id || item.id) === vendorId) || false,
+    [cartItems, vendorId]
+  );
 
   const handleCart = (e) => {
     e.stopPropagation();
     haptic("medium");
-    inCart ? removeFromCart(vendor.id) : addToCart(vendor);
+
+    if (inCart) {
+      removeFromCart(vendorId);
+    } else {
+      const cartItem = {
+        _id: vendorId,
+        id: vendorId,
+        name: vendor.name || "Unknown Vendor",
+        category: vendor.category || "Vendor",
+        price: vendor.perDayPrice?.min || (typeof vendor.basePrice === "number" ? vendor.basePrice : 0),
+        image: vendor.defaultImage || vendor?.images?.[0] || "",
+        quantity: 1,
+        address: vendor.address || "",
+        rating: vendor.rating || 0,
+        reviews: vendor.reviews || 0,
+        verified: vendor.verified || false,
+      };
+      addToCart(cartItem);
+    }
   };
+
+  // ✅ ADD: Navigation handler
+  const handleCardClick = () => {
+    haptic("light");
+    const categorySlug = vendor.category?.toLowerCase().replace(/\s+/g, "-") || "vendor";
+    router.push(`/m/vendor/${categorySlug}/${vendorId}`);
+  };
+
+  const displayPrice = useMemo(() => {
+    if (vendor.perDayPrice?.min) {
+      return `₹${vendor.perDayPrice.min.toLocaleString()}`;
+    }
+    if (typeof vendor.price === "number") {
+      return `₹${vendor.price.toLocaleString()}`;
+    }
+    if (typeof vendor.price === "string" && vendor.price.trim()) {
+      return vendor.price;
+    }
+    return "Contact";
+  }, [vendor.perDayPrice, vendor.price]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      onClick={handleCardClick}
       className="flex-shrink-0 w-44 bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 snap-center group"
     >
       {/* Image */}
       <div className="relative h-28 bg-gray-100 overflow-hidden">
         <SmartMedia
-          src={vendor?.defaultImage || vendor.images[1]}
+          src={vendor?.defaultImage || vendor.images[0] || vendor.images?.[1] || ""}
           type="image"
           className="w-full h-full object-cover object-center"
           loading="lazy"
         />
 
         {/* Badge */}
-        {vendor.tags && (
+        {vendor?.tags?.length > 0 && (
           <span
             className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded text-white"
             style={{ backgroundColor: vendor.badgeColor || THEME.accent }}
@@ -711,15 +386,10 @@ const VendorCard = memo(({ vendor }) => {
         )}
 
         {/* Discount Tag */}
-        {vendor?.perDayPrice?.max && (
+        {vendor?.perDayPrice?.max && vendor?.perDayPrice?.min && (
           <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-green-500 rounded">
             <span className="text-[9px] font-bold text-white">
-              {Math.round(
-                ((parseInt(vendor?.budgetRange?.max) - parseInt(vendor?.budgetRange?.min)) /
-                  parseInt(vendor?.budgetRange?.max)) *
-                  100
-              )}
-              % OFF
+              {Math.round(((vendor.perDayPrice.max - vendor.perDayPrice.min) / vendor.perDayPrice.max) * 100)}% OFF
             </span>
           </div>
         )}
@@ -741,29 +411,28 @@ const VendorCard = memo(({ vendor }) => {
         <p className="text-[10px] text-gray-500 mb-1.5">{vendor?.category}</p>
 
         {/* Rating & Location */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex items-center gap-0.5">
-            <Star size={10} className="fill-amber-400 text-amber-400" />
-            <span className="text-[10px] font-bold text-gray-700">{vendor.rating}</span>
-            <span className="text-[9px] text-gray-400">({vendor.reviews})</span>
+        {(vendor.rating || vendor.reviews) && (
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-0.5">
+              <Star size={10} className="fill-amber-400 text-amber-400" />
+              <span className="text-[10px] font-bold text-gray-700">{vendor.rating || "0"}</span>
+              <span className="text-[9px] text-gray-400">({vendor.reviews || 0})</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Response Time */}
-        {vendor.responseTime && (
+        {vendor?.responseTime && (
           <div className="flex items-center gap-1 mb-2 text-gray-400">
             <Clock size={9} />
-            <span className="text-[9px]">Responds in {vendor?.responseTime}</span>
+            <span className="text-[9px]">Responds in {vendor.responseTime}</span>
           </div>
         )}
 
         {/* Price & CTA */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
           <div>
-            <span className="text-sm font-bold text-gray-900">{vendor.price}</span>
-            {vendor.originalPrice && (
-              <span className="text-[9px] text-gray-400 line-through ml-1">{vendor.originalPrice}</span>
-            )}
+            <span className="text-sm font-bold text-gray-900">{displayPrice}</span>
           </div>
           <button
             onClick={handleCart}
@@ -793,7 +462,7 @@ VendorCard.displayName = "VendorCard";
 // VIEW MORE CARD - Compact
 // =============================================================================
 
-const ViewMoreCard = memo(({ title, count, icon: Icon, color }) => {
+const ViewMoreCard = memo(({ title, count, icon: Icon, color, viewMoreurl }) => {
   const haptic = useHapticFeedback();
   const router = useRouter();
 
@@ -801,7 +470,7 @@ const ViewMoreCard = memo(({ title, count, icon: Icon, color }) => {
     <div
       onClick={() => {
         haptic("medium");
-        router.push("/vendors");
+        router.push(viewMoreurl);
       }}
       className="flex-shrink-0 w-44 h-full rounded-xl overflow-hidden border-2 border-dashed border-gray-200 snap-center cursor-pointer transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] flex flex-col items-center justify-center min-h-[260px] group"
     >
@@ -846,6 +515,21 @@ const SectionHeader = memo(({ title, subtitle, icon: Icon, color, onViewAll }) =
           <p className="text-[10px] text-gray-500">{subtitle}</p>
         </div>
       </div>
+      {/* View All Button */}
+      {onViewAll && (
+        <button
+          onClick={() => {
+            haptic("light");
+            onViewAll();
+          }}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition-all"
+        >
+          <span className="text-xs font-semibold" style={{ color }}>
+            View All
+          </span>
+          <ArrowRight size={14} style={{ color }} />
+        </button>
+      )}
     </div>
   );
 });
@@ -902,6 +586,49 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
     }
   };
 
+  const viewMoreUrl = useMemo(() => {
+    const baseUrl = "/m/vendors/marketplace";
+    const params = new URLSearchParams();
+
+    // Determine section type and add appropriate filters
+    if (title.includes("Featured")) {
+      params.set("featured", "true");
+      params.set("sortBy", "rating");
+    } else if (title.includes("Popular") || title.includes("Most Booked")) {
+      params.set("sortBy", "bookings");
+      params.set("sortOrder", "desc");
+    } else if (title.includes("Trending")) {
+      params.set("sortBy", "views");
+      params.set("sortOrder", "desc");
+    } else if (title.includes("Top Rated")) {
+      params.set("sortBy", "rating");
+      params.set("minRating", "4");
+    } else if (title.includes("New") || title.includes("Recently Added")) {
+      params.set("sortBy", "newest");
+      params.set("sortOrder", "desc");
+    } else if (title.includes("Planners")) {
+      // Handle "Top Event Planners" or "Top Wedding Planners"
+      params.set("categories", "planners");
+      params.set("sortBy", "rating");
+      params.set("sortOrder", "desc");
+    } else if (title.includes("Photographers")) {
+      params.set("categories", "photographers");
+      params.set("sortBy", "rating");
+    } else if (title.includes("Makeup")) {
+      params.set("categories", "makeup");
+      params.set("sortBy", "rating");
+    }
+
+    // Add category filter if vendors have a consistent category (and not already set)
+    if (vendors?.[0]?.category && !params.has("categories")) {
+      params.set("categories", vendors[0].category);
+    }
+
+    // Build final URL
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+  }, [vendors, title]);
+
   return (
     <section className="py-4 bg-white mb-1">
       {/* Header */}
@@ -910,7 +637,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
         subtitle={subtitle}
         icon={Icon}
         color={color}
-        onViewAll={() => router.push("/vendors")}
+        onViewAll={() => router.push(viewMoreUrl)}
       />
 
       {/* Scroll Indicators */}
@@ -974,17 +701,19 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
             [...Array(4)].map((_, i) => (
               <motion.div
                 key={`skeleton-${i}`}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{
-                  delay: i * 0.1,
-                  duration: 0.5,
-                  ease: "easeOut",
-                }}
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0 }}
               >
                 <VendorCardSkeleton />
               </motion.div>
             ))
+          ) : vendors.length === 0 ? (
+            // ✅ ADD: Empty state when no vendors
+            <div className="flex-shrink-0 w-44 h-[260px] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center px-4">
+              <Icon size={32} className="text-gray-300 mb-2" style={{ color }} />
+              <p className="text-xs font-medium text-gray-400">No vendors found</p>
+            </div>
           ) : (
             <>
               {vendors.map((vendor, index) => (
@@ -1000,7 +729,13 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
 
               {/* Only show View More if there are vendors */}
               {vendors.length > 0 && (
-                <ViewMoreCard title={title.split(" ").pop()} count={vendors.length * 10} icon={Icon} color={color} />
+                <ViewMoreCard
+                  title={title.split(" ").pop()}
+                  count={vendors.length * 10}
+                  icon={Icon}
+                  color={color}
+                  viewMoreurl={viewMoreUrl}
+                />
               )}
             </>
           )}
@@ -1028,8 +763,9 @@ const FloatingCart = memo(({ setOpenCartNavbar }) => {
   const total = useMemo(() => {
     return (
       cartItems?.reduce((sum, item) => {
-        const price = parseInt(item.price?.replace(/[^0-9]/g, "")) || 0;
-        return sum + price;
+        const price =
+          typeof item.price === "number" ? item.price : parseInt(String(item.price || "0").replace(/[^0-9]/g, "")) || 0;
+        return sum + price * (item.quantity || 1);
       }, 0) || 0
     );
   }, [cartItems]);
@@ -1088,6 +824,140 @@ export default function FindAVendorPageWrapper() {
   const { cartItems, getCartCount, setOpenCartNavbar } = useCartStore();
   const count = getCartCount?.() || cartItems?.length || 0;
 
+  // State for all sections
+  const [heroCategories, setHeroCategories] = useState([]);
+  const [featuredVendors, setFeaturedVendors] = useState([]);
+  const [topPlanners, setTopPlanners] = useState([]);
+  const [mostBooked, setMostBooked] = useState([]);
+  const [topPhotographers, setTopPhotographers] = useState([]);
+  const [topMakeup, setTopMakeup] = useState([]);
+  const [trending, setTrending] = useState([]);
+
+  // Loading states
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [isLoadingPlanners, setIsLoadingPlanners] = useState(true);
+  const [isLoadingBooked, setIsLoadingBooked] = useState(true);
+  const [isLoadingPhotographers, setIsLoadingPhotographers] = useState(true);
+  const [isLoadingMakeup, setIsLoadingMakeup] = useState(true);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  // Helper to filter valid vendors
+  const filterValidVendors = (vendors) => {
+    return vendors.filter((vendor) => vendor && (vendor._id || vendor.id) && vendor.name);
+  };
+
+  // Fetch all vendor data on mount
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        // 1. Fetch Hero Categories (All categories for grid)
+        setIsLoadingCategories(true);
+        const categoriesRes = await fetch("/api/vendor/categories");
+        const categoriesData = await categoriesRes.json();
+        if (categoriesData.success) {
+          setHeroCategories(categoriesData.data || []);
+        }
+        setIsLoadingCategories(false);
+
+        // 2. Fetch Featured Vendors
+        setIsLoadingFeatured(true);
+        const featuredParams = new URLSearchParams({
+          featured: "true",
+          sortBy: "rating",
+          limit: "10",
+        });
+        const featuredRes = await fetch(`/api/vendor?${featuredParams.toString()}`);
+        const featuredData = await featuredRes.json();
+        if (featuredData.success) {
+          setFeaturedVendors(filterValidVendors(featuredData.data || []));
+        }
+        setIsLoadingFeatured(false);
+
+        // 3. Fetch Top Planners
+        setIsLoadingPlanners(true);
+        const plannersParams = new URLSearchParams({
+          categories: "planners",
+          sortBy: "rating",
+          limit: "10",
+        });
+        const plannersRes = await fetch(`/api/vendor?${plannersParams.toString()}`);
+        const plannersData = await plannersRes.json();
+        if (plannersData.success) {
+          setTopPlanners(plannersData.data || []);
+        }
+        setIsLoadingPlanners(false);
+
+        // 4. Fetch Most Booked
+        setIsLoadingBooked(true);
+        const bookedParams = new URLSearchParams({
+          sortBy: "bookings",
+          limit: "10",
+        });
+        const bookedRes = await fetch(`/api/vendor?${bookedParams.toString()}`);
+        const bookedData = await bookedRes.json();
+        if (bookedData.success) {
+          setMostBooked(bookedData.data || []);
+        }
+        setIsLoadingBooked(false);
+
+        // 5. Fetch Top Photographers
+        setIsLoadingPhotographers(true);
+        const photographersParams = new URLSearchParams({
+          categories: "photographers",
+          sortBy: "rating",
+          limit: "10",
+        });
+        const photographersRes = await fetch(`/api/vendor?${photographersParams.toString()}`);
+        const photographersData = await photographersRes.json();
+        if (photographersData.success) {
+          setTopPhotographers(photographersData.data || []);
+        }
+        setIsLoadingPhotographers(false);
+
+        // 6. Fetch Top Makeup Artists
+        setIsLoadingMakeup(true);
+        const makeupParams = new URLSearchParams({
+          categories: "makeup",
+          sortBy: "rating",
+          limit: "10",
+        });
+        const makeupRes = await fetch(`/api/vendor?${makeupParams.toString()}`);
+        const makeupData = await makeupRes.json();
+        if (makeupData.success) {
+          setTopMakeup(makeupData.data || []);
+        }
+        setIsLoadingMakeup(false);
+
+        // 7. Fetch Trending Vendors
+        setIsLoadingTrending(true);
+        const trendingParams = new URLSearchParams({
+          trending: "true",
+          sortBy: "views",
+          limit: "10",
+        });
+        const trendingRes = await fetch(`/api/vendor?${trendingParams.toString()}`);
+        const trendingData = await trendingRes.json();
+        if (trendingData.success) {
+          setTrending(trendingData.data || []);
+        }
+        setIsLoadingTrending(false);
+      } catch (error) {
+        console.error("Error fetching vendor data:", error);
+        // Set all loading states to false on error
+        setIsLoadingCategories(false);
+        setIsLoadingFeatured(false);
+        setIsLoadingPlanners(false);
+        setIsLoadingBooked(false);
+        setIsLoadingPhotographers(false);
+        setIsLoadingMakeup(false);
+        setIsLoadingTrending(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -1135,49 +1005,55 @@ export default function FindAVendorPageWrapper() {
         <VendorCarousel
           title="Featured Vendors"
           subtitle="Handpicked by our experts"
-          vendors={FEATURED_VENDORS}
+          vendors={featuredVendors}
           icon={Sparkles}
           color="#f59e0b"
+          isLoading={isLoadingFeatured}
         />
 
         <VendorCarousel
           title="Top Wedding Planners"
           subtitle="Make your dream wedding happen"
-          vendors={TOP_PLANNERS}
+          vendors={topPlanners}
           icon={Calendar}
           color="#8b5cf6"
+          isLoading={isLoadingPlanners}
         />
 
         <VendorCarousel
           title="Most Booked"
           subtitle="Popular this wedding season"
-          vendors={MOST_BOOKED}
+          vendors={mostBooked}
           icon={TrendingUp}
           color="#10b981"
+          isLoading={isLoadingBooked}
         />
 
         <VendorCarousel
           title="Top Photographers"
           subtitle="Capture every beautiful moment"
-          vendors={TOP_PHOTOGRAPHERS}
+          vendors={topPhotographers}
           icon={Camera}
           color="#3b82f6"
+          isLoading={isLoadingPhotographers}
         />
 
         <VendorCarousel
           title="Makeup Artists"
           subtitle="Look your absolute best"
-          vendors={TOP_MAKEUP}
+          vendors={topMakeup}
           icon={Palette}
           color="#ec4899"
+          isLoading={isLoadingMakeup}
         />
 
         <VendorCarousel
           title="Trending Now"
           subtitle="What's hot right now"
-          vendors={TRENDING}
+          vendors={trending}
           icon={Zap}
           color="#f97316"
+          isLoading={isLoadingTrending}
         />
       </div>
 
@@ -1197,6 +1073,26 @@ export default function FindAVendorPageWrapper() {
         }
         * {
           -webkit-tap-highlight-color: transparent;
+        }
+
+        @keyframes glass-shimmer {
+          0% {
+            background-position: -400px 0;
+          }
+          100% {
+            background-position: 400px 0;
+          }
+        }
+
+        .animate-glass-shimmer {
+          background: linear-gradient(
+            90deg,
+            rgba(243, 244, 246, 1) 0%,
+            rgba(229, 231, 235, 1) 50%,
+            rgba(243, 244, 246, 1) 100%
+          );
+          background-size: 800px 100%;
+          animation: glass-shimmer 1.5s ease-in-out infinite;
         }
       `}</style>
     </div>
