@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import AddVendor from "@/components/mobile/admin/vendors/addVendor";
 import AllVendors from "@/components/mobile/admin/vendors/AllVendors";
-import ViewVendorTab from "@/components/mobile/admin/vendors/ViewVendorTab";
-import EditVendorTab from "@/components/mobile/admin/vendors/EditVendorTab";
+// import ViewVendorTab from "@/components/mobile/admin/vendors/ViewVendorTab";
+// import EditVendorTab from "@/components/mobile/admin/vendors/EditVendorTab";
 
 export default function VendorsPage() {
   const [activeTab, setActiveTab] = useState("all");
@@ -335,18 +335,18 @@ export default function VendorsPage() {
                 </div>
               )}
 
-              {activeTab === "view" && selectedVendor && (
+              {/* {activeTab === "view" && selectedVendor && (
                 <ViewVendorTab
                   vendor={selectedVendor}
                   onBack={handleBackToList}
                   onEdit={handleSwitchToEdit}
                   onDelete={handleDeleteSuccess}
                 />
-              )}
+              )} */}
 
-              {activeTab === "edit" && selectedVendor && (
+              {/* {activeTab === "edit" && selectedVendor && (
                 <EditVendorTab vendor={selectedVendor} onBack={handleBackToList} onSuccess={handleEditSuccess} />
-              )}
+              )} */}
             </motion.div>
           </AnimatePresence>
 
