@@ -462,7 +462,7 @@ const MainContent = () => {
           isLoading={isTrendingLoading} // Optional: Pass loading state
         />
 
-        <SampleProposal />
+        <SampleProposal category={currentCategory} />
 
         {/* Decorative Wave - Optimized SVG */}
         <div className="rotate-180 bottom-5 z-50 opacity-100 pointer-events-none mb-9">

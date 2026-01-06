@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Sparkles } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
 
-const SampleProposal = () => {
+const SampleProposal = ({ category }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false); // Pause on hover/touch
@@ -14,31 +14,24 @@ const SampleProposal = () => {
   const proposals = [
     {
       id: 1,
-      title: "Royal Jaipur Palace Wedding",
-      location: "Fairmont, Jaipur",
-      image: "https://www.theweddingcompany.com/_next/static/media/1.28919306.webp",
+      title: `Rahul And Priya's ${category?.toLowerCase() || "Wedding"} Celebration`,
+      location: "Enjoyable Moments",
+      image: "/Banners/sampleProposal1.png",
       theme: "Traditional Gold",
     },
     {
       id: 2,
-      title: "Beachside Sunset Vows",
-      location: "Taj Exotica, Goa",
-      image: "https://www.theweddingcompany.com/_next/static/media/2.78471c2c.webp",
+      title: "Our Simple Process for Customers",
+      location: "Simplied and Easy Steps",
+      image: "/Banners/sampleProposal2.png",
       theme: "Floral Pastel",
     },
     {
       id: 3,
-      title: "Elegant City Reception",
-      location: "The Oberoi, Delhi",
-      image: "https://www.theweddingcompany.com/_next/static/media/3.2443e50a.webp",
+      title: "Budget Estimation Process",
+      location: "Planned Budget Tracker",
+      image: "/Banners/sampleProposal3.png",
       theme: "Modern Chic",
-    },
-    {
-      id: 4,
-      title: "Grand Celebration",
-      location: "The Oberoi, Delhi",
-      image: "https://www.theweddingcompany.com/_next/static/media/4.a93956bd.webp",
-      theme: "Classic Lux",
     },
   ];
 
@@ -166,7 +159,6 @@ const SampleProposal = () => {
               {proposals[currentIndex].title}
             </h3>
             <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium">
-              <MapPin size={14} className="text-gray-400" />
               <span>{proposals[currentIndex].location}</span>
             </div>
           </motion.div>

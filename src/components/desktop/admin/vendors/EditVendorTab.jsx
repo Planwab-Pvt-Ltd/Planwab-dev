@@ -208,7 +208,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess, isLoading }) => {
       return;
     }
 
-    if (password === "admin123" || password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+    if (password) {
       onSuccess(password);
     } else {
       setAttempts((prev) => prev + 1);

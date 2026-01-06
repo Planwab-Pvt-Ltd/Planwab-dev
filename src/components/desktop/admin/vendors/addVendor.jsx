@@ -175,6 +175,107 @@ const useToast = () => {
 };
 
 // ============================================================================
+// AUTO-SAVE CONTEXT & UTILITIES
+// ============================================================================
+const AUTOSAVE_KEY = "planwab_vendor_autosave";
+const AUTOSAVE_DEBOUNCE_MS = 2000; // 2 seconds debounce
+
+const AutoSaveManager = {
+  save: (data, isUserChange = false) => {
+    // Don't save if no user changes
+    if (!isUserChange) {
+      return;
+    }
+
+    try {
+      const saveData = {
+        formData: data.formData,
+        activeCategory: data.activeCategory,
+        uploadedFilesMeta: data.uploadedFiles.map((f) => ({
+          name: f.name,
+          size: f.size,
+          type: f.type,
+        })),
+        timestamp: Date.now(),
+        version: "1.0",
+        hasUserChanges: true, // Flag to indicate real user data
+      };
+
+      // Calculate meaningful fields (exclude defaults)
+      const meaningfulFields = Object.keys(saveData.formData).filter((key) => {
+        const value = saveData.formData[key];
+        // Check if value is different from initial/default
+        if (value === null || value === undefined || value === "") return false;
+        if (Array.isArray(value) && value.length === 0) return false;
+        if (typeof value === "object" && Object.keys(value).length === 0) return false;
+        return true;
+      });
+
+      // Don't save if only default values exist
+      if (meaningfulFields.length < 3 && saveData.uploadedFilesMeta.length === 0) {
+        console.log("⏭️ Skipping auto-save - no meaningful user data");
+        return;
+      }
+
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saveData));
+      console.log(`✅ Auto-save successful - ${meaningfulFields.length} fields`);
+    } catch (error) {
+      console.error("❌ Auto-save failed:", error);
+      // If quota exceeded, try to save without file metadata
+      try {
+        const minimalData = {
+          formData: data.formData,
+          activeCategory: data.activeCategory,
+          timestamp: Date.now(),
+          version: "1.0",
+          hasUserChanges: true,
+        };
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(minimalData));
+      } catch (e) {
+        console.error("❌ Minimal auto-save also failed:", e);
+      }
+    }
+  },
+
+  load: () => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (!saved) return null;
+
+      const data = JSON.parse(saved);
+
+      // Check if data is not too old (7 days max)
+      const age = Date.now() - data.timestamp;
+      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+      if (age > maxAge) {
+        console.log("Auto-saved data is too old, discarding");
+        AutoSaveManager.clear();
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Failed to load auto-save:", error);
+      return null;
+    }
+  },
+
+  clear: () => {
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+      console.log("Auto-save cleared");
+    } catch (error) {
+      console.error("Failed to clear auto-save:", error);
+    }
+  },
+
+  exists: () => {
+    return !!localStorage.getItem(AUTOSAVE_KEY);
+  },
+};
+
+// ============================================================================
 // MAIN EXPORT COMPONENT
 // ============================================================================
 export default function AddVendor({ onNavigate }) {
@@ -193,7 +294,6 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
   const [error, setError] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [attempts, setAttempts] = useState(0);
   const inputRef = useRef(null);
   const { addToast } = useToast();
 
@@ -218,22 +318,11 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
     setIsVerifying(true);
     setError("");
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // Just a small delay for UX
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    if (password === "admin123" || password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      addToast("Access granted! Publishing vendor...", "success");
-      onSuccess();
-      onClose();
-    } else {
-      setAttempts((prev) => prev + 1);
-      setError(`Invalid password. ${3 - attempts - 1} attempts remaining.`);
-      addToast("Invalid admin password", "error");
-      if (attempts >= 2) {
-        addToast("Too many failed attempts. Please try again later.", "warning");
-        onClose();
-      }
-    }
-    setIsVerifying(false);
+    // Pass password to parent handler
+    onSuccess(password);
   };
 
   if (!isOpen) return null;
@@ -352,6 +441,129 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
               Contact your system administrator if you've forgotten the password
             </p>
           </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+// ============================================================================
+// AUTO-SAVE RECOVERY MODAL
+// ============================================================================
+const AutoSaveRecoveryModal = ({ isOpen, onRestore, onDiscard, savedData }) => {
+  if (!isOpen) return null;
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700"
+        >
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <RefreshCw size={28} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Unsaved Work Found!</h2>
+                <p className="text-white/80 text-sm mt-0.5">We found your previous session data</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-5">
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+              <div className="flex items-start gap-3">
+                <Info size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-1">
+                    Auto-saved session detected
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Last saved: {formatDate(savedData?.timestamp)}
+                  </p>
+                  {savedData?.formData?.name && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                      Business: <span className="font-semibold">{savedData.formData.name}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Category</span>
+                <span className="font-medium text-gray-900 dark:text-white capitalize">
+                  {savedData?.activeCategory || "Not set"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Form Fields</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {Object.keys(savedData?.formData || {}).filter((k) => savedData?.formData[k]).length} filled
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-700">
+              <p className="text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>
+                  Choose "Use Saved Data" to continue where you left off, or "Start Fresh" to begin a new entry.
+                </span>
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onDiscard}
+                className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-all flex items-center justify-center gap-2"
+              >
+                <Trash2 size={18} />
+                Start Fresh
+              </button>
+              <button
+                type="button"
+                onClick={onRestore}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
+              >
+                <CheckCircle size={18} />
+                Use Saved Data
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              Auto-save helps you never lose your work
+            </p>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -638,6 +850,13 @@ function AddVendorContent({ onNavigate }) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [touchedFields, setTouchedFields] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  // Auto-save states
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryData, setRecoveryData] = useState(null);
+  const autoSaveTimerRef = useRef(null);
+  // Auto-save states
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const isInitialMount = useRef(true);
 
   // ============================================================================
   // FIELD OPTIONS CONFIGURATION
@@ -1087,6 +1306,113 @@ function AddVendorContent({ onNavigate }) {
   }, [formData, uploadedFiles, activeCategory]);
 
   // ============================================================================
+  // AUTO-SAVE: Load saved data on mount
+  // ============================================================================
+  useEffect(() => {
+    const savedData = AutoSaveManager.load();
+    if (savedData && savedData.hasUserChanges) {
+      // Validate that there's meaningful data
+      const hasName = savedData.formData?.name && savedData.formData.name.trim();
+      const hasEmail = savedData.formData?.email && savedData.formData.email.trim();
+      const hasPhone = savedData.formData?.phoneNo && savedData.formData.phoneNo.trim();
+      const hasImages = savedData.uploadedFilesMeta && savedData.uploadedFilesMeta.length > 0;
+
+      // Only show recovery if there's at least one meaningful field
+      if (hasName || hasEmail || hasPhone || hasImages) {
+        setRecoveryData(savedData);
+        setShowRecoveryModal(true);
+      } else {
+        // Clear invalid auto-save
+        AutoSaveManager.clear();
+      }
+    }
+  }, []); // Run once on mount
+
+  // ============================================================================
+  // AUTO-SAVE: Save data on changes (debounced)
+  // ============================================================================
+  useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Don't auto-save if showing recovery modal or submitting
+    if (showRecoveryModal || isSubmitting) return;
+
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    // Set new timer (debounced save)
+    autoSaveTimerRef.current = setTimeout(() => {
+      // Only save if user has actually interacted and there are changes
+      if (hasUserInteracted && hasChanges) {
+        AutoSaveManager.save(
+          {
+            formData,
+            activeCategory,
+            uploadedFiles,
+          },
+          true // Indicate this is a user change
+        );
+      }
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, activeCategory, uploadedFiles, hasChanges, showRecoveryModal, isSubmitting, hasUserInteracted]);
+
+  // ============================================================================
+  // AUTO-SAVE: Save when user leaves page
+  // ============================================================================
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && hasChanges && hasUserInteracted && !isSubmitting) {
+        // User is leaving, save immediately
+        AutoSaveManager.save(
+          {
+            formData,
+            activeCategory,
+            uploadedFiles,
+          },
+          true
+        );
+      }
+    };
+
+    const handleBeforeUnload = (e) => {
+      if (hasChanges && hasUserInteracted && !isSubmitting) {
+        AutoSaveManager.save(
+          {
+            formData,
+            activeCategory,
+            uploadedFiles,
+          },
+          true
+        );
+
+        // Show browser warning
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [formData, activeCategory, uploadedFiles, hasChanges, hasUserInteracted, isSubmitting]);
+
+  // ============================================================================
   // SCROLL TO FORM TOP FUNCTION
   // ============================================================================
   const scrollToFormTop = useCallback(() => {
@@ -1108,6 +1434,9 @@ function AddVendorContent({ onNavigate }) {
     setErrors({});
     setTouchedFields({});
     setOriginalData(JSON.parse(JSON.stringify(initialFormData)));
+    setHasUserInteracted(false); // ADD THIS
+    isInitialMount.current = true;
+    AutoSaveManager.clear(); // ADD THIS LINE
     addToast("Form has been reset to default values", "info");
     scrollToFormTop();
   }, [addToast, scrollToFormTop]);
@@ -1175,6 +1504,9 @@ function AddVendorContent({ onNavigate }) {
 
   const handleInputChange = useCallback(
     (field, value, isNested = false, nestedField = "") => {
+      // Mark that user has interacted
+      setHasUserInteracted(true); // ADD THIS LINE
+
       setFormData((prev) => {
         if (isNested) {
           return { ...prev, [field]: { ...(prev[field] || {}), [nestedField]: value } };
@@ -1194,6 +1526,7 @@ function AddVendorContent({ onNavigate }) {
   );
 
   const handleCategoryDataChange = useCallback((field, value) => {
+    setHasUserInteracted(true);
     setFormData((prev) => ({
       ...prev,
       categoryData: { ...prev.categoryData, [field]: value },
@@ -1201,6 +1534,7 @@ function AddVendorContent({ onNavigate }) {
   }, []);
 
   const handleNestedCategoryDataChange = useCallback((field, nestedField, value) => {
+    setHasUserInteracted(true);
     setFormData((prev) => ({
       ...prev,
       categoryData: {
@@ -1211,6 +1545,7 @@ function AddVendorContent({ onNavigate }) {
   }, []);
 
   const handleVendorProfileChange = useCallback((field, value) => {
+    setHasUserInteracted(true);
     setFormData((prev) => ({
       ...prev,
       vendorProfile: { ...(prev.vendorProfile || {}), [field]: value },
@@ -1218,6 +1553,7 @@ function AddVendorContent({ onNavigate }) {
   }, []);
 
   const handleListChange = useCallback((field, updatedList) => {
+    setHasUserInteracted(true);
     setFormData((prev) => ({ ...prev, [field]: updatedList }));
   }, []);
 
@@ -1226,6 +1562,8 @@ function AddVendorContent({ onNavigate }) {
   // ============================================================================
   const handleFileUpload = useCallback(
     (files) => {
+      setHasUserInteracted(true);
+
       const fileArray = Array.from(files);
       const validFiles = fileArray.filter((file) => {
         const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -1366,7 +1704,15 @@ function AddVendorContent({ onNavigate }) {
     setShowPasswordModal(true);
   };
 
-  const handleConfirmedSubmit = async () => {
+  const handleConfirmedSubmit = async (adminPassword) => {
+    if (!adminPassword || adminPassword.trim() === "") {
+      addToast("Admin password is required to submit the form", "error");
+      return;
+    }
+    if (adminPassword !== "AddVendorPlanwab") {
+      addToast("Incorrect admin password. Please try again.", "error");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -1413,6 +1759,10 @@ function AddVendorContent({ onNavigate }) {
 
       addToast("🎉 Vendor published successfully! Redirecting...", "success", 5000);
 
+      AutoSaveManager.clear();
+      setHasUserInteracted(false); // ADD THIS
+      isInitialMount.current = true;
+
       setTimeout(() => {
         if (onNavigate) {
           onNavigate("all");
@@ -1442,6 +1792,46 @@ function AddVendorContent({ onNavigate }) {
     },
     [activeSection, scrollToFormTop]
   );
+
+  // ============================================================================
+  // AUTO-SAVE RECOVERY HANDLERS
+  // ============================================================================
+  const handleRestoreAutoSave = useCallback(() => {
+    if (!recoveryData) return;
+
+    try {
+      // Restore form data
+      setFormData(recoveryData.formData || initialFormData);
+
+      // Restore category
+      if (recoveryData.activeCategory) {
+        setActiveCategory(recoveryData.activeCategory);
+      }
+
+      // Note: Cannot restore actual file objects, user needs to re-upload
+      // But we can show a message about it
+
+      setShowRecoveryModal(false);
+      addToast("✅ Your previous work has been restored!", "success", 5000);
+
+      if (recoveryData.uploadedFilesMeta && recoveryData.uploadedFilesMeta.length > 0) {
+        addToast("⚠️ Please re-upload your images", "warning", 6000);
+      }
+
+      scrollToFormTop();
+    } catch (error) {
+      console.error("Failed to restore auto-save:", error);
+      addToast("Failed to restore saved data", "error");
+      setShowRecoveryModal(false);
+    }
+  }, [recoveryData, addToast, scrollToFormTop]);
+
+  const handleDiscardAutoSave = useCallback(() => {
+    AutoSaveManager.clear();
+    setRecoveryData(null);
+    setShowRecoveryModal(false);
+    addToast("Started fresh - previous data cleared", "info");
+  }, [addToast]);
 
   // ============================================================================
   // COMPUTED VALUES
@@ -1503,7 +1893,6 @@ function AddVendorContent({ onNavigate }) {
                 <p className="text-white/70 text-sm mt-2">
                   Complete the form below to create a professional vendor listing
                 </p>
-
                 {/* Progress Bar */}
                 <div className="flex items-center gap-3 mt-4">
                   <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden max-w-[250px]">
@@ -1526,6 +1915,29 @@ function AddVendorContent({ onNavigate }) {
                     </motion.span>
                   )}
                 </div>
+                {overallProgress}% Complete
+                {requiredFieldsComplete && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="px-3 py-1 bg-green-400 text-green-900 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lg"
+                  >
+                    <CheckCircle size={14} />
+                    Ready to Publish
+                  </motion.span>
+                )}
+                {/* ADD THIS: */}
+                {hasChanges && !isSubmitting && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-2 py-1 mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-medium rounded-full flex items-center gap-1"
+                    title="Your work is automatically saved"
+                  >
+                    <RefreshCw size={10} />
+                    Auto-saving
+                  </motion.span>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -1586,6 +1998,7 @@ function AddVendorContent({ onNavigate }) {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
+                    setHasUserInteracted(true);
                     setActiveCategory(cat.key);
                     setFormData((prev) => ({ ...prev, categoryData: {} }));
                     addToast(`Category changed to ${cat.label}`, "info");
@@ -1967,10 +2380,18 @@ function AddVendorContent({ onNavigate }) {
         {previewImage && <ImagePreviewModal image={previewImage} onClose={() => setPreviewImage(null)} />}
       </AnimatePresence>
 
+      {/* Auto-Save Recovery Modal */}
+      <AutoSaveRecoveryModal
+        isOpen={showRecoveryModal}
+        onRestore={handleRestoreAutoSave}
+        onDiscard={handleDiscardAutoSave}
+        savedData={recoveryData}
+      />
+
       <AdminPasswordModal
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
-        onSuccess={handleConfirmedSubmit}
+        onSuccess={(password) => handleConfirmedSubmit(password)}
       />
 
       {/* ==================================================================== */}
