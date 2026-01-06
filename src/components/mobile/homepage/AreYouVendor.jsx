@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Mail, Phone, MapPin, Briefcase, User, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
+import { toast } from "sonner";
 
 // Mock SmartMedia component for demo
 const SmartMedia = ({ src, alt, className, loading, priority }) => (
@@ -15,12 +16,134 @@ export const VendorOnboardingDrawer = ({ isOpen, onClose, haptic }) => {
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
-    phone: "",
+    phone: "", // Added required field
     businessName: "",
-    serviceType: "",
+    serviceType: "", // This maps to category
     city: "",
     experience: "",
+    description: "", // Added to formData
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // Categories from your mongoose model
+  const categories = [
+    "Event Planner",
+    "Venue",
+    "Photographer",
+    "Decorator",
+    "Caterer",
+    "Makeup Artist",
+    "DJ/Music",
+    "Mehendi Artist",
+    "Cake",
+    "Pandit",
+  ];
+
+  // Experience options from your mongoose model
+  const experienceOptions = ["0-1", "1-3", "3-5", "5-10", "10+"];
+
+  // Popular cities in India
+  const cities = [
+    "Mumbai",
+    "Delhi",
+    "Bangalore",
+    "Hyderabad",
+    "Chennai",
+    "Kolkata",
+    "Pune",
+    "Ahmedabad",
+    "Jaipur",
+    "Lucknow",
+    "Noida",
+    "Gurgaon",
+  ];
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+    if (!formData.businessName.trim()) newErrors.businessName = "Business name is required";
+    if (!formData.serviceType) newErrors.serviceType = "Category is required";
+    if (!formData.city.trim()) newErrors.city = "City is required";
+    if (!formData.experience) newErrors.experience = "Experience is required";
+
+    // Email validation
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
+
+    // Phone validation
+    const phoneRegex = /^[+]?[0-9]{10,15}$/;
+    if (formData.phone && !phoneRegex.test(formData.phone.replace(/\s/g, ""))) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmitQuickForm = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/vendor/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessName: formData.businessName,
+          ownerName: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          category: formData.serviceType,
+          city: formData.city,
+          experience: formData.experience,
+          description: formData.description,
+          registrationType: "quick",
+          agreeToTerms: true, // Implicit agreement for quick form
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onClose();
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          businessName: "",
+          serviceType: "",
+          city: "",
+          experience: "",
+          description: "",
+        });
+        setErrors({});
+        toast?.success("Vendor request submitted successfully!");
+      } else {
+        if (response.status === 409) {
+          setErrors({ email: "A request with this email already exists" });
+          toast?.info("You've already submitted a request with this email.");
+        } else {
+          throw new Error(result.error || "Submission failed");
+        }
+      }
+    } catch (error) {
+      console.error("Quick form submission error:", error);
+      toast?.error("Submission failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Professional Lock: Prevents the background from scrolling/bouncing while drawer is open
   useEffect(() => {
@@ -37,7 +160,14 @@ export const VendorOnboardingDrawer = ({ isOpen, onClose, haptic }) => {
     };
   }, [isOpen]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -95,12 +225,17 @@ export const VendorOnboardingDrawer = ({ isOpen, onClose, haptic }) => {
                     />
                     <input
                       name="name"
+                      value={formData.name}
                       onChange={handleChange}
                       placeholder="Full Name *"
                       required
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all"
+                      className={`w-full pl-12 pr-4 py-4 bg-white border ${
+                        errors.name ? "border-red-500" : "border-gray-200"
+                      } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all`}
                     />
+                    {errors.name && <p className="text-red-500 text-xs mt-1 ml-1">{errors.name}</p>}
                   </div>
+
                   <div className="relative group">
                     <Mail
                       size={18}
@@ -109,11 +244,34 @@ export const VendorOnboardingDrawer = ({ isOpen, onClose, haptic }) => {
                     <input
                       name="email"
                       type="email"
+                      value={formData.email}
                       onChange={handleChange}
                       placeholder="Business Email *"
                       required
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all"
+                      className={`w-full pl-12 pr-4 py-4 bg-white border ${
+                        errors.email ? "border-red-500" : "border-gray-200"
+                      } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all`}
                     />
+                    {errors.email && <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>}
+                  </div>
+
+                  <div className="relative group">
+                    <Phone
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#C33765] transition-colors"
+                    />
+                    <input
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="Phone Number *"
+                      required
+                      className={`w-full pl-12 pr-4 py-4 bg-white border ${
+                        errors.phone ? "border-red-500" : "border-gray-200"
+                      } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all`}
+                    />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1 ml-1">{errors.phone}</p>}
                   </div>
                 </div>
               </section>
@@ -128,54 +286,157 @@ export const VendorOnboardingDrawer = ({ isOpen, onClose, haptic }) => {
                     />
                     <input
                       name="businessName"
+                      value={formData.businessName}
                       onChange={handleChange}
-                      placeholder="Brand Name *"
+                      placeholder="Business Name *"
                       required
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all"
+                      className={`w-full pl-12 pr-4 py-4 bg-white border ${
+                        errors.businessName ? "border-red-500" : "border-gray-200"
+                      } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 focus:border-[#C33765] transition-all`}
                     />
+                    {errors.businessName && <p className="text-red-500 text-xs mt-1 ml-1">{errors.businessName}</p>}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <select
-                      name="serviceType"
-                      onChange={handleChange}
-                      className="w-full px-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 appearance-none text-gray-600"
-                    >
-                      <option>Category *</option>
-                      <option>Photographer</option>
-                      <option>Venue</option>
-                    </select>
+
+                  <div className="grid grid-cols-1 gap-3">
                     <div className="relative">
-                      <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <select
+                        name="serviceType"
+                        value={formData.serviceType}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-4 bg-white border ${
+                          errors.serviceType ? "border-red-500" : "border-gray-200"
+                        } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 appearance-none text-gray-600`}
+                        required
+                      >
+                        <option value="">Select Category *</option>
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.serviceType && <p className="text-red-500 text-xs mt-1 ml-1">{errors.serviceType}</p>}
+                    </div>
+
+                    <div className="relative group">
+                      <MapPin
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#C33765] transition-colors"
+                      />
                       <input
                         name="city"
+                        value={formData.city}
                         onChange={handleChange}
                         placeholder="City *"
-                        className="w-full pl-10 pr-4 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20"
+                        list="cities"
+                        required
+                        className={`w-full pl-10 pr-4 py-4 bg-white border ${
+                          errors.city ? "border-red-500" : "border-gray-200"
+                        } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20`}
                       />
+                      <datalist id="cities">
+                        {cities.map((city) => (
+                          <option key={city} value={city} />
+                        ))}
+                      </datalist>
+                      {errors.city && <p className="text-red-500 text-xs mt-1 ml-1">{errors.city}</p>}
+                    </div>
+
+                    <div className="relative">
+                      <select
+                        name="experience"
+                        value={formData.experience}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-4 bg-white border ${
+                          errors.experience ? "border-red-500" : "border-gray-200"
+                        } rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 appearance-none text-gray-600`}
+                        required
+                      >
+                        <option value="">Years of Experience *</option>
+                        {experienceOptions.map((exp) => (
+                          <option key={exp} value={exp}>
+                            {exp} {exp === "10+" ? "years" : "years"}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.experience && <p className="text-red-500 text-xs mt-1 ml-1">{errors.experience}</p>}
                     </div>
                   </div>
-                  <textarea
-                    name="description"
-                    rows="3"
-                    placeholder="Tell us about your services..."
-                    className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 resize-none"
-                  />
+
+                  <div className="relative">
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows="3"
+                      placeholder="Tell us about your services and specialties..."
+                      className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#C33765]/20 resize-none"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Terms & Privacy Notice */}
+              <section className="space-y-3">
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                  <div className="flex items-start gap-3">
+                    <Sparkles size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="text-blue-800 font-medium mb-1">Quick Registration Benefits</p>
+                      <p className="text-blue-700">
+                        Get instant visibility on our platform and start receiving qualified leads within 24 hours!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-500 leading-relaxed">
+                  By clicking "Complete Registration", you agree to our{" "}
+                  <span className="text-[#C33765] font-medium">Terms & Conditions</span> and{" "}
+                  <span className="text-[#C33765] font-medium">Privacy Policy</span>. We'll use your information to
+                  create your vendor profile and connect you with potential customers.
                 </div>
               </section>
             </div>
 
             {/* Sticky Professional Footer */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+            <div className="absolute flex gap-2 bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
-                  haptic?.("success"); /* logic */
+                  haptic?.("success");
+                  handleSubmitQuickForm();
                 }}
-                className="w-full bg-[#C33765] text-white py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full bg-[#C33765] text-white py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                Complete Registration
-                <ChevronRight size={20} />
+                {isSubmitting ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                    />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Complete Registration
+                    <ChevronRight size={20} />
+                  </>
+                )}
               </motion.button>
+              <Link
+                href={"/m/vendor/register"}
+                onClick={() => {
+                  haptic?.("success");
+                  onClose();
+                }}
+                aria-label="Full registration form"
+                className="w-fit bg-[#C33765] text-white py-4 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 px-3"
+              >
+                <ChevronRight size={20} />
+              </Link>
               {/* iOS Home Indicator Spacer */}
               <div className="h-4" />
             </div>

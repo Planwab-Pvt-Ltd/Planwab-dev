@@ -275,9 +275,7 @@ export async function GET(request) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const clerkId = searchParams.get("clerkId");
-    const email = searchParams.get("email");
-    const eventId = searchParams.get("id");
+    const eventId = searchParams.get("eventId");
 
     // If specific event ID is provided
     if (eventId) {
@@ -287,20 +285,6 @@ export async function GET(request) {
       }
       return NextResponse.json({ success: true, event }, { status: 200 });
     }
-
-    // Build query
-    const query = {};
-    if (clerkId) query.clerkId = clerkId;
-    if (email) query.contactEmail = email.toLowerCase();
-
-    if (!clerkId && !email) {
-      return NextResponse.json(
-        { success: false, message: "Please provide clerkId or email to fetch events" },
-        { status: 400 }
-      );
-    }
-
-    const events = await PlannedEvent.find(query).sort({ createdAt: -1 }).limit(50).lean();
 
     return NextResponse.json(
       {

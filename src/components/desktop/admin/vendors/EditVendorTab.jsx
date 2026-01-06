@@ -75,12 +75,7 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
-  BookOpen,
-  Rocket,
-  MousePointer,
-  Layout,
-  Settings,
-  PenTool,
+  ArrowLeft,
   Lock,
   EyeOff,
   KeyRound,
@@ -88,7 +83,6 @@ import {
   AlertTriangle,
   ArrowUp,
   ArrowDown,
-  Move,
 } from "lucide-react";
 
 // ============================================================================
@@ -177,10 +171,10 @@ const useToast = () => {
 // ============================================================================
 // MAIN EXPORT COMPONENT
 // ============================================================================
-export default function AddVendor({ onNavigate }) {
+export default function EditVendorTab({ vendor, onBack, onSuccess }) {
   return (
     <ToastProvider>
-      <AddVendorContent onNavigate={onNavigate} />
+      <EditVendorContent vendor={vendor} onBack={onBack} onSuccess={onSuccess} />
     </ToastProvider>
   );
 }
@@ -188,10 +182,9 @@ export default function AddVendor({ onNavigate }) {
 // ============================================================================
 // ADMIN PASSWORD MODAL COMPONENT
 // ============================================================================
-const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
+const AdminPasswordModal = ({ isOpen, onClose, onSuccess, isLoading }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const inputRef = useRef(null);
@@ -215,15 +208,8 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    setIsVerifying(true);
-    setError("");
-
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
     if (password === "admin123" || password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      addToast("Access granted! Publishing vendor...", "success");
-      onSuccess();
-      onClose();
+      onSuccess(password);
     } else {
       setAttempts((prev) => prev + 1);
       setError(`Invalid password. ${3 - attempts - 1} attempts remaining.`);
@@ -233,7 +219,6 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
         onClose();
       }
     }
-    setIsVerifying(false);
   };
 
   if (!isOpen) return null;
@@ -264,7 +249,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
               <div>
                 <h2 className="text-xl font-bold">Admin Verification</h2>
-                <p className="text-white/80 text-sm mt-0.5">Secure access required</p>
+                <p className="text-white/80 text-sm mt-0.5">Confirm changes with password</p>
               </div>
             </div>
           </div>
@@ -295,7 +280,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
                       ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
                       : "border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20"
                   }`}
-                  disabled={isVerifying}
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -324,25 +309,25 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
               <button
                 type="button"
                 onClick={onClose}
-                disabled={isVerifying}
+                disabled={isLoading}
                 className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-all disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isVerifying || !password.trim()}
+                disabled={isLoading || !password.trim()}
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25"
               >
-                {isVerifying ? (
+                {isLoading ? (
                   <>
                     <RefreshCw size={18} className="animate-spin" />
-                    Verifying...
+                    Saving...
                   </>
                 ) : (
                   <>
-                    <ShieldCheck size={18} />
-                    Verify & Publish
+                    <Save size={18} />
+                    Save Changes
                   </>
                 )}
               </button>
@@ -359,175 +344,9 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
 };
 
 // ============================================================================
-// WELCOME SECTION COMPONENT
-// ============================================================================
-const WelcomeSection = ({ isVisible, onClose }) => {
-  const [expandedTip, setExpandedTip] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  const tips = [
-    {
-      id: 1,
-      icon: FileText,
-      title: "Required Fields",
-      shortDesc: "Fill in essential business details",
-      fullDesc:
-        "Complete all fields marked with a red asterisk (*) including business name, email, phone, city, base price, and at least one image. These are mandatory for publishing.",
-      color: "from-rose-500 to-pink-500",
-    },
-    {
-      id: 2,
-      icon: PenTool,
-      title: "Custom Values",
-      shortDesc: "Add your own unique options",
-      fullDesc:
-        "Most selection fields allow custom entries. Simply type your value and press Enter to add options not in the predefined list. Great for unique amenities or services!",
-      color: "from-violet-500 to-purple-500",
-    },
-    {
-      id: 3,
-      icon: Layout,
-      title: "Section Navigation",
-      shortDesc: "Navigate efficiently between sections",
-      fullDesc:
-        "Use the section tabs or Previous/Next buttons to navigate. Each section shows completion progress. Sections with errors are highlighted in red for easy identification.",
-      color: "from-cyan-500 to-blue-500",
-    },
-    {
-      id: 4,
-      icon: Rocket,
-      title: "Quick Publish",
-      shortDesc: "Publish when ready indicator shows",
-      fullDesc:
-        "Once all required fields are complete, the 'Ready' badge appears. Click Publish to submit. You'll be automatically redirected to view all vendors on success.",
-      color: "from-emerald-500 to-green-500",
-    },
-  ];
-
-  if (!isVisible) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20, height: 0 }}
-      className="mb-6 rounded-2xl overflow-hidden border border-indigo-200 dark:border-indigo-800 shadow-xl"
-    >
-      <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
-
-        <div className="relative z-10 p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Sparkles size={28} className="text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Welcome to Vendor Registration</h2>
-                <p className="text-white/80 mt-1">Create a professional vendor listing in minutes</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white"
-                title={isCollapsed ? "Expand" : "Collapse"}
-              >
-                {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white"
-                title="Dismiss"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                  {tips.map((tip) => (
-                    <motion.div
-                      key={tip.id}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 cursor-pointer transition-all border border-white/20 ${
-                        expandedTip === tip.id ? "ring-2 ring-white/50" : ""
-                      }`}
-                      onClick={() => setExpandedTip(expandedTip === tip.id ? null : tip.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg bg-gradient-to-br ${tip.color}`}>
-                          <tip.icon size={18} className="text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-white text-sm">{tip.title}</h3>
-                            <ChevronDown
-                              size={14}
-                              className={`text-white/60 transition-transform ${
-                                expandedTip === tip.id ? "rotate-180" : ""
-                              }`}
-                            />
-                          </div>
-                          <p className="text-white/70 text-xs mt-1">{tip.shortDesc}</p>
-                        </div>
-                      </div>
-                      <AnimatePresence>
-                        {expandedTip === tip.id && (
-                          <motion.p
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="text-white/80 text-xs mt-3 pt-3 border-t border-white/20 leading-relaxed"
-                          >
-                            {tip.fullDesc}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-white/80 text-sm">
-                      <MousePointer size={14} />
-                      <span>Click any tip to expand</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-white/80 text-sm">
-                      <BookOpen size={14} />
-                      <span>11 sections to complete</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors backdrop-blur-sm"
-                  >
-                    Got it, let's start!
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// ============================================================================
 // MAIN CONTENT COMPONENT
 // ============================================================================
-function AddVendorContent({ onNavigate }) {
+function EditVendorContent({ vendor, onBack, onSuccess }) {
   const { addToast } = useToast();
   const formContainerRef = useRef(null);
 
@@ -551,83 +370,92 @@ function AddVendorContent({ onNavigate }) {
   ];
 
   // ============================================================================
-  // INITIAL FORM DATA
+  // INITIAL FORM DATA FUNCTION
   // ============================================================================
-  const initialFormData = {
-    name: "",
-    username: "",
-    email: "",
-    phoneNo: "",
-    whatsappNo: "",
-    contactPerson: { firstName: "", lastName: "" },
-    address: {
-      street: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      country: "India",
-      googleMapUrl: "",
-      location: { type: "Point", coordinates: [0, 0] },
-    },
-    landmarks: [],
-    directions: [],
-    isVerified: false,
-    isActive: true,
-    isFeatured: false,
-    tags: [],
-    availabilityStatus: "Available",
-    description: "",
-    shortDescription: "",
-    images: [],
-    defaultImage: "",
-    videoUrl: "",
-    gallery: [],
-    rating: 4.5,
-    reviewCount: 0,
-    reviews: 0,
-    bookings: 0,
-    yearsExperience: 0,
-    responseTime: "Within 2 hours",
-    repeatCustomerRate: "45%",
-    responseRate: "98%",
-    stats: [],
-    highlights: [],
-    operatingHours: [],
-    amenities: [],
-    facilities: [],
-    highlightPoints: [],
-    awards: [],
-    specialOffers: [],
-    eventTypes: ["Weddings", "Corporate", "Birthday", "Conference", "Reception", "Engagement", "Anniversary"],
-    basePrice: "",
-    priceUnit: "day",
-    perDayPrice: { min: "", max: "" },
-    packages: [],
-    paymentMethods: ["Cash", "UPI", "Bank Transfer"],
-    policies: [],
-    faqs: [],
-    socialLinks: {
-      website: "",
-      facebook: "",
-      instagram: "",
-      twitter: "",
-      youtube: "",
-      linkedin: "",
-    },
-    metaTitle: "",
-    metaDescription: "",
-    metaKeywords: [],
-    categoryData: {},
-    vendorProfile: {},
-  };
+  const initializeFormData = useCallback((vendorData) => {
+    return {
+      ...vendorData,
+      name: vendorData.name || "",
+      username: vendorData.username || "",
+      email: vendorData.email || "",
+      phoneNo: vendorData.phoneNo || "",
+      whatsappNo: vendorData.whatsappNo || "",
+      contactPerson: vendorData.contactPerson || { firstName: "", lastName: "" },
+      address: vendorData.address || {
+        street: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "India",
+        googleMapUrl: "",
+        location: { type: "Point", coordinates: [0, 0] },
+      },
+      landmarks: vendorData.landmarks || [],
+      directions: vendorData.directions || [],
+      isVerified: vendorData.isVerified || false,
+      isActive: vendorData.isActive !== false,
+      isFeatured: vendorData.isFeatured || false,
+      tags: vendorData.tags || [],
+      availabilityStatus: vendorData.availabilityStatus || "Available",
+      description: vendorData.description || "",
+      shortDescription: vendorData.shortDescription || "",
+      videoUrl: vendorData.videoUrl || "",
+      rating: vendorData.rating || 4.5,
+      reviewCount: vendorData.reviewCount || 0,
+      reviews: vendorData.reviews || 0,
+      bookings: vendorData.bookings || 0,
+      yearsExperience: vendorData.yearsExperience || 0,
+      responseTime: vendorData.responseTime || "Within 2 hours",
+      repeatCustomerRate: vendorData.repeatCustomerRate || "45%",
+      responseRate: vendorData.responseRate || "98%",
+      stats: vendorData.stats || [],
+      highlights: vendorData.highlights || [],
+      operatingHours: vendorData.operatingHours || [],
+      amenities: vendorData.amenities || [],
+      facilities: vendorData.facilities || [],
+      highlightPoints: vendorData.highlightPoints || [],
+      awards: vendorData.awards || [],
+      specialOffers: vendorData.specialOffers || [],
+      eventTypes: vendorData.eventTypes || [
+        "Weddings",
+        "Corporate",
+        "Birthday",
+        "Conference",
+        "Reception",
+        "Engagement",
+        "Anniversary",
+      ],
+      basePrice: vendorData.basePrice || "",
+      priceUnit: vendorData.priceUnit || "day",
+      perDayPrice: vendorData.perDayPrice || { min: "", max: "" },
+      packages: vendorData.packages || [],
+      paymentMethods: vendorData.paymentMethods || ["Cash", "UPI", "Bank Transfer"],
+      policies: vendorData.policies || [],
+      faqs: vendorData.faqs || [],
+      socialLinks: vendorData.socialLinks || {
+        website: "",
+        facebook: "",
+        instagram: "",
+        twitter: "",
+        youtube: "",
+        linkedin: "",
+      },
+      metaTitle: vendorData.metaTitle || "",
+      metaDescription: vendorData.metaDescription || "",
+      metaKeywords: vendorData.metaKeywords || [],
+      categoryData: vendorData.categoryData || {},
+      vendorProfile: vendorData.vendorProfile || {},
+      category: vendorData.category || "venues",
+    };
+  }, []);
 
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
-  const [activeCategory, setActiveCategory] = useState("venues");
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -635,9 +463,9 @@ function AddVendorContent({ onNavigate }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [sectionProgress, setSectionProgress] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
-  const [showWelcome, setShowWelcome] = useState(true);
   const [touchedFields, setTouchedFields] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
   // ============================================================================
   // FIELD OPTIONS CONFIGURATION
@@ -920,7 +748,7 @@ function AddVendorContent({ onNavigate }) {
       id: "basic",
       label: "Basic Info",
       icon: Building,
-      required: ["name", "username", "email", "phoneNo"],
+      required: ["name", "email", "phoneNo"],
       description: "Business identity & contact details",
     },
     {
@@ -934,7 +762,7 @@ function AddVendorContent({ onNavigate }) {
       id: "media",
       label: "Media",
       icon: ImageIcon,
-      required: ["images"],
+      required: [],
       description: "Photos, videos & descriptions",
     },
     {
@@ -999,8 +827,13 @@ function AddVendorContent({ onNavigate }) {
   // EFFECTS
   // ============================================================================
   useEffect(() => {
-    setOriginalData(JSON.parse(JSON.stringify(initialFormData)));
-  }, []);
+    if (vendor) {
+      const initialData = initializeFormData(vendor);
+      setFormData(initialData);
+      setOriginalData(JSON.parse(JSON.stringify(initialData)));
+      setExistingImages(vendor.images || []);
+    }
+  }, [vendor, initializeFormData]);
 
   useEffect(() => {
     return () => {
@@ -1014,12 +847,12 @@ function AddVendorContent({ onNavigate }) {
   }, [uploadedFiles]);
 
   useEffect(() => {
-    if (originalData) {
-      const currentJson = JSON.stringify(formData);
-      const originalJson = JSON.stringify(originalData);
+    if (originalData && formData) {
+      const currentJson = JSON.stringify({ ...formData, images: existingImages });
+      const originalJson = JSON.stringify({ ...originalData, images: vendor?.images || [] });
       setHasChanges(currentJson !== originalJson || uploadedFiles.length > 0);
     }
-  }, [formData, uploadedFiles, originalData]);
+  }, [formData, existingImages, uploadedFiles, originalData, vendor]);
 
   useEffect(() => {
     const progress = {};
@@ -1043,7 +876,7 @@ function AddVendorContent({ onNavigate }) {
         if (formData.address?.googleMapUrl) filled++;
       } else if (section.id === "media") {
         total = 3;
-        if (uploadedFiles.length > 0) filled++;
+        if (existingImages.length > 0 || uploadedFiles.length > 0) filled++;
         if (formData.description) filled++;
         if (formData.shortDescription) filled++;
       } else if (section.id === "pricing") {
@@ -1084,7 +917,7 @@ function AddVendorContent({ onNavigate }) {
       progress[section.id] = total > 0 ? Math.round((filled / total) * 100) : 0;
     });
     setSectionProgress(progress);
-  }, [formData, uploadedFiles, activeCategory]);
+  }, [formData, existingImages, uploadedFiles]);
 
   // ============================================================================
   // SCROLL TO FORM TOP FUNCTION
@@ -1102,18 +935,10 @@ function AddVendorContent({ onNavigate }) {
     setTouchedFields((prev) => ({ ...prev, [field]: true }));
   }, []);
 
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setUploadedFiles([]);
-    setErrors({});
-    setTouchedFields({});
-    setOriginalData(JSON.parse(JSON.stringify(initialFormData)));
-    addToast("Form has been reset to default values", "info");
-    scrollToFormTop();
-  }, [addToast, scrollToFormTop]);
-
   const resetSection = useCallback(
     (sectionId) => {
+      if (!originalData) return;
+
       const sectionFields = {
         basic: [
           "name",
@@ -1157,20 +982,21 @@ function AddVendorContent({ onNavigate }) {
         const updated = { ...prev };
         fieldsToReset.forEach((field) => {
           updated[field] = JSON.parse(
-            JSON.stringify(initialFormData[field] || (Array.isArray(initialFormData[field]) ? [] : {}))
+            JSON.stringify(originalData[field] || (Array.isArray(originalData[field]) ? [] : {}))
           );
         });
         return updated;
       });
 
       if (sectionId === "media") {
+        setExistingImages(vendor?.images || []);
         setUploadedFiles([]);
       }
 
       const sectionName = sections.find((s) => s.id === sectionId)?.label || "Section";
       addToast(`${sectionName} has been reset`, "info");
     },
-    [addToast]
+    [originalData, vendor, addToast]
   );
 
   const handleInputChange = useCallback(
@@ -1248,33 +1074,51 @@ function AddVendorContent({ onNavigate }) {
 
   const removeFile = useCallback(
     (index) => {
-      setUploadedFiles((prev) => {
-        const updated = prev.filter((_, i) => i !== index);
-        return updated;
-      });
+      setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+      addToast("Image removed from gallery", "info");
+    },
+    [addToast]
+  );
+
+  const removeExistingImage = useCallback(
+    (index) => {
+      setExistingImages((prev) => prev.filter((_, i) => i !== index));
       addToast("Image removed from gallery", "info");
     },
     [addToast]
   );
 
   const setAsCover = useCallback(
-    (index) => {
-      if (index === 0) {
-        addToast("This image is already the cover", "info");
-        return;
+    (index, isExisting = true) => {
+      if (isExisting) {
+        if (index === 0) {
+          addToast("This image is already the cover", "info");
+          return;
+        }
+        setExistingImages((prev) => {
+          const newImages = [...prev];
+          const [selected] = newImages.splice(index, 1);
+          return [selected, ...newImages];
+        });
+      } else {
+        if (existingImages.length === 0 && index === 0) {
+          addToast("This image is already the cover", "info");
+          return;
+        }
+        setUploadedFiles((prev) => {
+          const newFiles = [...prev];
+          const [selected] = newFiles.splice(index, 1);
+          return [selected, ...newFiles];
+        });
       }
-      setUploadedFiles((prev) => {
-        const newFiles = [...prev];
-        const [selected] = newFiles.splice(index, 1);
-        return [selected, ...newFiles];
-      });
       addToast("Cover image updated successfully", "success");
     },
-    [addToast]
+    [existingImages.length, addToast]
   );
 
-  const moveImage = useCallback((index, direction) => {
-    setUploadedFiles((prev) => {
+  const moveImage = useCallback((index, direction, isExisting = true) => {
+    const setter = isExisting ? setExistingImages : setUploadedFiles;
+    setter((prev) => {
       const newArr = [...prev];
       const newIndex = index + direction;
       if (newIndex < 0 || newIndex >= newArr.length) return prev;
@@ -1290,9 +1134,6 @@ function AddVendorContent({ onNavigate }) {
     const newErrors = {};
 
     if (!formData.name?.trim()) newErrors.name = "Business name is required";
-    if (!formData.username?.trim()) newErrors.username = "Username is required";
-    else if (!/^[a-z0-9-]+$/.test(formData.username))
-      newErrors.username = "Username can only contain lowercase letters, numbers, and hyphens";
 
     if (!formData.email?.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Please enter a valid email address";
@@ -1300,7 +1141,7 @@ function AddVendorContent({ onNavigate }) {
     if (!formData.phoneNo?.trim()) {
       newErrors.phoneNo = "Phone number is required";
     } else if (!/^[\d\s+\-()]{10,}$/.test(formData.phoneNo)) {
-      newErrors.phoneNo = "Enter a valid phone (min 10 digits, can include +, -, spaces)";
+      newErrors.phoneNo = "Enter a valid phone (min 10 digits)";
     }
 
     if (!formData.address?.city?.trim()) newErrors["address.city"] = "City is required";
@@ -1309,16 +1150,18 @@ function AddVendorContent({ onNavigate }) {
     else if (isNaN(formData.basePrice) || Number(formData.basePrice) <= 0)
       newErrors.basePrice = "Please enter a valid price";
 
-    if (uploadedFiles.length === 0) newErrors.images = "Please upload at least one image";
+    if (existingImages.length === 0 && uploadedFiles.length === 0) {
+      newErrors.images = "Please have at least one image";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, uploadedFiles.length]);
+  }, [formData, existingImages.length, uploadedFiles.length]);
 
   const getErrorsForSection = useCallback(
     (sectionId) => {
       const sectionErrorMap = {
-        basic: ["name", "username", "email", "phoneNo"],
+        basic: ["name", "email", "phoneNo"],
         location: ["address.city"],
         media: ["images"],
         pricing: ["basePrice"],
@@ -1350,9 +1193,7 @@ function AddVendorContent({ onNavigate }) {
   // ============================================================================
   // FORM SUBMISSION
   // ============================================================================
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-
+  const handleSubmit = useCallback(() => {
     if (!validateForm()) {
       const errorSections = sections.filter((s) => getErrorsForSection(s.id).length > 0);
       if (errorSections.length > 0) {
@@ -1364,43 +1205,35 @@ function AddVendorContent({ onNavigate }) {
     }
 
     setShowPasswordModal(true);
-  };
+  }, [validateForm, getErrorsForSection, addToast, scrollToFormTop]);
 
-  const handleConfirmedSubmit = async () => {
+  const handleConfirmedSubmit = async (password) => {
     setIsSubmitting(true);
 
     try {
-      addToast(`Uploading ${uploadedFiles.length} image(s) to cloud...`, "info");
-      const imageUrls = await uploadImagesToCloudinary(uploadedFiles);
-
-      if (imageUrls.length === 0) {
-        throw new Error("Failed to upload images. Please try again.");
+      let newImageUrls = [];
+      if (uploadedFiles.length > 0) {
+        addToast(`Uploading ${uploadedFiles.length} image(s) to cloud...`, "info");
+        newImageUrls = await uploadImagesToCloudinary(uploadedFiles);
       }
 
-      addToast("Images uploaded successfully! Saving vendor data...", "success");
-
-      const gallery = imageUrls.map((url) => ({
-        url,
-        category: "General",
-        aspectRatio: "landscape",
-      }));
+      const allImages = [...existingImages, ...newImageUrls];
 
       const payload = {
+        id: vendor._id,
+        password,
         ...formData,
-        category: activeCategory,
-        images: imageUrls,
-        defaultImage: imageUrls[0],
-        gallery: gallery,
-        ...formData.categoryData,
+        images: allImages,
+        defaultImage: allImages[0] || "",
       };
 
-      delete payload.categoryData;
+      // Clean up payload
+      delete payload._id;
+      delete payload.__v;
+      delete payload.createdAt;
 
-      if (!payload.perDayPrice.min) delete payload.perDayPrice.min;
-      if (!payload.perDayPrice.max) delete payload.perDayPrice.max;
-
-      const response = await fetch("/api/vendor/add", {
-        method: "POST",
+      const response = await fetch("/api/vendor", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -1408,18 +1241,16 @@ function AddVendorContent({ onNavigate }) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to register vendor");
+        throw new Error(result.message || "Failed to update vendor");
       }
 
-      addToast("🎉 Vendor published successfully! Redirecting...", "success", 5000);
+      addToast("🎉 Vendor updated successfully!", "success", 5000);
+      setShowPasswordModal(false);
+      setHasChanges(false);
 
       setTimeout(() => {
-        if (onNavigate) {
-          onNavigate("all");
-        }
-      }, 2000);
-
-      resetForm();
+        onSuccess?.();
+      }, 1500);
     } catch (error) {
       console.error("Submit error:", error);
       addToast(error.message || "Something went wrong. Please try again.", "error");
@@ -1443,6 +1274,14 @@ function AddVendorContent({ onNavigate }) {
     [activeSection, scrollToFormTop]
   );
 
+  const handleBack = useCallback(() => {
+    if (hasChanges) {
+      setShowUnsavedWarning(true);
+    } else {
+      onBack?.();
+    }
+  }, [hasChanges, onBack]);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -1450,12 +1289,25 @@ function AddVendorContent({ onNavigate }) {
   const overallProgress = Math.round(Object.values(sectionProgress).reduce((a, b) => a + b, 0) / sections.length);
   const requiredFieldsComplete =
     formData.name &&
-    formData.username &&
     formData.email &&
     formData.phoneNo &&
     formData.address?.city &&
     formData.basePrice &&
-    uploadedFiles.length > 0;
+    (existingImages.length > 0 || uploadedFiles.length > 0);
+
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
+  if (!vendor || !formData.name) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <RefreshCw className="animate-spin text-indigo-500 mx-auto mb-3" size={32} />
+          <p className="text-gray-500">Loading vendor data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ============================================================================
   // RENDER
@@ -1463,13 +1315,6 @@ function AddVendorContent({ onNavigate }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-6 px-2 sm:px-4 lg:px-6 w-full max-w-full overflow-x-hidden box-border">
       <div className="w-full max-w-7xl mx-auto overflow-hidden">
-        {/* ================================================================== */}
-        {/* WELCOME SECTION */}
-        {/* ================================================================== */}
-        <AnimatePresence>
-          {showWelcome && <WelcomeSection isVisible={showWelcome} onClose={() => setShowWelcome(false)} />}
-        </AnimatePresence>
-
         {/* ================================================================== */}
         {/* MAIN FORM CONTAINER */}
         {/* ================================================================== */}
@@ -1484,47 +1329,53 @@ function AddVendorContent({ onNavigate }) {
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
 
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="text-white min-w-0">
-                <h1 className="text-xl md:text-2xl font-bold flex items-center gap-3 flex-wrap">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <Plus size={24} />
-                  </div>
-                  Add New Vendor
-                  {hasChanges && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="px-2.5 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full"
-                    >
-                      Unsaved Changes
-                    </motion.span>
-                  )}
-                </h1>
-                <p className="text-white/70 text-sm mt-2">
-                  Complete the form below to create a professional vendor listing
-                </p>
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 border-white/30 bg-white/20 flex-shrink-0">
+                  <img
+                    src={formData.defaultImage || existingImages[0] || "/placeholder-vendor.jpg"}
+                    alt={formData.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-white min-w-0">
+                  <h1 className="text-xl md:text-2xl font-bold flex items-center gap-3 flex-wrap">
+                    Edit: {formData.name}
+                    {hasChanges && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="px-2.5 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full"
+                      >
+                        Unsaved Changes
+                      </motion.span>
+                    )}
+                  </h1>
+                  <p className="text-white/70 text-sm mt-1 capitalize">
+                    {formData.category} • {formData.address?.city || "No city"}
+                  </p>
 
-                {/* Progress Bar */}
-                <div className="flex items-center gap-3 mt-4">
-                  <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden max-w-[250px]">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${overallProgress}%` }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                    />
+                  {/* Progress Bar */}
+                  <div className="flex items-center gap-3 mt-3">
+                    <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden max-w-[250px]">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${overallProgress}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-white/90">{overallProgress}% Complete</span>
+                    {requiredFieldsComplete && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="px-3 py-1 bg-green-400 text-green-900 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lg"
+                      >
+                        <CheckCircle size={14} />
+                        Ready to Save
+                      </motion.span>
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-white/90">{overallProgress}% Complete</span>
-                  {requiredFieldsComplete && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="px-3 py-1 bg-green-400 text-green-900 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lg"
-                    >
-                      <CheckCircle size={14} />
-                      Ready to Publish
-                    </motion.span>
-                  )}
                 </div>
               </div>
 
@@ -1532,36 +1383,27 @@ function AddVendorContent({ onNavigate }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setShowWelcome(true)}
-                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all border border-white/20"
-                  title="Show help"
-                >
-                  <HelpCircle size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
+                  onClick={handleBack}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all border border-white/20"
-                  disabled={isSubmitting}
                 >
-                  <RefreshCw size={16} />
-                  <span className="hidden sm:inline">Reset</span>
+                  <ArrowLeft size={16} />
+                  <span className="hidden sm:inline">Back</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !requiredFieldsComplete}
+                  disabled={isSubmitting || !hasChanges}
                   className="px-5 py-2.5 bg-white text-indigo-600 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
                   {isSubmitting ? (
                     <>
                       <RefreshCw size={16} className="animate-spin" />
-                      <span className="hidden sm:inline">Publishing...</span>
+                      <span className="hidden sm:inline">Saving...</span>
                     </>
                   ) : (
                     <>
-                      <Zap size={16} />
-                      <span>Publish</span>
+                      <Save size={16} />
+                      <span>Save Changes</span>
                     </>
                   )}
                 </button>
@@ -1575,8 +1417,7 @@ function AddVendorContent({ onNavigate }) {
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 items-center gap-2">
               <Layers size={16} />
-              Select Vendor Category
-              <span className="text-red-500">*</span>
+              Vendor Category
             </label>
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {categories.map((cat) => (
@@ -1586,12 +1427,11 @@ function AddVendorContent({ onNavigate }) {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
-                    setActiveCategory(cat.key);
-                    setFormData((prev) => ({ ...prev, categoryData: {} }));
+                    handleInputChange("category", cat.key);
                     addToast(`Category changed to ${cat.label}`, "info");
                   }}
                   className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all min-w-[85px] flex-shrink-0 ${
-                    activeCategory === cat.key
+                    formData.category === cat.key
                       ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 shadow-lg shadow-indigo-500/20"
                       : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-indigo-300 hover:shadow-md"
                   }`}
@@ -1726,15 +1566,7 @@ function AddVendorContent({ onNavigate }) {
           {/* ================================================================ */}
           {/* FORM CONTENT */}
           {/* ================================================================ */}
-          <form
-            onSubmit={handleSubmit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.target.type !== "submit" && e.target.tagName !== "BUTTON") {
-                e.preventDefault();
-              }
-            }}
-            className="p-4 md:p-6 overflow-hidden"
-          >
+          <div className="p-4 md:p-6 overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSection}
@@ -1769,9 +1601,11 @@ function AddVendorContent({ onNavigate }) {
                   <MediaSection
                     data={formData}
                     onChange={handleInputChange}
+                    existingImages={existingImages}
                     uploadedFiles={uploadedFiles}
                     onFileUpload={handleFileUpload}
                     onRemoveFile={removeFile}
+                    onRemoveExisting={removeExistingImage}
                     onSetCover={setAsCover}
                     onMoveImage={moveImage}
                     onPreview={setPreviewImage}
@@ -1802,8 +1636,8 @@ function AddVendorContent({ onNavigate }) {
                 )}
                 {activeSection === "category" && (
                   <CategorySpecificFields
-                    category={activeCategory}
-                    data={formData.categoryData}
+                    category={formData.category}
+                    data={formData.categoryData || {}}
                     onChange={handleCategoryDataChange}
                     onNestedChange={handleNestedCategoryDataChange}
                     options={fieldOptions}
@@ -1847,7 +1681,7 @@ function AddVendorContent({ onNavigate }) {
                 )}
               </motion.div>
             </AnimatePresence>
-          </form>
+          </div>
 
           {/* ================================================================ */}
           {/* FOOTER NAVIGATION */}
@@ -1886,18 +1720,18 @@ function AddVendorContent({ onNavigate }) {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || !requiredFieldsComplete}
+                disabled={isSubmitting || !hasChanges}
                 className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-green-500/25"
               >
                 {isSubmitting ? (
                   <>
                     <RefreshCw size={16} className="animate-spin" />
-                    Publishing...
+                    Saving...
                   </>
                 ) : (
                   <>
-                    <CheckCircle size={16} />
-                    Publish Vendor
+                    <Save size={16} />
+                    Save Changes
                   </>
                 )}
               </button>
@@ -1931,15 +1765,13 @@ function AddVendorContent({ onNavigate }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">You have unsaved changes</p>
-                  {!requiredFieldsComplete && (
-                    <p className="text-xs text-red-500">Complete required fields to publish</p>
-                  )}
+                  {!requiredFieldsComplete && <p className="text-xs text-red-500">Complete required fields to save</p>}
                 </div>
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={resetForm}
+                  onClick={handleBack}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition-all"
                   disabled={isSubmitting}
                 >
@@ -1948,11 +1780,11 @@ function AddVendorContent({ onNavigate }) {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !requiredFieldsComplete}
+                  disabled={isSubmitting || !hasChanges}
                   className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 shadow-lg transition-all"
                 >
                   {isSubmitting ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                  Publish
+                  Save
                 </button>
               </div>
             </motion.div>
@@ -1963,15 +1795,32 @@ function AddVendorContent({ onNavigate }) {
       {/* ==================================================================== */}
       {/* MODALS */}
       {/* ==================================================================== */}
-      <AnimatePresence>
-        {previewImage && <ImagePreviewModal image={previewImage} onClose={() => setPreviewImage(null)} />}
-      </AnimatePresence>
-
       <AdminPasswordModal
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
         onSuccess={handleConfirmedSubmit}
+        isLoading={isSubmitting}
       />
+
+      <AnimatePresence>
+        {previewImage && <ImagePreviewModal image={previewImage} onClose={() => setPreviewImage(null)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUnsavedWarning && (
+          <UnsavedChangesModal
+            onDiscard={() => {
+              setShowUnsavedWarning(false);
+              onBack?.();
+            }}
+            onCancel={() => setShowUnsavedWarning(false)}
+            onSave={() => {
+              setShowUnsavedWarning(false);
+              handleSubmit();
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ==================================================================== */}
       {/* GLOBAL STYLES */}
@@ -1987,19 +1836,14 @@ function AddVendorContent({ onNavigate }) {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        /* FIX: Ensure buttons are always clickable in image thumbnails */
         .group button {
           pointer-events: auto !important;
           cursor: pointer;
         }
-
-        /* FIX: Prevent parent click when clicking buttons */
         .thumbnail-preview-area {
           position: relative;
           z-index: 1;
         }
-
-        /* FIX: Ensure action buttons are above everything */
         .group .absolute {
           z-index: 10;
         }
@@ -2775,8 +2619,6 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
             const formatted = cleaned.replace(/-+/g, "-").replace(/^-|-$/g, "");
             onChange("username", formatted || "");
           }}
-          required
-          error={errors.username}
           placeholder="e.g., royal-palace-banquets"
           helperText="Used in URL: /vendors/your-username"
           copyable
@@ -3017,9 +2859,11 @@ const LocationSection = ({ data, onChange, onListChange, errors, options, addToa
 const MediaSection = ({
   data,
   onChange,
+  existingImages,
   uploadedFiles,
   onFileUpload,
   onRemoveFile,
+  onRemoveExisting,
   onSetCover,
   onMoveImage,
   onPreview,
@@ -3028,7 +2872,7 @@ const MediaSection = ({
   errors,
   addToast,
 }) => {
-  const totalImages = uploadedFiles.length;
+  const totalImages = existingImages.length + uploadedFiles.length;
 
   return (
     <div className="space-y-8">
@@ -3064,6 +2908,37 @@ const MediaSection = ({
         badge={`${totalImages} images`}
         tip="High-quality images significantly improve customer engagement. Upload at least 3-5 images showcasing your best work."
       >
+        {/* Existing Images */}
+        {existingImages.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Current Images ({existingImages.length})
+              </h4>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {existingImages.map((img, i) => (
+                <ImageThumbnail
+                  key={`existing-${i}`}
+                  src={img}
+                  index={i}
+                  isCover={i === 0}
+                  isNew={false}
+                  onPreview={() => onPreview(img)}
+                  onRemove={() => onRemoveExisting(i)}
+                  onSetCover={() => onSetCover(i, true)}
+                  onMoveLeft={() => onMoveImage(i, -1, true)}
+                  onMoveRight={() => onMoveImage(i, 1, true)}
+                  canMoveLeft={i > 0}
+                  canMoveRight={i < existingImages.length - 1}
+                  totalImages={existingImages.length}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Upload Area */}
         <div
           className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
             dragActive
@@ -3101,14 +2976,14 @@ const MediaSection = ({
           <p className="text-gray-700 dark:text-gray-300 font-semibold mb-1">Drag & Drop images here</p>
           <p className="text-gray-500 text-sm mb-4">or click to browse</p>
           <label
-            htmlFor="mainImages"
+            htmlFor="newImages"
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl cursor-pointer hover:from-indigo-700 hover:to-purple-700 transition-all font-medium shadow-lg shadow-indigo-500/25"
           >
             <Camera size={18} />
             Browse Files
           </label>
           <input
-            id="mainImages"
+            id="newImages"
             type="file"
             multiple
             className="hidden"
@@ -3129,27 +3004,24 @@ const MediaSection = ({
           </motion.p>
         )}
 
+        {/* New Uploads */}
         {uploadedFiles.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Uploaded Images ({uploadedFiles.length})
+                New Images ({uploadedFiles.length})
               </h4>
-              <div className="flex items-center gap-3">
-                <p className="text-xs text-gray-500">First image is cover photo</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Clear all images
-                    uploadedFiles.forEach((_, i) => onRemoveFile(i));
-                    addToast("All images cleared", "info");
-                  }}
-                  className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
-                >
-                  <Trash2 size={12} />
-                  Clear All
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  uploadedFiles.forEach((_, i) => onRemoveFile(i));
+                  addToast("All new images cleared", "info");
+                }}
+                className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+              >
+                <Trash2 size={12} />
+                Clear All New
+              </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {uploadedFiles.map((file, i) => (
@@ -3157,14 +3029,14 @@ const MediaSection = ({
                   key={`new-${i}-${file.name}`}
                   src={URL.createObjectURL(file)}
                   index={i}
-                  isCover={i === 0}
+                  isCover={existingImages.length === 0 && i === 0}
                   isNew={true}
                   fileSize={file.size}
                   onPreview={() => onPreview(URL.createObjectURL(file))}
                   onRemove={() => onRemoveFile(i)}
-                  onSetCover={() => onSetCover(i)}
-                  onMoveLeft={() => onMoveImage(i, -1)}
-                  onMoveRight={() => onMoveImage(i, 1)}
+                  onSetCover={() => onSetCover(i, false)}
+                  onMoveLeft={() => onMoveImage(i, -1, false)}
+                  onMoveRight={() => onMoveImage(i, 1, false)}
                   canMoveLeft={i > 0}
                   canMoveRight={i < uploadedFiles.length - 1}
                   totalImages={uploadedFiles.length}
@@ -3219,7 +3091,6 @@ const ImageThumbnail = ({
 }) => {
   const { addToast } = useToast();
 
-  // Separate handlers that PREVENT propagation properly
   const handleRemove = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3250,10 +3121,7 @@ const ImageThumbnail = ({
     }
   };
 
-  // IMPORTANT: Preview should only trigger on image click, not buttons
   const handleImageClick = (e) => {
-    // Only trigger if clicking directly on the image container
-    // Not on buttons or overlay elements
     if (e.target.tagName === "IMG" || e.target.classList.contains("thumbnail-preview-area")) {
       e.preventDefault();
       onPreview();
@@ -3268,15 +3136,12 @@ const ImageThumbnail = ({
       exit={{ opacity: 0, scale: 0.9 }}
       className="relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden group border-2 border-transparent hover:border-indigo-400 transition-all shadow-sm hover:shadow-lg"
     >
-      {/* Image Container - Clickable for preview */}
       <div className="w-full h-full cursor-zoom-in thumbnail-preview-area" onClick={handleImageClick}>
         <img src={src} className="w-full h-full object-cover pointer-events-none" alt={`Image ${index + 1}`} />
       </div>
 
-      {/* Gradient Overlay - NOT clickable */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
 
-      {/* Top Actions - MUST be clickable */}
       <div className="absolute top-2 right-2 flex gap-1.5 z-10">
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -3300,7 +3165,6 @@ const ImageThumbnail = ({
         </motion.button>
       </div>
 
-      {/* Bottom Actions - MUST be clickable */}
       <div className="absolute bottom-0 left-0 right-0 p-2 flex items-center justify-between z-10">
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <motion.button
@@ -3343,7 +3207,6 @@ const ImageThumbnail = ({
         )}
       </div>
 
-      {/* Static Badges - NOT clickable */}
       {isCover && (
         <span className="absolute top-2 left-2 px-2.5 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-bold rounded-lg shadow-lg pointer-events-none z-10">
           Cover
@@ -3529,7 +3392,6 @@ const PricingSection = ({ data, onChange, onListChange, errors, options, addToas
             onChange={(e) => {
               const minVal = e.target.value;
               onChange("perDayPrice", minVal, true, "min");
-              // Validate against max
               if (data.perDayPrice?.max && parseFloat(minVal) > parseFloat(data.perDayPrice.max)) {
                 addToast("Min price cannot exceed max price", "warning");
               }
@@ -3545,7 +3407,6 @@ const PricingSection = ({ data, onChange, onListChange, errors, options, addToas
             onChange={(e) => {
               const maxVal = e.target.value;
               onChange("perDayPrice", maxVal, true, "max");
-              // Validate against min
               if (data.perDayPrice?.min && parseFloat(maxVal) < parseFloat(data.perDayPrice.min)) {
                 addToast("Max price cannot be less than min price", "warning");
               }
@@ -3872,7 +3733,7 @@ const PackageCard = ({
               className="flex-1 min-w-0 px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 focus:ring-4 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  e.preventDefault(); // IMPORTANT: Prevents form submission
+                  e.preventDefault();
                   onAddFeature(index, featureInput);
                   setFeatureInput("");
                   if (featureInput.trim()) addToast("Feature added", "success");
@@ -5180,5 +5041,54 @@ const ImagePreviewModal = ({ image, onClose }) => (
       className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
       onClick={(e) => e.stopPropagation()}
     />
+  </motion.div>
+);
+
+// ============================================================================
+// UNSAVED CHANGES MODAL
+// ============================================================================
+const UnsavedChangesModal = ({ onDiscard, onCancel, onSave }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    onClick={onCancel}
+  >
+    <motion.div
+      initial={{ scale: 0.9, y: 20 }}
+      animate={{ scale: 1, y: 0 }}
+      exit={{ scale: 0.9, y: 20 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-700"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="text-amber-600" size={32} />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Unsaved Changes</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">You have unsaved changes. What would you like to do?</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={onSave}
+          className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center gap-2"
+        >
+          <Save size={16} /> Save Changes
+        </button>
+        <button
+          onClick={onDiscard}
+          className="w-full px-4 py-2.5 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium"
+        >
+          Discard Changes
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+        >
+          Cancel
+        </button>
+      </div>
+    </motion.div>
   </motion.div>
 );

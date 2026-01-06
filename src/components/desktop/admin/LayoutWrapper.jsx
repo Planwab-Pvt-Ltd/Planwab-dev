@@ -8,12 +8,6 @@ import Header from "@/components/desktop/admin/Header";
 export default function AdminLayoutWrapper({ children }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (window.innerWidth >= 768) {
-      setSidebarOpen(true);
-    }
-  }, []);
-
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
   };

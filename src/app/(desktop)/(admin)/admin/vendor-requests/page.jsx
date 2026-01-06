@@ -1,40 +1,24 @@
-// page.jsx - Main Vendors Page
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  List,
-  PlusCircle,
-  Eye,
-  Edit,
-  ArrowLeft,
-  Store,
-  TrendingUp,
-  RefreshCw,
-  Search,
-  Bell,
-  Settings,
-  ChevronRight,
-  Home,
-} from "lucide-react";
-import AddVendor from "@/components/desktop/admin/vendors/addVendor";
-import AllVendors from "@/components/desktop/admin/vendors/AllVendors";
-import ViewVendorTab from "@/components/desktop/admin/vendors/ViewVendorTab";
-import EditVendorTab from "@/components/desktop/admin/vendors/EditVendorTab";
+import { List, Eye, ArrowLeft, TrendingUp, RefreshCw, ChevronRight, Home, UserCheck } from "lucide-react";
+import ViewVendorRequestTab from "@/components/desktop/admin/vendor-requests/viewVendorRequestTab";
+import AllVendorRequests from "@/components/desktop/admin/vendor-requests/AllVendorRequests";
 
-export default function VendorsPage() {
+export default function VendorRequestsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
-  const [selectedVendor, setSelectedVendor] = useState(null);
-  const [selectedVendorId, setSelectedVendorId] = useState(searchParams.get("vendorId") || null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedRequestId, setSelectedRequestId] = useState(searchParams.get("requestId") || null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [mounted, setMounted] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -42,71 +26,79 @@ export default function VendorsPage() {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    const vendorId = searchParams.get("vendorId");
+    const requestId = searchParams.get("requestId");
+    const editMode = searchParams.get("edit") === "true";
 
-    if (tab && ["all", "add", "view", "edit"].includes(tab)) {
+    if (tab && ["all", "view"].includes(tab)) {
       setActiveTab(tab);
     }
 
-    if (vendorId && (tab === "view" || tab === "edit")) {
-      fetchVendorById(vendorId);
+    if (requestId && tab === "view") {
+      fetchRequestById(requestId);
+      setIsEditMode(editMode);
     }
   }, [searchParams]);
 
-  const fetchVendorById = useCallback(async (id) => {
+  const fetchRequestById = useCallback(async (id) => {
     try {
-      const response = await fetch(`/api/vendor/${id}`);
-      if (!response.ok) throw new Error("Vendor not found");
+      const response = await fetch(`/api/vendor/requests?id=${id}`);
+      if (!response.ok) throw new Error("Vendor request not found");
       const result = await response.json();
-      setSelectedVendor(result.data || result);
+      setSelectedRequest(result.data || result);
     } catch (error) {
-      console.error("Error fetching vendor:", error);
+      console.error("Error fetching vendor request:", error);
       updateURL("all");
-      setSelectedVendor(null);
+      setSelectedRequest(null);
     }
   }, []);
 
   const updateURL = useCallback(
-    (tab, vendorId = null) => {
+    (tab, requestId = null, editMode = false) => {
       const params = new URLSearchParams();
       params.set("tab", tab);
 
-      if (vendorId) {
-        params.set("vendorId", vendorId);
+      if (requestId) {
+        params.set("requestId", requestId);
       }
 
-      if (tab === "view" || tab === "edit") {
-        params.set("name", selectedVendor?.name || "vendor");
+      if (editMode) {
+        params.set("edit", "true");
+      }
+
+      if (tab === "view") {
+        params.set("name", selectedRequest?.businessName || "vendor-request");
       }
 
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [router, selectedVendor]
+    [router, selectedRequest]
   );
 
-  const handleViewVendor = useCallback(
-    (vendor) => {
-      if (!vendor || !vendor._id) {
-        console.error("Invalid vendor data for view");
+  const handleViewRequest = useCallback(
+    (request) => {
+      if (!request || !request._id) {
+        console.error("Invalid vendor request data for view");
         return;
       }
-      setSelectedVendor(vendor);
+      setSelectedRequest(request);
       setActiveTab("view");
-      updateURL("view", vendor._id);
+      setIsEditMode(false);
+      updateURL("view", request._id, false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [updateURL]
   );
 
-  const handleEditVendor = useCallback(
-    (vendor) => {
-      if (!vendor || !vendor._id) {
-        console.error("Invalid vendor data for edit");
+  const handleEditRequest = useCallback(
+    (request) => {
+      if (!request || !request._id) {
+        console.error("Invalid vendor request data for edit");
         return;
       }
-      setSelectedVendor(vendor);
-      setActiveTab("edit");
-      updateURL("edit", vendor._id);
+      setSelectedRequest(request);
+      setActiveTab("view");
+      setIsEditMode(true);
+      updateURL("view", request._id, true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [updateURL]
@@ -114,7 +106,8 @@ export default function VendorsPage() {
 
   const handleBackToList = useCallback(() => {
     setActiveTab("all");
-    setSelectedVendor(null);
+    setSelectedRequest(null);
+    setIsEditMode(false);
     updateURL("all");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [updateURL]);
@@ -122,26 +115,31 @@ export default function VendorsPage() {
   const handleEditSuccess = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
     setLastRefresh(new Date());
-    setActiveTab("all");
-    setSelectedVendor(null);
-    updateURL("all");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [updateURL]);
+    setIsEditMode(false);
+    if (selectedRequest) {
+      updateURL("view", selectedRequest._id, false);
+    }
+  }, [updateURL, selectedRequest]);
 
   const handleDeleteSuccess = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
     setLastRefresh(new Date());
     setActiveTab("all");
-    setSelectedVendor(null);
+    setSelectedRequest(null);
+    setIsEditMode(false);
     updateURL("all");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [updateURL]);
 
   const handleSwitchToEdit = useCallback(() => {
-    setActiveTab("edit");
-    updateURL("edit", selectedVendor?._id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [updateURL, selectedVendor]);
+    setIsEditMode(true);
+    updateURL("view", selectedRequest?._id, true);
+  }, [updateURL, selectedRequest]);
+
+  const handleSwitchToView = useCallback(() => {
+    setIsEditMode(false);
+    updateURL("view", selectedRequest?._id, false);
+  }, [updateURL, selectedRequest]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -151,17 +149,15 @@ export default function VendorsPage() {
     setIsRefreshing(false);
   }, []);
 
-  const handleAddSuccess = useCallback(() => {
-    setRefreshTrigger((prev) => prev + 1);
-    setLastRefresh(new Date());
-    setActiveTab("all");
-    updateURL("all");
-  }, [updateURL]);
-
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && (activeTab === "view" || activeTab === "edit")) {
-        handleBackToList();
+      if (e.key === "Escape" && activeTab === "view") {
+        if (isEditMode) {
+          setIsEditMode(false);
+          updateURL("view", selectedRequest?._id, false);
+        } else {
+          handleBackToList();
+        }
       }
       if (e.ctrlKey && e.key === "r") {
         e.preventDefault();
@@ -171,39 +167,40 @@ export default function VendorsPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeTab, handleBackToList, handleRefresh]);
+  }, [activeTab, isEditMode, handleBackToList, handleRefresh, updateURL, selectedRequest]);
 
-  const tabs = [
-    { id: "all", label: "All Vendors", icon: List, description: "View and manage all vendors" },
-    { id: "add", label: "Add Vendor", icon: PlusCircle, description: "Register a new vendor" },
-  ];
+  const tabs = [{ id: "all", label: "All Requests", icon: List, description: "View and manage all vendor requests" }];
 
   const getBreadcrumbs = () => {
-    const crumbs = [{ label: "Dashboard", href: "/admin" }, { label: "Vendors" }];
+    const crumbs = [{ label: "Dashboard", href: "/admin" }, { label: "Vendor Requests" }];
 
-    if (activeTab === "view" && selectedVendor) {
-      crumbs.push({ label: selectedVendor.name, isActive: true });
-    } else if (activeTab === "edit" && selectedVendor) {
-      crumbs.push({ label: selectedVendor.name, onClick: () => setActiveTab("view") });
-      crumbs.push({ label: "Edit", isActive: true });
-    } else if (activeTab === "add") {
-      crumbs.push({ label: "Add New", isActive: true });
+    if (activeTab === "view" && selectedRequest) {
+      crumbs.push({ label: selectedRequest.businessName, isActive: !isEditMode });
+      if (isEditMode) {
+        crumbs.push({ label: "Edit", isActive: true });
+      }
     }
 
     return crumbs;
   };
 
   const getPageTitle = () => {
-    if (activeTab === "view" && selectedVendor) {
-      return `Viewing: ${selectedVendor.name}`;
+    if (activeTab === "view" && selectedRequest) {
+      return isEditMode ? `Editing: ${selectedRequest.businessName}` : `Viewing: ${selectedRequest.businessName}`;
     }
-    if (activeTab === "edit" && selectedVendor) {
-      return `Editing: ${selectedVendor.name}`;
+    return "Manage Vendor Requests";
+  };
+
+  const getCurrentTabInfo = () => {
+    if (activeTab === "view" && selectedRequest) {
+      return {
+        id: "view",
+        label: isEditMode ? "Edit Request" : "View Request",
+        icon: Eye,
+        description: isEditMode ? "Edit vendor request details" : "View vendor request details",
+      };
     }
-    if (activeTab === "add") {
-      return "Add New Vendor";
-    }
-    return "Manage Vendors";
+    return tabs[0];
   };
 
   return (
@@ -216,14 +213,7 @@ export default function VendorsPage() {
             {getBreadcrumbs().map((crumb, index) => (
               <div key={index} className="flex items-center gap-1 flex-shrink-0">
                 <ChevronRight size={14} className="text-gray-400" />
-                {crumb.onClick ? (
-                  <button
-                    onClick={crumb.onClick}
-                    className="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors"
-                  >
-                    {crumb.label}
-                  </button>
-                ) : crumb.href ? (
+                {crumb.href ? (
                   <a
                     href={crumb.href}
                     className="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors"
@@ -248,7 +238,7 @@ export default function VendorsPage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg flex-shrink-0">
-                  <Store size={24} className="text-white" />
+                  <UserCheck size={24} className="text-white" />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">
@@ -266,7 +256,7 @@ export default function VendorsPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                {(activeTab === "view" || activeTab === "edit") && (
+                {activeTab === "view" && (
                   <motion.button
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -287,63 +277,51 @@ export default function VendorsPage() {
                 >
                   <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
                 </button>
-
-                {activeTab === "all" && (
-                  <motion.button
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    onClick={() => setActiveTab("add")}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all text-sm font-semibold shadow-lg shadow-indigo-500/25"
-                  >
-                    <PlusCircle size={16} />
-                    <span className="hidden sm:inline">Add Vendor</span>
-                    <span className="sm:hidden">Add</span>
-                  </motion.button>
-                )}
               </div>
             </div>
 
             {/* Tab Navigation */}
-            {!selectedVendor && (
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex gap-2">
-                  {tabs.map((tab) => (
-                    <TabButton
-                      key={tab.id}
-                      tab={tab}
-                      isActive={activeTab === tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id);
-                        updateURL(tab.id);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex gap-2">
+                {/* All Requests Tab */}
+                <TabButton
+                  tab={tabs[0]}
+                  isActive={activeTab === "all"}
+                  onClick={() => {
+                    setActiveTab("all");
+                    setSelectedRequest(null);
+                    setIsEditMode(false);
+                    updateURL("all");
+                  }}
+                />
 
-            {/* Vendor Navigation when viewing/editing */}
-            {selectedVendor && (
+                {/* Dynamic View/Edit Tab */}
+                {selectedRequest && activeTab === "view" && (
+                  <TabButton tab={getCurrentTabInfo()} isActive={true} onClick={() => {}} />
+                )}
+              </div>
+            </div>
+
+            {/* Request Navigation when viewing/editing */}
+            {selectedRequest && activeTab === "view" && (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                    <img
-                      src={selectedVendor.defaultImage || selectedVendor.images?.[0] || "/placeholder-vendor.jpg"}
-                      alt={selectedVendor.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                    {selectedRequest.businessName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{selectedVendor.name}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {selectedRequest.businessName}
+                    </p>
                     <p className="text-xs text-gray-500 capitalize">
-                      {selectedVendor.category} • {selectedVendor.address?.city || "N/A"}
+                      {selectedRequest.category} • {selectedRequest.city || "N/A"} • {selectedRequest.status}
                     </p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button
-                      onClick={() => setActiveTab("view")}
+                      onClick={handleSwitchToView}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        activeTab === "view"
+                        !isEditMode
                           ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
                           : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
@@ -352,14 +330,14 @@ export default function VendorsPage() {
                       <span className="hidden sm:inline">View</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab("edit")}
+                      onClick={handleSwitchToEdit}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        activeTab === "edit"
+                        isEditMode
                           ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
                           : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
                     >
-                      <Edit size={14} />
+                      <TrendingUp size={14} />
                       <span className="hidden sm:inline">Edit</span>
                     </button>
                   </div>
@@ -371,37 +349,31 @@ export default function VendorsPage() {
           {/* Main Content */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab + (selectedVendor?._id || "")}
+              key={activeTab + (selectedRequest?._id || "") + (isEditMode ? "-edit" : "-view")}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               {activeTab === "all" && (
-                <AllVendors
-                  onViewVendor={handleViewVendor}
-                  onEditVendor={handleEditVendor}
+                <AllVendorRequests
+                  onViewRequest={handleViewRequest}
+                  onEditRequest={handleEditRequest}
                   refreshTrigger={refreshTrigger}
+                  onDeleteSuccess={handleDeleteSuccess}
                 />
               )}
 
-              {activeTab === "add" && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <AddVendor onSuccess={handleAddSuccess} />
-                </div>
-              )}
-
-              {activeTab === "view" && selectedVendor && (
-                <ViewVendorTab
-                  vendor={selectedVendor}
+              {activeTab === "view" && selectedRequest && (
+                <ViewVendorRequestTab
+                  request={selectedRequest}
+                  isEditMode={isEditMode}
                   onBack={handleBackToList}
-                  onEdit={handleSwitchToEdit}
+                  onSwitchToEdit={handleSwitchToEdit}
+                  onSwitchToView={handleSwitchToView}
+                  onEditSuccess={handleEditSuccess}
                   onDelete={handleDeleteSuccess}
                 />
-              )}
-
-              {activeTab === "edit" && selectedVendor && (
-                <EditVendorTab vendor={selectedVendor} onBack={handleBackToList} onSuccess={handleEditSuccess} />
               )}
             </motion.div>
           </AnimatePresence>
@@ -409,7 +381,7 @@ export default function VendorsPage() {
           {/* Footer Info */}
           <div className="mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
             <p>
-              Vendor Management System • Press{" "}
+              Vendor Requests Management System • Press{" "}
               <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> to go back •{" "}
               <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Ctrl+R</kbd> to refresh
             </p>

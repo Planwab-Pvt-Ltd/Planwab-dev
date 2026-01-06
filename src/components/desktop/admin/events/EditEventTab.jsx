@@ -1,4 +1,4 @@
-// AddEvent.jsx
+// EditEventTab.jsx
 "use client";
 
 // ============================================================================
@@ -33,13 +33,7 @@ import {
   Info,
   Lightbulb,
   Bell,
-  Zap,
-  ChevronDown,
-  ChevronUp,
-  BookOpen,
-  Rocket,
-  MousePointer,
-  Layout,
+  ArrowLeft,
   Lock,
   EyeOff,
   Eye,
@@ -49,13 +43,6 @@ import {
   Undo2,
   CakeSlice,
   PartyPopper,
-  Briefcase,
-  GraduationCap,
-  Baby,
-  Music,
-  Utensils,
-  Camera,
-  Plane,
   HelpCircle,
   Globe,
   CreditCard,
@@ -65,7 +52,6 @@ import {
   Sun,
   Moon,
   Sunset,
-  Timer,
 } from "lucide-react";
 
 // ============================================================================
@@ -154,10 +140,10 @@ const useToast = () => {
 // ============================================================================
 // MAIN EXPORT COMPONENT
 // ============================================================================
-export default function AddEvent({ onNavigate, onSuccess }) {
+export default function EditEventTab({ event, onBack, onSuccess }) {
   return (
     <ToastProvider>
-      <AddEventContent onNavigate={onNavigate} onSuccess={onSuccess} />
+      <EditEventContent event={event} onBack={onBack} onSuccess={onSuccess} />
     </ToastProvider>
   );
 }
@@ -165,10 +151,9 @@ export default function AddEvent({ onNavigate, onSuccess }) {
 // ============================================================================
 // ADMIN PASSWORD MODAL COMPONENT
 // ============================================================================
-const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
+const AdminPasswordModal = ({ isOpen, onClose, onSuccess, isLoading }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const inputRef = useRef(null);
@@ -192,25 +177,8 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    setIsVerifying(true);
-    setError("");
-
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    if (password === "admin123" || password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      addToast("Access granted! Creating event...", "success");
-      onSuccess();
-      onClose();
-    } else {
-      setAttempts((prev) => prev + 1);
-      setError(`Invalid password. ${3 - attempts - 1} attempts remaining.`);
-      addToast("Invalid admin password", "error");
-      if (attempts >= 2) {
-        addToast("Too many failed attempts. Please try again later.", "warning");
-        onClose();
-      }
-    }
-    setIsVerifying(false);
+    // ✅ Just send the password to API, no frontend validation
+    onSuccess(password);
   };
 
   if (!isOpen) return null;
@@ -241,7 +209,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
               <div>
                 <h2 className="text-xl font-bold">Admin Verification</h2>
-                <p className="text-white/80 text-sm mt-0.5">Secure access required</p>
+                <p className="text-white/80 text-sm mt-0.5">Confirm changes with password</p>
               </div>
             </div>
           </div>
@@ -272,7 +240,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
                       ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
                       : "border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20"
                   }`}
-                  disabled={isVerifying}
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -301,25 +269,25 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
               <button
                 type="button"
                 onClick={onClose}
-                disabled={isVerifying}
+                disabled={isLoading}
                 className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-all disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isVerifying || !password.trim()}
+                disabled={isLoading || !password.trim()}
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl font-bold hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25"
               >
-                {isVerifying ? (
+                {isLoading ? (
                   <>
                     <RefreshCw size={18} className="animate-spin" />
-                    Verifying...
+                    Saving...
                   </>
                 ) : (
                   <>
-                    <ShieldCheck size={18} />
-                    Verify & Create
+                    <Save size={18} />
+                    Save Changes
                   </>
                 )}
               </button>
@@ -336,175 +304,58 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
 };
 
 // ============================================================================
-// WELCOME SECTION COMPONENT
+// UNSAVED CHANGES MODAL
 // ============================================================================
-const WelcomeSection = ({ isVisible, onClose }) => {
-  const [expandedTip, setExpandedTip] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  const tips = [
-    {
-      id: 1,
-      icon: FileText,
-      title: "Required Fields",
-      shortDesc: "Fill in essential event details",
-      fullDesc:
-        "Complete all fields marked with a red asterisk (*) including category, contact name, email, phone, city, and budget. These are mandatory for creating an event.",
-      color: "from-rose-500 to-pink-500",
-    },
-    {
-      id: 2,
-      icon: Calendar,
-      title: "Date & Time",
-      shortDesc: "Set your event schedule",
-      fullDesc:
-        "Choose a specific date or select a date range if you're flexible. Pick a time slot that works best for your event type.",
-      color: "from-violet-500 to-purple-500",
-    },
-    {
-      id: 3,
-      icon: Layout,
-      title: "Section Navigation",
-      shortDesc: "Navigate efficiently between sections",
-      fullDesc:
-        "Use the section tabs or Previous/Next buttons to navigate. Each section shows completion progress. Sections with errors are highlighted in red.",
-      color: "from-cyan-500 to-blue-500",
-    },
-    {
-      id: 4,
-      icon: Rocket,
-      title: "Quick Create",
-      shortDesc: "Create when ready indicator shows",
-      fullDesc:
-        "Once all required fields are complete, the 'Ready' badge appears. Click Create to submit your event planning request.",
-      color: "from-emerald-500 to-green-500",
-    },
-  ];
-
-  if (!isVisible) return null;
-
-  return (
+const UnsavedChangesModal = ({ onDiscard, onCancel, onSave }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    onClick={onCancel}
+  >
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20, height: 0 }}
-      className="mb-6 rounded-2xl overflow-hidden border border-pink-200 dark:border-pink-800 shadow-xl"
+      initial={{ scale: 0.9, y: 20 }}
+      animate={{ scale: 1, y: 0 }}
+      exit={{ scale: 0.9, y: 20 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-700"
+      onClick={(e) => e.stopPropagation()}
     >
-      <div className="bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 relative">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
-
-        <div className="relative z-10 p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <PartyPopper size={28} className="text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Plan Your Perfect Event</h2>
-                <p className="text-white/80 mt-1">Create an event planning request in minutes</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white"
-                title={isCollapsed ? "Expand" : "Collapse"}
-              >
-                {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white"
-                title="Dismiss"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                  {tips.map((tip) => (
-                    <motion.div
-                      key={tip.id}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 cursor-pointer transition-all border border-white/20 ${
-                        expandedTip === tip.id ? "ring-2 ring-white/50" : ""
-                      }`}
-                      onClick={() => setExpandedTip(expandedTip === tip.id ? null : tip.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg bg-gradient-to-br ${tip.color}`}>
-                          <tip.icon size={18} className="text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-white text-sm">{tip.title}</h3>
-                            <ChevronDown
-                              size={14}
-                              className={`text-white/60 transition-transform ${
-                                expandedTip === tip.id ? "rotate-180" : ""
-                              }`}
-                            />
-                          </div>
-                          <p className="text-white/70 text-xs mt-1">{tip.shortDesc}</p>
-                        </div>
-                      </div>
-                      <AnimatePresence>
-                        {expandedTip === tip.id && (
-                          <motion.p
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="text-white/80 text-xs mt-3 pt-3 border-t border-white/20 leading-relaxed"
-                          >
-                            {tip.fullDesc}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-white/80 text-sm">
-                      <MousePointer size={14} />
-                      <span>Click any tip to expand</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-white/80 text-sm">
-                      <BookOpen size={14} />
-                      <span>5 sections to complete</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors backdrop-blur-sm"
-                  >
-                    Got it, let's start!
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <div className="text-center mb-6">
+        <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="text-amber-600" size={32} />
         </div>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Unsaved Changes</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">You have unsaved changes. What would you like to do?</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={onSave}
+          className="w-full px-4 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl hover:from-pink-700 hover:to-purple-700 transition-colors font-medium flex items-center justify-center gap-2"
+        >
+          <Save size={16} /> Save Changes
+        </button>
+        <button
+          onClick={onDiscard}
+          className="w-full px-4 py-2.5 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium"
+        >
+          Discard Changes
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+        >
+          Cancel
+        </button>
       </div>
     </motion.div>
-  );
-};
+  </motion.div>
+);
 
 // ============================================================================
 // MAIN CONTENT COMPONENT
 // ============================================================================
-function AddEventContent({ onNavigate, onSuccess }) {
+function EditEventContent({ event, onBack, onSuccess }) {
   const { addToast } = useToast();
   const formContainerRef = useRef(null);
 
@@ -536,61 +387,51 @@ function AddEventContent({ onNavigate, onSuccess }) {
   ];
 
   // ============================================================================
-  // INITIAL FORM DATA
+  // INITIAL FORM DATA FUNCTION
   // ============================================================================
-  const initialFormData = {
-    // Step 1: Category & City
-    category: "",
-    city: "",
-
-    // Step 2: Date & Time
-    eventDetails: {
-      selectedDate: "",
-      year: new Date().getFullYear(),
-      month: "",
-      day: "",
-      dateRange: "",
-      timeSlot: "",
-    },
-
-    // Step 3: Budget
-    budgetDetails: {
-      valueFormatted: "",
-      valueRaw: "",
-      paymentPreference: "",
-    },
-
-    // Step 4: Contact Info
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
-    countryCode: "+91",
-    fullPhone: "",
-
-    // Step 5: Current Location
-    currentLocation: "",
-
-    // Metadata
-    status: "pending",
-    source: "admin",
-    notes: "",
-    username: "",
-  };
+  const initializeFormData = useCallback((eventData) => {
+    return {
+      category: eventData.category || "",
+      city: eventData.city || "",
+      eventDetails: eventData.eventDetails || {
+        selectedDate: "",
+        year: new Date().getFullYear(),
+        month: "",
+        day: "",
+        dateRange: "",
+        timeSlot: "",
+      },
+      budgetDetails: eventData.budgetDetails || {
+        valueFormatted: "",
+        valueRaw: "",
+        paymentPreference: "",
+      },
+      contactName: eventData.contactName || "",
+      contactEmail: eventData.contactEmail || "",
+      contactPhone: eventData.contactPhone || "",
+      countryCode: eventData.countryCode || "+91",
+      fullPhone: eventData.fullPhone || "",
+      currentLocation: eventData.currentLocation || "",
+      status: eventData.status || "pending",
+      source: eventData.source || "admin",
+      notes: eventData.notes || "",
+      username: eventData.username || "",
+    };
+  }, []);
 
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
-  const [activeCategory, setActiveCategory] = useState("");
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState({});
   const [originalData, setOriginalData] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSection, setActiveSection] = useState("category");
   const [hasChanges, setHasChanges] = useState(false);
   const [sectionProgress, setSectionProgress] = useState({});
-  const [showWelcome, setShowWelcome] = useState(true);
   const [touchedFields, setTouchedFields] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
   // ============================================================================
   // FIELD OPTIONS CONFIGURATION
@@ -682,35 +523,35 @@ function AddEventContent({ onNavigate, onSuccess }) {
       label: "Event Type",
       icon: Heart,
       required: ["category", "city"],
-      description: "Select your event category and location",
+      description: "Event category and location",
     },
     {
       id: "datetime",
       label: "Date & Time",
       icon: Calendar,
       required: [],
-      description: "Choose when you want your event",
+      description: "When the event will take place",
     },
     {
       id: "budget",
       label: "Budget",
       icon: DollarSign,
       required: ["budgetDetails.valueRaw"],
-      description: "Set your budget expectations",
+      description: "Budget expectations",
     },
     {
       id: "contact",
       label: "Contact Info",
       icon: User,
       required: ["contactName", "contactEmail", "contactPhone"],
-      description: "Your contact details for coordination",
+      description: "Contact details for coordination",
     },
     {
       id: "additional",
       label: "Additional Info",
       icon: FileText,
       required: [],
-      description: "Any extra details or notes",
+      description: "Extra details and notes",
     },
   ];
 
@@ -718,11 +559,15 @@ function AddEventContent({ onNavigate, onSuccess }) {
   // EFFECTS
   // ============================================================================
   useEffect(() => {
-    setOriginalData(JSON.parse(JSON.stringify(initialFormData)));
-  }, []);
+    if (event) {
+      const initialData = initializeFormData(event);
+      setFormData(initialData);
+      setOriginalData(JSON.parse(JSON.stringify(initialData)));
+    }
+  }, [event, initializeFormData]);
 
   useEffect(() => {
-    if (originalData) {
+    if (originalData && formData) {
       const currentJson = JSON.stringify(formData);
       const originalJson = JSON.stringify(originalData);
       setHasChanges(currentJson !== originalJson);
@@ -781,18 +626,10 @@ function AddEventContent({ onNavigate, onSuccess }) {
     setTouchedFields((prev) => ({ ...prev, [field]: true }));
   }, []);
 
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setActiveCategory("");
-    setErrors({});
-    setTouchedFields({});
-    setOriginalData(JSON.parse(JSON.stringify(initialFormData)));
-    addToast("Form has been reset to default values", "info");
-    scrollToFormTop();
-  }, [addToast, scrollToFormTop]);
-
   const resetSection = useCallback(
     (sectionId) => {
+      if (!originalData) return;
+
       const sectionFields = {
         category: ["category", "city"],
         datetime: ["eventDetails"],
@@ -805,23 +642,19 @@ function AddEventContent({ onNavigate, onSuccess }) {
       setFormData((prev) => {
         const updated = { ...prev };
         fieldsToReset.forEach((field) => {
-          if (typeof initialFormData[field] === "object") {
-            updated[field] = JSON.parse(JSON.stringify(initialFormData[field]));
+          if (typeof originalData[field] === "object") {
+            updated[field] = JSON.parse(JSON.stringify(originalData[field]));
           } else {
-            updated[field] = initialFormData[field];
+            updated[field] = originalData[field];
           }
         });
         return updated;
       });
 
-      if (sectionId === "category") {
-        setActiveCategory("");
-      }
-
       const sectionName = sections.find((s) => s.id === sectionId)?.label || "Section";
       addToast(`${sectionName} has been reset`, "info");
     },
-    [addToast]
+    [originalData, addToast]
   );
 
   const handleInputChange = useCallback(
@@ -852,7 +685,6 @@ function AddEventContent({ onNavigate, onSuccess }) {
 
     if (!formData.category?.trim()) newErrors.category = "Event category is required";
     if (!formData.city?.trim()) newErrors.city = "City is required";
-
     if (!formData.contactName?.trim()) newErrors.contactName = "Contact name is required";
 
     if (!formData.contactEmail?.trim()) {
@@ -889,9 +721,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
   // ============================================================================
   // FORM SUBMISSION
   // ============================================================================
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
-
+  const handleSubmit = useCallback(() => {
     if (!validateForm()) {
       const errorSections = sections.filter((s) => getErrorsForSection(s.id).length > 0);
       if (errorSections.length > 0) {
@@ -903,27 +733,27 @@ function AddEventContent({ onNavigate, onSuccess }) {
     }
 
     setShowPasswordModal(true);
-  };
+  }, [validateForm, getErrorsForSection, addToast, scrollToFormTop]);
 
-  const handleConfirmedSubmit = async () => {
+  const handleConfirmedSubmit = async (password) => {
     setIsSubmitting(true);
 
     try {
-      // Format the full phone number
       const fullPhone = `${formData.countryCode}${formData.contactPhone}`;
 
-      // Format budget value
-      const budgetValue = formData.budgetDetails.valueRaw;
       let valueFormatted = formData.budgetDetails.valueFormatted;
+      const budgetValue = formData.budgetDetails.valueRaw;
       if (!valueFormatted && budgetValue) {
         if (budgetValue >= 100) {
-          valueFormatted = `₹${budgetValue / 100} Crore${budgetValue > 100 ? "s" : ""}`;
+          valueFormatted = `₹${budgetValue / 100} Crore(s)`;
         } else {
           valueFormatted = `₹${budgetValue} Lakhs`;
         }
       }
 
       const payload = {
+        eventId: event._id, // ✅ Changed from 'id' to 'eventId'
+        password,
         ...formData,
         fullPhone,
         budgetDetails: {
@@ -934,7 +764,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
       };
 
       const response = await fetch("/api/plannedevent", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -942,20 +772,16 @@ function AddEventContent({ onNavigate, onSuccess }) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to create event");
+        throw new Error(result.message || "Failed to update event");
       }
 
-      addToast("🎉 Event created successfully!", "success", 5000);
+      addToast("🎉 Event updated successfully!", "success", 5000);
+      setShowPasswordModal(false);
+      setHasChanges(false);
 
       setTimeout(() => {
-        if (onSuccess) {
-          onSuccess();
-        } else if (onNavigate) {
-          onNavigate("all");
-        }
-      }, 2000);
-
-      resetForm();
+        onSuccess?.();
+      }, 1500);
     } catch (error) {
       console.error("Submit error:", error);
       addToast(error.message || "Something went wrong. Please try again.", "error");
@@ -979,6 +805,14 @@ function AddEventContent({ onNavigate, onSuccess }) {
     [activeSection, scrollToFormTop]
   );
 
+  const handleBack = useCallback(() => {
+    if (hasChanges) {
+      setShowUnsavedWarning(true);
+    } else {
+      onBack?.();
+    }
+  }, [hasChanges, onBack]);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -992,19 +826,30 @@ function AddEventContent({ onNavigate, onSuccess }) {
     formData.contactPhone &&
     formData.budgetDetails?.valueRaw;
 
+  // Get category info
+  const categoryInfo = categories.find((c) => c.key === formData.category);
+  const CategoryIcon = categoryInfo?.icon || PartyPopper;
+
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
+  if (!event || !formData.category === undefined) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <RefreshCw className="animate-spin text-purple-500 mx-auto mb-3" size={32} />
+          <p className="text-gray-500">Loading event data...</p>
+        </div>
+      </div>
+    );
+  }
+
   // ============================================================================
   // RENDER
   // ============================================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-6 px-2 sm:px-4 lg:px-6 w-full max-w-full overflow-x-hidden box-border">
       <div className="w-full max-w-6xl mx-auto overflow-hidden">
-        {/* ================================================================== */}
-        {/* WELCOME SECTION */}
-        {/* ================================================================== */}
-        <AnimatePresence>
-          {showWelcome && <WelcomeSection isVisible={showWelcome} onClose={() => setShowWelcome(false)} />}
-        </AnimatePresence>
-
         {/* ================================================================== */}
         {/* MAIN FORM CONTAINER */}
         {/* ================================================================== */}
@@ -1019,47 +864,53 @@ function AddEventContent({ onNavigate, onSuccess }) {
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
 
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="text-white min-w-0">
-                <h1 className="text-xl md:text-2xl font-bold flex items-center gap-3 flex-wrap">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <PartyPopper size={24} />
-                  </div>
-                  Plan New Event
-                  {hasChanges && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="px-2.5 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full"
-                    >
-                      Unsaved Changes
-                    </motion.span>
-                  )}
-                </h1>
-                <p className="text-white/70 text-sm mt-2">
-                  Fill in the details below to create your event planning request
-                </p>
+              <div className="flex items-center gap-4 min-w-0">
+                <div
+                  className={`w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${
+                    categoryInfo?.color || "from-purple-500 to-pink-500"
+                  } flex items-center justify-center flex-shrink-0 shadow-lg`}
+                >
+                  <CategoryIcon className="text-white" size={28} />
+                </div>
+                <div className="text-white min-w-0">
+                  <h1 className="text-xl md:text-2xl font-bold flex items-center gap-3 flex-wrap">
+                    Edit: {formData.category?.charAt(0).toUpperCase() + formData.category?.slice(1)} Event
+                    {hasChanges && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="px-2.5 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full"
+                      >
+                        Unsaved Changes
+                      </motion.span>
+                    )}
+                  </h1>
+                  <p className="text-white/70 text-sm mt-1">
+                    {formData.contactName || "Event Details"} • {formData.city || "Location TBD"}
+                  </p>
 
-                {/* Progress Bar */}
-                <div className="flex items-center gap-3 mt-4">
-                  <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden max-w-[250px]">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${overallProgress}%` }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                    />
+                  {/* Progress Bar */}
+                  <div className="flex items-center gap-3 mt-3">
+                    <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden max-w-[250px]">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${overallProgress}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-white/90">{overallProgress}% Complete</span>
+                    {requiredFieldsComplete && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="px-3 py-1 bg-green-400 text-green-900 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lg"
+                      >
+                        <CheckCircle size={14} />
+                        Ready to Save
+                      </motion.span>
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-white/90">{overallProgress}% Complete</span>
-                  {requiredFieldsComplete && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="px-3 py-1 bg-green-400 text-green-900 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lg"
-                    >
-                      <CheckCircle size={14} />
-                      Ready to Create
-                    </motion.span>
-                  )}
                 </div>
               </div>
 
@@ -1067,36 +918,27 @@ function AddEventContent({ onNavigate, onSuccess }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setShowWelcome(true)}
-                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all border border-white/20"
-                  title="Show help"
-                >
-                  <HelpCircle size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
+                  onClick={handleBack}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all border border-white/20"
-                  disabled={isSubmitting}
                 >
-                  <RefreshCw size={16} />
-                  <span className="hidden sm:inline">Reset</span>
+                  <ArrowLeft size={16} />
+                  <span className="hidden sm:inline">Back</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !requiredFieldsComplete}
+                  disabled={isSubmitting || !hasChanges}
                   className="px-5 py-2.5 bg-white text-purple-600 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
                   {isSubmitting ? (
                     <>
                       <RefreshCw size={16} className="animate-spin" />
-                      <span className="hidden sm:inline">Creating...</span>
+                      <span className="hidden sm:inline">Saving...</span>
                     </>
                   ) : (
                     <>
-                      <Zap size={16} />
-                      <span>Create Event</span>
+                      <Save size={16} />
+                      <span>Save Changes</span>
                     </>
                   )}
                 </button>
@@ -1138,7 +980,6 @@ function AddEventContent({ onNavigate, onSuccess }) {
                     <span className="hidden md:inline">{section.label}</span>
                     <span className="md:hidden">{index + 1}</span>
 
-                    {/* Status Indicators */}
                     {!isActive && (
                       <div className="flex items-center gap-1">
                         {isRequired && <span className="text-[9px] text-red-500 font-bold">*</span>}
@@ -1227,15 +1068,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
           {/* ================================================================ */}
           {/* FORM CONTENT */}
           {/* ================================================================ */}
-          <form
-            onSubmit={handleSubmit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.target.type !== "submit" && e.target.tagName !== "BUTTON") {
-                e.preventDefault();
-              }
-            }}
-            className="p-4 md:p-6 overflow-hidden"
-          >
+          <div className="p-4 md:p-6 overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSection}
@@ -1251,8 +1084,6 @@ function AddEventContent({ onNavigate, onSuccess }) {
                     errors={errors}
                     options={fieldOptions}
                     categories={categories}
-                    activeCategory={activeCategory}
-                    setActiveCategory={setActiveCategory}
                     addToast={addToast}
                   />
                 )}
@@ -1295,7 +1126,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
                 )}
               </motion.div>
             </AnimatePresence>
-          </form>
+          </div>
 
           {/* ================================================================ */}
           {/* FOOTER NAVIGATION */}
@@ -1334,18 +1165,18 @@ function AddEventContent({ onNavigate, onSuccess }) {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || !requiredFieldsComplete}
+                disabled={isSubmitting || !hasChanges}
                 className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-green-500/25"
               >
                 {isSubmitting ? (
                   <>
                     <RefreshCw size={16} className="animate-spin" />
-                    Creating...
+                    Saving...
                   </>
                 ) : (
                   <>
-                    <CheckCircle size={16} />
-                    Create Event
+                    <Save size={16} />
+                    Save Changes
                   </>
                 )}
               </button>
@@ -1379,15 +1210,13 @@ function AddEventContent({ onNavigate, onSuccess }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">You have unsaved changes</p>
-                  {!requiredFieldsComplete && (
-                    <p className="text-xs text-red-500">Complete required fields to create</p>
-                  )}
+                  {!requiredFieldsComplete && <p className="text-xs text-red-500">Complete required fields to save</p>}
                 </div>
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={resetForm}
+                  onClick={handleBack}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm transition-all"
                   disabled={isSubmitting}
                 >
@@ -1396,11 +1225,11 @@ function AddEventContent({ onNavigate, onSuccess }) {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !requiredFieldsComplete}
+                  disabled={isSubmitting || !hasChanges}
                   className="px-5 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl font-bold text-sm hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 flex items-center gap-2 shadow-lg transition-all"
                 >
                   {isSubmitting ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                  Create
+                  Save
                 </button>
               </div>
             </motion.div>
@@ -1415,7 +1244,24 @@ function AddEventContent({ onNavigate, onSuccess }) {
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
         onSuccess={handleConfirmedSubmit}
+        isLoading={isSubmitting}
       />
+
+      <AnimatePresence>
+        {showUnsavedWarning && (
+          <UnsavedChangesModal
+            onDiscard={() => {
+              setShowUnsavedWarning(false);
+              onBack?.();
+            }}
+            onCancel={() => setShowUnsavedWarning(false)}
+            onSave={() => {
+              setShowUnsavedWarning(false);
+              handleSubmit();
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ==================================================================== */}
       {/* GLOBAL STYLES */}
@@ -1668,24 +1514,9 @@ const CustomSelect = ({ label, options, value, onChange, error, required, placeh
 // ============================================================================
 // CATEGORY SECTION
 // ============================================================================
-const CategorySection = ({
-  data,
-  onChange,
-  errors,
-  options,
-  categories,
-  activeCategory,
-  setActiveCategory,
-  addToast,
-}) => (
+const CategorySection = ({ data, onChange, errors, options, categories, addToast }) => (
   <div className="space-y-8">
-    <Section
-      title="Event Category"
-      icon={Heart}
-      description="What type of event are you planning?"
-      badge="Required"
-      tip="Select the category that best describes your event. This helps us connect you with the right vendors and planners."
-    >
+    <Section title="Event Category" icon={Heart} description="What type of event is this?" badge="Required">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {categories.map((cat) => (
           <motion.button
@@ -1694,7 +1525,6 @@ const CategorySection = ({
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => {
-              setActiveCategory(cat.key);
               onChange("category", cat.key);
               addToast(`${cat.label} selected`, "success");
             }}
@@ -1740,7 +1570,7 @@ const CategorySection = ({
       )}
     </Section>
 
-    <Section title="Event Location" icon={MapPin} description="Where will your event take place?" badge="Required">
+    <Section title="Event Location" icon={MapPin} description="Where will the event take place?" badge="Required">
       <CustomSelect
         label="City"
         options={options.cities}
@@ -1748,7 +1578,7 @@ const CategorySection = ({
         onChange={(val) => onChange("city", val)}
         required
         error={errors.city}
-        placeholder="Select your city..."
+        placeholder="Select city..."
         allowCustom
       />
     </Section>
@@ -1760,12 +1590,7 @@ const CategorySection = ({
 // ============================================================================
 const DateTimeSection = ({ data, onChange, errors, options, addToast }) => (
   <div className="space-y-8">
-    <Section
-      title="Event Date"
-      icon={Calendar}
-      description="When do you want your event?"
-      tip="You can either select a specific date or choose a flexible date range if you haven't finalized the date yet."
-    >
+    <Section title="Event Date" icon={Calendar} description="When is the event scheduled?">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <InputField
           label="Specific Date"
@@ -1773,10 +1598,9 @@ const DateTimeSection = ({ data, onChange, errors, options, addToast }) => (
           value={data.eventDetails?.selectedDate || ""}
           onChange={(e) => onChange("eventDetails", e.target.value, true, "selectedDate")}
           icon={Calendar}
-          helperText="Select if you have a specific date in mind"
         />
         <CustomSelect
-          label="Or Select Date Range"
+          label="Or Date Range"
           options={options.dateRanges}
           value={data.eventDetails?.dateRange || ""}
           onChange={(val) => onChange("eventDetails", val, true, "dateRange")}
@@ -1797,11 +1621,9 @@ const DateTimeSection = ({ data, onChange, errors, options, addToast }) => (
           value={data.eventDetails?.year || ""}
           onChange={(e) => onChange("eventDetails", parseInt(e.target.value) || "", true, "year")}
           placeholder="2025"
-          min={new Date().getFullYear()}
-          max={new Date().getFullYear() + 5}
         />
         <InputField
-          label="Day (if known)"
+          label="Day"
           type="number"
           value={data.eventDetails?.day || ""}
           onChange={(e) => onChange("eventDetails", parseInt(e.target.value) || "", true, "day")}
@@ -1812,7 +1634,7 @@ const DateTimeSection = ({ data, onChange, errors, options, addToast }) => (
       </div>
     </Section>
 
-    <Section title="Time Slot" icon={Clock} description="What time works best for your event?">
+    <Section title="Time Slot" icon={Clock} description="Preferred time for the event">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {options.timeSlots.map((slot) => (
           <motion.button
@@ -1863,13 +1685,7 @@ const DateTimeSection = ({ data, onChange, errors, options, addToast }) => (
 // ============================================================================
 const BudgetSection = ({ data, onChange, errors, options, addToast }) => (
   <div className="space-y-8">
-    <Section
-      title="Event Budget"
-      icon={IndianRupee}
-      description="What's your budget for this event?"
-      badge="Required"
-      tip="Be realistic with your budget to get accurate vendor recommendations. You can always adjust later during planning."
-    >
+    <Section title="Event Budget" icon={IndianRupee} description="Budget for this event" badge="Required">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {options.budgetRanges.map((range) => (
           <motion.button
@@ -1922,7 +1738,7 @@ const BudgetSection = ({ data, onChange, errors, options, addToast }) => (
 
       <div className="mt-6">
         <InputField
-          label="Or Enter Custom Budget (in Lakhs)"
+          label="Custom Budget (in Lakhs)"
           type="number"
           value={data.budgetDetails?.valueRaw || ""}
           onChange={(e) => {
@@ -1936,12 +1752,11 @@ const BudgetSection = ({ data, onChange, errors, options, addToast }) => (
           placeholder="e.g., 25"
           prefix="₹"
           suffix="Lakhs"
-          helperText="Enter your budget in Lakhs (e.g., 25 for ₹25 Lakhs)"
         />
       </div>
     </Section>
 
-    <Section title="Payment Preference" icon={CreditCard} description="How would you like to make payments?">
+    <Section title="Payment Preference" icon={CreditCard} description="Preferred payment method">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {options.paymentPreferences.map((pref) => (
           <motion.button
@@ -1992,13 +1807,7 @@ const BudgetSection = ({ data, onChange, errors, options, addToast }) => (
 // ============================================================================
 const ContactSection = ({ data, onChange, errors, options, onBlur, addToast }) => (
   <div className="space-y-8">
-    <Section
-      title="Contact Information"
-      icon={User}
-      description="Your details for coordination"
-      badge="Required"
-      tip="Provide accurate contact information so our team can reach you regarding your event planning."
-    >
+    <Section title="Contact Information" icon={User} description="Contact details for this event" badge="Required">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <InputField
           label="Full Name"
@@ -2007,16 +1816,15 @@ const ContactSection = ({ data, onChange, errors, options, onBlur, addToast }) =
           onBlur={() => onBlur?.("contactName")}
           required
           error={errors.contactName}
-          placeholder="Your full name"
+          placeholder="Contact name"
           icon={User}
         />
         <InputField
           label="Username"
           value={data.username || ""}
           onChange={(e) => onChange("username", e.target.value)}
-          placeholder="Preferred username (optional)"
+          placeholder="Username (optional)"
           icon={Tag}
-          helperText="For account creation if applicable"
         />
         <InputField
           label="Email Address"
@@ -2026,7 +1834,7 @@ const ContactSection = ({ data, onChange, errors, options, onBlur, addToast }) =
           onBlur={() => onBlur?.("contactEmail")}
           required
           error={errors.contactEmail}
-          placeholder="your@email.com"
+          placeholder="email@example.com"
           icon={Mail}
         />
         <div className="flex gap-2">
@@ -2061,14 +1869,13 @@ const ContactSection = ({ data, onChange, errors, options, onBlur, addToast }) =
 // ============================================================================
 const AdditionalSection = ({ data, onChange, errors, options, addToast }) => (
   <div className="space-y-8">
-    <Section title="Current Location" icon={MapPin} description="Where are you currently based?">
+    <Section title="Current Location" icon={MapPin} description="Client's current location">
       <InputField
-        label="Your Current Location"
+        label="Location"
         value={data.currentLocation || ""}
         onChange={(e) => onChange("currentLocation", e.target.value)}
         placeholder="e.g., Noida, Uttar Pradesh, India"
         icon={MapPin}
-        helperText="This helps us understand logistics better"
       />
     </Section>
 
@@ -2096,9 +1903,9 @@ const AdditionalSection = ({ data, onChange, errors, options, addToast }) => (
       </div>
     </Section>
 
-    <Section title="Source" icon={Globe} description="How did this event request originate?">
+    <Section title="Source" icon={Globe} description="Event request source">
       <CustomSelect
-        label="Event Source"
+        label="Source"
         options={options.sources}
         value={data.source || "admin"}
         onChange={(val) => onChange("source", val)}
@@ -2106,15 +1913,14 @@ const AdditionalSection = ({ data, onChange, errors, options, addToast }) => (
       />
     </Section>
 
-    <Section title="Additional Notes" icon={FileText} description="Any special requirements or notes?">
+    <Section title="Additional Notes" icon={FileText} description="Any additional information">
       <TextArea
         label="Notes"
         value={data.notes || ""}
         onChange={(e) => onChange("notes", e.target.value)}
-        placeholder="Enter any special requirements, preferences, or additional information that might help us plan your event better..."
+        placeholder="Enter any additional notes or special requirements..."
         rows={5}
         maxLength={1000}
-        helperText="Share any specific requirements or preferences"
       />
     </Section>
   </div>

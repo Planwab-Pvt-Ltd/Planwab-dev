@@ -722,6 +722,32 @@ const CategoryGrid = ({ currentCategory }) => {
             </p>
           </Link>
         ))}
+
+        {/* View All Item */}
+        <Link
+          href={`/m/vendors/explore/${currentCategory?.toLowerCase() || "all"}`}
+          className="flex flex-col items-center shrink-0 col-span-1"
+          onClick={() => haptic("light")}
+        >
+          <div
+            className="relative rounded-[12px] overflow-hidden bg-gray-200 mb-1.5 shadow-sm transition-transform active:scale-95 hover:scale-[1.02] w-20 flex items-center justify-center"
+            style={{ height: "80px" }}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <div className="grid grid-cols-2 gap-1">
+                <div className="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-gray-500 rounded-full"></div>
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+              </div>
+              <ChevronRight size={14} className="text-gray-600 mt-1" />
+            </div>
+          </div>
+
+          <p className="text-xs font-medium font-sans text-center text-gray-800 whitespace-nowrap leading-tight">
+            View All
+          </p>
+        </Link>
       </div>
 
       {/* Category Drawer */}

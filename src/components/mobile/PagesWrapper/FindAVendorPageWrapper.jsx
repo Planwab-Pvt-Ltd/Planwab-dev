@@ -21,6 +21,9 @@ import {
   Zap,
   ArrowRight,
   Clock,
+  Music,
+  Utensils,
+  Home,
 } from "lucide-react";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import Link from "next/link";
@@ -218,12 +221,12 @@ const HeroCarousel = memo(() => {
           >
             {/* Image Card */}
             <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm">
-              <motion.img
+              <SmartMedia
                 src={item.image}
                 alt={item.name}
+                type="image"
                 className="w-full h-full object-cover"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                prioirity={true}
               />
             </div>
 
@@ -825,13 +828,16 @@ export default function FindAVendorPageWrapper() {
   const count = getCartCount?.() || cartItems?.length || 0;
 
   // State for all sections
-  const [heroCategories, setHeroCategories] = useState([]);
   const [featuredVendors, setFeaturedVendors] = useState([]);
   const [topPlanners, setTopPlanners] = useState([]);
   const [mostBooked, setMostBooked] = useState([]);
   const [topPhotographers, setTopPhotographers] = useState([]);
   const [topMakeup, setTopMakeup] = useState([]);
   const [trending, setTrending] = useState([]);
+  const [topDJs, setTopDJs] = useState([]);
+  const [topCatering, setTopCatering] = useState([]);
+  const [topMehendi, setTopMehendi] = useState([]);
+  const [topVenues, setTopVenues] = useState([]);
 
   // Loading states
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
@@ -840,119 +846,321 @@ export default function FindAVendorPageWrapper() {
   const [isLoadingPhotographers, setIsLoadingPhotographers] = useState(true);
   const [isLoadingMakeup, setIsLoadingMakeup] = useState(true);
   const [isLoadingTrending, setIsLoadingTrending] = useState(true);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingDJs, setIsLoadingDJs] = useState(true);
+  const [isLoadingCatering, setIsLoadingCatering] = useState(true);
+  const [isLoadingMehendi, setIsLoadingMehendi] = useState(true);
+  const [isLoadingVenues, setIsLoadingVenues] = useState(true);
 
   // Helper to filter valid vendors
   const filterValidVendors = (vendors) => {
     return vendors.filter((vendor) => vendor && (vendor._id || vendor.id) && vendor.name);
   };
 
-  // Fetch all vendor data on mount
   useEffect(() => {
     const fetchAllData = async () => {
+      // Set all loading states to true immediately
+      setIsLoadingFeatured(true);
+      setIsLoadingPlanners(true);
+      setIsLoadingBooked(true);
+      setIsLoadingPhotographers(true);
+      setIsLoadingMakeup(true);
+      setIsLoadingTrending(true);
+      setIsLoadingDJs(true);
+      setIsLoadingCatering(true);
+      setIsLoadingMehendi(true);
+      setIsLoadingVenues(true);
+
+      // Create abort controller for cleanup
+      const abortController = new AbortController();
+      const { signal } = abortController;
+
+      // Define all fetch promises with error boundaries
+      const fetchPromises = [
+        // 1. Featured Vendors
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            featured: "true",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Featured vendors failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setFeaturedVendors(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching featured vendors:", err);
+              setFeaturedVendors([]);
+            }
+          })
+          .finally(() => setIsLoadingFeatured(false)),
+
+        // 2. Top Planners
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "planners",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Planners failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopPlanners(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching planners:", err);
+              setTopPlanners([]);
+            }
+          })
+          .finally(() => setIsLoadingPlanners(false)),
+
+        // 3. Most Booked
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            sortBy: "bookings",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Most booked failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setMostBooked(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching most booked:", err);
+              setMostBooked([]);
+            }
+          })
+          .finally(() => setIsLoadingBooked(false)),
+
+        // 4. Top Photographers
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "photographers",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Photographers failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopPhotographers(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching photographers:", err);
+              setTopPhotographers([]);
+            }
+          })
+          .finally(() => setIsLoadingPhotographers(false)),
+
+        // 5. Top Makeup Artists
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "makeup",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Makeup artists failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopMakeup(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching makeup artists:", err);
+              setTopMakeup([]);
+            }
+          })
+          .finally(() => setIsLoadingMakeup(false)),
+
+        // 6. Trending Vendors
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            trending: "true",
+            sortBy: "views",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Trending vendors failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTrending(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching trending vendors:", err);
+              setTrending([]);
+            }
+          })
+          .finally(() => setIsLoadingTrending(false)),
+
+        // 7. Top DJs
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "djs",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`DJs failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopDJs(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching DJs:", err);
+              setTopDJs([]);
+            }
+          })
+          .finally(() => setIsLoadingDJs(false)),
+
+        // 8. Top Catering
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "catering",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Catering failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopCatering(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching catering:", err);
+              setTopCatering([]);
+            }
+          })
+          .finally(() => setIsLoadingCatering(false)),
+
+        // 9. Top Mehendi Artists
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "mehendi",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Mehendi failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopMehendi(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching mehendi:", err);
+              setTopMehendi([]);
+            }
+          })
+          .finally(() => setIsLoadingMehendi(false)),
+
+        // 10. Top Venues
+        fetch(
+          `/api/vendor?${new URLSearchParams({
+            categories: "venues",
+            sortBy: "rating",
+            limit: "10",
+          }).toString()}`,
+          { signal }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Venues failed: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              setTopVenues(filterValidVendors(data.data || []));
+            }
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              console.error("Error fetching venues:", err);
+              setTopVenues([]);
+            }
+          })
+          .finally(() => setIsLoadingVenues(false)),
+      ];
+
+      // Execute all fetches in parallel with timeout
       try {
-        // 1. Fetch Hero Categories (All categories for grid)
-        setIsLoadingCategories(true);
-        const categoriesRes = await fetch("/api/vendor/categories");
-        const categoriesData = await categoriesRes.json();
-        if (categoriesData.success) {
-          setHeroCategories(categoriesData.data || []);
-        }
-        setIsLoadingCategories(false);
-
-        // 2. Fetch Featured Vendors
-        setIsLoadingFeatured(true);
-        const featuredParams = new URLSearchParams({
-          featured: "true",
-          sortBy: "rating",
-          limit: "10",
-        });
-        const featuredRes = await fetch(`/api/vendor?${featuredParams.toString()}`);
-        const featuredData = await featuredRes.json();
-        if (featuredData.success) {
-          setFeaturedVendors(filterValidVendors(featuredData.data || []));
-        }
-        setIsLoadingFeatured(false);
-
-        // 3. Fetch Top Planners
-        setIsLoadingPlanners(true);
-        const plannersParams = new URLSearchParams({
-          categories: "planners",
-          sortBy: "rating",
-          limit: "10",
-        });
-        const plannersRes = await fetch(`/api/vendor?${plannersParams.toString()}`);
-        const plannersData = await plannersRes.json();
-        if (plannersData.success) {
-          setTopPlanners(plannersData.data || []);
-        }
-        setIsLoadingPlanners(false);
-
-        // 4. Fetch Most Booked
-        setIsLoadingBooked(true);
-        const bookedParams = new URLSearchParams({
-          sortBy: "bookings",
-          limit: "10",
-        });
-        const bookedRes = await fetch(`/api/vendor?${bookedParams.toString()}`);
-        const bookedData = await bookedRes.json();
-        if (bookedData.success) {
-          setMostBooked(bookedData.data || []);
-        }
-        setIsLoadingBooked(false);
-
-        // 5. Fetch Top Photographers
-        setIsLoadingPhotographers(true);
-        const photographersParams = new URLSearchParams({
-          categories: "photographers",
-          sortBy: "rating",
-          limit: "10",
-        });
-        const photographersRes = await fetch(`/api/vendor?${photographersParams.toString()}`);
-        const photographersData = await photographersRes.json();
-        if (photographersData.success) {
-          setTopPhotographers(photographersData.data || []);
-        }
-        setIsLoadingPhotographers(false);
-
-        // 6. Fetch Top Makeup Artists
-        setIsLoadingMakeup(true);
-        const makeupParams = new URLSearchParams({
-          categories: "makeup",
-          sortBy: "rating",
-          limit: "10",
-        });
-        const makeupRes = await fetch(`/api/vendor?${makeupParams.toString()}`);
-        const makeupData = await makeupRes.json();
-        if (makeupData.success) {
-          setTopMakeup(makeupData.data || []);
-        }
-        setIsLoadingMakeup(false);
-
-        // 7. Fetch Trending Vendors
-        setIsLoadingTrending(true);
-        const trendingParams = new URLSearchParams({
-          trending: "true",
-          sortBy: "views",
-          limit: "10",
-        });
-        const trendingRes = await fetch(`/api/vendor?${trendingParams.toString()}`);
-        const trendingData = await trendingRes.json();
-        if (trendingData.success) {
-          setTrending(trendingData.data || []);
-        }
-        setIsLoadingTrending(false);
+        await Promise.race([
+          Promise.allSettled(fetchPromises),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Request timeout")), 30000)),
+        ]);
       } catch (error) {
-        console.error("Error fetching vendor data:", error);
-        // Set all loading states to false on error
-        setIsLoadingCategories(false);
+        console.error("Critical error in data fetching:", error);
+        // Ensure all loading states are false even on timeout
         setIsLoadingFeatured(false);
         setIsLoadingPlanners(false);
         setIsLoadingBooked(false);
         setIsLoadingPhotographers(false);
         setIsLoadingMakeup(false);
         setIsLoadingTrending(false);
+        setIsLoadingDJs(false);
+        setIsLoadingCatering(false);
+        setIsLoadingMehendi(false);
+        setIsLoadingVenues(false);
       }
+
+      // Cleanup function
+      return () => {
+        abortController.abort();
+      };
     };
 
     fetchAllData();
@@ -1036,6 +1244,42 @@ export default function FindAVendorPageWrapper() {
           icon={Camera}
           color="#3b82f6"
           isLoading={isLoadingPhotographers}
+        />
+
+        <VendorCarousel
+          title="Top DJs & Music"
+          subtitle="Set the perfect mood"
+          vendors={topDJs}
+          icon={Music}
+          color="#a855f7"
+          isLoading={isLoadingDJs}
+        />
+
+        <VendorCarousel
+          title="Best Catering Services"
+          subtitle="Delicious food for every palate"
+          vendors={topCatering}
+          icon={Utensils}
+          color="#14b8a6"
+          isLoading={isLoadingCatering}
+        />
+
+        <VendorCarousel
+          title="Mehendi Artists"
+          subtitle="Beautiful traditional designs"
+          vendors={topMehendi}
+          icon={Sparkles}
+          color="#d946ef"
+          isLoading={isLoadingMehendi}
+        />
+
+        <VendorCarousel
+          title="Premium Venues"
+          subtitle="Perfect spaces for your celebration"
+          vendors={topVenues}
+          icon={Home}
+          color="#0ea5e9"
+          isLoading={isLoadingVenues}
         />
 
         <VendorCarousel

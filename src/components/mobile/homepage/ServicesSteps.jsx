@@ -4,6 +4,7 @@ import React, { memo } from "react";
 import { Check, ArrowRight } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 // 1. Static Data (Optimized)
 const FEATURES = ["Wedding planning", "Budget optimisation", "Event management"];
@@ -67,7 +68,10 @@ const ServicesSteps = () => {
   const categoryKey = rawCategory ? rawCategory : "default";
   const theme = themeConfig[categoryKey] || themeConfig?.default;
 
-  FEATURES[0] = categoryKey === "default" ? "Event planning" : `${categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1)} planning`;
+  FEATURES[0] =
+    categoryKey === "default"
+      ? "Event planning"
+      : `${categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1)} planning`;
 
   return (
     <div
@@ -119,7 +123,8 @@ const ServicesSteps = () => {
           </div>
 
           {/* CTA Button */}
-          <button
+          <Link
+            href={`/m/plan-my-event/${categoryKey === "default" ? "wedding" : categoryKey?.toLowerCase()}`}
             className={`group flex w-full lg:w-fit items-center justify-center gap-3 rounded-2xl px-8 py-4 text-base font-bold shadow-lg active:scale-95 transition-all ${theme?.button}`}
             aria-label="Talk to Planner"
           >
@@ -128,7 +133,7 @@ const ServicesSteps = () => {
               className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
               strokeWidth={2.5}
             />
-          </button>
+          </Link>
         </div>
 
         {/* Desktop Right Image */}

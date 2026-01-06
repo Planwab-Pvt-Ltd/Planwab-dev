@@ -47,7 +47,7 @@ const ScrollButton = memo(({ onClick, disabled, direction }) => (
 ));
 
 // --- 4. MAIN COMPONENT ---
-const QuickServices = () => {
+const QuickServices = ({ category }) => {
   const scrollRef = useRef(null);
   const haptic = useHapticFeedback();
 
@@ -181,6 +181,28 @@ const QuickServices = () => {
             </span>
           </Link>
         ))}
+
+        {/* View All Item */}
+        <Link
+          href={`/m/vendors/explore/${category?.toLowerCase() || "all"}`}
+          onClick={() => haptic("light")}
+          className="flex flex-col items-center gap-[16px] min-w-[90px] cursor-pointer group active:scale-95 transition-transform duration-200"
+        >
+          <div className="w-28 h-28 rounded-2xl bg-gray-200 flex items-center justify-center group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-200 shadow-lg">
+            <div className="flex flex-col items-center gap-1">
+              <div className="grid grid-cols-2 gap-1">
+                <div className="w-2 h-2 bg-gray-600 rounded-full opacity-80"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full opacity-60"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full opacity-60"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full opacity-40"></div>
+              </div>
+              <ChevronRight size={16} className="text-gray-600 opacity-90 mt-1" />
+            </div>
+          </div>
+          <span className="text-xs font-bold text-slate-700 whitespace-nowrap group-hover:text-blue-700 transition-colors text-center">
+            View All
+          </span>
+        </Link>
 
         {/* Spacer for right padding */}
         <div className="w-2 flex-shrink-0" />

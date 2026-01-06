@@ -1462,6 +1462,40 @@ const VendorDetailsPageWrapper = () => {
 
   const images = useMemo(() => vendor?.images || [], [vendor]);
 
+  useEffect(() => {
+    if (images.length === 0) return;
+
+    const preloadLinks = [];
+
+    images.forEach((src, index) => {
+      // Strategy 1: Create Image objects for browser cache
+      const img = new Image();
+      img.decoding = "async";
+
+      img.onload = () => {
+        img.decode().catch(() => {
+          // Silently handle decode errors
+        });
+      };
+
+      img.src = src;
+
+      // Strategy 2: Prefetch first 3 images with link tags
+      if (index < 3) {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.as = "image";
+        link.href = src;
+        document.head.appendChild(link);
+        preloadLinks.push(link);
+      }
+    });
+
+    return () => {
+      preloadLinks.forEach((link) => link.remove());
+    };
+  }, [images]);
+
   const packages = useMemo(
     () => [
       {
@@ -1970,6 +2004,11 @@ const VendorDetailsPageWrapper = () => {
         }}
       >
         <div className="relative w-full h-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+          <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none -z-10">
+            {images.map((img, i) => (
+              <img key={i} src={img} alt="" loading="eager" decoding="async" />
+            ))}
+          </div>
           <AnimatePresence initial={false} custom={slideDirection} mode="wait">
             <motion.div
               key={currentImageIndex}
@@ -1987,11 +2026,13 @@ const VendorDetailsPageWrapper = () => {
               <SmartMedia
                 src={images[currentImageIndex]}
                 type="image"
-                priority={true}
+                priority={currentImageIndex === 0}
                 sizes="100vw"
                 quality={100} // Crank quality to max
                 useSkeleton={false} // DISABLE the blur/shimmer animation
                 unoptimized={true}
+                preload="eager" // ADD this line
+                fetchPriority="high"
                 className="w-full h-full object-cover"
                 loaderImage="/GlowLoadingGif.gif"
               />
@@ -2869,6 +2910,11 @@ const VendorDetailsPageWrapper = () => {
                     isDragging.current = false;
                   }}
                 >
+                  <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none">
+                    {images.map((img, i) => (
+                      <img key={i} src={img} alt="" loading="eager" decoding="async" />
+                    ))}
+                  </div>
                   <img
                     src={images[modalImageIndex]}
                     alt="Full view"

@@ -475,7 +475,7 @@ const MainContent = () => {
           />
         </div>
 
-        <QuickServices />
+        <QuickServices category={currentCategory} />
 
         <WhyWeBetter />
 

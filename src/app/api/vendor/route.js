@@ -23,88 +23,188 @@ import { connectToDatabase } from "@/database/mongoose";
 // HELPER FUNCTIONS
 // =============================================================================
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "PlanWAB@12345";
+const VENDOR_EDIT_ADMIN_PASSWORD = process.env.VENDOR_EDIT_ADMIN_PASSWORD || "EDit@PlanWAB@12345";
+
+const verifyAdminPassword = (password) => {
+  return password === ADMIN_PASSWORD;
+};
+
+const verifyVendorEditPassword = (password) => {
+  return password === VENDOR_EDIT_ADMIN_PASSWORD;
+};
+
 const cleanVendorData = (data) => {
   const cleaned = { ...data };
 
-  // Clean perDayPrice
-  if (cleaned.perDayPrice) {
-    if (!cleaned.perDayPrice.min && !cleaned.perDayPrice.max) {
-      delete cleaned.perDayPrice;
-    } else {
-      if (cleaned.perDayPrice.min) cleaned.perDayPrice.min = Number(cleaned.perDayPrice.min);
-      if (cleaned.perDayPrice.max) cleaned.perDayPrice.max = Number(cleaned.perDayPrice.max);
+  const trimString = (val) => (typeof val === "string" ? val.trim() : val);
+  const parseNumber = (val, defaultVal = 0) => {
+    if (val === "" || val === null || val === undefined) return defaultVal;
+    const num = Number(val);
+    return isNaN(num) ? defaultVal : num;
+  };
+
+  // Basic string fields
+  const stringFields = [
+    "name",
+    "username",
+    "email",
+    "phoneNo",
+    "whatsappNo",
+    "description",
+    "shortDescription",
+    "videoUrl",
+    "availabilityStatus",
+    "priceUnit",
+    "responseTime",
+    "repeatCustomerRate",
+    "responseRate",
+    "metaTitle",
+    "metaDescription",
+  ];
+
+  stringFields.forEach((field) => {
+    if (cleaned[field] !== undefined) {
+      cleaned[field] = trimString(cleaned[field]);
+    }
+  });
+
+  // Number fields
+  const numberFields = [
+    "basePrice",
+    "rating",
+    "reviews",
+    "reviewCount",
+    "bookings",
+    "yearsExperience",
+    "profileViews",
+    "favorites",
+    "shares",
+  ];
+
+  numberFields.forEach((field) => {
+    if (cleaned[field] !== undefined) {
+      cleaned[field] = parseNumber(cleaned[field]);
+    }
+  });
+
+  // Boolean fields
+  const booleanFields = ["isVerified", "isActive", "isFeatured"];
+  booleanFields.forEach((field) => {
+    if (cleaned[field] !== undefined) {
+      cleaned[field] = Boolean(cleaned[field]);
+    }
+  });
+
+  // Contact person
+  if (cleaned.contactPerson) {
+    cleaned.contactPerson = {
+      firstName: trimString(cleaned.contactPerson.firstName || ""),
+      lastName: trimString(cleaned.contactPerson.lastName || ""),
+    };
+  }
+
+  // Address
+  if (cleaned.address) {
+    cleaned.address = {
+      street: trimString(cleaned.address.street || ""),
+      city: trimString(cleaned.address.city || ""),
+      state: trimString(cleaned.address.state || ""),
+      postalCode: trimString(cleaned.address.postalCode || ""),
+      country: trimString(cleaned.address.country || "India"),
+      googleMapUrl: trimString(cleaned.address.googleMapUrl || ""),
+      location: cleaned.address.location || { type: "Point", coordinates: [0, 0] },
+    };
+
+    // Validate coordinates
+    if (cleaned.address.location?.coordinates) {
+      const coords = cleaned.address.location.coordinates;
+      cleaned.address.location.coordinates = [parseNumber(coords[0], 0), parseNumber(coords[1], 0)];
     }
   }
 
-  // Ensure basePrice is a number
-  if (cleaned.basePrice) {
-    cleaned.basePrice = Number(cleaned.basePrice);
+  // Per day price
+  if (cleaned.perDayPrice) {
+    cleaned.perDayPrice = {
+      min: parseNumber(cleaned.perDayPrice.min, null),
+      max: parseNumber(cleaned.perDayPrice.max, null),
+    };
+    // Remove null values
+    if (cleaned.perDayPrice.min === null) delete cleaned.perDayPrice.min;
+    if (cleaned.perDayPrice.max === null) delete cleaned.perDayPrice.max;
   }
 
-  // Clean packages
-  if (cleaned.packages && cleaned.packages.length > 0) {
-    cleaned.packages = cleaned.packages.map((pkg) => ({
-      ...pkg,
-      price: Number(pkg.price) || 0,
-      originalPrice: pkg.originalPrice ? Number(pkg.originalPrice) : undefined,
-      savingsPercentage: pkg.savingsPercentage ? Number(pkg.savingsPercentage) : 0,
-      features: pkg.features?.filter((f) => f && f.trim() !== "") || [],
-      notIncluded: pkg.notIncluded?.filter((f) => f && f.trim() !== "") || [],
-    }));
+  // Social links
+  if (cleaned.socialLinks) {
+    const socialFields = ["website", "facebook", "instagram", "twitter", "youtube", "linkedin"];
+    const cleanedSocial = {};
+    socialFields.forEach((field) => {
+      const val = trimString(cleaned.socialLinks[field] || "");
+      if (val) cleanedSocial[field] = val;
+    });
+    cleaned.socialLinks = cleanedSocial;
   }
 
-  // Clean stats
-  if (cleaned.stats && cleaned.stats.length > 0) {
-    cleaned.stats = cleaned.stats.filter((stat) => stat.label && stat.value);
+  // Vendor Profile (NEW)
+  if (cleaned.vendorProfile) {
+    const vp = cleaned.vendorProfile;
+    cleaned.vendorProfile = {
+      profilePicture: trimString(vp.profilePicture || ""),
+      coverPhoto: trimString(vp.coverPhoto || ""),
+      bio: trimString(vp.bio || ""),
+      tagline: trimString(vp.tagline || ""),
+      pronouns: trimString(vp.pronouns || ""),
+      website: trimString(vp.website || ""),
+
+      // Instagram
+      instagramHandle: trimString(vp.instagramHandle || ""),
+      instagramFollowers: trimString(vp.instagramFollowers || ""),
+      instagramPosts: trimString(vp.instagramPosts || ""),
+      instagramFollowing: trimString(vp.instagramFollowing || ""),
+
+      // Other social handles
+      facebookHandle: trimString(vp.facebookHandle || ""),
+      twitterHandle: trimString(vp.twitterHandle || ""),
+      linkedinHandle: trimString(vp.linkedinHandle || ""),
+      youtubeHandle: trimString(vp.youtubeHandle || ""),
+      youtubeSubscribers: trimString(vp.youtubeSubscribers || ""),
+      tiktokHandle: trimString(vp.tiktokHandle || ""),
+      pinterestHandle: trimString(vp.pinterestHandle || ""),
+      threadsHandle: trimString(vp.threadsHandle || ""),
+
+      // Contact
+      businessEmail: trimString(vp.businessEmail || ""),
+      publicPhone: trimString(vp.publicPhone || ""),
+
+      // Category
+      category: trimString(vp.category || ""),
+      subCategory: trimString(vp.subCategory || ""),
+
+      // Testimonial
+      testimonialQuote: trimString(vp.testimonialQuote || ""),
+      testimonialAuthor: trimString(vp.testimonialAuthor || ""),
+
+      // Verification
+      verifiedSince: vp.verifiedSince || null,
+      profileCompleteness: parseNumber(vp.profileCompleteness, 0),
+      lastActive: vp.lastActive || null,
+
+      // Arrays
+      highlights: Array.isArray(vp.highlights) ? vp.highlights.filter(Boolean).map(trimString) : [],
+      featuredWork: Array.isArray(vp.featuredWork) ? vp.featuredWork.filter(Boolean) : [],
+    };
+
+    // Remove empty string values from vendorProfile
+    Object.keys(cleaned.vendorProfile).forEach((key) => {
+      const val = cleaned.vendorProfile[key];
+      if (val === "" || val === null) {
+        delete cleaned.vendorProfile[key];
+      }
+    });
   }
 
-  // Clean highlights
-  if (cleaned.highlights && cleaned.highlights.length > 0) {
-    cleaned.highlights = cleaned.highlights.filter((h) => h.label && h.value);
-  }
-
-  // Clean operating hours
-  if (cleaned.operatingHours && cleaned.operatingHours.length > 0) {
-    cleaned.operatingHours = cleaned.operatingHours.filter((oh) => oh.day && oh.hours);
-  }
-
-  // Clean landmarks
-  if (cleaned.landmarks && cleaned.landmarks.length > 0) {
-    cleaned.landmarks = cleaned.landmarks.filter((lm) => lm.name);
-  }
-
-  // Clean directions
-  if (cleaned.directions && cleaned.directions.length > 0) {
-    cleaned.directions = cleaned.directions.filter((dir) => dir.type && dir.description);
-  }
-
-  // Clean policies
-  if (cleaned.policies && cleaned.policies.length > 0) {
-    cleaned.policies = cleaned.policies
-      .filter((policy) => policy.title)
-      .map((policy) => ({
-        ...policy,
-        details: policy.details?.filter((d) => d && d.trim() !== "") || [],
-      }));
-  }
-
-  // Clean FAQs
-  if (cleaned.faqs && cleaned.faqs.length > 0) {
-    cleaned.faqs = cleaned.faqs.filter((faq) => faq.question && faq.answer);
-  }
-
-  // Clean awards
-  if (cleaned.awards && cleaned.awards.length > 0) {
-    cleaned.awards = cleaned.awards.filter((award) => award.title);
-  }
-
-  // Clean special offers
-  if (cleaned.specialOffers && cleaned.specialOffers.length > 0) {
-    cleaned.specialOffers = cleaned.specialOffers.filter((offer) => offer.title);
-  }
-
-  // Clean empty arrays
-  const arrayFields = [
+  // Array fields - clean and filter
+  const arrayStringFields = [
     "tags",
     "amenities",
     "facilities",
@@ -113,92 +213,97 @@ const cleanVendorData = (data) => {
     "paymentMethods",
     "metaKeywords",
     "images",
+  ];
+
+  arrayStringFields.forEach((field) => {
+    if (Array.isArray(cleaned[field])) {
+      cleaned[field] = cleaned[field].filter(Boolean).map(trimString);
+    }
+  });
+
+  // Complex array fields
+  const complexArrayFields = [
+    "landmarks",
+    "directions",
+    "operatingHours",
+    "stats",
+    "highlights",
+    "awards",
+    "specialOffers",
+    "packages",
+    "policies",
+    "faqs",
     "gallery",
   ];
 
-  arrayFields.forEach((field) => {
-    if (cleaned[field] && Array.isArray(cleaned[field])) {
-      cleaned[field] = cleaned[field].filter((item) => {
-        if (typeof item === "string") return item.trim() !== "";
-        return true;
-      });
+  complexArrayFields.forEach((field) => {
+    if (Array.isArray(cleaned[field])) {
+      cleaned[field] = cleaned[field]
+        .filter((item) => item && typeof item === "object")
+        .map((item) => {
+          const cleanedItem = {};
+          Object.keys(item).forEach((key) => {
+            const val = item[key];
+            if (Array.isArray(val)) {
+              cleanedItem[key] = val.filter(Boolean).map((v) => (typeof v === "string" ? v.trim() : v));
+            } else if (typeof val === "string") {
+              cleanedItem[key] = val.trim();
+            } else if (typeof val === "number" || typeof val === "boolean") {
+              cleanedItem[key] = val;
+            } else if (val !== null && val !== undefined) {
+              cleanedItem[key] = val;
+            }
+          });
+          return cleanedItem;
+        });
     }
   });
 
-  // Ensure numeric fields are numbers
-  const numericFields = ["rating", "reviewCount", "reviews", "bookings", "yearsExperience"];
-  numericFields.forEach((field) => {
-    if (cleaned[field] !== undefined) {
-      cleaned[field] = Number(cleaned[field]) || 0;
-    }
-  });
-
-  // Clean category-specific nested numeric fields
-  if (cleaned.seating) {
-    if (cleaned.seating.min) cleaned.seating.min = Number(cleaned.seating.min);
-    if (cleaned.seating.max) cleaned.seating.max = Number(cleaned.seating.max);
+  // Packages special handling
+  if (Array.isArray(cleaned.packages)) {
+    cleaned.packages = cleaned.packages.map((pkg) => ({
+      name: trimString(pkg.name || ""),
+      price: parseNumber(pkg.price, 0),
+      originalPrice: parseNumber(pkg.originalPrice, 0),
+      duration: trimString(pkg.duration || ""),
+      features: Array.isArray(pkg.features) ? pkg.features.filter(Boolean).map(trimString) : [],
+      notIncluded: Array.isArray(pkg.notIncluded) ? pkg.notIncluded.filter(Boolean).map(trimString) : [],
+      isPopular: Boolean(pkg.isPopular),
+      savingsPercentage: parseNumber(pkg.savingsPercentage, 0),
+    }));
   }
 
-  if (cleaned.floating) {
-    if (cleaned.floating.min) cleaned.floating.min = Number(cleaned.floating.min);
-    if (cleaned.floating.max) cleaned.floating.max = Number(cleaned.floating.max);
+  // Policies special handling
+  if (Array.isArray(cleaned.policies)) {
+    cleaned.policies = cleaned.policies.map((policy) => ({
+      title: trimString(policy.title || ""),
+      content: trimString(policy.content || ""),
+      icon: trimString(policy.icon || "FileText"),
+      iconColor: trimString(policy.iconColor || "text-gray-500"),
+      details: Array.isArray(policy.details) ? policy.details.filter(Boolean).map(trimString) : [],
+    }));
   }
 
-  if (cleaned.rooms) {
-    if (cleaned.rooms.count) cleaned.rooms.count = Number(cleaned.rooms.count);
-    if (cleaned.rooms.max) cleaned.rooms.max = Number(cleaned.rooms.max);
+  // FAQs special handling
+  if (Array.isArray(cleaned.faqs)) {
+    cleaned.faqs = cleaned.faqs
+      .map((faq) => ({
+        question: trimString(faq.question || ""),
+        answer: trimString(faq.answer || ""),
+      }))
+      .filter((faq) => faq.question || faq.answer);
   }
 
-  if (cleaned.parking) {
-    if (cleaned.parking.capacity) cleaned.parking.capacity = Number(cleaned.parking.capacity);
+  // Default image
+  if (Array.isArray(cleaned.images) && cleaned.images.length > 0 && !cleaned.defaultImage) {
+    cleaned.defaultImage = cleaned.images[0];
   }
-
-  if (cleaned.pricePerPlate) {
-    if (cleaned.pricePerPlate.veg) cleaned.pricePerPlate.veg = Number(cleaned.pricePerPlate.veg);
-    if (cleaned.pricePerPlate.nonVeg) cleaned.pricePerPlate.nonVeg = Number(cleaned.pricePerPlate.nonVeg);
-  }
-
-  if (cleaned.trialPolicy) {
-    if (cleaned.trialPolicy.price) cleaned.trialPolicy.price = Number(cleaned.trialPolicy.price);
-  }
-
-  if (cleaned.budgetRange) {
-    if (cleaned.budgetRange.min) cleaned.budgetRange.min = Number(cleaned.budgetRange.min);
-    if (cleaned.budgetRange.max) cleaned.budgetRange.max = Number(cleaned.budgetRange.max);
-  }
-
-  const categoryNumericFields = [
-    "halls",
-    "deliveryTime",
-    "teamSize",
-    "minCapacity",
-    "maxCapacity",
-    "pricePerHand",
-    "bridalPackagePrice",
-    "pricePerKg",
-    "minOrderWeight",
-    "advanceBookingDays",
-    "minOrderQuantity",
-    "fittingSessions",
-    "vendorNetwork",
-  ];
-
-  categoryNumericFields.forEach((field) => {
-    if (cleaned[field] !== undefined && cleaned[field] !== "") {
-      cleaned[field] = Number(cleaned[field]) || 0;
-    }
-  });
 
   return cleaned;
 };
 
-const verifyAdminPassword = (password) => {
-  const adminPassword = process.env.ADMIN_VENDOR_PASSWORD || "admin@vendor123";
-  return password === adminPassword;
-};
-
 // =============================================================================
-// GET - Fetch all vendors with pagination, filters, and search
+// GET - Fetch all vendors with pagination, filters, and search (OPTIMIZED)
 // =============================================================================
 
 const SUBCATEGORY_MAPPINGS = {
@@ -301,6 +406,8 @@ const SORT_MAPPINGS = {
 // GET - Fetch vendors with advanced filtering, search, and pagination
 // =============================================================================
 export async function GET(request) {
+  const startTime = Date.now();
+
   try {
     await connectToDatabase();
 
@@ -333,7 +440,8 @@ export async function GET(request) {
     // HANDLE SINGLE VENDOR REQUEST
     // =============================================================================
     if (vendorId) {
-      const vendor = await Vendor.findById(vendorId).lean();
+      const vendor = await Vendor.findById(vendorId).select("-reviewsList -likedBy -bookmarkedBy").lean().exec();
+
       if (!vendor) {
         return NextResponse.json({ success: false, message: "Vendor not found" }, { status: 404 });
       }
@@ -497,60 +605,47 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
 
     // =============================================================================
-    // DEBUG LOGGING (Remove in production)
+    // OPTIMIZED: PARALLEL QUERY EXECUTION
     // =============================================================================
-    console.log("=== VENDOR API DEBUG ===");
-    console.log("Request URL:", request.url);
-    console.log("Query Parameters:", {
-      page,
-      limit,
-      category,
-      categories,
-      subcategory,
-      featured,
-      cities,
-      minPrice,
-      maxPrice,
-      minRating,
-      search,
-      sortBy,
-      availability,
-    });
-    console.log("MongoDB Query:", JSON.stringify(query, null, 2));
-    console.log("MongoDB Sort:", JSON.stringify(sort, null, 2));
-    console.log("Pagination:", { skip, limit });
-    console.log("=======================");
+    // Only fetch availableCities if cities filter is NOT applied (optimization)
+    const shouldFetchCities = !cities;
 
-    // =============================================================================
-    // EXECUTE QUERY WITH PAGINATION
-    // =============================================================================
+    // Build query for cities (exclude city filter to get all available)
+    const citiesQuery = shouldFetchCities
+      ? {
+          ...query,
+          "address.city": undefined,
+        }
+      : null;
+
+    // Execute all queries in parallel for maximum performance
     const [vendors, total, availableCities] = await Promise.all([
+      // Main vendor query with optimized select and lean
       Vendor.find(query)
         .sort(sort)
         .skip(skip)
         .limit(limit)
-        .select("-reviewsList -likedBy -bookmarkedBy") // Exclude large arrays
-        .collation({ locale: "en", strength: 2 }) // Case-insensitive sorting for text fields
-        .lean()
+        .select("-reviewsList -likedBy -bookmarkedBy -__v") // Exclude large/unnecessary fields
+        .collation({ locale: "en", strength: 2 })
+        .lean({ virtuals: false }) // Disable virtuals for faster execution
         .exec(),
 
+      // Count query (optimized with hint if needed)
       Vendor.countDocuments(query).exec(),
 
-      // Get available cities based on current filters (excluding city filter itself)
-      Vendor.distinct("address.city", {
-        ...query,
-        "address.city": undefined, // Remove city filter to get all available cities
-      }).exec(),
+      // Conditional cities query - only run if needed
+      shouldFetchCities ? Vendor.distinct("address.city", citiesQuery).exec() : Promise.resolve([]),
     ]);
 
+    // =============================================================================
+    // OPTIMIZED: DATA PROCESSING (Minimize operations)
+    // =============================================================================
     const processedVendors = vendors.map((vendor) => ({
       ...vendor,
-      bookings: vendor.bookings || vendor.totalBookings || 0,
-      reviews: vendor.reviews || vendor.reviewCount || vendor.totalReviews || 0,
-      rating: vendor.rating || vendor.averageRating || 0,
+      bookings: vendor.bookings ?? vendor.totalBookings ?? 0,
+      reviews: vendor.reviews ?? vendor.reviewCount ?? vendor.totalReviews ?? 0,
+      rating: vendor.rating ?? vendor.averageRating ?? 0,
     }));
-
-    console.log(`Query returned ${processedVendors.length} vendors out of ${total} total`);
 
     // =============================================================================
     // CALCULATE PAGINATION METADATA
@@ -560,34 +655,39 @@ export async function GET(request) {
     const hasPrev = page > 1;
 
     // =============================================================================
-    // PREPARE RESPONSE
+    // OPTIMIZED: CONDITIONAL LOGGING (Only in development)
     // =============================================================================
-    console.log(`Query returned ${vendors.length} vendors out of ${total} total`);
+    if (process.env.NODE_ENV === "development") {
+      console.log("=== VENDOR API DEBUG ===");
+      console.log("Request URL:", request.url);
+      console.log("Query Parameters:", {
+        page,
+        limit,
+        category,
+        categories,
+        subcategory,
+        featured,
+        cities,
+        minPrice,
+        maxPrice,
+        minRating,
+        search,
+        sortBy,
+        sortOrder,
+        availability,
+      });
+      console.log("MongoDB Query:", JSON.stringify(query, null, 2));
+      console.log("MongoDB Sort:", JSON.stringify(sort, null, 2));
+      console.log("Sort Mapping Used:", sortBy, "->", SORT_MAPPINGS[sortBy] ? "Custom" : "Dynamic");
+      console.log("Pagination:", { skip, limit });
+      console.log(`Query returned ${processedVendors.length} vendors out of ${total} total`);
+      console.log("Execution Time:", Date.now() - startTime, "ms");
+      console.log("=======================");
+    }
 
-    console.log("=== VENDOR API DEBUG ===");
-    console.log("Request URL:", request.url);
-    console.log("Query Parameters:", {
-      page,
-      limit,
-      category,
-      categories,
-      subcategory,
-      featured,
-      cities,
-      minPrice,
-      maxPrice,
-      minRating,
-      search,
-      sortBy,
-      sortOrder, // **ADD THIS**
-      availability,
-    });
-    console.log("MongoDB Query:", JSON.stringify(query, null, 2));
-    console.log("MongoDB Sort:", JSON.stringify(sort, null, 2)); // **ENSURE THIS EXISTS**
-    console.log("Sort Mapping Used:", sortBy, "->", SORT_MAPPINGS[sortBy] ? "Custom" : "Dynamic"); // **ADD THIS**
-    console.log("Pagination:", { skip, limit });
-    console.log("=======================");
-
+    // =============================================================================
+    // PREPARE OPTIMIZED RESPONSE
+    // =============================================================================
     return NextResponse.json({
       success: true,
       data: processedVendors,
@@ -602,7 +702,7 @@ export async function GET(request) {
         resultsOnPage: processedVendors.length,
       },
       filters: {
-        availableCities: availableCities.filter(Boolean).sort(),
+        availableCities: shouldFetchCities ? availableCities.filter(Boolean).sort() : [],
         appliedFilters: {
           category: categories || category,
           subcategory,
@@ -618,9 +718,8 @@ export async function GET(request) {
       },
       meta: {
         timestamp: new Date().toISOString(),
-        queryExecutionTime: Date.now(),
+        queryExecutionTime: Date.now() - startTime,
         sortApplied: {
-          // **ADD THIS**
           sortBy,
           sortOrder,
           sortMapping: SORT_MAPPINGS[sortBy] ? "predefined" : "dynamic",
@@ -628,10 +727,15 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    console.error("=== VENDOR API ERROR ===");
-    console.error("Error details:", error);
-    console.error("Stack trace:", error.stack);
-    console.error("=======================");
+    // =============================================================================
+    // OPTIMIZED: ERROR HANDLING (Conditional logging)
+    // =============================================================================
+    if (process.env.NODE_ENV === "development") {
+      console.error("=== VENDOR API ERROR ===");
+      console.error("Error details:", error);
+      console.error("Stack trace:", error.stack);
+      console.error("=======================");
+    }
 
     // Handle specific error types
     if (error.name === "CastError") {
@@ -685,12 +789,12 @@ export async function PUT(request) {
     }
 
     // Verify admin password
-    if (!verifyAdminPassword(password)) {
+    if (!verifyVendorEditPassword(password)) {
       return NextResponse.json({ success: false, message: "Invalid admin password" }, { status: 401 });
     }
 
     // Find existing vendor
-    const existingVendor = await Vendor.findById(id);
+    const existingVendor = await Vendor.findById(id).lean();
     if (!existingVendor) {
       return NextResponse.json({ success: false, message: "Vendor not found" }, { status: 404 });
     }
@@ -699,17 +803,42 @@ export async function PUT(request) {
     const cleanedData = cleanVendorData(updateData);
 
     // Remove fields that shouldn't be updated
-    delete cleanedData._id;
-    delete cleanedData.createdAt;
-    delete cleanedData.category; // Category cannot be changed
-    delete cleanedData.__v;
+    const protectedFields = ["_id", "createdAt", "category", "__v"];
+    protectedFields.forEach((field) => delete cleanedData[field]);
 
-    // Update vendor
+    // Merge nested objects properly (preserve existing data if not provided)
+    const mergeFields = ["contactPerson", "address", "perDayPrice", "socialLinks", "vendorProfile"];
+    mergeFields.forEach((field) => {
+      if (cleanedData[field] && existingVendor[field]) {
+        cleanedData[field] = {
+          ...existingVendor[field],
+          ...cleanedData[field],
+        };
+      }
+    });
+
+    // Update vendor with optimized query
     const updatedVendor = await Vendor.findByIdAndUpdate(
       id,
-      { $set: cleanedData, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    ).lean();
+      {
+        $set: {
+          ...cleanedData,
+          updatedAt: new Date(),
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+        lean: true,
+        projection: {
+          __v: 0,
+        },
+      }
+    );
+
+    if (!updatedVendor) {
+      return NextResponse.json({ success: false, message: "Failed to update vendor" }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
@@ -719,6 +848,7 @@ export async function PUT(request) {
   } catch (error) {
     console.error("Error updating vendor:", error);
 
+    // Validation Error
     if (error.name === "ValidationError") {
       const errors = {};
       Object.keys(error.errors).forEach((key) => {
@@ -727,20 +857,27 @@ export async function PUT(request) {
       return NextResponse.json({ success: false, message: "Validation Error", errors }, { status: 400 });
     }
 
+    // Duplicate Key Error
     if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
+      const field = Object.keys(error.keyValue || {})[0] || "field";
       return NextResponse.json(
         { success: false, message: `A vendor with this ${field} already exists.` },
         { status: 409 }
       );
     }
 
+    // Invalid ID Format
     if (error.name === "CastError") {
       return NextResponse.json({ success: false, message: "Invalid vendor ID format" }, { status: 400 });
     }
 
+    // Generic Error
     return NextResponse.json(
-      { success: false, message: "Failed to update vendor", error: error.message },
+      {
+        success: false,
+        message: "Failed to update vendor",
+        error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      },
       { status: 500 }
     );
   }

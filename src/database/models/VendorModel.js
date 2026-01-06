@@ -168,6 +168,41 @@ const DirectionSchema = new Schema(
   { _id: false }
 );
 
+const vendorProfileSchema = new Schema(
+  {
+    profilePicture: { type: String },
+    coverPhoto: { type: String },
+    bio: { type: String },
+    tagline: { type: String },
+    pronouns: { type: String },
+    website: { type: String },
+    instagramHandle: { type: String },
+    instagramFollowers: { type: String },
+    instagramPosts: { type: String },
+    instagramFollowing: { type: String },
+    facebookHandle: { type: String },
+    twitterHandle: { type: String },
+    linkedinHandle: { type: String },
+    youtubeHandle: { type: String },
+    youtubeSubscribers: { type: String },
+    tiktokHandle: { type: String },
+    pinterestHandle: { type: String },
+    threadsHandle: { type: String },
+    businessEmail: { type: String },
+    publicPhone: { type: String },
+    category: { type: String },
+    subCategory: { type: String },
+    testimonialQuote: { type: String },
+    testimonialAuthor: { type: String },
+    verifiedSince: { type: Date },
+    profileCompleteness: { type: Number, default: 0 },
+    lastActive: { type: Date },
+    highlights: [{ type: String }],
+    featuredWork: [{ type: String }],
+  },
+  { _id: false }
+);
+
 // =============================================================================
 // BASE VENDOR SCHEMA
 // =============================================================================
@@ -277,6 +312,9 @@ const VendorBaseSchema = new Schema(
     metaTitle: { type: String },
     metaDescription: { type: String },
     metaKeywords: { type: [String], default: [] },
+
+    // --- Vendor Profile ---
+    vendorProfile: [vendorProfileSchema],
   },
   {
     timestamps: true,

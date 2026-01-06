@@ -70,6 +70,8 @@ import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 import { useUser } from "@clerk/clerk-react";
 import { set } from "mongoose";
+import SmartMedia from "../SmartMediaLoader";
+import { toast } from "sonner";
 
 // =============================================================================
 // CONSTANTS
@@ -1274,167 +1276,265 @@ const CardSkeleton = memo(({ viewMode }) => {
 });
 CardSkeleton.displayName = "CardSkeleton";
 
-const ImageCarousel = memo(({ images, vendorName, isGrid, isFavorite, onFavorite, tags, colorPrimary, rating }) => {
-  const [[page, direction], setPage] = useState([0, 0]);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [showHeart, setShowHeart] = useState(false);
-  const haptic = useHapticFeedback();
+const ImageCarousel = memo(
+  ({ images, vendorName, isGrid, isFavorite, onFavorite, tags, isLiking, colorPrimary, rating }) => {
+    const [[page, direction], setPage] = useState([0, 0]);
+    const [hasInteracted, setHasInteracted] = useState(false);
+    const [loadedImages, setLoadedImages] = useState(new Set());
+    const [showHeart, setShowHeart] = useState(false);
+    const imageRefs = useRef(new Map());
+    const haptic = useHapticFeedback();
 
-  const imageIndex = ((page % images.length) + images.length) % images.length;
-  const hasMultipleImages = images.length > 1;
+    const imageIndex = ((page % images.length) + images.length) % images.length;
+    const hasMultipleImages = images.length > 1;
 
-  const paginate = useCallback(
-    (newDirection) => {
-      if (!hasMultipleImages) return;
-      haptic("light");
-      setPage([page + newDirection, newDirection]);
-    },
-    [hasMultipleImages, page, haptic]
-  );
+    useEffect(() => {
+      const preloadLinks = [];
 
-  const handleDragEnd = useCallback(
-    (_, { offset, velocity }) => {
-      const swipe = Math.abs(offset.x) * velocity.x;
-      if (swipe < -3000) paginate(1);
-      else if (swipe > 3000) paginate(-1);
-    },
-    [paginate]
-  );
+      images.forEach((src, index) => {
+        const img = new Image();
+        img.decoding = "async";
 
-  const handleDoubleTap = useDoubleTap(() => {
-    haptic("success");
-    setShowHeart(true);
-    setTimeout(() => setShowHeart(false), 800);
-    if (!isFavorite) onFavorite();
-  });
+        img.onload = () => {
+          img
+            .decode()
+            .then(() => {
+              setLoadedImages((prev) => new Set(prev).add(src));
+              imageRefs.current.set(src, img);
+            })
+            .catch(() => {
+              setLoadedImages((prev) => new Set(prev).add(src));
+            });
+        };
 
-  const slideVariants = {
-    enter: (d) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0.5 }),
-    center: { x: 0, opacity: 1, zIndex: 1 },
-    exit: (d) => ({ x: d < 0 ? "100%" : "-100%", opacity: 0.5, zIndex: 0 }),
-  };
+        img.src = src;
 
-  return (
-    <div className={`relative bg-gray-100 overflow-hidden ${isGrid ? "h-32" : "h-48"}`} onClick={handleDoubleTap}>
-      <AnimatePresence initial={false} custom={direction} mode="popLayout">
-        <motion.img
-          key={page}
-          src={images[imageIndex]}
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          drag={hasMultipleImages ? "x" : false}
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.5}
-          onDragEnd={handleDragEnd}
-          onLoad={() => setIsLoaded(true)}
-          className={`absolute inset-0 w-full h-full object-cover select-none touch-pan-y ${
-            isLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          alt={vendorName}
-          loading="lazy"
-          decoding="async"
-        />
-      </AnimatePresence>
+        if (index < 3) {
+          const link = document.createElement("link");
+          link.rel = "prefetch";
+          link.as = "image";
+          link.href = src;
+          document.head.appendChild(link);
+          preloadLinks.push(link);
+        }
+      });
 
-      {!isLoaded && <div className="absolute inset-0 bg-gray-200" style={{ animation: "shimmer 1.5s infinite" }} />}
+      return () => {
+        preloadLinks.forEach((link) => link.remove());
+      };
+    }, [images]);
 
-      <AnimatePresence>
-        {showHeart && (
+    const paginate = useCallback(
+      (newDirection) => {
+        if (!hasMultipleImages) return;
+        haptic("light");
+        setHasInteracted(true);
+        setPage([page + newDirection, newDirection]);
+      },
+      [hasMultipleImages, page, haptic]
+    );
+
+    const handleDragEnd = useCallback(
+      (_, { offset, velocity }) => {
+        const swipe = Math.abs(offset.x) * velocity.x;
+        if (swipe < -2500) {
+          setHasInteracted(true);
+          paginate(1);
+        } else if (swipe > 2500) {
+          setHasInteracted(true);
+          paginate(-1);
+        }
+      },
+      [paginate]
+    );
+
+    const handleDoubleTap = useDoubleTap(() => {
+      haptic("success");
+      setShowHeart(true);
+      setTimeout(() => setShowHeart(false), 800);
+      if (!isFavorite) onFavorite();
+    });
+
+    const slideVariants = {
+      enter: (d) => ({
+        x: d > 0 ? "100%" : "-100%",
+        opacity: 0,
+      }),
+      center: {
+        x: 0,
+        opacity: 1,
+        zIndex: 1,
+      },
+      exit: (d) => ({
+        x: d < 0 ? "100%" : "-100%",
+        opacity: 0,
+        zIndex: 0,
+      }),
+    };
+
+    return (
+      <div className={`relative bg-gray-100 overflow-hidden ${isGrid ? "h-32" : "h-48"}`} onClick={handleDoubleTap}>
+        <div className="hidden" aria-hidden="true">
+          {images.map((src) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              loading="eager"
+              decoding="async"
+              onLoad={() => setLoadedImages((prev) => new Set(prev).add(src))}
+            />
+          ))}
+        </div>
+
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1.2, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+            key={page}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 400, damping: 40, mass: 0.8 },
+              opacity: { duration: 0.25 },
+            }}
+            drag={hasMultipleImages ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            dragMomentum={false}
+            onDragEnd={handleDragEnd}
+            className="absolute inset-0 w-full h-full"
+            style={{
+              willChange: "transform",
+              backfaceVisibility: "hidden",
+            }}
           >
-            <Heart size={60} className="fill-white text-white drop-shadow-lg" />
+            <SmartMedia
+              src={images[imageIndex]}
+              alt={vendorName}
+              type="image"
+              className="w-full h-full select-none touch-pan-y"
+              objectFit="cover"
+              priority={imageIndex === 0}
+              quality={85}
+              sizes={isGrid ? "(max-width: 768px) 50vw, 33vw" : "(max-width: 768px) 100vw, 50vw"}
+              useSkeleton={!hasInteracted && !loadedImages.has(images[imageIndex])}
+              unoptimized={false}
+            />
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
-
-      <div className="absolute top-2 left-2 right-2 flex justify-between items-start z-10">
-        <div className="flex gap-1.5">
-          {tags?.includes("Popular") && (
-            <div className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
-              <Sparkles size={10} /> Popular
-            </div>
+        <AnimatePresence>
+          {showHeart && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+            >
+              <Heart size={60} className="fill-white text-white drop-shadow-lg" />
+            </motion.div>
           )}
-          {tags?.includes("Verified") && (
-            <div className="px-2 py-1 bg-blue-400 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
-              <CheckCircle size={10} /> Verified
-            </div>
-          )}
-        </div>
+        </AnimatePresence>
 
-        <motion.button
-          whileTap={{ scale: 0.8 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            haptic("medium");
-            onFavorite();
-          }}
-          className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
-        >
-          <Heart
-            size={16}
-            className={`transition-colors ${isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"}`}
-            strokeWidth={2}
-          />
-        </motion.button>
-      </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
-      <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center z-10">
-        <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
-          <Star size={12} className="fill-amber-400 text-amber-400" />
-          <span className="text-xs font-bold text-gray-800">{rating?.toFixed(1) || "4.5"}</span>
-        </div>
-
-        {hasMultipleImages && !isGrid && (
-          <div className="flex gap-1">
-            {images.slice(0, 5).map((_, idx) => (
-              <motion.div
-                key={idx}
-                animate={{ width: idx === imageIndex ? 12 : 5, opacity: idx === imageIndex ? 1 : 0.5 }}
-                className="h-1.5 bg-white rounded-full shadow-sm"
-              />
-            ))}
-            {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
+        <div className="absolute top-2 left-2 right-2 flex justify-between items-start z-10">
+          <div className="flex gap-1.5">
+            {tags?.includes("Popular") && (
+              <div className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
+                <Sparkles size={10} /> Popular
+              </div>
+            )}
+            {tags?.includes("Verified") && (
+              <div className="px-2 py-1 bg-blue-400 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
+                <CheckCircle size={10} /> Verified
+              </div>
+            )}
           </div>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 500, damping: 25 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isLiking) {
+                haptic("medium");
+                onFavorite();
+              }
+            }}
+            disabled={isLiking}
+            className={`p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md ${
+              isLiking ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            <Heart
+              size={16}
+              className={`transition-colors duration-200 ${
+                isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"
+              }`}
+              strokeWidth={2}
+            />
+          </motion.button>
+        </div>
+
+        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center z-10">
+          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <span className="text-xs font-bold text-gray-800">{rating?.toFixed(1) || "4.5"}</span>
+          </div>
+
+          {hasMultipleImages && !isGrid && (
+            <div className="flex gap-1">
+              {images.slice(0, 5).map((_, idx) => (
+                <motion.div
+                  key={idx}
+                  animate={{
+                    width: idx === imageIndex ? 12 : 5,
+                    opacity: idx === imageIndex ? 1 : 0.5,
+                  }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="h-1.5 bg-white rounded-full shadow-sm"
+                />
+              ))}
+              {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
+            </div>
+          )}
+        </div>
+
+        {!isGrid && hasMultipleImages && (
+          <>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                paginate(-1);
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
+              <ChevronLeft size={18} className="text-gray-700" />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                paginate(1);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            >
+              <ChevronRight size={18} className="text-gray-700" />
+            </motion.button>
+          </>
         )}
       </div>
-
-      {!isGrid && hasMultipleImages && (
-        <>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              paginate(-1);
-            }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronLeft size={18} className="text-gray-700" />
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              paginate(1);
-            }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronRight size={18} className="text-gray-700" />
-          </motion.button>
-        </>
-      )}
-    </div>
-  );
-});
+    );
+  }
+);
 ImageCarousel.displayName = "ImageCarousel";
 
 const QuickActionButton = memo(({ icon: Icon, label, onClick, isActive, color }) => {
@@ -1463,8 +1563,6 @@ const VendorCard = memo(
   ({
     vendor,
     viewMode,
-    isFavorite,
-    onFavorite,
     isComparing,
     isSelectedForCompare,
     onCompare,
@@ -1479,15 +1577,74 @@ const VendorCard = memo(
     const { ref, hasBeenInView } = useInView();
     const haptic = useHapticFeedback();
     const isGrid = viewMode === "grid";
+    const [isLiked, setIsLiked] = useState(false);
+    const [statusLoading, setStatusLoading] = useState(false);
+    const [likingLoading, setLikingLoading] = useState(false);
+
+    // ADD this useEffect in VendorCard component:
+    useEffect(() => {
+      if (!user || !vendor?._id) return;
+      setStatusLoading(true);
+      const fetchStatus = async () => {
+        try {
+          const res = await fetch(`/api/user/status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vendorId: vendor._id, userId: user.id }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setIsLiked(data.isLiked);
+            setStatusLoading(false);
+          }
+        } catch (error) {
+          console.error("Error fetching interaction status:", error);
+        } finally {
+          setStatusLoading(false);
+        }
+      };
+
+      fetchStatus();
+    }, [user, vendor?._id]);
+
+    // ADD this function in VendorCard component:
+    const handleToggleLike = async () => {
+      if (!user) {
+        toast.error("Please login to like vendors");
+        return;
+      }
+      setLikingLoading(true);
+      const prevLiked = isLiked;
+      setIsLiked(!prevLiked);
+      if (navigator.vibrate) navigator.vibrate(10);
+
+      try {
+        const res = await fetch("/api/user/toggle-like", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vendorId: vendor._id }),
+        });
+
+        if (!res.ok) throw new Error("Failed");
+
+        const data = await res.json();
+        toast.success(data.message);
+        setLikingLoading(false);
+      } catch (error) {
+        setIsLiked(prevLiked);
+        toast.error("Something went wrong");
+      } finally {
+        setLikingLoading(false);
+      }
+    };
 
     const { addToCart, isInCart, removeFromCart } = useCartStore();
     const inCart = isInCart(vendor._id);
 
     const displayImages = useMemo(() => {
       const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
-      if (imgs.length > 0) return imgs;
-      if (vendor.defaultImage) return [vendor.defaultImage];
-      return ["/placeholder.jpg"];
+      const validImages = imgs.length > 0 ? imgs : vendor.defaultImage ? [vendor.defaultImage] : ["/placeholder.jpg"];
+      return validImages.slice(0, 5);
     }, [vendor.images, vendor.defaultImage, vendor.normalizedImages]);
 
     const price = useMemo(() => getVendorPrice(vendor), [vendor]);
@@ -1610,8 +1767,9 @@ const VendorCard = memo(
           images={displayImages}
           vendorName={vendor.name}
           isGrid={isGrid}
-          isFavorite={isFavorite}
-          onFavorite={() => onFavorite(vendor._id)}
+          isFavorite={isLiked}
+          isLiking={likingLoading}
+          onFavorite={handleToggleLike}
           tags={vendor.tags}
           colorPrimary={colorPrimary}
           rating={vendor.rating}
@@ -2963,7 +3121,6 @@ export default function MarketplacePageWrapper() {
   const [availableCities, setAvailableCities] = useState([]);
   const [sortOrder, setSortOrder] = useState("desc");
 
-  const [favorites, setFavorites] = useLocalStorage("mp_favorites", []);
   const [recentSearches, setRecentSearches] = useLocalStorage("mp_recentSearches", []);
   const [compareMode, setCompareMode] = useState(false);
   const [compareList, setCompareList] = useState([]);
@@ -3256,18 +3413,6 @@ export default function MarketplacePageWrapper() {
   const hideToast = useCallback(() => {
     setToast((prev) => ({ ...prev, isVisible: false }));
   }, []);
-
-  const handleFavorite = useCallback(
-    (vendorId) => {
-      haptic("medium");
-      setFavorites((prev) => {
-        const isFavorited = prev.includes(vendorId);
-        showToast(isFavorited ? "Removed from favorites" : "Added to favorites", "success");
-        return isFavorited ? prev.filter((id) => id !== vendorId) : [...prev, vendorId];
-      });
-    },
-    [haptic, setFavorites, showToast]
-  );
 
   const handleCategoryChange = useCallback(
     (cat) => {
@@ -3635,7 +3780,13 @@ export default function MarketplacePageWrapper() {
 
         <AnimatePresence mode="wait">
           {isMapView ? (
-            <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div
+              key="map"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
               <Suspense fallback={<MapLoadingPlaceholder />}>
                 <MapView vendors={vendors} onVendorSelect={() => setIsMapView(false)} center={DEFAULT_CENTER} />
               </Suspense>
@@ -3647,6 +3798,7 @@ export default function MarketplacePageWrapper() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}
             >
               {Array.from({ length: 6 }).map((_, i) => (
@@ -3655,16 +3807,10 @@ export default function MarketplacePageWrapper() {
             </motion.div>
           ) : (
             /* PHASE 2: Data Loaded State - Now show data or empty state */
-            <motion.div
-              key="data-content"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+            <div key="data-content">
               {isLoading ? (
-                /* Subsequent loading (pagination, filters) - subtle loading */
-                <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"} opacity-60`}>
+                /* Subsequent loading (pagination, filters) - show skeletons */
+                <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
                   {Array.from({ length: 6 }).map((_, i) => (
                     <CardSkeleton key={i} viewMode={viewMode} />
                   ))}
@@ -3673,21 +3819,29 @@ export default function MarketplacePageWrapper() {
                 /* Sub-Phase A: Results found */
                 <>
                   <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
-                    {vendors.map((vendor) => (
-                      <VendorCard
+                    {vendors.map((vendor, index) => (
+                      <motion.div
                         key={vendor._id}
-                        vendor={vendor}
-                        viewMode={viewMode}
-                        isFavorite={favorites.includes(vendor._id)}
-                        onFavorite={handleFavorite}
-                        isComparing={compareMode}
-                        isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
-                        onCompare={handleCompareToggle}
-                        colorPrimary={COLORS.primary}
-                        onShowToast={showToast}
-                        setCompareMode={setCompareMode}
-                        setCompareList={setCompareList}
-                      />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: index * 0.05,
+                          ease: "easeOut",
+                        }}
+                      >
+                        <VendorCard
+                          vendor={vendor}
+                          viewMode={viewMode}
+                          isComparing={compareMode}
+                          isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
+                          onCompare={handleCompareToggle}
+                          colorPrimary={COLORS.primary}
+                          onShowToast={showToast}
+                          setCompareMode={setCompareMode}
+                          setCompareList={setCompareList}
+                        />
+                      </motion.div>
                     ))}
                   </div>
 
@@ -3703,7 +3857,7 @@ export default function MarketplacePageWrapper() {
                 /* Sub-Phase B: No results */
                 <EmptyState onClearFilters={clearAllFilters} colorPrimary={COLORS.primary} searchQuery={searchQuery} />
               )}
-            </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </main>
