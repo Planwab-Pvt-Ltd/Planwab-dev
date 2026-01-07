@@ -314,7 +314,10 @@ const VendorBaseSchema = new Schema(
     metaKeywords: { type: [String], default: [] },
 
     // --- Vendor Profile ---
-    vendorProfile: [vendorProfileSchema],
+    vendorProfile: {
+      type: vendorProfileSchema,
+      default: () => ({}),
+    },
   },
   {
     timestamps: true,

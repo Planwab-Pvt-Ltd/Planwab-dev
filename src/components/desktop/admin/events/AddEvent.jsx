@@ -67,6 +67,7 @@ import {
   Sunset,
   Timer,
 } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 
 // ============================================================================
 // TOAST CONTEXT & PROVIDER
@@ -507,6 +508,7 @@ const WelcomeSection = ({ isVisible, onClose }) => {
 function AddEventContent({ onNavigate, onSuccess }) {
   const { addToast } = useToast();
   const formContainerRef = useRef(null);
+  const { user } = useUser();
 
   // ============================================================================
   // CATEGORIES CONFIGURATION
@@ -906,6 +908,10 @@ function AddEventContent({ onNavigate, onSuccess }) {
   };
 
   const handleConfirmedSubmit = async () => {
+    if (!user && !user?.id) {
+      addToast("You must be signed in to submit an event", "error");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -931,6 +937,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
           valueFormatted,
           valueRaw: Number(formData.budgetDetails.valueRaw),
         },
+        addedBy: user.id,
       };
 
       const response = await fetch("/api/plannedevent", {
@@ -946,6 +953,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
       }
 
       addToast("🎉 Event created successfully!", "success", 5000);
+      setShowPasswordModal(false);
 
       setTimeout(() => {
         if (onSuccess) {

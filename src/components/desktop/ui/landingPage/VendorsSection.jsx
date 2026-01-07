@@ -149,9 +149,15 @@ export const VenueCard = ({ vendor }) => (
       <img
         src={vendor?.image}
         alt={vendor?.name}
+        loading="lazy" // ADD THIS
+        decoding="async" // ADD THIS
         className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
         onError={(e) => {
-          e.target.src = "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80";
+          // Prevent infinite reload loop
+          if (!e.target.dataset.fallbackApplied) {
+            e.target.dataset.fallbackApplied = "true";
+            e.target.src = "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80";
+          }
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -230,9 +236,14 @@ export const PhotographerCard = ({ vendor }) => (
       <img
         src={vendor?.image}
         alt={vendor?.name}
+        loading="lazy" // ADD THIS
+        decoding="async" // ADD THIS
         className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
         onError={(e) => {
-          e.target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80";
+          if (!e.target.dataset.fallbackApplied) {
+            e.target.dataset.fallbackApplied = "true";
+            e.target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80";
+          }
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -298,9 +309,14 @@ export const DecoratorCard = ({ vendor }) => (
         <img
           src={vendor?.image}
           alt={vendor?.name}
+          loading="lazy" // ADD THIS
+          decoding="async" // ADD THIS
           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
           onError={(e) => {
-            e.target.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80";
+            if (!e.target.dataset.fallbackApplied) {
+              e.target.dataset.fallbackApplied = "true";
+              e.target.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80";
+            }
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -369,9 +385,14 @@ export const PlannerCard = ({ vendor }) => (
           <img
             src={vendor?.image}
             alt={vendor?.name}
+            loading="lazy" // ADD THIS
+            decoding="async" // ADD THIS
             className="w-20 h-20 rounded-2xl object-cover border-4 border-white dark:border-gray-700 shadow-lg transition-all duration-300 group-hover:scale-105"
             onError={(e) => {
-              e.target.src = "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
+              if (!e.target.dataset.fallbackApplied) {
+                e.target.dataset.fallbackApplied = "true";
+                e.target.src = "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
+              }
             }}
           />
           {vendor?.verified && (

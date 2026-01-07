@@ -43,6 +43,7 @@ import {
   HelpCircle,
   PartyPopper,
 } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 
 // ============================================================================
 // TOAST CONTEXT & PROVIDER
@@ -188,8 +189,13 @@ const DeleteConfirmModal = ({ event, onClose, onConfirm }) => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { addToast } = useToast();
+  const { user } = useUser();
 
   const handleDelete = async () => {
+    if (!user && !user?.id) {
+      addToast("You must be signed in to submit an event", "error");
+      return;
+    }
     if (!password) {
       setError("Please enter admin password");
       return;

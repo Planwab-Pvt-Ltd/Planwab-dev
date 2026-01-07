@@ -3,7 +3,8 @@
 import { Sun, User, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
-import { SignedIn, UserButton, UserProfile, useUser } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, UserButton, UserProfile, useUser } from "@clerk/clerk-react";
+import Link from "next/link";
 
 const textVariants = {
   hidden: { opacity: 0, x: -10, transition: { duration: 0.2 } },
@@ -62,6 +63,14 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
                 <p className="text-xs text-gray-500 dark:text-gray-400">{user?.emailAddresses[0]?.emailAddress}</p>
               </div>
             </SignedIn>
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className="font-semibold text-white dark:text-gray-100 bg-gradient-to-b from-indigo-500 to-purple-500 px-3 py-2 rounded-md hover:opacity-90 transition"
+              >
+                Sign In
+              </Link>
+            </SignedOut>
           </div>
         </div>
       </div>

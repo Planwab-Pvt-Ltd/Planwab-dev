@@ -137,6 +137,17 @@ export default function HeroSection() {
     },
   };
 
+  // ADD THIS: After useEffects (around line 110)
+  useEffect(() => {
+    // Preload category images to prevent loading delay on hover
+    vendorCategories.forEach((vendor) => {
+      if (vendor.src) {
+        const img = new Image();
+        img.src = vendor.src;
+      }
+    });
+  }, []); // Run once on mount
+
   const renderDropdown = () => {
     switch (activeField) {
       case "event":
@@ -376,6 +387,12 @@ export default function HeroSection() {
                         <img
                           src={vendor.src}
                           alt={vendor.name}
+                          loading="lazy" // ADD THIS
+                          decoding="async" // ADD THIS
+                          // ADD THIS: Preload on mount to prevent load delay
+                          onLoad={(e) => {
+                            e.target.dataset.loaded = "true";
+                          }}
                           className="w-full h-full object-cover mix-blend-multiply"
                         />
                       )}

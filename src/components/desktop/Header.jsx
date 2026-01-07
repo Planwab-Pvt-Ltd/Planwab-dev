@@ -23,6 +23,7 @@ import {
   Home,
   Calendar,
   Phone,
+  LucideLayoutDashboard,
 } from "lucide-react";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import { usePathname } from "next/navigation";
@@ -241,6 +242,7 @@ const ProfileDropdown = ({ isOpen }) => {
     { icon: Heart, label: "Favorites", href: "/" },
     { icon: CreditCard, label: "Billing", href: "/" },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
+    { icon: LucideLayoutDashboard, label: "Admin Dashboard", href: "/admin/vendors" },
   ];
   return (
     <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 !z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2 px-2">

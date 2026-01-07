@@ -90,6 +90,7 @@ import {
   ArrowDown,
   Move,
 } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 
 // ============================================================================
 // TOAST CONTEXT & PROVIDER
@@ -742,6 +743,7 @@ const WelcomeSection = ({ isVisible, onClose }) => {
 function AddVendorContent({ onNavigate }) {
   const { addToast } = useToast();
   const formContainerRef = useRef(null);
+  const { user } = useUser();
 
   // ============================================================================
   // CATEGORIES CONFIGURATION
@@ -1705,6 +1707,10 @@ function AddVendorContent({ onNavigate }) {
   };
 
   const handleConfirmedSubmit = async (adminPassword) => {
+    if (!user && !user?.id) {
+      addToast("You must be signed in to submit an event", "error");
+      return;
+    }
     if (!adminPassword || adminPassword.trim() === "") {
       addToast("Admin password is required to submit the form", "error");
       return;
@@ -1738,6 +1744,7 @@ function AddVendorContent({ onNavigate }) {
         defaultImage: imageUrls[0],
         gallery: gallery,
         ...formData.categoryData,
+        addedBy: user.id,
       };
 
       delete payload.categoryData;
@@ -1758,6 +1765,7 @@ function AddVendorContent({ onNavigate }) {
       }
 
       addToast("🎉 Vendor published successfully! Redirecting...", "success", 5000);
+      setShowPasswordModal(false);
 
       AutoSaveManager.clear();
       setHasUserInteracted(false); // ADD THIS

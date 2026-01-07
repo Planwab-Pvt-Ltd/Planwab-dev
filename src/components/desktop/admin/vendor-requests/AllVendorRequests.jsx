@@ -50,6 +50,7 @@ import {
   Minus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 
 const REQUESTS_PER_PAGE = 10;
 
@@ -109,6 +110,8 @@ export default function AllVendorRequests({ onViewRequest, onEditRequest, onDele
   const [adminPassword, setAdminPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const { user } = useUser();
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -322,6 +325,10 @@ export default function AllVendorRequests({ onViewRequest, onEditRequest, onDele
   );
 
   const handlePasswordVerification = async (action) => {
+    if (!user && !user?.id) {
+      toast.info("You must be signed in to submit an event", "error");
+      return;
+    }
     if (!adminPassword.trim()) {
       setPasswordError("Please enter admin password");
       return;

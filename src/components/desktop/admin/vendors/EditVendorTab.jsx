@@ -84,6 +84,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 
 // ============================================================================
 // TOAST CONTEXT & PROVIDER
@@ -349,6 +350,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess, isLoading }) => {
 function EditVendorContent({ vendor, onBack, onSuccess }) {
   const { addToast } = useToast();
   const formContainerRef = useRef(null);
+  const { user } = useUser();
 
   // ============================================================================
   // CATEGORIES CONFIGURATION
@@ -1208,6 +1210,10 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
   }, [validateForm, getErrorsForSection, addToast, scrollToFormTop]);
 
   const handleConfirmedSubmit = async (password) => {
+    if (!user && !user?.id) {
+      addToast("You must be signed in to submit an event", "error");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -1225,6 +1231,7 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
         ...formData,
         images: allImages,
         defaultImage: allImages[0] || "",
+        editedBy: user.id,
       };
 
       // Clean up payload
