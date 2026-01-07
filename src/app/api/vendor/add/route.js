@@ -241,6 +241,34 @@ export async function POST(request) {
     const body = await request.json();
     const { category, ...restData } = body;
 
+    if (restData.vendorProfile) {
+      // Convert array to object if needed
+      if (Array.isArray(restData.vendorProfile)) {
+        restData.vendorProfile = restData.vendorProfile[0] || undefined;
+      }
+
+      // Remove if empty object
+      if (
+        restData.vendorProfile &&
+        typeof restData.vendorProfile === "object" &&
+        Object.keys(restData.vendorProfile).length === 0
+      ) {
+        restData.vendorProfile = undefined;
+      }
+
+      // Remove if all values are empty
+      if (restData.vendorProfile && typeof restData.vendorProfile === "object") {
+        const hasActualData = Object.values(restData.vendorProfile).some(
+          (value) =>
+            value !== null && value !== undefined && value !== "" && (Array.isArray(value) ? value.length > 0 : true)
+        );
+
+        if (!hasActualData) {
+          restData.vendorProfile = undefined;
+        }
+      }
+    }
+
     // Validate category
     if (!category || !categoryModelMap[category]) {
       return NextResponse.json(

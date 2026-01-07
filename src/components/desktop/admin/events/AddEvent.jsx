@@ -910,6 +910,7 @@ function AddEventContent({ onNavigate, onSuccess }) {
   const handleConfirmedSubmit = async () => {
     if (!user && !user?.id) {
       addToast("You must be signed in to submit an event", "error");
+      setShowPasswordModal(false);
       return;
     }
     setIsSubmitting(true);

@@ -375,6 +375,121 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
   // INITIAL FORM DATA FUNCTION
   // ============================================================================
   const initializeFormData = useCallback((vendorData) => {
+    let categoryData = vendorData.categoryData || {};
+
+    // If categoryData is empty, extract from top-level fields based on category
+    if (Object.keys(categoryData).length === 0 && vendorData.category) {
+      const categoryFields = {
+        venues: [
+          "seating",
+          "floating",
+          "halls",
+          "rooms",
+          "parking",
+          "areas",
+          "foodPolicy",
+          "ceilingHeight",
+          "stageSize",
+          "powerBackup",
+        ],
+        photographers: [
+          "services",
+          "deliverables",
+          "deliveryTime",
+          "teamSize",
+          "travelCost",
+          "videographyIncluded",
+          "droneAvailable",
+        ],
+        makeup: ["services", "brandsUsed", "trialPolicy", "travelToVenue", "assistantsAvailable"],
+        catering: ["cuisines", "menuTypes", "minCapacity", "maxCapacity", "pricePerPlate", "liveCounters"],
+        djs: [
+          "genres",
+          "performanceDuration",
+          "soundSystemPower",
+          "setupTime",
+          "equipmentProvided",
+          "backupAvailable",
+          "lightingIncluded",
+          "emceeServices",
+        ],
+        clothes: [
+          "outfitTypes",
+          "wearType",
+          "leadTime",
+          "sizeRange",
+          "fittingSessions",
+          "customization",
+          "rentalAvailable",
+          "alterationsIncluded",
+        ],
+        mehendi: [
+          "designs",
+          "pricePerHand",
+          "bridalPackagePrice",
+          "teamSize",
+          "dryingTime",
+          "colorGuarantee",
+          "organic",
+          "travelToVenue",
+        ],
+        cakes: [
+          "flavors",
+          "speciality",
+          "pricePerKg",
+          "minOrderWeight",
+          "advanceBookingDays",
+          "deliveryAvailable",
+          "customDesigns",
+          "eggless",
+          "sugarFree",
+        ],
+        jewellery: [
+          "material",
+          "styles",
+          "returnPolicy",
+          "customization",
+          "rentalAvailable",
+          "certificationProvided",
+          "homeTrialAvailable",
+        ],
+        invitations: [
+          "types",
+          "minOrderQuantity",
+          "digitalDeliveryTime",
+          "physicalDeliveryTime",
+          "customDesign",
+          "languages",
+        ],
+        hairstyling: [
+          "styles",
+          "productsUsed",
+          "extensionsProvided",
+          "drapingIncluded",
+          "travelToVenue",
+          "trialAvailable",
+        ],
+        planners: [
+          "specializations",
+          "eventsManaged",
+          "teamSize",
+          "vendorNetwork",
+          "feeStructure",
+          "budgetRange",
+          "destinationWeddings",
+        ],
+        other: ["serviceType", "customFields"],
+      };
+
+      const fieldsToExtract = categoryFields[vendorData.category] || [];
+      categoryData = {};
+      fieldsToExtract.forEach((field) => {
+        if (vendorData[field] !== undefined) {
+          categoryData[field] = vendorData[field];
+        }
+      });
+    }
+
     return {
       ...vendorData,
       name: vendorData.name || "",
@@ -445,8 +560,11 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
       metaTitle: vendorData.metaTitle || "",
       metaDescription: vendorData.metaDescription || "",
       metaKeywords: vendorData.metaKeywords || [],
-      categoryData: vendorData.categoryData || {},
-      vendorProfile: vendorData.vendorProfile || {},
+      categoryData: categoryData,
+      vendorProfile:
+        Array.isArray(vendorData.vendorProfile) && vendorData.vendorProfile.length > 0
+          ? vendorData.vendorProfile[0] // Extract first element if array
+          : vendorData.vendorProfile || {},
       category: vendorData.category || "venues",
     };
   }, []);
@@ -2689,6 +2807,13 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
           placeholder="Select status..."
           allowCustom
         />
+        <InputField
+          label="Subcategory"
+          value={data.subcategory || ""}
+          onChange={(e) => onChange("subcategory", e.target.value)}
+          placeholder="e.g., Luxury Venues, Budget Photography"
+          helperText="Optional: Specify a subcategory for better filtering"
+        />
         <div className="space-y-4">
           <CheckboxField
             label="Verified Vendor"
@@ -4249,6 +4374,85 @@ const VendorProfileSection = ({ data, onChange, addToast }) => (
       </div>
     </Section>
 
+    <Section title="Additional Social Profiles" icon={Globe}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+          label="Facebook Handle"
+          value={data.facebookHandle || ""}
+          onChange={(e) => onChange("facebookHandle", e.target.value)}
+          placeholder="@yourpage"
+          icon={Facebook}
+        />
+        <InputField
+          label="Twitter/X Handle"
+          value={data.twitterHandle || ""}
+          onChange={(e) => onChange("twitterHandle", e.target.value)}
+          placeholder="@yourhandle"
+          icon={Twitter}
+        />
+        <InputField
+          label="LinkedIn Handle"
+          value={data.linkedinHandle || ""}
+          onChange={(e) => onChange("linkedinHandle", e.target.value)}
+          placeholder="@yourcompany"
+          icon={Linkedin}
+        />
+        <InputField
+          label="YouTube Channel"
+          value={data.youtubeHandle || ""}
+          onChange={(e) => onChange("youtubeHandle", e.target.value)}
+          placeholder="@yourchannel"
+          icon={Youtube}
+        />
+        <InputField
+          label="YouTube Subscribers"
+          value={data.youtubeSubscribers || ""}
+          onChange={(e) => onChange("youtubeSubscribers", e.target.value)}
+          placeholder="10K"
+        />
+        <InputField
+          label="TikTok Handle"
+          value={data.tiktokHandle || ""}
+          onChange={(e) => onChange("tiktokHandle", e.target.value)}
+          placeholder="@yourtiktok"
+        />
+        <InputField
+          label="Pinterest Handle"
+          value={data.pinterestHandle || ""}
+          onChange={(e) => onChange("pinterestHandle", e.target.value)}
+          placeholder="@yourpinterest"
+        />
+        <InputField
+          label="Threads Handle"
+          value={data.threadsHandle || ""}
+          onChange={(e) => onChange("threadsHandle", e.target.value)}
+          placeholder="@yourthreads"
+        />
+      </div>
+    </Section>
+
+    <Section title="Business Contact (Public)" icon={Phone}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+          label="Public Business Email"
+          type="email"
+          value={data.businessEmail || ""}
+          onChange={(e) => onChange("businessEmail", e.target.value)}
+          placeholder="info@yourbusiness.com"
+          icon={Mail}
+          helperText="Displayed publicly on your profile"
+        />
+        <InputField
+          label="Public Phone Number"
+          value={data.publicPhone || ""}
+          onChange={(e) => onChange("publicPhone", e.target.value)}
+          placeholder="+91 98765 43210"
+          icon={Phone}
+          helperText="Different from primary contact if needed"
+        />
+      </div>
+    </Section>
+
     <Section title="Featured Testimonial" icon={Quote}>
       <TextArea
         label="Testimonial Quote"
@@ -4265,6 +4469,26 @@ const VendorProfileSection = ({ data, onChange, addToast }) => (
         className="mt-4"
         icon={User}
       />
+    </Section>
+
+    <Section title="Profile Highlights" icon={Star}>
+      <ListInput
+        label="Highlight Badges"
+        items={data.highlights || []}
+        onChange={(v) => onChange("highlights", v)}
+        placeholder="Add a highlight (e.g., 'Top Rated 2024', 'Featured Artist')..."
+      />
+      <p className="text-xs text-gray-500 mt-2">Short badges/tags displayed prominently on your profile</p>
+    </Section>
+
+    <Section title="Featured Work" icon={Award}>
+      <ListInput
+        label="Featured Work URLs"
+        items={data.featuredWork || []}
+        onChange={(v) => onChange("featuredWork", v)}
+        placeholder="Add image URL of featured work..."
+      />
+      <p className="text-xs text-gray-500 mt-2">URLs of your best work to showcase in featured section</p>
     </Section>
 
     <Section title="Verification" icon={CheckCircle}>
@@ -4703,6 +4927,23 @@ const CategorySpecificFields = ({
                 value={data.teamSize || ""}
                 onChange={(e) => onChange("teamSize", parseInt(e.target.value) || 0)}
                 placeholder="5"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField
+                label="Drying Time"
+                value={data.dryingTime || ""}
+                onChange={(e) => onChange("dryingTime", e.target.value)}
+                placeholder="2-3 hours"
+                helperText="Approximate time for henna to dry"
+              />
+              <InputField
+                label="Color Guarantee"
+                value={data.colorGuarantee || ""}
+                onChange={(e) => onChange("colorGuarantee", e.target.value)}
+                placeholder="Deep maroon color guaranteed"
+                helperText="What color stain do you guarantee?"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

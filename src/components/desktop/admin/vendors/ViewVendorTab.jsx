@@ -75,6 +75,7 @@ import {
   Scissors,
   RefreshCw,
   AlertTriangle,
+  Quote,
 } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 
@@ -353,9 +354,9 @@ function ViewVendorContent({ vendor, onBack, onEdit, onDelete }) {
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
 
             {/* Cover Image */}
-            {(vendor.vendorProfile?.coverPhoto || vendor.defaultImage || vendor.images?.[0]) && (
+            {(vendor.defaultImage || vendor.images?.[0]) && (
               <Image
-                src={vendor.vendorProfile?.coverPhoto || vendor.defaultImage || vendor.images[0]}
+                src={vendor.images[1] || vendor.defaultImage}
                 alt={vendor.name}
                 fill
                 className="object-cover opacity-30"
@@ -372,12 +373,7 @@ function ViewVendorContent({ vendor, onBack, onEdit, onDelete }) {
                 {/* Profile Picture */}
                 <div className="relative w-20 h-20 md:w-28 md:h-28 rounded-2xl overflow-hidden border-4 border-white dark:border-gray-800 shadow-2xl bg-white flex-shrink-0 group">
                   <Image
-                    src={
-                      vendor.vendorProfile?.profilePicture ||
-                      vendor.defaultImage ||
-                      vendor.images?.[0] ||
-                      "/placeholder-vendor.jpg"
-                    }
+                    src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-vendor.jpg"}
                     alt={vendor.name}
                     width={112}
                     height={112}
@@ -941,6 +937,7 @@ const OverviewSection = ({ vendor, formatPrice, formatDate, copyToClipboard, cop
           copied={copiedField}
         />
         <InfoCard icon={Target} label="Status" value={vendor.isActive ? "Active" : "Inactive"} />
+        <InfoCard icon={Tag} label="Subcategory" value={vendor.subcategory || "Not specified"} />
       </div>
     </Section>
   </div>
@@ -1704,6 +1701,15 @@ const CategoryDetailsSection = ({ vendor, categoryInfo, formatPrice }) => {
                   <InfoCard icon={DollarSign} label="Bridal Package" value={formatPrice(vendor.bridalPackagePrice)} />
                 )}
                 {vendor.teamSize && <InfoCard icon={Users} label="Team Size" value={vendor.teamSize} />}
+              </div>
+            </Section>
+
+            <Section title="Service Details" icon={Info}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {vendor.dryingTime && <InfoCard icon={Clock} label="Drying Time" value={vendor.dryingTime} />}
+                {vendor.colorGuarantee && (
+                  <InfoCard icon={CheckCircle} label="Color Guarantee" value={vendor.colorGuarantee} />
+                )}
               </div>
             </Section>
 

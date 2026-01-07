@@ -308,6 +308,10 @@ const VendorBaseSchema = new Schema(
       linkedin: { type: String },
     },
 
+    addedBy: {
+      type: String,
+    },
+
     // --- SEO ---
     metaTitle: { type: String },
     metaDescription: { type: String },
@@ -316,7 +320,8 @@ const VendorBaseSchema = new Schema(
     // --- Vendor Profile ---
     vendorProfile: {
       type: vendorProfileSchema,
-      default: () => ({}),
+      default: undefined, // Change from () => ({}) to undefined
+      required: false, // Explicitly mark as optional
     },
   },
   {

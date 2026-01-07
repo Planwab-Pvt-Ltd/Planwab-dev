@@ -789,6 +789,7 @@ function AddVendorContent({ onNavigate }) {
     isActive: true,
     isFeatured: false,
     tags: [],
+    subcategory: "",
     availabilityStatus: "Available",
     description: "",
     shortDescription: "",
@@ -833,6 +834,11 @@ function AddVendorContent({ onNavigate }) {
     metaKeywords: [],
     categoryData: {},
     vendorProfile: {},
+    reviewsList: [], // ADD THIS
+    likesCount: 0, // ADD THIS
+    likedBy: [], // ADD THIS
+    bookmarksCount: 0, // ADD THIS
+    bookmarkedBy: [],
   };
 
   // ============================================================================
@@ -956,10 +962,11 @@ function AddVendorContent({ onNavigate }) {
     priceUnits: ["day", "plate", "hour", "event", "package", "item", "session", "person"],
     availability: ["Available", "Busy", "Unavailable", "Closed"],
     days: [
+      "All Days",
+      "Mon - Sat",
       "Mon - Thu",
       "Fri - Sat",
       "Sunday",
-      "All Days",
       "Weekends",
       "Monday",
       "Tuesday",
@@ -1289,10 +1296,13 @@ function AddVendorContent({ onNavigate }) {
         if (Object.values(formData.socialLinks || {}).some((v) => v)) filled++;
         if (formData.metaTitle || formData.metaDescription) filled++;
       } else if (section.id === "stats") {
-        total = 3;
+        total = 6; // Update total
         if (formData.rating) filled++;
         if (formData.operatingHours?.length > 0) filled++;
         if (formData.eventTypes?.length > 0) filled++;
+        if (formData.stats?.length > 0) filled++;
+        if (formData.highlights?.length > 0) filled++;
+        if (formData.responseTime) filled++;
       } else if (section.id === "category") {
         total = 1;
         if (Object.keys(formData.categoryData || {}).length > 0) filled++;
@@ -1334,10 +1344,10 @@ function AddVendorContent({ onNavigate }) {
   // AUTO-SAVE: Save data on changes (debounced)
   // ============================================================================
   useEffect(() => {
-    // Skip on initial mount
+    // Skip on initial mount - but check AFTER setting the flag
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      return;
+      return; // MOVE return here
     }
 
     // Don't auto-save if showing recovery modal or submitting
@@ -1350,7 +1360,6 @@ function AddVendorContent({ onNavigate }) {
 
     // Set new timer (debounced save)
     autoSaveTimerRef.current = setTimeout(() => {
-      // Only save if user has actually interacted and there are changes
       if (hasUserInteracted && hasChanges) {
         AutoSaveManager.save(
           {
@@ -1358,7 +1367,7 @@ function AddVendorContent({ onNavigate }) {
             activeCategory,
             uploadedFiles,
           },
-          true // Indicate this is a user change
+          true
         );
       }
     }, AUTOSAVE_DEBOUNCE_MS);
@@ -1567,8 +1576,8 @@ function AddVendorContent({ onNavigate }) {
       setHasUserInteracted(true);
 
       const fileArray = Array.from(files);
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       const validFiles = fileArray.filter((file) => {
-        const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
         return validTypes.includes(file.type) && file.size <= 5 * 1024 * 1024;
       });
 
@@ -1576,6 +1585,12 @@ function AddVendorContent({ onNavigate }) {
       if (skipped > 0) {
         addToast(`${skipped} file(s) skipped (invalid type or exceeds 5MB)`, "warning");
       }
+
+      const sizeFailed = fileArray.filter((f) => f.size > 5 * 1024 * 1024).length;
+      const typeFailed = fileArray.filter((f) => !validTypes?.includes(f.type)).length;
+
+      if (sizeFailed > 0) addToast(`${sizeFailed} file(s) too large (max 5MB)`, "warning");
+      if (typeFailed > 0) addToast(`${typeFailed} file(s) wrong format`, "warning");
 
       if (validFiles.length > 0) {
         setUploadedFiles((prev) => [...prev, ...validFiles]);
@@ -1693,7 +1708,59 @@ function AddVendorContent({ onNavigate }) {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 
-    if (!validateForm()) {
+    // FIRST: Clean the data
+    const cleanedFormData = {
+      ...formData,
+      stats: (formData.stats || []).filter((s) => s.label && s.value),
+      highlights: (formData.highlights || []).filter((h) => h.label && h.value),
+      operatingHours: (formData.operatingHours || []).filter((oh) => oh.day && oh.hours),
+      landmarks: (formData.landmarks || []).filter((lm) => lm.name && lm.distance),
+      directions: (formData.directions || []).filter((d) => d.type && d.description),
+      policies: (formData.policies || []).filter((p) => p.title),
+      faqs: (formData.faqs || []).filter((f) => f.question && f.answer),
+      packages: (formData.packages || []).filter((p) => p.name && p.price),
+      awards: (formData.awards || []).filter((a) => a.title),
+      specialOffers: (formData.specialOffers || []).filter((o) => o.title),
+    };
+
+    // SECOND: Update state (for consistency)
+    setFormData(cleanedFormData);
+
+    // THIRD: Create validation function that uses cleaned data
+    const validateCleanedData = () => {
+      const newErrors = {};
+
+      if (!cleanedFormData.name?.trim()) newErrors.name = "Business name is required";
+      if (!cleanedFormData.username?.trim()) newErrors.username = "Username is required";
+      else if (!/^[a-z0-9-]+$/.test(cleanedFormData.username))
+        newErrors.username = "Username can only contain lowercase letters, numbers, and hyphens";
+
+      if (!cleanedFormData.email?.trim()) newErrors.email = "Email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanedFormData.email))
+        newErrors.email = "Please enter a valid email address";
+
+      if (!cleanedFormData.phoneNo?.trim()) {
+        newErrors.phoneNo = "Phone number is required";
+      } else if (!/^[\d\s+\-()]{10,}$/.test(cleanedFormData.phoneNo)) {
+        newErrors.phoneNo = "Enter a valid phone (min 10 digits, can include +, -, spaces)";
+      }
+
+      if (!cleanedFormData.address?.city?.trim()) newErrors["address.city"] = "City is required";
+
+      if (!cleanedFormData.basePrice) newErrors.basePrice = "Base price is required";
+      else if (isNaN(cleanedFormData.basePrice) || Number(cleanedFormData.basePrice) <= 0)
+        newErrors.basePrice = "Please enter a valid price";
+
+      if (uploadedFiles.length === 0) newErrors.images = "Please upload at least one image";
+
+      // Note: We DON'T validate empty arrays anymore since they're already cleaned
+      return newErrors;
+    };
+
+    const validationErrors = validateCleanedData();
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       const errorSections = sections.filter((s) => getErrorsForSection(s.id).length > 0);
       if (errorSections.length > 0) {
         setActiveSection(errorSections[0].id);
@@ -1709,14 +1776,17 @@ function AddVendorContent({ onNavigate }) {
   const handleConfirmedSubmit = async (adminPassword) => {
     if (!user && !user?.id) {
       addToast("You must be signed in to submit an event", "error");
+      setShowPasswordModal(false);
       return;
     }
     if (!adminPassword || adminPassword.trim() === "") {
       addToast("Admin password is required to submit the form", "error");
+      setShowPasswordModal(false);
       return;
     }
     if (adminPassword !== "AddVendorPlanwab") {
       addToast("Incorrect admin password. Please try again.", "error");
+      setShowPasswordModal(false);
       return;
     }
     setIsSubmitting(true);
@@ -1745,6 +1815,8 @@ function AddVendorContent({ onNavigate }) {
         gallery: gallery,
         ...formData.categoryData,
         addedBy: user.id,
+        vendorProfile:
+          formData.vendorProfile && Object.keys(formData.vendorProfile).length > 0 ? formData.vendorProfile : undefined,
       };
 
       delete payload.categoryData;
@@ -1781,9 +1853,11 @@ function AddVendorContent({ onNavigate }) {
     } catch (error) {
       console.error("Submit error:", error);
       addToast(error.message || "Something went wrong. Please try again.", "error");
+      setShowPasswordModal(false);
     } finally {
       setIsSubmitting(false);
     }
+    setShowPasswordModal(false);
   };
 
   // ============================================================================
@@ -1816,8 +1890,8 @@ function AddVendorContent({ onNavigate }) {
         setActiveCategory(recoveryData.activeCategory);
       }
 
-      // Note: Cannot restore actual file objects, user needs to re-upload
-      // But we can show a message about it
+      // IMPORTANT: Mark as having user interaction AFTER restoring
+      setHasUserInteracted(true);
 
       setShowRecoveryModal(false);
       addToast("✅ Your previous work has been restored!", "success", 5000);
@@ -1923,30 +1997,19 @@ function AddVendorContent({ onNavigate }) {
                     </motion.span>
                   )}
                 </div>
-                {overallProgress}% Complete
-                {requiredFieldsComplete && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="px-3 py-1 bg-green-400 text-green-900 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-lg"
-                  >
-                    <CheckCircle size={14} />
-                    Ready to Publish
-                  </motion.span>
-                )}
-                {/* ADD THIS: */}
-                {hasChanges && !isSubmitting && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="px-2 py-1 mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-medium rounded-full flex items-center gap-1"
-                    title="Your work is automatically saved"
-                  >
-                    <RefreshCw size={10} />
-                    Auto-saving
-                  </motion.span>
-                )}
               </div>
+              {/* ADD THIS: */}
+              {hasChanges && !isSubmitting && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="px-2 py-1 mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-medium rounded-full flex items-center gap-1"
+                  title="Your work is automatically saved"
+                >
+                  <RefreshCw size={10} />
+                  Auto-saving
+                </motion.span>
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -2006,6 +2069,11 @@ function AddVendorContent({ onNavigate }) {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
+                    if (activeCategory !== cat.key && hasChanges) {
+                      if (!confirm("Changing category will clear category-specific data. Continue?")) {
+                        return;
+                      }
+                    }
                     setHasUserInteracted(true);
                     setActiveCategory(cat.key);
                     setFormData((prev) => ({ ...prev, categoryData: {} }));
@@ -3014,17 +3082,130 @@ const ListInput = ({ label, items = [], onChange, placeholder }) => {
 // ============================================================================
 const DynamicList = ({ title, items = [], fields, onChange, emptyMessage, maxItems }) => {
   const { addToast } = useToast();
+  const [isAdding, setIsAdding] = useState(false);
+  const [newItemData, setNewItemData] = useState({});
 
   const add = () => {
     if (maxItems && items.length >= maxItems) {
       addToast(`Maximum ${maxItems} items allowed`, "warning");
       return;
     }
-    const newItem = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default || "" }), {});
-    onChange([...items, newItem]);
-    addToast("New item added", "success");
+    setIsAdding(true);
+    const emptyItem = fields.reduce((acc, f) => ({ ...acc, [f.key]: f.default || "" }), {});
+    setNewItemData(emptyItem);
   };
 
+  const cancelAdd = () => {
+    setIsAdding(false);
+    setNewItemData({});
+  };
+
+  const confirmAdd = () => {
+    // Get all field keys from the actual fields prop
+    const fieldKeys = fields.map((f) => f.key);
+
+    // Check if at least one field has meaningful data
+    const hasData = fieldKeys.some((key) => {
+      const value = newItemData[key];
+      if (!value) return false;
+
+      // For strings, check if trimmed value is not empty
+      if (typeof value === "string") {
+        return value.trim() !== "";
+      }
+
+      // For numbers, check if valid
+      if (typeof value === "number") {
+        return !isNaN(value);
+      }
+
+      return true;
+    });
+
+    if (!hasData) {
+      // Show which fields are expected
+      const fieldNames = fields.map((f) => f.placeholder || f.key).join(", ");
+      addToast(`Please fill in at least one field: ${fieldNames}`, "warning");
+      return;
+    }
+
+    // Optional: Check for specific required patterns
+    // For example, if both "label" and "value" exist, both should be filled
+    const hasLabelAndValue = fields.some((f) => f.key === "label") && fields.some((f) => f.key === "value");
+    if (hasLabelAndValue) {
+      const label = newItemData.label?.trim();
+      const value = newItemData.value?.trim();
+      if (!label || !value) {
+        addToast("Both label and value are required for this item", "warning");
+        return;
+      }
+    }
+
+    // For day/hours combination
+    const hasDayAndHours = fields.some((f) => f.key === "day") && fields.some((f) => f.key === "hours");
+    if (hasDayAndHours) {
+      const day = newItemData.day?.trim();
+      const hours = newItemData.hours?.trim();
+      if (!day || !hours) {
+        addToast("Both day and hours are required", "warning");
+        return;
+      }
+    }
+
+    // For name/distance combination (landmarks)
+    const hasNameAndDistance = fields.some((f) => f.key === "name") && fields.some((f) => f.key === "distance");
+    if (hasNameAndDistance) {
+      const name = newItemData.name?.trim();
+      const distance = newItemData.distance?.trim();
+      if (!name || !distance) {
+        addToast("Both name and distance are required", "warning");
+        return;
+      }
+    }
+
+    // For type/description combination (directions)
+    const hasTypeAndDescription = fields.some((f) => f.key === "type") && fields.some((f) => f.key === "description");
+    if (hasTypeAndDescription) {
+      const type = newItemData.type?.trim();
+      const description = newItemData.description?.trim();
+      if (!type || !description) {
+        addToast("Both type and description are required", "warning");
+        return;
+      }
+    }
+
+    // For question/answer combination (FAQs)
+    const hasQuestionAndAnswer = fields.some((f) => f.key === "question") && fields.some((f) => f.key === "answer");
+    if (hasQuestionAndAnswer) {
+      const question = newItemData.question?.trim();
+      const answer = newItemData.answer?.trim();
+      if (!question || !answer) {
+        addToast("Both question and answer are required", "warning");
+        return;
+      }
+    }
+
+    // For title field (policies, awards, etc.)
+    const hasTitle = fields.some((f) => f.key === "title");
+    if (hasTitle && fields.length === 1) {
+      const title = newItemData.title?.trim();
+      if (!title) {
+        addToast("Title is required", "warning");
+        return;
+      }
+    }
+
+    onChange([...items, newItemData]);
+    addToast("Item added successfully", "success");
+    setIsAdding(false);
+    setNewItemData({});
+  };
+
+  const updateNewItem = (key, val) => {
+    setNewItemData((prev) => ({ ...prev, [key]: val }));
+  };
+
+  // ADD THESE MISSING FUNCTIONS:
   const update = (idx, key, val) => {
     const updated = [...items];
     updated[idx] = { ...updated[idx], [key]: val };
@@ -3044,6 +3225,33 @@ const DynamicList = ({ title, items = [], fields, onChange, emptyMessage, maxIte
     onChange(updated);
   };
 
+  const hasEmptyItems = (items, fields) => {
+    return items.some((item) => {
+      // Check if at least one key field is empty
+      const requiredKeys = fields
+        .filter((f) =>
+          [
+            "label",
+            "value",
+            "day",
+            "hours",
+            "name",
+            "distance",
+            "type",
+            "description",
+            "question",
+            "answer",
+            "title",
+          ].includes(f.key)
+        )
+        .map((f) => f.key);
+
+      if (requiredKeys.length === 0) return false;
+
+      return requiredKeys.some((key) => !item[key] || item[key].trim() === "");
+    });
+  };
+
   return (
     <div className="w-full min-w-0">
       {title && (
@@ -3054,11 +3262,29 @@ const DynamicList = ({ title, items = [], fields, onChange, emptyMessage, maxIte
           </span>
         </div>
       )}
-      {items.length === 0 && emptyMessage && (
+
+      {items.length === 0 && !isAdding && emptyMessage && (
         <p className="text-sm text-gray-500 mb-3 italic text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
           {emptyMessage}
         </p>
       )}
+
+      {hasEmptyItems(items, fields) && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-300 dark:border-amber-700 rounded-xl flex items-start gap-3"
+        >
+          <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Incomplete Items Detected</p>
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+              Some items have empty required fields. They won't be saved unless you fill them in.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       <div className="space-y-2">
         <AnimatePresence>
           {items.map((item, idx) => (
@@ -3133,16 +3359,82 @@ const DynamicList = ({ title, items = [], fields, onChange, emptyMessage, maxIte
               </button>
             </motion.div>
           ))}
+
+          {isAdding && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex gap-2 items-start p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl border-2 border-blue-300 dark:border-blue-700"
+            >
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
+                {fields.map((f) =>
+                  f.options ? (
+                    <select
+                      key={f.key}
+                      value={newItemData[f.key] || ""}
+                      onChange={(e) => updateNewItem(f.key, e.target.value)}
+                      className="px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none w-full transition-all"
+                    >
+                      <option value="">{f.placeholder}</option>
+                      {f.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : f.type === "textarea" ? (
+                    <textarea
+                      key={f.key}
+                      placeholder={f.placeholder}
+                      value={newItemData[f.key] || ""}
+                      onChange={(e) => updateNewItem(f.key, e.target.value)}
+                      rows={2}
+                      className="px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 col-span-full resize-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none w-full transition-all"
+                    />
+                  ) : (
+                    <input
+                      key={f.key}
+                      type={f.type || "text"}
+                      placeholder={f.placeholder}
+                      value={newItemData[f.key] || ""}
+                      onChange={(e) => updateNewItem(f.key, e.target.value)}
+                      className="px-3 py-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none w-full transition-all"
+                    />
+                  )
+                )}
+              </div>
+              <div className="flex flex-col gap-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={confirmAdd}
+                  className="p-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                  title="Confirm Add"
+                >
+                  <Check size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelAdd}
+                  className="p-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+                  title="Cancel"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
+
       <button
         type="button"
         onClick={add}
-        disabled={maxItems && items.length >= maxItems}
+        disabled={(maxItems && items.length >= maxItems) || isAdding}
         className="mt-3 w-full py-3.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors flex items-center gap-2 justify-center border-2 border-dashed border-indigo-300 dark:border-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Plus size={16} />
-        Add Item
+        {isAdding ? "Fill the form above" : "Add Item"}
       </button>
     </div>
   );
@@ -3268,6 +3560,13 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
           onChange={(val) => onChange("availabilityStatus", val)}
           placeholder="Select status..."
           allowCustom
+        />
+        <InputField
+          label="Subcategory"
+          value={data.subcategory || ""}
+          onChange={(e) => onChange("subcategory", e.target.value)}
+          placeholder="e.g., Luxury Venues, Budget Photography"
+          helperText="Optional: Specify a subcategory for better filtering"
         />
         <div className="space-y-4">
           <CheckboxField
@@ -4273,6 +4572,15 @@ const PackageCard = ({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Included Features</label>
             <span className="text-xs text-gray-500">{pkg.features?.length || 0} items</span>
           </div>
+          {/* ADD THIS: */}
+          {(!pkg.features || pkg.features.length === 0) && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
+              <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                <Info size={12} />
+                Add features included in this package (e.g., "2 photographers", "All edited photos")
+              </p>
+            </div>
+          )}
           {pkg.features && pkg.features.length > 0 && (
             <ul className="space-y-1 mb-2 max-h-32 overflow-y-auto">
               {pkg.features.map((f, fi) => (
@@ -4302,6 +4610,7 @@ const PackageCard = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault(); // IMPORTANT: Prevents form submission
+                  e.stopPropagation();
                   onAddFeature(index, featureInput);
                   setFeatureInput("");
                   if (featureInput.trim()) addToast("Feature added", "success");
@@ -4357,6 +4666,7 @@ const PackageCard = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
+                  e.stopPropagation();
                   onAddNotIncluded(index, notIncludedInput);
                   setNotIncludedInput("");
                 }
@@ -4550,9 +4860,14 @@ const PolicyCard = ({ policy, index, onUpdate, onRemove, onAddDetail, onRemoveDe
       />
       <div className="mt-3">
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Policy Details</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Policy Details/Points</label>
           <span className="text-xs text-gray-500">{policy.details?.length || 0} items</span>
         </div>
+        {(!policy.details || policy.details.length === 0) && (
+          <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg mb-2">
+            💡 Add detailed points about this policy. Press Enter or click + to add.
+          </p>
+        )}
         {policy.details && policy.details.length > 0 && (
           <ul className="space-y-1 mb-2">
             {policy.details.map((d, di) => (
@@ -4810,6 +5125,85 @@ const VendorProfileSection = ({ data, onChange, addToast }) => (
       </div>
     </Section>
 
+    <Section title="Additional Social Profiles" icon={Globe}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+          label="Facebook Handle"
+          value={data.facebookHandle || ""}
+          onChange={(e) => onChange("facebookHandle", e.target.value)}
+          placeholder="@yourpage"
+          icon={Facebook}
+        />
+        <InputField
+          label="Twitter/X Handle"
+          value={data.twitterHandle || ""}
+          onChange={(e) => onChange("twitterHandle", e.target.value)}
+          placeholder="@yourhandle"
+          icon={Twitter}
+        />
+        <InputField
+          label="LinkedIn Handle"
+          value={data.linkedinHandle || ""}
+          onChange={(e) => onChange("linkedinHandle", e.target.value)}
+          placeholder="@yourcompany"
+          icon={Linkedin}
+        />
+        <InputField
+          label="YouTube Channel"
+          value={data.youtubeHandle || ""}
+          onChange={(e) => onChange("youtubeHandle", e.target.value)}
+          placeholder="@yourchannel"
+          icon={Youtube}
+        />
+        <InputField
+          label="YouTube Subscribers"
+          value={data.youtubeSubscribers || ""}
+          onChange={(e) => onChange("youtubeSubscribers", e.target.value)}
+          placeholder="10K"
+        />
+        <InputField
+          label="TikTok Handle"
+          value={data.tiktokHandle || ""}
+          onChange={(e) => onChange("tiktokHandle", e.target.value)}
+          placeholder="@yourtiktok"
+        />
+        <InputField
+          label="Pinterest Handle"
+          value={data.pinterestHandle || ""}
+          onChange={(e) => onChange("pinterestHandle", e.target.value)}
+          placeholder="@yourpinterest"
+        />
+        <InputField
+          label="Threads Handle"
+          value={data.threadsHandle || ""}
+          onChange={(e) => onChange("threadsHandle", e.target.value)}
+          placeholder="@yourthreads"
+        />
+      </div>
+    </Section>
+
+    <Section title="Business Contact (Public)" icon={Phone}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <InputField
+          label="Public Business Email"
+          type="email"
+          value={data.businessEmail || ""}
+          onChange={(e) => onChange("businessEmail", e.target.value)}
+          placeholder="info@yourbusiness.com"
+          icon={Mail}
+          helperText="Displayed publicly on your profile"
+        />
+        <InputField
+          label="Public Phone Number"
+          value={data.publicPhone || ""}
+          onChange={(e) => onChange("publicPhone", e.target.value)}
+          placeholder="+91 98765 43210"
+          icon={Phone}
+          helperText="Different from primary contact if needed"
+        />
+      </div>
+    </Section>
+
     <Section title="Featured Testimonial" icon={Quote}>
       <TextArea
         label="Testimonial Quote"
@@ -4826,6 +5220,26 @@ const VendorProfileSection = ({ data, onChange, addToast }) => (
         className="mt-4"
         icon={User}
       />
+    </Section>
+
+    <Section title="Profile Highlights" icon={Star}>
+      <ListInput
+        label="Highlight Badges"
+        items={data.highlights || []}
+        onChange={(v) => onChange("highlights", v)}
+        placeholder="Add a highlight (e.g., 'Top Rated 2024', 'Featured Artist')..."
+      />
+      <p className="text-xs text-gray-500 mt-2">Short badges/tags displayed prominently on your profile</p>
+    </Section>
+
+    <Section title="Featured Work" icon={Award}>
+      <ListInput
+        label="Featured Work URLs"
+        items={data.featuredWork || []}
+        onChange={(v) => onChange("featuredWork", v)}
+        placeholder="Add image URL of featured work..."
+      />
+      <p className="text-xs text-gray-500 mt-2">URLs of your best work to showcase in featured section</p>
     </Section>
 
     <Section title="Verification" icon={CheckCircle}>
@@ -5266,6 +5680,25 @@ const CategorySpecificFields = ({
                 placeholder="5"
               />
             </div>
+
+            {/* ADD THIS NEW ROW: */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField
+                label="Drying Time"
+                value={data.dryingTime || ""}
+                onChange={(e) => onChange("dryingTime", e.target.value)}
+                placeholder="2-3 hours"
+                helperText="Approximate time for henna to dry"
+              />
+              <InputField
+                label="Color Guarantee"
+                value={data.colorGuarantee || ""}
+                onChange={(e) => onChange("colorGuarantee", e.target.value)}
+                placeholder="Deep maroon color guaranteed"
+                helperText="What color stain do you guarantee?"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <CheckboxField
                 label="100% Organic"
