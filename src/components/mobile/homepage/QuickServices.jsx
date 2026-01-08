@@ -9,15 +9,15 @@ import Link from "next/link";
 const QUICK_LINKS = [
   { label: "Venues", key: "venues", src: `venueQS.png` },
   { label: "Makeup", key: "makeup", src: `makeupQS.png` },
-  { label: "Photo", key: "photographer", src: `photographerQS.png` },
-  { label: "Mehndi", key: "mehndi", src: `mehndiQS.png` },
+  { label: "Photo", key: "photographers", src: `photographerQS.png` },
+  { label: "Mehndi", key: "mehendi", src: `mehndiQS.png` },
   { label: "Decor", key: "decor", src: `decorQS.png` },
-  { label: "Catering", key: "cateror", src: `caterorQS.png` },
-  { label: "DJ & Music", key: "dj", src: `djQS.png` },
+  { label: "Catering", key: "catering", src: `caterorQS.png` },
+  { label: "DJ & Music", key: "djs", src: `djQS.png` },
   { label: "Cakes", key: "cake", src: `cakesQS.png` },
   { label: "Pandit", key: "pandit", src: `panditQS.png` },
   { label: "Dhol", key: "dhol", src: `dholQS.png` },
-  { label: "Planner", key: "planner", src: `plannerQS.png` },
+  { label: "Planner", key: "planners", src: `plannerQS.png` },
 ];
 
 // --- 2. HELPER HOOKS ---

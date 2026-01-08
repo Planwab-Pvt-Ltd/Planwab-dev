@@ -453,7 +453,7 @@ const AreYouAVendorSection = ({ haptic, setIsDrawerOpen }) => {
   return (
     <>
       <section
-        className="relative overflow-x-hidden px-3 pt-2 md:px-0 md:py-12 !z-10 bg-white pb-12"
+        className="relative overflow-x-hidden px-3 pt-2 md:px-0 md:py-12 !z-10 bg-white pb-12 border-none shadow-none"
         id="are_you_a_vendor_section"
       >
         {/* Background Pattern Left - Decorative */}

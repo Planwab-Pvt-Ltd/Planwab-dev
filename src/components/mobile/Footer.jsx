@@ -181,7 +181,16 @@ const Footer = () => {
               <div className="border-t border-gray-300 pt-4 mt-6 space-y-2 text-sm text-gray-600">
                 <p>© 2026 PlanWAB. All Rights Reserved.</p>
                 <p>Built with ❤️ for Vendors & Creators in India.</p>
-                <p className="font-medium">Designed & Developed by PlanWAB Team</p>
+                <p className="font-medium">
+                  Designed & Developed by PlanWAB{" "}
+                  <a
+                    href="https://www.linkedin.com/in/balram-dhakad-2a9110210/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Team
+                  </a>
+                </p>
               </div>
             </div>
 

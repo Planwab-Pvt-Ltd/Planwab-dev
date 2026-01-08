@@ -18,6 +18,7 @@ function useHapticFeedback() {
 const drawerConfigs = {
   planner: {
     title: "Choose Your Planner",
+    key: "planners",
     subtitle: "How would you like to find your perfect planner?",
     cards: [
       {
@@ -54,6 +55,7 @@ const drawerConfigs = {
   },
   venues: {
     title: "Find Your Venue",
+    key: "venues",
     subtitle: "How would you like to discover the perfect venue?",
     cards: [
       {
@@ -90,6 +92,7 @@ const drawerConfigs = {
   },
   makeup: {
     title: "Makeup Services",
+    key: "makeup",
     subtitle: "Select the type of makeup service you need",
     cards: [
       {
@@ -140,6 +143,7 @@ const drawerConfigs = {
   },
   photographer: {
     title: "Photography Services",
+    key: "photographers",
     subtitle: "Choose your photography style",
     cards: [
       {
@@ -179,6 +183,7 @@ const drawerConfigs = {
   },
   caterers: {
     title: "Catering Services",
+    key: "catering",
     subtitle: "Select your preferred cuisine type",
     cards: [
       {
@@ -218,6 +223,7 @@ const drawerConfigs = {
   },
   decor: {
     title: "Decoration Services",
+    key: "decor",
     subtitle: "Choose your decoration style",
     cards: [
       {
@@ -257,6 +263,7 @@ const drawerConfigs = {
   },
   decorator: {
     title: "Decoration Services",
+    key: "decor",
     subtitle: "Choose your decoration style",
     cards: [
       {
@@ -296,6 +303,7 @@ const drawerConfigs = {
   },
   djs: {
     title: "DJ & Sound Services",
+    key: "djs",
     subtitle: "Select your entertainment package",
     cards: [
       {
@@ -335,6 +343,7 @@ const drawerConfigs = {
   },
   cake: {
     title: "Cake Services",
+    key: "cake",
     subtitle: "Choose your cake type",
     cards: [
       {
@@ -395,16 +404,16 @@ const CategoryDrawer = ({ isOpen, onClose, config, categoryName, haptic, current
     haptic("medium");
     // Handle the action based on card type
     if (card.action === "marketplace") {
-      const baseUrl = `/m/vendors/marketplace/${categoryName.replace(/\s+/g, "-")?.toLowerCase()}`;
+      const baseUrl = `/m/vendors/marketplace/${config?.key || "planners"}`;
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     } else if (card.action === "match") {
       const category = currentCategory?.toLowerCase() === "default" ? "wedding" : currentCategory?.toLowerCase();
-      const url = `/m/events/${category}?filter=${categoryName?.replace(/\s+/g, "-")?.toLowerCase()}`;
+      const url = `/m/events/${category}?filter=${categoryName?.toLowerCase()}`;
       window.location.href = url;
       console.log("Opening matching flow for:", categoryName);
     } else if (card.action === "random") {
-      const baseUrl = `/m/vendors/marketplace/${categoryName.replace(/\s+/g, "-")?.toLowerCase()}`;
+      const baseUrl = `/m/vendors/marketplace`;
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     }
@@ -510,6 +519,7 @@ const CategoryGrid = ({ currentCategory }) => {
     () => [
       {
         name: `${currentCategory === "Default" ? "Event" : currentCategory} Planner`,
+        key: "planners",
         image: "/CardsCatPhotos/PlannerCat.png",
         span: 1,
         widthClass: "w-20",
@@ -518,23 +528,53 @@ const CategoryGrid = ({ currentCategory }) => {
       {
         name: "Photographer",
         image: "/CardsCatPhotos/PhotographerCat.png",
+        key: "photographers",
         span: 1,
         widthClass: "w-20",
         pixelWidth: 80,
       },
-      { name: "mehendi", image: "/CardsCatPhotos/MehndiCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
-      { name: "MakeUp", image: "/CardsCatPhotos/MakeUpCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      {
+        name: "mehendi",
+        key: "mehendi",
+        image: "/CardsCatPhotos/MehndiCat.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
+      {
+        name: "MakeUp",
+        key: "makeup",
+        image: "/CardsCatPhotos/MakeUpCat.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
       {
         name: `${currentCategory} Venues`,
+        key: "venues",
         // Use a smaller, optimized static image if possible instead of a heavy GIF for thumbnails
         image: "https://cdn.yesmadam.com/images/live/category/Hydra%20Category_Wedding%20Season-18-11-25.gif",
         span: 2,
         widthClass: "w-40",
         pixelWidth: 160,
       },
-      { name: "DJs & Sound", image: "/CardsCatPhotos/DJCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
-      { name: "Dhol", image: "/CardsCatPhotos/DholCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
-      { name: "Caterers", image: "/CardsCatPhotos/CaterorsCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      {
+        name: "DJs & Sound",
+        key: "djs",
+        image: "/CardsCatPhotos/DJCat.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
+      { name: "Dhol", key: "dhol", image: "/CardsCatPhotos/DholCat.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      {
+        name: "Caterers",
+        key: "catering",
+        image: "/CardsCatPhotos/CaterorsCat.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
     ],
     [currentCategory]
   );
@@ -543,6 +583,7 @@ const CategoryGrid = ({ currentCategory }) => {
     () => [
       {
         name: `${currentCategory === "Default" ? "Event" : currentCategory} Planner`,
+        key: "planners",
         image: "/CardsCatPhotos/PlannerCatB.png",
         span: 1,
         widthClass: "w-20",
@@ -550,14 +591,23 @@ const CategoryGrid = ({ currentCategory }) => {
       },
       {
         name: "Decorator",
+        key: "decor",
         image: "/CardsCatPhotos/DecoratorCatB.png",
         span: 1,
         widthClass: "w-20",
         pixelWidth: 80,
       },
-      { name: "DJs & Sound", image: "/CardsCatPhotos/DJCatB.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      {
+        name: "DJs & Sound",
+        key: "djs",
+        image: "/CardsCatPhotos/DJCatB.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
       {
         name: "Photographer",
+        key: "photographers",
         image: "/CardsCatPhotos/PhotographerCatB.png",
         span: 1,
         widthClass: "w-20",
@@ -565,21 +615,37 @@ const CategoryGrid = ({ currentCategory }) => {
       },
       {
         name: `${currentCategory} Venues`,
+        key: "venues",
         // Use a smaller, optimized static image if possible instead of a heavy GIF for thumbnails
         image: "https://cdn.yesmadam.com/images/live/category/Hydra%20Category_Wedding%20Season-18-11-25.gif",
         span: 2,
         widthClass: "w-40",
         pixelWidth: 160,
       },
-      { name: "Caterers", image: "/CardsCatPhotos/CaterorsCatB.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      {
+        name: "Caterers",
+        key: "catering",
+        image: "/CardsCatPhotos/CaterorsCatB.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
       {
         name: "Cake",
+        key: "cake",
         image: "/CardsCatPhotos/CakesCatB.png",
         span: 1,
         widthClass: "w-20",
         pixelWidth: 80,
       },
-      { name: "MakeUp", image: "/CardsCatPhotos/MakeUpCatB.png", span: 1, widthClass: "w-20", pixelWidth: 80 },
+      {
+        name: "MakeUp",
+        key: "makeup",
+        image: "/CardsCatPhotos/MakeUpCatB.png",
+        span: 1,
+        widthClass: "w-20",
+        pixelWidth: 80,
+      },
     ],
     [currentCategory]
   );
@@ -693,7 +759,7 @@ const CategoryGrid = ({ currentCategory }) => {
       >
         {activeCategories.map((item, index) => (
           <Link
-            href={`/m/vendors/marketplace/${item?.name.replace(/\s+/g, "-")?.toLowerCase()}`}
+            href={`/m/vendors/marketplace/${item?.key.toLowerCase()}`}
             key={index} // Keys are stable since list doesn't re-sort
             className={`flex flex-col items-center shrink-0 ${
               item.span === 2 ? "row-span-1 col-span-2" : "col-span-1"

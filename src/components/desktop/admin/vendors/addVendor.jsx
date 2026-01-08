@@ -303,9 +303,13 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
     if (!isOpen) {
-      setPassword("");
-      setError("");
-      setShowPassword(false);
+      const timer = setTimeout(() => {
+        setPassword("");
+        setError("");
+        setShowPassword(false);
+        setIsVerifying(false);
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -319,11 +323,14 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
     setIsVerifying(true);
     setError("");
 
-    // Just a small delay for UX
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-    // Pass password to parent handler
-    onSuccess(password);
+      await onSuccess(password);
+    } catch (err) {
+      setError(err.message || "Verification failed");
+      setIsVerifying(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -1777,17 +1784,17 @@ function AddVendorContent({ onNavigate }) {
     if (!user && !user?.id) {
       addToast("You must be signed in to submit an event", "error");
       setShowPasswordModal(false);
-      return;
+      throw new Error("User not signed in");
     }
     if (!adminPassword || adminPassword.trim() === "") {
       addToast("Admin password is required to submit the form", "error");
       setShowPasswordModal(false);
-      return;
+      throw new Error("Admin password not provided");
     }
     if (adminPassword !== "AddVendorPlanwab") {
       addToast("Incorrect admin password. Please try again.", "error");
       setShowPasswordModal(false);
-      return;
+      throw new Error("Incorrect admin password");
     }
     setIsSubmitting(true);
 
@@ -1837,27 +1844,28 @@ function AddVendorContent({ onNavigate }) {
       }
 
       addToast("🎉 Vendor published successfully! Redirecting...", "success", 5000);
-      setShowPasswordModal(false);
 
       AutoSaveManager.clear();
       setHasUserInteracted(false); // ADD THIS
       isInitialMount.current = true;
+
+      resetForm();
+
+      setShowPasswordModal(false);
 
       setTimeout(() => {
         if (onNavigate) {
           onNavigate("all");
         }
       }, 2000);
-
-      resetForm();
     } catch (error) {
       console.error("Submit error:", error);
       addToast(error.message || "Something went wrong. Please try again.", "error");
       setShowPasswordModal(false);
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
-    setShowPasswordModal(false);
   };
 
   // ============================================================================

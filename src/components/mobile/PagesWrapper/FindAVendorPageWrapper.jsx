@@ -37,60 +37,70 @@ const HERO_CATEGORIES = [
   {
     id: 1,
     name: "Makeup Artists",
+    key: "makeup",
     image: "/quickServicesPhotos/makeupQS.png",
     count: "456",
   },
   {
     id: 2,
     name: "Planners",
+    key: "planners",
     image: "/quickServicesPhotos/plannerQS.png",
     count: "145",
   },
   {
     id: 3,
     name: "Decorators",
+    key: "decor",
     image: "/quickServicesPhotos/decorQS.png",
     count: "267",
   },
   {
     id: 4,
     name: "Photographers",
+    key: "photographers",
     image: "/quickServicesPhotos/photographerQS.png",
     count: "198",
   },
   {
     id: 5,
     name: "Venues",
+    key: "venues",
     image: "/quickServicesPhotos/venueQS.png",
     count: "476",
   },
   {
     id: 6,
     name: "Mehendi",
+    key: "mehendi",
     image: "/quickServicesPhotos/mehndiQS.png",
     count: "156",
   },
   {
     id: 7,
     name: "Caterers",
+    key: "catering",
     image: "/quickServicesPhotos/caterorQS.png",
     count: "189",
   },
   {
     id: 8,
     name: "DJ & Music",
+    key: "djs",
     image: "/quickServicesPhotos/djQS.png",
     count: "97",
   },
   {
     id: 9,
     name: "Florists",
+    key: "florists",
     image: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=400&h=500&fit=crop",
     count: "0",
   },
   {
     id: 10,
     name: "Choreographers",
+    key: "choreographers",
     image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400&h=500&fit=crop",
     count: "0",
   },
@@ -145,7 +155,7 @@ const HeroCarousel = memo(() => {
   const handleCategoryClick = (item) => {
     if (isDragging) return;
     haptic("medium");
-    router.push(`/m/vendors/marketplace/${item.name.toLowerCase().replace(/\s+/g, "-")}`);
+    router.push(`/m/vendors/marketplace/${item?.key}`);
   };
 
   // Track scroll position and update current page

@@ -70,7 +70,7 @@ const WhyWeBetter = () => {
       {/* Main Content */}
       <div className="flex flex-col items-center px-5 pb-4 md:px-0 md:pb-12">
         {/* Header Text */}
-        <div className="text-center max-w-2xl mx-auto bg-[#F0F7F4]">
+        <div className="text-center max-w-2xl mx-auto bg-white">
           <h2 className="pb-2 font-serif text-3xl font-semibold text-[#121212] md:pb-4 lg:text-5xl">
             Why are we better?
           </h2>
@@ -84,7 +84,7 @@ const WhyWeBetter = () => {
         </div>
 
         {/* Benefits Grid */}
-        <div className="grid grid-cols-1 gap-y-4 py-4 md:grid-cols-2 bg-[#F0F7F4] md:gap-x-4 md:py-7 lg:grid-cols-3 lg:gap-x-10 2xl:gap-x-12 w-full max-w-7xl">
+        <div className="grid grid-cols-1 gap-y-4 py-4 md:grid-cols-2 bg-white md:gap-x-4 md:py-7 lg:grid-cols-3 lg:gap-x-10 2xl:gap-x-12 w-full max-w-7xl">
           {BENEFITS.map((benefit) => (
             <BenefitCard key={benefit.id} data={benefit} />
           ))}
