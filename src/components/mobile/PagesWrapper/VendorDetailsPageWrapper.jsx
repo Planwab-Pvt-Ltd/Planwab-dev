@@ -21,6 +21,7 @@ import {
   Wifi,
   Car,
   Music,
+  BarChart2,
   Wind,
   Camera,
   User,
@@ -113,6 +114,11 @@ import {
   Heart as HeartIcon,
   Grid3X3,
   LayoutGrid,
+  IndianRupee,
+  BadgeIndianRupee,
+  Eye,
+  TrendingDown,
+  CalendarCheck,
 } from "lucide-react";
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
@@ -592,13 +598,13 @@ const CategoryHighlights = memo(({ vendor }) => {
                 <CheckCircle size={16} className="text-green-500 ml-auto" />
               </div>
             )}
-            {vendor.travelToVenue && (
+            {/* {vendor.travelToVenue && (
               <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                 <MapPin size={14} className="text-blue-500" />
                 <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Travel to Venue</span>
                 <CheckCircle size={12} className="text-green-500 ml-auto" />
               </div>
-            )}
+            )} */}
           </div>
         );
       case "venues":
@@ -2020,6 +2026,10 @@ const VendorDetailsPageWrapper = () => {
   const isDragging = useRef(false);
   const autoplayTimerRef = useRef(null);
 
+  const [showHeaderTabs, setShowHeaderTabs] = useState(false);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
   const { scrollY } = useScroll();
   const carouselY = useTransform(scrollY, [0, 500], [0, 150]);
   const carouselScale = useTransform(scrollY, [0, 500], [1, 1.1]);
@@ -2195,6 +2205,7 @@ const VendorDetailsPageWrapper = () => {
       if (!response.ok) throw new Error("Failed to fetch vendor data.");
       const data = await response.json();
       setVendor(data);
+      console.log("Fetched vendor data:", data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -2205,6 +2216,30 @@ const VendorDetailsPageWrapper = () => {
   useEffect(() => {
     fetchVendor();
   }, [fetchVendor]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const threshold = 750;
+
+          if (scrollY > threshold && !showHeaderTabs) {
+            setShowHeaderTabs(true);
+          } else if (scrollY <= threshold && showHeaderTabs) {
+            setShowHeaderTabs(false);
+          }
+
+          lastScrollY.current = scrollY;
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [showHeaderTabs]);
 
   useEffect(() => {
     if (!vendor?._id) return;
@@ -2264,6 +2299,12 @@ const VendorDetailsPageWrapper = () => {
       { id: "gallery", label: "Gallery", icon: Camera, show: images.length > 0 },
       { id: "packages", label: "Packages", icon: Gift, show: vendor?.packages?.length > 0 },
       { id: "reviews", label: "Reviews", icon: MessageCircle },
+      {
+        id: "insights",
+        label: "Insights",
+        icon: BarChart2,
+        show: vendor?.highlights?.length > 0 || vendor?.stats?.length > 0,
+      },
       { id: "faqs", label: "FAQs", icon: FileText, show: vendor?.faqs?.length > 0 },
       { id: "policies", label: "Policies", icon: Shield, show: vendor?.policies?.length > 0 },
       { id: "location", label: "Location", icon: MapPin },
@@ -2454,6 +2495,18 @@ const VendorDetailsPageWrapper = () => {
     setShowImageModal(true);
   }, []);
 
+  const handleTabClick = useCallback((tabId) => {
+    setActiveTab(tabId);
+    if (tabsRef.current) {
+      const headerHeight = 49;
+      const tabsPosition = tabsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight - 10;
+      window.scrollTo({
+        top: tabsPosition,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
   if (loading) return <DetailsPageSkeleton />;
   if (error || !vendor)
     return (
@@ -2481,16 +2534,37 @@ const VendorDetailsPageWrapper = () => {
       <ScrollProgressBar />
 
       {/* STICKY HEADER */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 rounded-b-2xl">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 rounded-b-2xl transition-all duration-300">
         <div className="flex items-center justify-between px-3 py-1">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => router.back()}
-            className="p-1.5 -ml-1 rounded-full active:bg-gray-100 dark:active:bg-gray-800"
-          >
-            <ArrowLeft size={22} className="text-gray-700 dark:text-gray-200" />
-          </motion.button>
-          <div className="flex gap-1">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => router.back()}
+              className="p-1.5 -ml-1 rounded-full active:bg-gray-100 dark:active:bg-gray-800 flex-shrink-0"
+            >
+              <ArrowLeft size={22} className="text-gray-700 dark:text-gray-200" />
+            </motion.button>
+
+            {/* Compact Vendor Name - Shows only when tabs are in header */}
+            <AnimatePresence mode="wait">
+              {showHeaderTabs && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{
+                    duration: 0.25,
+                    ease: [0.4, 0, 0.2, 1],
+                  }}
+                  className="flex-1 min-w-0"
+                >
+                  <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{vendor.name}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex gap-1 flex-shrink-0">
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={handleToggleBookmark}
@@ -2532,15 +2606,78 @@ const VendorDetailsPageWrapper = () => {
             </motion.button>
           </div>
         </div>
+
+        {/* Tab Navigation in Header - Shows on scroll */}
+        <AnimatePresence mode="wait">
+          {showHeaderTabs && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                height: { duration: 0.3 },
+                opacity: { duration: 0.2 },
+              }}
+              className="overflow-hidden border-t border-gray-100 dark:border-gray-800/50"
+            >
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar px-3 py-2 scroll-smooth">
+                {TAB_CONFIG.map((tab, index) => (
+                  <motion.button
+                    key={tab.id}
+                    initial={{ opacity: 0, scale: 0.9, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{
+                      delay: index * 0.03,
+                      duration: 0.2,
+                      ease: "easeOut",
+                    }}
+                    onClick={() => handleTabClick(tab.id)}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-bold transition-all whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    <tab.icon size={11} />
+                    {tab.label}
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* Progress Indicator */}
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="h-0.5 bg-gradient-to-r from-blue-600 via-purple-500 to-amber-500 origin-left"
+                style={{
+                  width: `${((TAB_CONFIG.findIndex((t) => t.id === activeTab) + 1) / TAB_CONFIG.length) * 100}%`,
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* PARALLAX IMAGE CAROUSEL */}
       <motion.div
         ref={carouselRef}
         className="fixed top-0 left-0 right-0 w-full h-[60vh] bg-white z-0"
-        style={{ y: carouselY, scale: carouselScale, opacity: carouselOpacity }}
+        style={{
+          y: carouselY,
+          scale: carouselScale,
+          opacity: carouselOpacity,
+        }}
       >
         <div className="relative w-full h-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+          <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none -z-10">
+            {images.map((img, i) => (
+              <img key={i} src={img} alt="" loading="eager" decoding="async" />
+            ))}
+          </div>
           <AnimatePresence initial={false} custom={slideDirection} mode="wait">
             <motion.div
               key={currentImageIndex}
@@ -2549,20 +2686,29 @@ const VendorDetailsPageWrapper = () => {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ x: { type: "spring", stiffness: 300, damping: 35 }, opacity: { duration: 0.2 } }}
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 35 },
+                opacity: { duration: 0.2 },
+              }}
               className="absolute inset-0"
             >
               <SmartMedia
-                src={images[currentImageIndex] || vendor.defaultImage}
+                src={images[currentImageIndex]}
                 type="image"
                 priority={currentImageIndex === 0}
                 sizes="100vw"
+                quality={100} // Crank quality to max
+                useSkeleton={false} // DISABLE the blur/shimmer animation
+                unoptimized={true}
+                preload="eager" // ADD this line
+                fetchPriority="high"
                 className="w-full h-full object-cover"
                 loaderImage="/GlowLoadingGif.gif"
               />
             </motion.div>
           </AnimatePresence>
 
+          {/* Top Tags */}
           <div className="absolute top-14 left-3 flex flex-wrap gap-1.5 z-10">
             {vendor.isVerified && (
               <span className="px-2 py-1 bg-green-500/90 backdrop-blur-xl rounded-full text-white text-[10px] font-bold flex items-center gap-0.5 shadow-lg">
@@ -2570,50 +2716,56 @@ const VendorDetailsPageWrapper = () => {
                 Verified
               </span>
             )}
-            {vendor.isFeatured && (
-              <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 backdrop-blur-xl rounded-full text-white text-[10px] font-bold flex items-center gap-0.5 shadow-lg">
-                <Sparkles size={10} />
-                Featured
-              </span>
-            )}
-            {!vendor.isActive && (
-              <span className="px-2 py-1 bg-red-500/90 backdrop-blur-xl rounded-full text-white text-[10px] font-bold flex items-center gap-0.5 shadow-lg">
-                <X size={10} />
-                Inactive
-              </span>
-            )}
+            <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 backdrop-blur-xl rounded-full text-white text-[10px] font-bold flex items-center gap-0.5 shadow-lg">
+              <Sparkles size={10} />
+              Featured
+            </span>
           </div>
 
+          {/* Play/Pause Button */}
           <div className="absolute top-14 right-3 z-10">
             <motion.button
               whileTap={{ scale: 0.85 }}
-              animate={{ backgroundColor: isPaused ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)" }}
+              animate={{
+                backgroundColor: isPaused ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.4)",
+                borderColor: isPaused ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.1)",
+              }}
+              transition={{ duration: 0.15 }}
               onClick={togglePlayPause}
-              className="p-2.5 rounded-full text-white shadow-lg backdrop-blur-md border border-white/10"
+              className="p-2.5 rounded-full text-white shadow-lg backdrop-blur-md border"
             >
-              {isPaused ? <Play size={18} /> : <Pause size={18} />}
+              <motion.div
+                key={isPaused ? "play" : "pause"}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.15 }}
+              >
+                {isPaused ? <Play size={18} /> : <Pause size={18} />}
+              </motion.div>
             </motion.button>
           </div>
 
+          {/* Navigation Arrows */}
           {images.length > 1 && (
             <>
               <motion.button
                 whileTap={{ scale: 0.85 }}
                 onClick={prevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full text-white z-20 bg-black/30 backdrop-blur-md border border-white/10 shadow-xl"
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full text-white z-20 bg-black/30 backdrop-blur-md active:bg-black/50 border border-white/10 shadow-xl"
               >
                 <ChevronLeft size={22} />
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.85 }}
                 onClick={nextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full text-white z-20 bg-black/30 backdrop-blur-md border border-white/10 shadow-xl"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full text-white z-20 bg-black/30 backdrop-blur-md active:bg-black/50 border border-white/10 shadow-xl"
               >
                 <ChevronRight size={22} />
               </motion.button>
             </>
           )}
 
+          {/* Progress Indicator */}
           {images.length > 1 && (
             <ProgressIndicator
               total={images.length}
@@ -2624,14 +2776,26 @@ const VendorDetailsPageWrapper = () => {
             />
           )}
 
+          {/* View All Photos Button */}
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => openImageModal(0)}
+            onClick={() => {
+              setModalImageIndex(0);
+              setShowImageModal(true);
+            }}
             className="absolute bottom-45 right-3 px-3 py-1.5 bg-black/50 backdrop-blur-xl rounded-full text-white text-[10px] font-bold flex items-center gap-1.5 border border-white/20 z-20 shadow-xl"
           >
             <ImageIcon size={12} />
             {images.length} Photos
           </motion.button>
+
+          {/* --- ADD THIS BLOCK HERE --- */}
+          {/* Hidden Preloader: Forces all images into memory immediately */}
+          <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none">
+            {images.map((img, i) => (
+              <SmartMedia key={i} src={img} type="image" priority={true} sizes="100vw" />
+            ))}
+          </div>
         </div>
       </motion.div>
 
@@ -2642,8 +2806,41 @@ const VendorDetailsPageWrapper = () => {
         {/* VENDOR INFO CARD */}
         <div className="bg-white dark:bg-gray-900 rounded-t-[2rem] px-4 pt-5 pb-4 shadow-2xl -mt-6 relative">
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4" />
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex-1 min-w-0">
+          <div className="flex justify-center gap-3 mb-2 items-stretch">
+            <Link
+              href={`/vendor/${vendor.category}/${vendor._id}/profile`}
+              className="group block relative rounded-full border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01]"
+            >
+              {vendor?.vendorProfile?.profilePicture ||
+              (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full p-[3px] bg-gradient-to-tr from-green-500 to-green-800 shadow-md">
+                    <SmartMedia
+                      src={
+                        vendor?.vendorProfile?.profilePicture ||
+                        (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "")
+                      }
+                      type="image"
+                      alt={`${vendor.name} Profile Picture`}
+                      className="w-full h-full object-cover rounded-full overflow-hidden"
+                    />
+                  </div>
+                  <div className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-1 rounded-full shadow-md border border-gray-100 dark:border-gray-700 text-violet-600">
+                    <Eye size={10} />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden">
+                  <SmartMedia
+                    src={vendor?.defaultImage || vendor?.images?.[0] || ""}
+                    type="image"
+                    alt={`${vendor.name} Profile Picture`}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+              )}
+            </Link>
+            <div className="flex flex-col items-start justify-center flex-1 min-h-full min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <h1 className="text-lg font-black text-gray-900 dark:text-white leading-tight truncate">
                   {vendor.name}
@@ -2682,10 +2879,6 @@ const VendorDetailsPageWrapper = () => {
                   </span>
                 )}
               </div>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="text-lg font-black text-blue-600 dark:text-blue-400">₹{displayPrice}</span>
-              <p className="text-[10px] text-gray-400">per {vendor.priceUnit || "day"}</p>
             </div>
           </div>
 
@@ -2756,25 +2949,34 @@ const VendorDetailsPageWrapper = () => {
         </div>
 
         {/* TAB NAVIGATION */}
-        <div className="sticky top-[49px] z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-y border-gray-200 dark:border-gray-800">
-          <div ref={tabsRef} className="flex gap-1.5 overflow-x-auto no-scrollbar px-3 py-2">
-            {TAB_CONFIG.map((tab) => (
-              <motion.button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                }`}
-              >
-                <tab.icon size={12} />
-                {tab.label}
-              </motion.button>
-            ))}
-          </div>
-        </div>
+        <AnimatePresence mode="wait">
+          {!showHeaderTabs && (
+            <motion.div
+              initial={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="sticky top-[49px] z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-y border-gray-200 dark:border-gray-800"
+            >
+              <div ref={tabsRef} className="flex gap-1.5 overflow-x-auto no-scrollbar px-3 py-2">
+                {TAB_CONFIG.map((tab) => (
+                  <motion.button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                    }`}
+                  >
+                    <tab.icon size={12} />
+                    {tab.label}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* TAB CONTENT */}
         <div className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 px-4 py-6">
@@ -2794,11 +2996,11 @@ const VendorDetailsPageWrapper = () => {
                   {vendor.shortDescription && (
                     <motion.div
                       variants={fadeInUp}
-                      className="bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-slate-900/50 p-6 rounded-3xl shadow-sm border border-indigo-100/50 dark:border-indigo-900/30"
+                      className="bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-slate-900/50 px-4 py-3 rounded-3xl shadow-sm border border-indigo-100/50 dark:border-indigo-900/30"
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center shrink-0 ring-1 ring-indigo-200/50 dark:ring-indigo-800/50">
-                          <Sparkles size={22} className="text-indigo-600 dark:text-indigo-400" />
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center shrink-0 ring-1 ring-indigo-200/50 dark:ring-indigo-800/50">
+                          <Sparkles size={16} className="text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div className="flex-1 pt-1.5">
                           <p className="text-[13.5px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium italic">
@@ -2809,28 +3011,113 @@ const VendorDetailsPageWrapper = () => {
                     </motion.div>
                   )}
 
-                  {/* 2. Category Specific Highlights */}
-                  <CategoryHighlights vendor={vendor} />
-
-                  {/* 3. Event Types Supported */}
-                  {vendor.eventTypes?.length > 0 && (
+                  {/* 2. Pricing Details */}
+                  {(vendor.basePrice || vendor.perDayPrice?.min) && (
                     <motion.div
                       variants={fadeInUp}
                       className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
                     >
                       <div className="flex items-center gap-3.5 mb-5">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shadow-inner">
-                          <Calendar size={20} className="text-emerald-600 dark:text-emerald-400" />
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/40 flex items-center justify-center shadow-inner">
+                          <IndianRupee size={20} className="text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div>
                           <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                            Event Types We Serve
+                            Pricing
                           </h3>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                            {vendor.eventTypes.length} specialized categories
+                            Transparent pricing options
                           </p>
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* Base Price */}
+                        {vendor.basePrice && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center justify-between p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/10 rounded-xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-emerald-200 dark:border-emerald-600">
+                                <BadgeIndianRupee size={18} className="text-emerald-600 dark:text-emerald-400" />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400 block">
+                                  Base Price
+                                </span>
+                                <span className="font-medium text-[11px] text-slate-500 dark:text-slate-500">
+                                  per {" " + vendor.priceUnit || "day"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-black text-[18px] text-emerald-600 dark:text-emerald-400">
+                                ₹{vendor.basePrice.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {/* Per Day Price Range */}
+                        {vendor.perDayPrice?.min && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.02 }}
+                            className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10 rounded-xl border border-blue-200/60 dark:border-blue-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-blue-200 dark:border-blue-600">
+                                <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400 block">
+                                  Per {vendor.priceUnit} Rate
+                                </span>
+                                <span className="font-medium text-[11px] text-slate-500 dark:text-slate-500">
+                                  {vendor.perDayPrice.max ? "Price range" : "Starting from"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              {vendor.perDayPrice.max ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-black text-[16px] text-blue-600 dark:text-blue-400">
+                                    ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                                  </span>
+                                  <span className="font-bold text-[13px] text-slate-400 dark:text-slate-500">-</span>
+                                  <span className="font-black text-[16px] text-blue-600 dark:text-blue-400">
+                                    ₹{vendor.perDayPrice.max.toLocaleString("en-IN")}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="font-black text-[18px] text-blue-600 dark:text-blue-400">
+                                  ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                                </span>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* 3. Category Specific Highlights */}
+                  <CategoryHighlights vendor={vendor} />
+
+                  {/* 4. Event Types Supported */}
+                  {vendor.eventTypes?.length > 0 && (
+                    <CollapsibleSection
+                      title="Event Types We Serve"
+                      icon={Calendar}
+                      iconColor="text-emerald-600 dark:text-emerald-400"
+                      iconBg="bg-gradient-to-br from-emerald-100 to-teal-100"
+                      defaultOpen={true}
+                      badge={`${vendor.eventTypes?.length} specialized categories`}
+                      badgeColor="gray"
+                    >
                       <div className="flex flex-wrap gap-2.5">
                         {vendor.eventTypes.map((type, i) => (
                           <motion.span
@@ -2845,11 +3132,11 @@ const VendorDetailsPageWrapper = () => {
                           </motion.span>
                         ))}
                       </div>
-                    </motion.div>
+                    </CollapsibleSection>
                   )}
 
-                  {/* 4. Operating Hours - Collapsed */}
-                  {vendor.operatingHours?.length > 0 && (
+                  {/* 5. Operating Hours - Collapsed */}
+                  {vendor.operatingHours && (
                     <CollapsibleSection
                       title="Operating Hours"
                       icon={Clock}
@@ -2860,24 +3147,41 @@ const VendorDetailsPageWrapper = () => {
                       badgeColor="blue"
                     >
                       <div className="space-y-2.5 mt-2">
-                        {vendor.operatingHours.map((schedule, i) => (
-                          <div
-                            key={i}
-                            className="flex justify-between items-center py-3.5 px-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
-                          >
-                            <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">
-                              {schedule.day}
-                            </span>
-                            <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
-                              {schedule.hours}
-                            </span>
+                        {vendor?.operatingHours?.length > 0 ? (
+                          vendor.operatingHours.length === 1 ? (
+                            <div className="flex justify-between items-center py-3.5 px-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm">
+                              <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">
+                                {vendor.operatingHours[0].day}
+                              </span>
+                              <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
+                                {vendor.operatingHours[0].hours}
+                              </span>
+                            </div>
+                          ) : (
+                            vendor.operatingHours.map((schedule, i) => (
+                              <div
+                                key={i}
+                                className="flex justify-between items-center py-3.5 px-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                              >
+                                <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">
+                                  {schedule.day}
+                                </span>
+                                <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
+                                  {schedule.hours}
+                                </span>
+                              </div>
+                            ))
+                          )
+                        ) : (
+                          <div className="py-3.5 px-4 text-[12px] text-slate-500 dark:text-slate-400 italic">
+                            Operating hours not available
                           </div>
-                        ))}
+                        )}
                       </div>
                     </CollapsibleSection>
                   )}
 
-                  {/* 5. Amenities */}
+                  {/* 6. Amenities */}
                   {vendor.amenities?.length > 0 && (
                     <motion.div
                       variants={fadeInUp}
@@ -2920,25 +3224,17 @@ const VendorDetailsPageWrapper = () => {
                     </motion.div>
                   )}
 
-                  {/* 6. Why Choose Us */}
+                  {/* 7. Why Choose Us */}
                   {vendor.highlightPoints?.length > 0 && (
-                    <motion.div
-                      variants={fadeInUp}
-                      className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                    <CollapsibleSection
+                      title="Why Choose Us"
+                      icon={BadgeCheck}
+                      iconColor="text-amber-600 dark:text-amber-400"
+                      iconBg="bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40"
+                      defaultOpen={true}
+                      badge={`${vendor.highlightPoints?.length} unique advantages`}
+                      badgeColor="gray"
                     >
-                      <div className="flex items-center gap-3.5 mb-5">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shadow-inner">
-                          <BadgeCheck size={20} className="text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                            Why Choose Us
-                          </h3>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                            Our unique advantages
-                          </p>
-                        </div>
-                      </div>
                       <div className="space-y-3">
                         {vendor.highlightPoints.map((point, i) => (
                           <motion.div
@@ -2957,10 +3253,10 @@ const VendorDetailsPageWrapper = () => {
                           </motion.div>
                         ))}
                       </div>
-                    </motion.div>
+                    </CollapsibleSection>
                   )}
 
-                  {/* 7. Special Offers - Collapsed */}
+                  {/* 8. Special Offers - Collapsed */}
                   {vendor.specialOffers?.length > 0 && (
                     <CollapsibleSection
                       title="Special Offers"
@@ -3008,7 +3304,7 @@ const VendorDetailsPageWrapper = () => {
                     </CollapsibleSection>
                   )}
 
-                  {/* 8. About Vendor - Full Description */}
+                  {/* 9. About Vendor - Full Description */}
                   {vendor.description && (
                     <motion.div
                       variants={fadeInUp}
@@ -3052,39 +3348,75 @@ const VendorDetailsPageWrapper = () => {
                     </motion.div>
                   )}
 
-                  {/* 9. Portfolio Album Section */}
+                  {/* 10. Portfolio Album Section */}
                   {images.length > 0 && (
                     <PortfolioAlbumSection images={images} onImageClick={openImageModal} vendorName={vendor.name} />
                   )}
 
-                  {/* 10. Social Links */}
+                  {/* 11. Social Links */}
                   <SocialLinksSection socialLinks={vendor.socialLinks} />
 
-                  {/* Vendor Profile Link */}
-                  {vendor.vendorProfile &&
-                    (Array.isArray(vendor.vendorProfile) ? vendor.vendorProfile[0] : vendor.vendorProfile)?.bio && (
-                      <motion.div variants={fadeInUp}>
-                        <Link
-                          href={`/vendor/${vendor.category}/${vendor._id}/profile`}
-                          className="block bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-600 p-6 rounded-3xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                                <UserCircle size={28} />
-                              </div>
-                              <div>
-                                <p className="font-bold text-[15px] mb-1">View Full Profile</p>
-                                <p className="text-[11px] text-white/80 font-medium">
-                                  Bio, social stats & featured work
-                                </p>
-                              </div>
+                  {/* 12. Vendor Profile Link */}
+                  {(vendor.vendorProfile ||
+                    (Array.isArray(vendor.vendorProfile) ? vendor.vendorProfile[0] : vendor.vendorProfile)) && (
+                    <motion.div variants={fadeInUp}>
+                      <Link
+                        href={`/vendor/${vendor.category}/${vendor._id}/profile`}
+                        className="group block relative bg-gradient-to-br from-indigo-500/80 via-purple-500/80 to-blue-600/70 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-lg hover:border-indigo-300/50 dark:hover:border-indigo-500/30 transition-all duration-300 hover:scale-[1.01] overflow-hidden"
+                      >
+                        {/* Subtle gradient overlay on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-blue-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-blue-500/5 transition-all duration-300 rounded-2xl" />
+
+                        <div className="relative flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            {/* Profile Picture or Fallback Icon */}
+                            <div className="relative flex-shrink-0">
+                              {vendor?.vendorProfile?.profilePicture ||
+                              (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
+                                <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
+                                  <SmartMedia
+                                    src={
+                                      vendor?.vendorProfile?.profilePicture ||
+                                      (Array.isArray(vendor.vendorProfile)
+                                        ? vendor?.vendorProfile[0]?.profilePicture
+                                        : "")
+                                    }
+                                    type="image"
+                                    alt={`${vendor.name} Profile Picture`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
+                                  <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                              )}
+                              {/* Status indicator dot */}
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                             </div>
-                            <ArrowRight size={22} className="opacity-80" />
+
+                            {/* Text Content */}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-[15px] text-white dark:text-slate-100 mb-0.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
+                                View Vendor Profile
+                              </p>
+                              <p className="text-[12px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                                {vendor?.vendorProfile?.tagline ||
+                                  (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.tagline : "") ||
+                                  "Bio, social stats & featured work"}
+                              </p>
+                            </div>
                           </div>
-                        </Link>
-                      </motion.div>
-                    )}
+
+                          {/* Arrow Icon */}
+                          <ArrowRight
+                            size={20}
+                            className="flex-shrink-0 text-white dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all duration-300"
+                          />
+                        </div>
+                      </Link>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
 
@@ -3387,6 +3719,141 @@ const VendorDetailsPageWrapper = () => {
               {/* REVIEWS TAB */}
               {activeTab === "reviews" && <ReviewSection vendorId={id} vendorName={vendor.name} />}
 
+              {/* Insights TAB */}
+              {activeTab === "insights" && (
+                <div className="space-y-3.5">
+                  {/* 3. Highlights & Pros */}
+                  {vendor.highlights?.length > 0 && (
+                    <motion.div
+                      variants={fadeInUp}
+                      className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                    >
+                      <div className="flex items-center gap-3.5 mb-5">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shadow-inner">
+                          <Sparkles size={20} className="text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                            Key Highlights
+                          </h3>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                            {vendor.highlights.length} standout features
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {vendor.highlights.map((highlight, idx) => {
+                          const ICON_MAP = {
+                            trophy: Trophy,
+                            users: Users,
+                            timer: Timer,
+                            medal: Medal,
+                            star: Star,
+                            award: Award,
+                            zap: Zap,
+                            heart: Heart,
+                            thumbsup: ThumbsUp,
+                            trendingup: TrendingUp,
+                          };
+                          const key = highlight?.icon?.toLowerCase()?.replace(/\s+/g, "").replace(/_/g, "-");
+                          const IconComponent = ICON_MAP[key] || Star;
+
+                          const colorClass = highlight.color || "text-slate-600 dark:text-slate-400";
+
+                          return (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.02 }}
+                              className="flex items-center justify-between p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
+                                  <IconComponent size={18} className={colorClass} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-semibold text-[12px] text-slate-700 dark:text-slate-300 block truncate">
+                                    {highlight.label}
+                                  </span>
+                                  {highlight.value && (
+                                    <span className="font-medium text-[11px] text-slate-500 dark:text-slate-400 block truncate">
+                                      {highlight.value}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* 4. Performance Stats */}
+                  {vendor.stats?.length > 0 && (
+                    <motion.div
+                      variants={fadeInUp}
+                      className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                    >
+                      <div className="flex items-center gap-3.5 mb-5">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center shadow-inner">
+                          <TrendingUp size={20} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                            Performance Stats
+                          </h3>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                            Real-time metrics & growth
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        {vendor.stats.map((stat, idx) => (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.02 }}
+                            className="p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400">
+                                {stat.label}
+                              </span>
+                              {stat.trend && (
+                                <div
+                                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    stat.positive
+                                      ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                                      : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                                  }`}
+                                >
+                                  {stat.positive ? (
+                                    <TrendingUp size={11} className="shrink-0" />
+                                  ) : (
+                                    <TrendingDown size={11} className="shrink-0" />
+                                  )}
+                                  <span>{stat.trend}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-black text-[24px] text-slate-800 dark:text-slate-100">
+                                {stat.value}
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
               {/* FAQS TAB */}
               {activeTab === "faqs" && (
                 <div className="space-y-3.5">
@@ -3632,6 +4099,97 @@ const VendorDetailsPageWrapper = () => {
           </AnimatePresence>
         </div>
 
+        {/* 2. Pricing Details */}
+        {(vendor.basePrice || vendor.perDayPrice?.min) && activeTab !== "overview" && (
+          <motion.div
+            variants={fadeInUp}
+            className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 mx-4 mb-3"
+          >
+            <div className="flex items-center gap-3.5 mb-5">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/40 flex items-center justify-center shadow-inner">
+                <IndianRupee size={20} className="text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">Pricing</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                  Transparent pricing options
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {/* Base Price */}
+              {vendor.basePrice && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/10 rounded-xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-emerald-200 dark:border-emerald-600">
+                      <BadgeIndianRupee size={18} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400 block">
+                        Base Price
+                      </span>
+                      <span className="font-medium text-[11px] text-slate-500 dark:text-slate-500">
+                        per {vendor.priceUnit || "day"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-black text-[18px] text-emerald-600 dark:text-emerald-400">
+                      ₹{vendor.basePrice.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Per Day Price Range */}
+              {vendor.perDayPrice?.min && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.02 }}
+                  className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10 rounded-xl border border-blue-200/60 dark:border-blue-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-blue-200 dark:border-blue-600">
+                      <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400 block">
+                        Per {vendor.priceUnit} Rate
+                      </span>
+                      <span className="font-medium text-[11px] text-slate-500 dark:text-slate-500">
+                        {vendor.perDayPrice.max ? "Price range" : "Starting from"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {vendor.perDayPrice.max ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-black text-[16px] text-blue-600 dark:text-blue-400">
+                          ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                        </span>
+                        <span className="font-bold text-[13px] text-slate-400 dark:text-slate-500">-</span>
+                        <span className="font-black text-[16px] text-blue-600 dark:text-blue-400">
+                          ₹{vendor.perDayPrice.max.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="font-black text-[18px] text-blue-600 dark:text-blue-400">
+                        ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {/* 9. Portfolio Album Section */}
         {images.length > 0 && activeTab !== "overview" && activeTab !== "gallery" && (
           <PortfolioAlbumSection images={images} onImageClick={openImageModal} vendorName={vendor.name} />
@@ -3644,19 +4202,55 @@ const VendorDetailsPageWrapper = () => {
             <motion.div variants={fadeInUp}>
               <Link
                 href={`/vendor/${vendor.category}/${vendor._id}/profile`}
-                className="block bg-gradient-to-br from-indigo-600 via-purple-600 to-violet-600 p-6 rounded-3xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] mt-2 mb-3 mx-2"
+                className="group block relative bg-gradient-to-br from-indigo-500/80 via-purple-500/80 to-blue-600/70 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-lg hover:border-indigo-300/50 dark:hover:border-indigo-500/30 transition-all duration-300 hover:scale-[1.01] overflow-hidden mt-2 mb-3 mx-2"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                      <UserCircle size={28} />
+                {/* Subtle gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-blue-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-blue-500/5 transition-all duration-300 rounded-2xl" />
+
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    {/* Profile Picture or Fallback Icon */}
+                    <div className="relative flex-shrink-0">
+                      {vendor?.vendorProfile?.profilePicture ||
+                      (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0].profilePicture : "") ? (
+                        <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
+                          <SmartMedia
+                            src={
+                              vendor?.vendorProfile?.profilePicture ||
+                              (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0].profilePicture : "")
+                            }
+                            type="image"
+                            alt={`${vendor.name} Profile Picture`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
+                          <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                      )}
+                      {/* Status indicator dot */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                     </div>
-                    <div>
-                      <p className="font-bold text-[15px] mb-1">View Full Profile</p>
-                      <p className="text-[11px] text-white/80 font-medium">Bio, social stats & featured work</p>
+
+                    {/* Text Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[15px] text-white dark:text-slate-100 mb-0.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
+                        View Vendor Profile
+                      </p>
+                      <p className="text-[12px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                        {vendor?.vendorProfile?.tagline ||
+                          (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.tagline : "") ||
+                          "Bio, social stats & featured work"}
+                      </p>
                     </div>
                   </div>
-                  <ArrowRight size={22} className="opacity-80" />
+
+                  {/* Arrow Icon */}
+                  <ArrowRight
+                    size={20}
+                    className="flex-shrink-0 text-white dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all duration-300"
+                  />
                 </div>
               </Link>
             </motion.div>
@@ -3705,14 +4299,15 @@ const VendorDetailsPageWrapper = () => {
               </div>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                className="text-blue-600 text-[11px] font-bold flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg"
+                disable={true || recommendedVendors.length <= 4}
+                className="text-blue-600 text-[11px] font-bold flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg disabled:opacity-20"
               >
                 View All
                 <ArrowRight size={12} />
               </motion.button>
             </div>
-            <div className="space-y-3">
-              {recommendedVendors.slice(0, 3).map((item) => (
+            <div className="flex flex-col gap-3">
+              {recommendedVendors.slice(0, 4).map((item) => (
                 <VendorCard key={item._id} item={item} type="vertical" />
               ))}
             </div>
@@ -3759,8 +4354,8 @@ const VendorDetailsPageWrapper = () => {
             <Headphones size={28} className="text-blue-500" />
           </div>
           <p className="text-[11px] text-gray-500 mb-1">Need help with your booking?</p>
-          <p className="font-black text-xl text-gray-900 dark:text-white">1800-123-4567</p>
-          <p className="text-[10px] text-gray-400 mt-1">24/7 Toll Free Support</p>
+          <p className="font-black text-xl text-gray-900 dark:text-white">+91 6267430959</p>
+          <p className="text-[10px] text-gray-400 mt-1">18/7 Toll Free Support</p>
         </div>
       </div>
 

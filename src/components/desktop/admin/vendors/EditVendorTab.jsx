@@ -683,10 +683,12 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
     priceUnits: ["day", "plate", "hour", "event", "package", "item", "session", "person"],
     availability: ["Available", "Busy", "Unavailable", "Closed"],
     days: [
+      "All Days",
+      "Mon - Sat",
+      "Mon - Fri",
       "Mon - Thu",
       "Fri - Sat",
       "Sunday",
-      "All Days",
       "Weekends",
       "Monday",
       "Tuesday",
