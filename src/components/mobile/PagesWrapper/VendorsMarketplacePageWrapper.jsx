@@ -72,6 +72,7 @@ import { useUser } from "@clerk/clerk-react";
 import { set } from "mongoose";
 import SmartMedia from "../SmartMediaLoader";
 import { toast } from "sonner";
+import Image from "next/image";
 
 // =============================================================================
 // CONSTANTS
@@ -710,22 +711,7 @@ const ActiveFiltersDisplay = memo(
       filters.push(`Order: ${sortOrder === "asc" ? "Low to High" : "High to Low"}`);
     }
 
-    // If no filters are applied, show a message
-    if (filters.length === 0) {
-      return (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="mb-4 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200"
-        >
-          <div className="flex items-center gap-2">
-            <Filter size={14} className="text-gray-400" />
-            <span className="text-xs font-medium text-gray-500">No filters applied - Showing all vendors</span>
-          </div>
-        </motion.div>
-      );
-    }
+    if (filters.length === 0) return null;
 
     return (
       <motion.div
@@ -912,6 +898,7 @@ CartPreview.displayName = "CartPreview";
 const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [isExpanded, setIsExpanded] = useLocalStorage("mp_promoExpanded", true);
   const haptic = useHapticFeedback();
   const scrollRef = useRef(null);
   const autoScrollRef = useRef(null);
@@ -1014,80 +1001,130 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
           </motion.div>
           Exclusive Deals
         </h2>
+
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            haptic("light");
+            setIsExpanded(!isExpanded);
+          }}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label={isExpanded ? "Collapse promos" : "Expand promos"}
+        >
+          <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3, ease: "easeInOut" }}>
+            <ChevronDown size={18} className="text-gray-500" />
+          </motion.div>
+        </motion.button>
       </div>
 
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {promos.map((promo, index) => {
-          const IconComponent = promo.icon;
-          return (
-            <motion.div
-              key={promo.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-              whileTap={{ scale: 0.98 }}
-              className="min-w-[82%] h-36 rounded-2xl relative overflow-hidden snap-start cursor-pointer shadow-lg"
-              style={{ background: promo.gradient }}
-            >
-              <div className="absolute right-[-40px] bottom-[-40px] w-40 h-40 bg-white/10 rounded-full" />
-              <div className="absolute left-[-30px] top-[-30px] w-32 h-32 bg-white/5 rounded-full" />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
-                <IconComponent size={80} strokeWidth={1} />
-              </div>
-
-              <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
-                <div className="flex items-start justify-between">
-                  <span className="px-2 py-1 bg-white/25 backdrop-blur-sm rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                    {promo.badge}
-                  </span>
-                  <span className="text-[10px] opacity-80 flex items-center gap-1">
-                    <Clock size={10} />
-                    Until {promo.validUntil}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-lg leading-tight mb-0.5">{promo.title}</h3>
-                  <p className="text-xs opacity-90 mb-2">{promo.subtitle}</p>
-
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => handleCopyCode(promo.code, e)}
-                    className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-white/30"
-                  >
-                    <span className="font-mono tracking-wider">{promo.code}</span>
-                    {copiedCode === promo.code ? (
-                      <Check size={12} className="text-green-300" />
-                    ) : (
-                      <Copy size={12} className="opacity-70" />
-                    )}
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      <div className="flex justify-center gap-1.5 mt-1">
-        {promos.map((_, idx) => (
-          <motion.button
-            key={idx}
-            onClick={() => scrollToIndex(idx)}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
             animate={{
-              width: idx === activeIndex ? 16 : 6,
-              backgroundColor: idx === activeIndex ? colorPrimary : COLORS.gray[300],
+              height: "auto",
+              opacity: 1,
+              transition: {
+                height: {
+                  duration: 0.4,
+                  ease: [0.4, 0.0, 0.2, 1], // Custom cubic-bezier for smooth expansion
+                },
+                opacity: {
+                  duration: 0.3,
+                  delay: 0.1,
+                },
+              },
             }}
-            transition={{ duration: 0.3 }}
-            className="h-1.5 rounded-full"
-          />
-        ))}
-      </div>
+            exit={{
+              height: 0,
+              opacity: 0,
+              transition: {
+                height: {
+                  duration: 0.3,
+                  ease: [0.4, 0.0, 0.2, 1],
+                },
+                opacity: {
+                  duration: 0.2,
+                },
+              },
+            }}
+            className="overflow-hidden"
+          >
+            <div
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {promos.map((promo, index) => {
+                const IconComponent = promo.icon;
+                return (
+                  <motion.div
+                    key={promo.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="min-w-[82%] h-36 rounded-2xl relative overflow-hidden snap-start cursor-pointer shadow-lg"
+                    style={{ background: promo.gradient }}
+                  >
+                    <div className="absolute right-[-40px] bottom-[-40px] w-40 h-40 bg-white/10 rounded-full" />
+                    <div className="absolute left-[-30px] top-[-30px] w-32 h-32 bg-white/5 rounded-full" />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
+                      <IconComponent size={80} strokeWidth={1} />
+                    </div>
+
+                    <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
+                      <div className="flex items-start justify-between">
+                        <span className="px-2 py-1 bg-white/25 backdrop-blur-sm rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                          {promo.badge}
+                        </span>
+                        <span className="text-[10px] opacity-80 flex items-center gap-1">
+                          <Clock size={10} />
+                          Until {promo.validUntil}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-lg leading-tight mb-0.5">{promo.title}</h3>
+                        <p className="text-xs opacity-90 mb-2">{promo.subtitle}</p>
+
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => handleCopyCode(promo.code, e)}
+                          className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-white/30"
+                        >
+                          <span className="font-mono tracking-wider">{promo.code}</span>
+                          {copiedCode === promo.code ? (
+                            <Check size={12} className="text-green-300" />
+                          ) : (
+                            <Copy size={12} className="opacity-70" />
+                          )}
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-center gap-1.5 mt-3">
+              {promos.map((_, idx) => (
+                <motion.button
+                  key={idx}
+                  onClick={() => scrollToIndex(idx)}
+                  animate={{
+                    width: idx === activeIndex ? 16 : 6,
+                    backgroundColor: idx === activeIndex ? colorPrimary : COLORS.gray[300],
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="h-1.5 rounded-full"
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 });
@@ -1292,7 +1329,7 @@ const ImageCarousel = memo(
       const preloadLinks = [];
 
       images.forEach((src, index) => {
-        const img = new Image();
+        const img = new window.Image();
         img.decoding = "async";
 
         img.onload = () => {
@@ -1415,6 +1452,10 @@ const ImageCarousel = memo(
               alt={vendorName}
               type="image"
               className="w-full h-full select-none touch-pan-y"
+              style={{
+                objectPosition: "center center",
+                aspectRatio: "16/9",
+              }}
               objectFit="cover"
               priority={imageIndex === 0}
               quality={85}
@@ -1776,7 +1817,47 @@ const VendorCard = memo(
         />
 
         <Link href={`/m/vendor/${vendor?.category}/${vendor?._id}`} className={`block ${isGrid ? "p-3" : "p-4"}`}>
-          <div className="flex justify-between items-start mb-1.5">
+          <div className="flex justify-between items-center mb-1.5">
+            {/* Profile Photo Section - Only in List View and when profile picture exists */}
+            {!isGrid &&
+              (vendor?.vendorProfile?.profilePicture ||
+                (Array.isArray(vendor?.vendorProfile) && vendor?.vendorProfile[0]?.profilePicture)) && (
+                <div
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = `/vendor/${vendor.category}/${vendor._id}/profile`;
+                  }}
+                  className="mr-3 shrink-0"
+                >
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-green-500 to-green-800 shadow-sm">
+                      <Image
+                        src={
+                          vendor?.vendorProfile?.profilePicture ||
+                          (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ||
+                          "/placeholder-profile.jpg"
+                        }
+                        alt={`${vendor.name} Profile Picture`}
+                        width={500}
+                        height={500}
+                        quality={90}
+                        priority={false}
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=="
+                        className="w-full h-full object-cover rounded-full overflow-hidden"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder-profile.jpg";
+                        }}
+                      />
+                    </div>
+                    <div className="absolute bottom-0 right-0 bg-white p-[2px] rounded-full shadow-sm border border-gray-100 text-violet-600">
+                      <Eye size={8} />
+                    </div>
+                  </div>
+                </div>
+              )}
             <div className="flex-1 min-w-0 pr-2">
               <h3 className={`font-bold text-gray-900 leading-tight truncate ${isGrid ? "text-sm" : "text-base"}`}>
                 {vendor.name}
@@ -2454,6 +2535,17 @@ const FilterDrawer = memo(({ isOpen, onClose, children, onClear, colorPrimary, a
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
+
+    // Restore navbar when drawer closes
+    if (!isOpen) {
+      const timer = setTimeout(() => {
+        // Only restore if no other overlays are open
+        document.body.style.overflow = "";
+      }, 300); // Match animation duration
+
+      return () => clearTimeout(timer);
+    }
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -3128,6 +3220,8 @@ export default function MarketplacePageWrapper() {
   const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
 
   const [toast, setToast] = useState({ message: "", type: "success", isVisible: false });
+  const toastQueueRef = useRef([]);
+  const isShowingToastRef = useRef(false);
 
   const haptic = useHapticFeedback();
   const { scrollY, scrollDirection } = useScrollPosition();
@@ -3170,7 +3264,6 @@ export default function MarketplacePageWrapper() {
 
   const currentSortLabel = useMemo(() => SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Sort", [sortBy]);
 
-  // Replace the buildUrlWithParams function with this optimized version:
   const buildUrlWithParams = useCallback((params) => {
     const url = new URLSearchParams();
 
@@ -3200,24 +3293,29 @@ export default function MarketplacePageWrapper() {
         finalCategories = [pageCategory];
       } else {
         const urlCats = params.get("categories");
-        if (urlCats) finalCategories = urlCats.split(",").filter(Boolean);
+        if (urlCats) {
+          finalCategories = urlCats.split(",").filter(Boolean);
+          finalCategories = finalCategories.filter((cat) => VENDOR_CATEGORIES.some((c) => c.id === cat));
+        }
       }
 
       const minP = params.get("minPrice");
       const maxP = params.get("maxPrice");
+      const minPrice = minP ? Math.max(0, parseInt(minP)) : 0;
+      const maxPrice = maxP ? Math.min(1000000, Math.max(minPrice, parseInt(maxP))) : 1000000;
       const cities = params.get("cities");
 
       // Batch all state updates in a single microtask
       Promise.resolve().then(() => {
         setSelectedCategories(finalCategories);
-        setSearchQuery(params.get("search") || "");
+        setSearchQuery(decodeURIComponent(params.get("search") || ""));
         setSortBy(params.get("sortBy") || "rating");
         setSortOrder(params.get("sortOrder") || "desc");
         setSelectedSubcategory(params.get("subcategory") || "");
         setRatingFilter(parseFloat(params.get("minRating")) || 0);
         setShowFeaturedOnly(params.get("featured") === "true");
         setCurrentPage(parseInt(params.get("page")) || 1);
-        setPriceRange([minP ? parseInt(minP) : 0, maxP ? parseInt(maxP) : 1000000]);
+        setPriceRange([minPrice, maxPrice]);
         if (cities) setSelectedLocations(cities.split(",").filter(Boolean));
 
         // Sync global store
@@ -3232,10 +3330,11 @@ export default function MarketplacePageWrapper() {
   }, [pageCategory, setActiveCategory]); // Reduced dependencies to prevent re-runs
 
   useEffect(() => {
-    if (debouncedSearchQuery && debouncedSearchQuery.length > 2) {
+    if (debouncedSearchQuery && debouncedSearchQuery.trim().length > 2) {
       setRecentSearches((prev) => {
-        const filtered = prev.filter((s) => s?.toLowerCase() !== debouncedSearchQuery?.toLowerCase());
-        return [debouncedSearchQuery, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+        const trimmed = debouncedSearchQuery.trim();
+        const filtered = (prev || []).filter((s) => s && s.trim() && s.trim().toLowerCase() !== trimmed.toLowerCase());
+        return [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
       });
     }
   }, [debouncedSearchQuery, setRecentSearches]);
@@ -3261,7 +3360,10 @@ export default function MarketplacePageWrapper() {
       });
 
       // Add filters
-      if (debouncedSearchQuery) queryParams.set("search", debouncedSearchQuery);
+      if (debouncedSearchQuery) {
+        const cleanQuery = decodeURIComponent(debouncedSearchQuery);
+        queryParams.set("search", cleanQuery);
+      }
       if (selectedCategories.length > 0) {
         queryParams.set("categories", selectedCategories.join(","));
       }
@@ -3279,12 +3381,27 @@ export default function MarketplacePageWrapper() {
         const result = await response.json();
 
         if (result.success) {
-          const mappedVendors = result.data.map((v) => ({
-            ...v,
-            position: v.location?.coordinates
-              ? { lat: v.location.coordinates[1], lng: v.location.coordinates[0] }
-              : CITY_COORDS[v.address?.city] || DEFAULT_CENTER,
-          }));
+          const mappedVendors = result.data.map((v) => {
+            let position;
+
+            // Priority 1: Actual coordinates from database
+            if (v.location?.coordinates && Array.isArray(v.location.coordinates)) {
+              position = {
+                lat: v.location.coordinates[1],
+                lng: v.location.coordinates[0],
+              };
+            }
+            // Priority 2: City coordinates lookup
+            else if (v.address?.city && CITY_COORDS[v.address.city]) {
+              position = CITY_COORDS[v.address.city];
+            }
+            // Priority 3: Default center
+            else {
+              position = DEFAULT_CENTER;
+            }
+
+            return { ...v, position };
+          });
 
           const paginationData = {
             totalPages: result.pagination?.totalPages || 1,
@@ -3299,13 +3416,9 @@ export default function MarketplacePageWrapper() {
           const cities = [...new Set(result.data.map((v) => v.address?.city).filter(Boolean))];
           setAvailableCities(cities);
 
-          // ✅ CHANGE: Only reset if results changed
-          if (
-            mappedVendors.length < ITEMS_PER_PAGE &&
-            currentPage > 1 &&
-            prevVendorCountRef.current !== mappedVendors.length
-          ) {
-            prevVendorCountRef.current = mappedVendors.length;
+          // Only reset page if we got zero results and we're not on page 1
+          if (mappedVendors.length === 0 && currentPage > 1) {
+            // Don't update ref here, let it reset naturally
             setCurrentPage(1);
           } else {
             prevVendorCountRef.current = mappedVendors.length;
@@ -3365,7 +3478,9 @@ export default function MarketplacePageWrapper() {
       if (selectedCategories.length > 0 && !isOnlyPath) {
         params.categories = selectedCategories.join(",");
       }
-      if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+      if (debouncedSearchQuery && debouncedSearchQuery.trim()) {
+        params.search = debouncedSearchQuery.trim();
+      }
       if (sortBy !== "rating") params.sortBy = sortBy;
       if (debouncedSortOrder !== "desc") params.sortOrder = debouncedSortOrder;
       if (selectedSubcategory) params.subcategory = selectedSubcategory;
@@ -3407,7 +3522,30 @@ export default function MarketplacePageWrapper() {
   ]);
 
   const showToast = useCallback((message, type = "success") => {
-    setToast({ message, type, isVisible: true });
+    // Add to queue
+    toastQueueRef.current.push({ message, type });
+
+    // Process queue if not currently showing a toast
+    if (!isShowingToastRef.current) {
+      const processQueue = () => {
+        if (toastQueueRef.current.length === 0) {
+          isShowingToastRef.current = false;
+          return;
+        }
+
+        isShowingToastRef.current = true;
+        const nextToast = toastQueueRef.current.shift();
+        setToast({ ...nextToast, isVisible: true });
+
+        // Auto-hide after 3 seconds and process next
+        setTimeout(() => {
+          setToast((prev) => ({ ...prev, isVisible: false }));
+          setTimeout(processQueue, 300); // Wait for exit animation
+        }, 3000);
+      };
+
+      processQueue();
+    }
   }, []);
 
   const hideToast = useCallback(() => {
@@ -3420,7 +3558,7 @@ export default function MarketplacePageWrapper() {
       if (cat === "__clear__") {
         setSelectedCategories([]);
         setSelectedSubcategory("");
-        setCurrentPage(1); // ✅ ADD: Reset to page 1
+        setCurrentPage(1);
         if (pageCategory) {
           router.push("/m/vendors/marketplace");
         }
@@ -3431,13 +3569,19 @@ export default function MarketplacePageWrapper() {
           setSelectedCategories([]);
           setSelectedSubcategory("");
         } else {
-          setSelectedCategories([cat]);
-          setSelectedSubcategory("");
+          // When selecting new category, clear subcategory if it doesn't belong
+          const newCategory = [cat];
+          const subcategoryBelongsToNew = SUBCATEGORIES[cat]?.some((sub) => sub.id === selectedSubcategory);
+
+          setSelectedCategories(newCategory);
+          if (!subcategoryBelongsToNew) {
+            setSelectedSubcategory("");
+          }
         }
-        setCurrentPage(1); // ✅ ADD: Reset to page 1
+        setCurrentPage(1);
       }
     },
-    [pageCategory, selectedCategories, router, haptic]
+    [pageCategory, selectedCategories, selectedSubcategory, router, haptic]
   );
 
   const handleFilterPanelCategoryChange = useCallback(
@@ -3476,15 +3620,27 @@ export default function MarketplacePageWrapper() {
       haptic("medium");
       setCompareList((prev) => {
         const exists = prev.find((v) => v._id === vendor._id);
-        if (exists) return prev.filter((v) => v._id !== vendor._id);
-        if (prev.length >= MAX_COMPARE_ITEMS) {
-          showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
-          return prev;
+        let newList;
+
+        if (exists) {
+          newList = prev.filter((v) => v._id !== vendor._id);
+        } else {
+          if (prev.length >= MAX_COMPARE_ITEMS) {
+            showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
+            return prev;
+          }
+          newList = [...prev, vendor];
         }
-        return [...prev, vendor];
+
+        // Auto-disable compare mode if list becomes empty
+        if (newList.length === 0 && compareMode) {
+          setCompareMode(false);
+        }
+
+        return newList;
       });
     },
-    [haptic, showToast]
+    [haptic, showToast, compareMode]
   );
 
   const handlePageChange = useCallback(
@@ -3499,7 +3655,6 @@ export default function MarketplacePageWrapper() {
   const clearAllFilters = useCallback(() => {
     haptic("medium");
 
-    // ✅ CHANGE: Batch all state updates in transition
     startTransition(() => {
       setSelectedCategories([]);
       setSelectedSubcategory("");
@@ -3508,13 +3663,18 @@ export default function MarketplacePageWrapper() {
       setSelectedLocations([]);
       setSearchQuery("");
       setSortBy("rating");
-      setSortOrder("desc"); // ✅ ADD: Reset sort order too
+      setSortOrder("desc");
       setRatingFilter(0);
       setCurrentPage(1);
+      // Also clear compare mode if active
+      if (compareMode) {
+        setCompareMode(false);
+        setCompareList([]);
+      }
     });
 
     showToast("All filters cleared", "info");
-  }, [haptic, showToast]);
+  }, [haptic, showToast, compareMode]);
 
   const handleSelectRecentSearch = useCallback((search) => {
     setSearchQuery(search);
@@ -3655,8 +3815,14 @@ export default function MarketplacePageWrapper() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              onFocus={() => {
+                setIsSearchFocused(true);
+                haptic("light");
+              }}
+              onBlur={() => {
+                // Delay to allow click events on recent searches to fire
+                setTimeout(() => setIsSearchFocused(false), 250);
+              }}
               placeholder="Search vendors, locations..."
               className="w-full pl-11 pr-10 py-3 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
             />
@@ -3822,12 +3988,11 @@ export default function MarketplacePageWrapper() {
                     {vendors.map((vendor, index) => (
                       <motion.div
                         key={vendor._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{
-                          duration: 0.3,
-                          delay: index * 0.05,
-                          ease: "easeOut",
+                          duration: 0.15,
+                          delay: index * 0.01,
                         }}
                       >
                         <VendorCard

@@ -128,6 +128,7 @@ import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useRedirectWithReturn } from "../../../hooks/useNavigationWithReturn";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
+import Image from "next/image";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse" />,
@@ -392,7 +393,7 @@ const ProgressIndicator = memo(({ total, currentIndex, duration, isPaused, onSel
   const remainingSeconds = Math.ceil(((100 - progress) / 100) * (duration / 1000));
 
   return (
-    <div className="absolute bottom-18 left-0 right-0 z-30 pointer-events-none">
+    <div className="absolute bottom-19 left-0 right-0 z-30 pointer-events-none">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
         <div className="relative pt-16 pb-6 px-3">
@@ -536,6 +537,7 @@ const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
                 src={img}
                 type="image"
                 className="w-full h-full object-cover"
+                style={{ objectPosition: "center center" }}
                 loaderImage="/GlowLoadingGif.gif"
               />
               {idx === 5 && remainingCount > 0 && (
@@ -768,6 +770,7 @@ const VendorCard = memo(({ item, type = "horizontal" }) => {
               src={item.images?.[0] || item.defaultImage}
               type="image"
               className="w-full h-full object-cover"
+              style={{ objectPosition: "center center" }}
               loaderImage="/GlowLoadingGif.gif"
             />
             <div className="absolute top-2 right-2 bg-white/95 dark:bg-black/80 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-lg backdrop-blur-sm">
@@ -1208,10 +1211,15 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, showToast
 
   useEffect(() => {
     if (items.length === 0) {
-      setAppliedCoupon(null);
-      onClose();
+      // Only close after a small delay to avoid jarring UX when removing last item
+      const timer = setTimeout(() => {
+        setAppliedCoupon(null);
+        onClose();
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
-  }, [items, onClose]);
+  }, [items.length, onClose]);
 
   const priceDetails = useMemo(() => {
     const subtotal = items.reduce(
@@ -2025,6 +2033,7 @@ const VendorDetailsPageWrapper = () => {
   const dragStartX = useRef(0);
   const isDragging = useRef(false);
   const autoplayTimerRef = useRef(null);
+  const contentSectionRef = useRef(null);
 
   const [showHeaderTabs, setShowHeaderTabs] = useState(false);
   const lastScrollY = useRef(0);
@@ -2084,7 +2093,10 @@ const VendorDetailsPageWrapper = () => {
 
   useEffect(() => {
     if (!user || !vendor?._id) return;
+
+    let isMounted = true;
     setStatusLoading(true);
+
     const fetchStatus = async () => {
       try {
         const res = await fetch(`/api/user/status`, {
@@ -2092,40 +2104,60 @@ const VendorDetailsPageWrapper = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ vendorId: vendor._id, userId: user.id }),
         });
+
+        if (!isMounted) return;
+
         if (res.ok) {
           const data = await res.json();
           setIsLiked(data.isLiked);
           setIsBookmarked(data.isBookmarked);
         }
       } catch (error) {
-        console.error("Error fetching interaction status:", error);
+        if (isMounted) {
+          console.error("Error fetching interaction status:", error);
+        }
       } finally {
-        setStatusLoading(false);
+        if (isMounted) {
+          setStatusLoading(false);
+        }
       }
     };
+
     fetchStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, vendor?._id]);
 
   const handleToggleLike = async () => {
-    if (!isAuthLoaded) return;
+    // Prevent multiple clicks
+    if (!isAuthLoaded || likingLoading || statusLoading) return;
+
     if (!user) {
       toast.error("Please login to like vendors");
       return;
     }
+
     setLikingLoading(true);
     const prevLiked = isLiked;
     setIsLiked(!prevLiked);
+
     if (navigator.vibrate) navigator.vibrate(10);
+
     try {
       const res = await fetch("/api/user/toggle-like", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vendorId: vendor._id }),
       });
+
       if (!res.ok) throw new Error("Failed");
+
       const data = await res.json();
       toast.success(data.message);
     } catch (error) {
+      // Revert on error
       setIsLiked(prevLiked);
       toast.error("Something went wrong");
     } finally {
@@ -2134,25 +2166,33 @@ const VendorDetailsPageWrapper = () => {
   };
 
   const handleToggleBookmark = async () => {
-    if (!isAuthLoaded) return;
+    // Prevent multiple clicks
+    if (!isAuthLoaded || bookmarkingLoading || statusLoading) return;
+
     if (!user) {
       toast.error("Please login to bookmark vendors");
       return;
     }
+
     setBookmarkingLoading(true);
     const prevBookmarked = isBookmarked;
     setIsBookmarked(!prevBookmarked);
+
     if (navigator.vibrate) navigator.vibrate(10);
+
     try {
       const res = await fetch("/api/user/toggle-watchlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vendorId: vendor._id }),
       });
+
       if (!res.ok) throw new Error("Failed");
+
       const data = await res.json();
       toast.success(data.message);
     } catch (error) {
+      // Revert on error
       setIsBookmarked(prevBookmarked);
       toast.error("Something went wrong");
     } finally {
@@ -2218,45 +2258,67 @@ const VendorDetailsPageWrapper = () => {
   }, [fetchVendor]);
 
   useEffect(() => {
+    let rafId = null;
+
     const handleScroll = () => {
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const threshold = 750;
+      if (rafId) return;
 
-          if (scrollY > threshold && !showHeaderTabs) {
-            setShowHeaderTabs(true);
-          } else if (scrollY <= threshold && showHeaderTabs) {
-            setShowHeaderTabs(false);
-          }
+      rafId = window.requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+        const threshold = 750;
 
-          lastScrollY.current = scrollY;
-          ticking.current = false;
-        });
-        ticking.current = true;
-      }
+        if (scrollY > threshold && !showHeaderTabs) {
+          setShowHeaderTabs(true);
+        } else if (scrollY <= threshold && showHeaderTabs) {
+          setShowHeaderTabs(false);
+        }
+
+        lastScrollY.current = scrollY;
+        rafId = null;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
   }, [showHeaderTabs]);
 
   useEffect(() => {
     if (!vendor?._id) return;
+
+    let isMounted = true;
+
     const fetchLists = async () => {
       try {
         const response = await fetch(`/api/vendor/lists/${vendor._id}`);
+
+        if (!isMounted) return;
+
         if (response.ok) {
           const data = await response.json();
-          setSimilarVendors(data.similarVendors || []);
-          setRecommendedVendors(data.recommendedVendors || []);
+          if (isMounted) {
+            setSimilarVendors(data.similarVendors || []);
+            setRecommendedVendors(data.recommendedVendors || []);
+          }
         }
       } catch (e) {
-        console.error("Failed to load recommendations", e);
+        if (isMounted) {
+          console.error("Failed to load recommendations", e);
+        }
       }
     };
+
     fetchLists();
-  }, [vendor]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [vendor?._id]);
 
   const images = useMemo(() => vendor?.images || [], [vendor]);
 
@@ -2264,7 +2326,7 @@ const VendorDetailsPageWrapper = () => {
     if (images.length === 0) return;
     const preloadLinks = [];
     images.forEach((src, index) => {
-      const img = new Image();
+      const img = new window.Image();
       img.decoding = "async";
       img.src = src;
       if (index < 3) {
@@ -2366,16 +2428,29 @@ const VendorDetailsPageWrapper = () => {
   }, [currentImageIndex, images.length, goToImage]);
 
   useEffect(() => {
+    // Clear any existing timer
     if (autoplayTimerRef.current) {
       clearTimeout(autoplayTimerRef.current);
       autoplayTimerRef.current = null;
     }
+
+    // Don't autoplay if paused or only one image
     if (isPaused || images.length <= 1) return;
+
+    // Set new timer
     autoplayTimerRef.current = setTimeout(() => {
-      nextImage();
+      // Double-check conditions before advancing
+      if (!isPaused && images.length > 1) {
+        nextImage();
+      }
     }, AUTOPLAY_DELAY);
+
+    // Cleanup
     return () => {
-      if (autoplayTimerRef.current) clearTimeout(autoplayTimerRef.current);
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+        autoplayTimerRef.current = null;
+      }
     };
   }, [currentImageIndex, isPaused, images.length, nextImage]);
 
@@ -2392,19 +2467,34 @@ const VendorDetailsPageWrapper = () => {
   );
 
   const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
     dragStartX.current = e.touches[0].clientX;
     isDragging.current = true;
   }, []);
+
   const handleTouchEnd = useCallback(
     (e) => {
       if (!isDragging.current) return;
-      const diff = dragStartX.current - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        diff > 0 ? nextImage() : prevImage();
+      if (e.changedTouches.length !== 1) {
+        isDragging.current = false;
+        return;
       }
+
+      const diff = dragStartX.current - e.changedTouches[0].clientX;
+      const threshold = 50;
+
+      if (Math.abs(diff) > threshold && images.length > 1) {
+        if (diff > 0) {
+          nextImage();
+        } else {
+          prevImage();
+        }
+      }
+
       isDragging.current = false;
+      dragStartX.current = 0;
     },
-    [nextImage, prevImage]
+    [nextImage, prevImage, images.length]
   );
 
   const scrollContainer = useCallback((ref, direction) => {
@@ -2495,17 +2585,40 @@ const VendorDetailsPageWrapper = () => {
     setShowImageModal(true);
   }, []);
 
-  const handleTabClick = useCallback((tabId) => {
-    setActiveTab(tabId);
-    if (tabsRef.current) {
-      const headerHeight = 49;
-      const tabsPosition = tabsRef.current.getBoundingClientRect().top + window.scrollY - headerHeight - 10;
-      window.scrollTo({
-        top: tabsPosition,
-        behavior: "smooth",
+  const handleTabClick = useCallback(
+    (tabId) => {
+      setActiveTab(tabId);
+
+      // Use double RAF for smooth render-then-scroll
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const headerHeight = 49;
+          const buffer = 10;
+
+          if (showHeaderTabs) {
+            // When header tabs are visible, scroll to content section
+            if (contentSectionRef.current) {
+              const contentTop = contentSectionRef.current.getBoundingClientRect().top + window.scrollY;
+              window.scrollTo({
+                top: contentTop - headerHeight - buffer,
+                behavior: "smooth",
+              });
+            }
+          } else {
+            // When main tabs are visible, scroll to them
+            if (tabsRef.current) {
+              const tabsTop = tabsRef.current.getBoundingClientRect().top + window.scrollY;
+              window.scrollTo({
+                top: tabsTop - headerHeight - buffer,
+                behavior: "smooth",
+              });
+            }
+          }
+        });
       });
-    }
-  }, []);
+    },
+    [showHeaderTabs]
+  );
 
   if (loading) return <DetailsPageSkeleton />;
   if (error || !vendor)
@@ -2690,19 +2803,20 @@ const VendorDetailsPageWrapper = () => {
                 x: { type: "spring", stiffness: 300, damping: 35 },
                 opacity: { duration: 0.2 },
               }}
-              className="absolute inset-0"
+              className="absolute inset-0 bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-black"
             >
               <SmartMedia
                 src={images[currentImageIndex]}
                 type="image"
                 priority={currentImageIndex === 0}
                 sizes="100vw"
-                quality={100} // Crank quality to max
-                useSkeleton={false} // DISABLE the blur/shimmer animation
+                quality={100}
+                useSkeleton={false}
                 unoptimized={true}
-                preload="eager" // ADD this line
+                preload="eager"
                 fetchPriority="high"
                 className="w-full h-full object-cover"
+                style={{ objectPosition: "center center" }}
                 loaderImage="/GlowLoadingGif.gif"
               />
             </motion.div>
@@ -2788,14 +2902,6 @@ const VendorDetailsPageWrapper = () => {
             <ImageIcon size={12} />
             {images.length} Photos
           </motion.button>
-
-          {/* --- ADD THIS BLOCK HERE --- */}
-          {/* Hidden Preloader: Forces all images into memory immediately */}
-          <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none">
-            {images.map((img, i) => (
-              <SmartMedia key={i} src={img} type="image" priority={true} sizes="100vw" />
-            ))}
-          </div>
         </div>
       </motion.div>
 
@@ -2815,14 +2921,24 @@ const VendorDetailsPageWrapper = () => {
               (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full p-[3px] bg-gradient-to-tr from-green-500 to-green-800 shadow-md">
-                    <SmartMedia
+                    <Image
                       src={
                         vendor?.vendorProfile?.profilePicture ||
-                        (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "")
+                        (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ||
+                        "/placeholder-profile.jpg"
                       }
-                      type="image"
                       alt={`${vendor.name} Profile Picture`}
+                      width={500}
+                      height={500}
+                      quality={90}
+                      priority={false}
+                      loading="lazy"
+                      placeholder="blur"
+                      blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=="
                       className="w-full h-full object-cover rounded-full overflow-hidden"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder-profile.jpg";
+                      }}
                     />
                   </div>
                   <div className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-1 rounded-full shadow-md border border-gray-100 dark:border-gray-700 text-violet-600">
@@ -2979,7 +3095,10 @@ const VendorDetailsPageWrapper = () => {
         </AnimatePresence>
 
         {/* TAB CONTENT */}
-        <div className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 px-4 py-6">
+        <div
+          ref={contentSectionRef}
+          className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 px-4 py-6"
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -3574,6 +3693,7 @@ const VendorDetailsPageWrapper = () => {
                               src={img}
                               type="image"
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              style={{ objectPosition: "center center" }}
                               loaderImage="/GlowLoadingGif.gif"
                             />
 

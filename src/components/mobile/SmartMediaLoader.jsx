@@ -4,6 +4,12 @@ import React, { useState, useRef, useEffect, memo } from "react";
 import Image from "next/image";
 import { PlayCircle, Image as ImageIcon, AlertCircle } from "lucide-react";
 
+// --- HELPER: Extract object-fit class from className if present ---
+const extractObjectFit = (className = "") => {
+  const objectFitMatch = className.match(/object-(cover|contain|fill|none|scale-down)/);
+  return objectFitMatch ? objectFitMatch[1] : null;
+};
+
 // --- HELPER: Fixes paths automatically ---
 const getSafeSrc = (src) => {
   if (!src) return "";
@@ -18,6 +24,7 @@ const SmartMedia = memo(
     type = "image",
     alt = "Media content",
     className = "",
+    style = {},
     poster = "",
     autoPlay = true,
     priority = false, // True for LCP (Hero images)
@@ -33,6 +40,11 @@ const SmartMedia = memo(
 
     // Apply safe path fix
     const safeSrc = getSafeSrc(src);
+
+    // SMART DETECTION: Use object-fit from className if present, otherwise use prop
+    const detectedObjectFit = extractObjectFit(className);
+    const finalObjectFit = detectedObjectFit || objectFit;
+    const cleanClassName = className.replace(/object-(cover|contain|fill|none|scale-down)\s?/g, "").trim();
 
     // --- VIDEO OPTIMIZATION: Play only when visible ---
     useEffect(() => {
@@ -65,7 +77,7 @@ const SmartMedia = memo(
     }, [type, autoPlay]);
 
     // --- STYLES ---
-    const containerClass = `relative overflow-hidden bg-transparent ${className}`;
+    const containerClass = `relative overflow-hidden bg-transparent ${cleanClassName}`;
     const mediaClass = `transition-all duration-700 ease-out ${
       isLoaded || !useSkeleton ? "opacity-100 scale-100" : "opacity-0 scale-102 blur-sm"
     }`;
@@ -109,7 +121,8 @@ const SmartMedia = memo(
           <video
             ref={videoRef}
             src={safeSrc}
-            className={`w-full h-full object-${objectFit} ${mediaClass}`}
+            className={`w-full h-full object-${finalObjectFit} ${mediaClass}`}
+            style={style}
             muted
             loop
             playsInline
@@ -130,7 +143,8 @@ const SmartMedia = memo(
             quality={quality}
             unoptimized={unoptimized}
             priority={priority}
-            className={`object-${objectFit} ${mediaClass}`}
+            className={`object-${finalObjectFit} ${mediaClass}`}
+            style={style}
             onLoad={() => setIsLoaded(true)}
             onError={() => setHasError(true)}
             decoding="async"
