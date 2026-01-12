@@ -116,9 +116,14 @@ import {
   Route,
   MapIcon,
   Navigation,
+  RotateCcw,
+  MessageSquareQuote,
+  Store,
+  Eye,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import ReviewSection from "../ReviewSection";
+import VendorProfileOnboarding from "../VendorProfileCreate";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse rounded-xl" />,
@@ -126,10 +131,10 @@ const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"),
 });
 
 const TABS = [
-  { id: "posts", label: "Posts", icon: Grid3X3 },
+  { id: "posts", label: "Posts", icon: Image },
   { id: "reels", label: "Reels", icon: Play },
-  { id: "portfolio", label: "Portfolio", icon: LayoutGrid },
-  { id: "services", label: "Services", icon: Package },
+  { id: "portfolio", label: "Portfolio", icon: MessageSquareQuote },
+  { id: "services", label: "Services", icon: Briefcase },
 ];
 
 const CATEGORY_CONFIG = {
@@ -215,6 +220,9 @@ const fadeInUp = {
 const staggerContainer = {
   animate: { transition: { staggerChildren: 0.05 } },
 };
+
+const modalTransition = { type: "spring", damping: 30, stiffness: 400, mass: 0.8 };
+const backdropTransition = { duration: 0.2, ease: "easeOut" };
 
 const CATEGORY_GRADIENTS = {
   planners: { from: "#3b82f6", to: "#06b6d4" },
@@ -4796,6 +4804,9 @@ const VendorProfilePageWrapper = () => {
   const [vendor, setVendor] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -4833,7 +4844,13 @@ const VendorProfilePageWrapper = () => {
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [archivedPosts, setArchivedPosts] = useState([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(0);
+  const [imageZoom, setImageZoom] = useState(1);
   const longPressTimerRef = useRef(null);
+  const dragStartX = useRef(0);
+  const isDragging = useRef(false);
 
   useEffect(() => {
     window.scrollTo({
@@ -4869,6 +4886,41 @@ const VendorProfilePageWrapper = () => {
     if (id) fetchData();
   }, [id]);
 
+  // NEW: Separate useEffect to check vendor profile existence
+  useEffect(() => {
+    const checkVendorProfile = async () => {
+      if (!id) return;
+
+      setProfileLoading(true);
+      try {
+        const response = await fetch(`/api/vendor/${id}/profile?vendorId=${id}`);
+        const data = await response.json();
+
+        if (response.ok && data.success && data.data) {
+          // Profile exists
+          setProfile(data.data);
+          setShowOnboarding(false);
+        } else {
+          // Profile doesn't exist - set empty object to show page
+          setProfile({});
+          setShowOnboarding(true);
+        }
+      } catch (error) {
+        console.error("Error checking vendor profile:", error);
+        // On error, assume profile doesn't exist
+        setProfile(null);
+        setShowOnboarding(true);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    // Only check profile after vendor data is loaded
+    if (vendor && !loading) {
+      checkVendorProfile();
+    }
+  }, [id, vendor, loading]);
+
   useEffect(() => {
     const handleFetchReviews = async () => {
       try {
@@ -4903,6 +4955,22 @@ const VendorProfilePageWrapper = () => {
       setShowShareModal(true);
     }
   }, [vendor]);
+
+  const handleProfileCreated = useCallback(
+    (newProfile) => {
+      setProfile(newProfile);
+      setShowOnboarding(false);
+
+      setVendor((prev) => ({
+        ...prev,
+        vendorProfile: newProfile,
+      }));
+
+      showUIConfirmation("Profile created successfully!", "success", CheckCircle);
+      window.location.reload();
+    },
+    [showUIConfirmation]
+  );
 
   const handleTrust = useCallback(() => {
     if (!hasTrusted) {
@@ -5003,6 +5071,40 @@ const VendorProfilePageWrapper = () => {
   const handleCopyLink = useCallback(() => {
     showUIConfirmation("Link copied!", "success", Copy);
   }, [showUIConfirmation]);
+
+  const openImageModal = useCallback((index) => {
+    setModalImageIndex(index);
+    setShowImageModal(true);
+  }, []);
+
+  const images = useMemo(() => vendor?.images || [], [vendor]);
+
+  useEffect(() => {
+    if (images.length === 0) return;
+    const preloadLinks = [];
+    images.forEach((src, index) => {
+      const img = new window.Image();
+      img.decoding = "async";
+      img.src = src;
+      if (index < 3) {
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.as = "image";
+        link.href = src;
+        document.head.appendChild(link);
+        preloadLinks.push(link);
+      }
+    });
+    return () => {
+      preloadLinks.forEach((link) => link.remove());
+    };
+  }, [images]);
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    dragStartX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  }, []);
 
   const stats = useMemo(
     () => [
@@ -6310,15 +6412,16 @@ const VendorProfilePageWrapper = () => {
     return <VendorProfileSkeleton />;
   }
 
-  if (!vendor || !profile) {
+  // If vendor doesn't exist at all, show error page
+  if (!vendor) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-6">
         <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-6">
           <Camera size={40} className="text-gray-400" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Profile Not Found</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Vendor Not Found</h2>
         <p className="text-gray-500 text-sm text-center mb-6">
-          The profile you're looking for doesn't exist or has been removed.
+          The vendor you're looking for doesn't exist or has been removed.
         </p>
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -6331,8 +6434,12 @@ const VendorProfilePageWrapper = () => {
     );
   }
 
+  const vendorProfile = Array.isArray(vendor?.vendorProfile) ? vendor.vendorProfile[0] : vendor?.vendorProfile;
+
   const vendorImage =
-    profile.profilePicture || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop";
+    profile?.profilePicture ||
+    vendorProfile?.profilePicture ||
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop";
 
   const defaultBio = `📸 Professional Event Photographer
 🎬 Capturing moments that last forever
@@ -6342,6 +6449,14 @@ const VendorProfilePageWrapper = () => {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-black pb-24">
+      <VendorProfileOnboarding
+        vendor={vendor}
+        id={id}
+        onProfileCreated={handleProfileCreated}
+        isOpen={openOnboardingDrawer}
+        onClose={() => setOpenOnboardingDrawer(false)}
+      />
+
       <ThumbsUpAnimation show={showThumbsUpAnimation} />
       <FloatingConfirmation
         show={showConfirmation.show}
@@ -6351,43 +6466,45 @@ const VendorProfilePageWrapper = () => {
       />
 
       {/* Enhanced Header */}
-      <motion.header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-b-2xl">
-        <motion.div
-          style={{ opacity: headerOpacity }}
-          className="absolute inset-0 bg-white dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800/50"
-        />
-        <div className="relative flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleBack}
-              className="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center"
-            >
-              <ArrowLeft size={18} className="text-gray-900 dark:text-white" />
-            </motion.button>
-            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate max-w-[200px]">
-              @{vendor.username || vendor.name?.toLowerCase().replace(/\s+/g, "_")}
-            </span>
-            {vendor.isVerified && <BadgeCheck size={16} className="text-blue-500 flex-shrink-0" />}
+      {!openOnboardingDrawer && (
+        <motion.header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-b-2xl">
+          <motion.div
+            style={{ opacity: headerOpacity }}
+            className="absolute inset-0 bg-white dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800/50"
+          />
+          <div className="relative flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleBack}
+                className="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center"
+              >
+                <ArrowLeft size={18} className="text-gray-900 dark:text-white" />
+              </motion.button>
+              <span className="font-semibold text-gray-900 dark:text-white text-sm truncate max-w-[200px]">
+                @{vendor.username || vendor.name?.toLowerCase().replace(/\s+/g, "_")}
+              </span>
+              {vendor.isVerified && <BadgeCheck size={16} className="text-blue-500 flex-shrink-0" />}
+            </div>
+            <div className="flex gap-1.5">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleShare}
+                className="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center"
+              >
+                <Share2 size={16} className="text-gray-900 dark:text-white" />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowMoreOptions(true)}
+                className="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center"
+              >
+                <MoreVertical size={16} className="text-gray-900 dark:text-white" />
+              </motion.button>
+            </div>
           </div>
-          <div className="flex gap-1.5">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleShare}
-              className="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center"
-            >
-              <Share2 size={16} className="text-gray-900 dark:text-white" />
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowMoreOptions(true)}
-              className="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center"
-            >
-              <MoreVertical size={16} className="text-gray-900 dark:text-white" />
-            </motion.button>
-          </div>
-        </div>
-      </motion.header>
+        </motion.header>
+      )}
 
       <div className="pt-14" />
 
@@ -6635,14 +6752,57 @@ const VendorProfilePageWrapper = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Floating Plus Button */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setShowUploadModal(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-500/40 flex items-center justify-center z-50"
-      >
-        <Plus size={28} className="text-white" />
-      </motion.button>
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+        {/* Create Profile Button - Only show when no profile */}
+        {!profileLoading && showOnboarding && !profile?.vendorBusinessName && !openOnboardingDrawer && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            exit={{ scale: 0, rotate: 180 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setOpenOnboardingDrawer(true)}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-2xl shadow-green-500/40 flex items-center justify-center group relative"
+          >
+            <Store size={26} className="text-white" />
+
+            {/* Tooltip */}
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              whileHover={{ opacity: 1, x: 0 }}
+              className="absolute right-full mr-3 px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+            >
+              Create Profile
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45" />
+            </motion.div>
+          </motion.button>
+        )}
+
+        {/* Upload Button - Only show when profile exists */}
+        {!profileLoading && profile?.vendorBusinessName && !openOnboardingDrawer && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowUploadModal(true)}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-500/40 flex items-center justify-center group relative"
+          >
+            <Plus size={28} className="text-white" />
+
+            {/* Tooltip */}
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              whileHover={{ opacity: 1, x: 0 }}
+              className="absolute right-full mr-3 px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+            >
+              Upload Content
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45" />
+            </motion.div>
+          </motion.button>
+        )}
+      </div>
 
       {/* All Modals */}
       <AnimatePresence>
@@ -6760,6 +6920,102 @@ const VendorProfilePageWrapper = () => {
         {previewPost && <PostPreviewModal post={previewPost} onClose={() => setPreviewPost(null)} />}
       </AnimatePresence>
 
+      {/* IMAGE GALLERY MODAL */}
+      <AnimatePresence>
+        {showImageModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition}
+            className="fixed inset-0 z-[100] bg-black flex flex-col"
+          >
+            <div className="flex justify-between items-center p-3 z-20">
+              <span className="text-white font-mono text-[11px] bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                {modalImageIndex + 1} / {images.length}
+              </span>
+              <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setImageZoom((z) => Math.min(z + 0.5, 3))}
+                  className="p-2 text-white/70 bg-white/10 rounded-full backdrop-blur-sm"
+                >
+                  <ZoomIn size={18} />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setImageZoom(1)}
+                  className="p-2 text-white/70 bg-white/10 rounded-full backdrop-blur-sm"
+                >
+                  <RotateCcw size={18} />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowImageModal(false)}
+                  className="p-2 text-white/70 bg-white/10 rounded-full backdrop-blur-sm"
+                >
+                  <X size={18} />
+                </motion.button>
+              </div>
+            </div>
+            <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+              <AnimatePresence initial={false} custom={slideDirection} mode="wait">
+                <motion.div
+                  key={modalImageIndex}
+                  custom={slideDirection}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                  className="absolute w-full h-full flex items-center justify-center p-2"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => {
+                    if (!isDragging.current) return;
+                    const diff = dragStartX.current - e.changedTouches[0].clientX;
+                    if (Math.abs(diff) > 50) {
+                      if (diff > 0) {
+                        setModalImageIndex((i) => (i + 1) % images.length);
+                        setSlideDirection(1);
+                      } else {
+                        setModalImageIndex((i) => (i - 1 + images.length) % images.length);
+                        setSlideDirection(-1);
+                      }
+                    }
+                    isDragging.current = false;
+                  }}
+                >
+                  <img
+                    src={images[modalImageIndex]}
+                    alt="Full view"
+                    className="max-w-full max-h-full object-contain transition-transform duration-200"
+                    style={{ transform: `scale(${imageZoom})` }}
+                    loading="lazy"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <div className="h-20 flex items-center justify-center gap-2 overflow-x-auto px-3 pb-4 no-scrollbar">
+              {images.map((img, i) => (
+                <motion.button
+                  key={i}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    setModalImageIndex(i);
+                    setSlideDirection(i > modalImageIndex ? 1 : -1);
+                  }}
+                  className={`relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                    i === modalImageIndex ? "border-white scale-110" : "border-transparent opacity-50"
+                  }`}
+                >
+                  <img src={img} className="w-full h-full object-cover" alt="thumbnail" loading="lazy" />
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -6774,5 +7030,3 @@ const VendorProfilePageWrapper = () => {
 };
 
 export default VendorProfilePageWrapper;
-
-// opus 4.5 thinking version2

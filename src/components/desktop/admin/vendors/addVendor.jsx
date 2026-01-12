@@ -89,6 +89,8 @@ import {
   ArrowUp,
   ArrowDown,
   Move,
+  Lamp,
+  Drum,
 } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 
@@ -768,6 +770,8 @@ function AddVendorContent({ onNavigate }) {
     { key: "invitations", label: "Invitations", icon: Mail, description: "Wedding cards & invites" },
     { key: "djs", label: "DJs", icon: Music, description: "Music & entertainment" },
     { key: "hairstyling", label: "Hairstyling", icon: Scissors, description: "Hair styling services" },
+    { key: "decor", label: "Decorators", icon: Lamp, description: "Event decoration services" },
+    { key: "dhol", label: "Dhol", icon: Drum, description: "Traditional drum players" },
     { key: "other", label: "Other", icon: FileText, description: "Other services" },
   ];
 

@@ -3476,66 +3476,63 @@ const VendorDetailsPageWrapper = () => {
                   <SocialLinksSection socialLinks={vendor.socialLinks} />
 
                   {/* 12. Vendor Profile Link */}
-                  {(vendor.vendorProfile ||
-                    (Array.isArray(vendor.vendorProfile) ? vendor.vendorProfile[0] : vendor.vendorProfile)) && (
-                    <motion.div variants={fadeInUp}>
-                      <Link
-                        href={`/vendor/${vendor.category}/${vendor._id}/profile`}
-                        className="group block relative bg-gradient-to-br from-indigo-500/80 via-purple-500/80 to-blue-600/70 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-lg hover:border-indigo-300/50 dark:hover:border-indigo-500/30 transition-all duration-300 hover:scale-[1.01] overflow-hidden"
-                      >
-                        {/* Subtle gradient overlay on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-blue-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-blue-500/5 transition-all duration-300 rounded-2xl" />
+                  <motion.div variants={fadeInUp}>
+                    <Link
+                      href={`/vendor/${vendor.category}/${vendor._id}/profile`}
+                      className="group block relative bg-gradient-to-br from-indigo-500/80 via-purple-500/80 to-blue-600/70 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-lg hover:border-indigo-300/50 dark:hover:border-indigo-500/30 transition-all duration-300 hover:scale-[1.01] overflow-hidden"
+                    >
+                      {/* Subtle gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-purple-500/0 to-blue-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-blue-500/5 transition-all duration-300 rounded-2xl" />
 
-                        <div className="relative flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            {/* Profile Picture or Fallback Icon */}
-                            <div className="relative flex-shrink-0">
-                              {vendor?.vendorProfile?.profilePicture ||
-                              (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
-                                <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
-                                  <SmartMedia
-                                    src={
-                                      vendor?.vendorProfile?.profilePicture ||
-                                      (Array.isArray(vendor.vendorProfile)
-                                        ? vendor?.vendorProfile[0]?.profilePicture
-                                        : "")
-                                    }
-                                    type="image"
-                                    alt={`${vendor.name} Profile Picture`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
-                                  <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
-                                </div>
-                              )}
-                              {/* Status indicator dot */}
-                              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
-                            </div>
-
-                            {/* Text Content */}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-[15px] text-white dark:text-slate-100 mb-0.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
-                                View Vendor Profile
-                              </p>
-                              <p className="text-[12px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                                {vendor?.vendorProfile?.tagline ||
-                                  (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.tagline : "") ||
-                                  "Bio, social stats & featured work"}
-                              </p>
-                            </div>
+                      <div className="relative flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          {/* Profile Picture or Fallback Icon */}
+                          <div className="relative flex-shrink-0">
+                            {vendor?.vendorProfile?.profilePicture ||
+                            (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
+                              <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
+                                <SmartMedia
+                                  src={
+                                    vendor?.vendorProfile?.profilePicture ||
+                                    (Array.isArray(vendor.vendorProfile)
+                                      ? vendor?.vendorProfile[0]?.profilePicture
+                                      : "")
+                                  }
+                                  type="image"
+                                  alt={`${vendor.name} Profile Picture`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
+                                <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
+                              </div>
+                            )}
+                            {/* Status indicator dot */}
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                           </div>
 
-                          {/* Arrow Icon */}
-                          <ArrowRight
-                            size={20}
-                            className="flex-shrink-0 text-white dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all duration-300"
-                          />
+                          {/* Text Content */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-[15px] text-white dark:text-slate-100 mb-0.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
+                              View Vendor Profile
+                            </p>
+                            <p className="text-[12px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                              {vendor?.vendorProfile?.tagline ||
+                                (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.tagline : "") ||
+                                "Bio, social stats & featured work"}
+                            </p>
+                          </div>
                         </div>
-                      </Link>
-                    </motion.div>
-                  )}
+
+                        {/* Arrow Icon */}
+                        <ArrowRight
+                          size={20}
+                          className="flex-shrink-0 text-white dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all duration-300"
+                        />
+                      </div>
+                    </Link>
+                  </motion.div>
                 </motion.div>
               )}
 
@@ -4316,8 +4313,7 @@ const VendorDetailsPageWrapper = () => {
         )}
 
         {/* Vendor Profile Link */}
-        {vendor.vendorProfile &&
-          activeTab !== "overview" &&
+        {activeTab !== "overview" &&
           (Array.isArray(vendor.vendorProfile) ? vendor.vendorProfile[0] : vendor.vendorProfile)?.bio && (
             <motion.div variants={fadeInUp}>
               <Link
