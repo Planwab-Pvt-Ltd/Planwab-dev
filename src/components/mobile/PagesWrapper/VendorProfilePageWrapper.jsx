@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, PanInfo } from "framer-motion";
 import {
@@ -9,6 +9,8 @@ import {
   MoreVertical,
   MapPin,
   Star,
+  Home,
+  Layers,
   Heart,
   CheckCircle,
   Phone,
@@ -63,8 +65,60 @@ import {
   AtSign,
   ImageIcon,
   ZoomIn,
+  Gift,
+  FileText,
+  BarChart2,
+  Award,
+  Building2,
+  Paintbrush2,
+  UserCircle,
+  UtensilsCrossed,
+  Shirt,
+  Hand,
+  CakeSlice,
+  Gem,
+  Scissors,
+  Music,
+  Wind,
+  Car,
+  Wifi,
+  Utensils,
+  Zap,
+  Tv,
+  Projector,
+  Armchair,
+  DoorOpen,
+  Accessibility,
+  Baby,
+  PawPrint,
+  Cigarette,
+  GlassWater,
+  Coffee,
+  Flower2,
+  Mic2,
+  ThermometerSun,
+  Flame,
+  Sun,
+  Building,
+  Leaf,
+  HeartIcon,
+  IndianRupee,
+  BadgeIndianRupee,
+  Percent,
+  Palette,
+  Youtube,
+  DollarSign,
+  Trophy,
+  HandCoins,
+  Timer,
+  Medal,
+  TrendingUp,
+  Route,
+  MapIcon,
+  Navigation,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import ReviewSection from "../ReviewSection";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse rounded-xl" />,
@@ -77,6 +131,102 @@ const TABS = [
   { id: "portfolio", label: "Portfolio", icon: LayoutGrid },
   { id: "services", label: "Services", icon: Package },
 ];
+
+const CATEGORY_CONFIG = {
+  venues: { label: "Venues", icon: Building2, color: "blue" },
+  photographers: { label: "Photography", icon: Camera, color: "purple" },
+  makeup: { label: "Makeup", icon: Paintbrush2, color: "pink" },
+  planners: { label: "Planning", icon: UserCircle, color: "indigo" },
+  catering: { label: "Catering", icon: UtensilsCrossed, color: "orange" },
+  clothes: { label: "Fashion", icon: Shirt, color: "rose" },
+  mehendi: { label: "Mehendi", icon: Hand, color: "amber" },
+  cakes: { label: "Cakes", icon: CakeSlice, color: "pink" },
+  jewellery: { label: "Jewellery", icon: Gem, color: "yellow" },
+  invitations: { label: "Invitations", icon: Mail, color: "teal" },
+  djs: { label: "DJs", icon: Music, color: "violet" },
+  hairstyling: { label: "Hairstyling", icon: Scissors, color: "fuchsia" },
+  other: { label: "Services", icon: FileText, color: "gray" },
+};
+
+const AMENITY_ICONS = {
+  "Air Conditioning": Wind,
+  Parking: Car,
+  "Sound System": Music,
+  "Wi-Fi": Wifi,
+  "Catering Service": Utensils,
+  Security: Shield,
+  "Photography Area": Camera,
+  "Bridal Room": Crown,
+  "Valet Parking": Car,
+  "Generator Backup": Zap,
+  "Decoration Service": Gift,
+  "DJ Services": Music,
+  "Stage Setup": Layers,
+  "Green Room": Home,
+  "LED Screens": Tv,
+  "Live Streaming": Video,
+  Projector: Projector,
+  "Waiting Lounge": Armchair,
+  "Multiple Entry Points": DoorOpen,
+  "Wheelchair Accessible": Accessibility,
+  "Kids Play Area": Baby,
+  "Pet Friendly": PawPrint,
+  "Smoking Area": Cigarette,
+  "Bar Service": GlassWater,
+  "Coffee Station": Coffee,
+  "Floral Decoration": Flower2,
+  "Dressing Room": Shirt,
+  "Kitchen Access": UtensilsCrossed,
+  Microphone: Mic2,
+  "Climate Control": ThermometerSun,
+  Heating: Flame,
+  "Outdoor Space": Sun,
+  "Indoor Venue": Building,
+  CCTV: Shield,
+  "Changing Room": Shirt,
+  "Open Catering": Utensils,
+  "Home Service (Doorstep Delivery)": Home,
+  "Studio Consultations:": Building2,
+  "Organic Henna Preparation": Leaf,
+  "After-Care Support": HeartIcon,
+  "Home Services / Doorstep Visits": Home,
+  "Organic / Herbal Henna": Leaf,
+  "Destination Wedding Travel": MapPin,
+  "Training & Workshops": Users,
+};
+
+const slideVariants = {
+  enter: (direction) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction) => ({ x: direction < 0 ? "100%" : "-100%", opacity: 0 }),
+};
+
+const collapseVariants = {
+  collapsed: { height: 0, opacity: 0, marginTop: 0 },
+  expanded: { height: "auto", opacity: 1, marginTop: 8 },
+};
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.05 } },
+};
+
+const CATEGORY_GRADIENTS = {
+  planners: { from: "#3b82f6", to: "#06b6d4" },
+  decor: { from: "#a855f7", to: "#ec4899" },
+  djs: { from: "#f59e0b", to: "#ef4444" },
+  photographers: { from: "#6366f1", to: "#8b5cf6" },
+  venues: { from: "#f59e0b", to: "#eab308" },
+  catering: { from: "#fb923c", to: "#f43f5e" },
+  cake: { from: "#ec4899", to: "#d946ef" },
+  makeup: { from: "#f43f5e", to: "#ec4899" },
+  mehendi: { from: "#10b981", to: "#059669" },
+};
 
 const MOCK_HIGHLIGHTS = [
   {
@@ -390,6 +540,11 @@ const ShimmerEffect = ({ className }) => (
   </div>
 );
 
+const formatPrice = (price) => {
+  if (!price) return "N/A";
+  return `₹${Number(price).toLocaleString("en-IN")}`;
+};
+
 const VendorProfileSkeleton = () => {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-black pb-24">
@@ -467,7 +622,7 @@ const VendorProfileSkeleton = () => {
 
           {/* Highlights Section Skeleton */}
           <div className="flex gap-4 py-1 overflow-hidden">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex flex-col items-center gap-2 min-w-[72px]">
                 <ShimmerEffect className="w-16 h-16 rounded-2xl" />
                 <ShimmerEffect className="w-12 h-3 rounded-full" />
@@ -492,7 +647,7 @@ const VendorProfileSkeleton = () => {
       {/* Content Grid Skeleton */}
       <div className="bg-white dark:bg-gray-900 min-h-[50vh]">
         <div className="grid grid-cols-3 gap-0.5">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0 }}
@@ -934,7 +1089,7 @@ const StoryViewer = ({ highlight, onClose }) => {
   );
 };
 
-const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete }) => {
+const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onEdit, onArchive }) => {
   const [isLiked, setIsLiked] = useState(post?.isLiked || false);
   const [isSaved, setIsSaved] = useState(post?.isSaved || false);
   const [likes, setLikes] = useState(post?.likes || 0);
@@ -955,7 +1110,13 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete }) =
   };
 
   const handleSave = () => {
-    setIsSaved(!isSaved);
+    if (!isSaved) {
+      setIsSaved(true);
+      onArchieve?.(post.id);
+    } else {
+      setIsSaved(false);
+      onArchive?.(post.id);
+    }
   };
 
   const handleComment = () => {
@@ -974,6 +1135,14 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete }) =
   const handleDelete = () => {
     onDelete?.();
     onClose();
+  };
+
+  const handleEdit = (newCaption) => {
+    onEdit?.(post.id, newCaption);
+  };
+
+  const handleArchive = () => {
+    onArchive?.(post.id);
   };
 
   if (!post) return null;
@@ -1132,6 +1301,8 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete }) =
             post={post}
             onDelete={handleDelete}
             onShare={() => setShowShareModal(true)}
+            onEdit={handleEdit}
+            onArchive={handleArchive}
           />
         )}
       </AnimatePresence>
@@ -2087,6 +2258,1032 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
   );
 };
 
+const InfoChip = memo(({ icon: Icon, label, value, color = "blue", size = "normal" }) => (
+  <div
+    className={`flex items-center gap-2 p-2.5 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl ${
+      size === "small" ? "p-2" : ""
+    }`}
+  >
+    <div
+      className={`w-8 h-8 rounded-lg bg-${color}-100 dark:bg-${color}-800/30 flex items-center justify-center ${
+        size === "small" ? "w-7 h-7" : ""
+      }`}
+    >
+      <Icon size={size === "small" ? 14 : 16} className={`text-${color}-600 dark:text-${color}-400`} />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[9px] text-gray-500 uppercase font-bold tracking-wide">{label}</p>
+      <p className={`font-bold text-gray-900 dark:text-white truncate ${size === "small" ? "text-[11px]" : "text-xs"}`}>
+        {value}
+      </p>
+    </div>
+  </div>
+));
+InfoChip.displayName = "InfoChip";
+
+const QuickStatCard = memo(({ icon: Icon, label, value, subtext, color = "blue", gradient }) => (
+  <motion.div
+    whileHover={{ scale: 1.02, y: -2 }}
+    whileTap={{ scale: 0.98 }}
+    className={`relative overflow-hidden p-3 rounded-2xl ${
+      gradient ||
+      `bg-gradient-to-br from-${color}-50 to-${color}-100/50 dark:from-${color}-900/30 dark:to-${color}-800/20`
+    } border border-${color}-100 dark:border-${color}-800/30`}
+  >
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-[9px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wide mb-0.5">{label}</p>
+        <p className="text-lg font-black text-gray-900 dark:text-white">{value}</p>
+        {subtext && <p className="text-[9px] text-gray-500 mt-0.5">{subtext}</p>}
+      </div>
+      <div
+        className={`w-10 h-10 rounded-xl bg-${color}-500/10 dark:bg-${color}-400/10 flex items-center justify-center`}
+      >
+        <Icon size={20} className={`text-${color}-600 dark:text-${color}-400`} />
+      </div>
+    </div>
+  </motion.div>
+));
+QuickStatCard.displayName = "QuickStatCard";
+
+const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
+  <motion.div
+    layout
+    whileTap={{ scale: 0.98 }}
+    onClick={() => onSelect(pkg.id || pkg._id)}
+    className={`bg-white dark:bg-gray-900 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+      isSelected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-gray-100 dark:border-gray-800"
+    } ${pkg.isPopular ? "ring-2 ring-amber-400 ring-offset-2 dark:ring-offset-black" : ""}`}
+  >
+    {pkg.isPopular && (
+      <div className="flex justify-center -mt-7 mb-3">
+        <span className="px-4 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black rounded-full flex items-center gap-1.5 shadow-lg">
+          <Sparkles size={12} />
+          Most Popular
+        </span>
+      </div>
+    )}
+    <div className="flex justify-between items-start mb-3">
+      <div className="flex-1 pr-3">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{pkg.name}</h4>
+        {pkg.duration && (
+          <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+            <Clock size={10} />
+            {pkg.duration}
+          </p>
+        )}
+      </div>
+      <div className="text-right shrink-0">
+        {pkg.originalPrice && (
+          <p className="text-[10px] text-gray-400 line-through">₹{Number(pkg.originalPrice).toLocaleString("en-IN")}</p>
+        )}
+        <p className="text-xl font-black text-blue-600 dark:text-blue-400">
+          ₹{Number(pkg.price).toLocaleString("en-IN")}
+        </p>
+        {pkg.savingsPercentage > 0 && (
+          <span className="inline-block px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 text-[9px] font-bold rounded-full mt-1">
+            Save {pkg.savingsPercentage}%
+          </span>
+        )}
+      </div>
+    </div>
+    {pkg.features?.length > 0 && (
+      <div className="space-y-1.5 mb-3 py-3 border-t border-gray-100 dark:border-gray-800">
+        {pkg.features.slice(0, 4).map((feature, idx) => (
+          <div key={idx} className="flex items-start gap-2">
+            <CheckCircle size={12} className="text-green-500 shrink-0 mt-0.5" />
+            <span className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">{feature}</span>
+          </div>
+        ))}
+        {pkg.features.length > 4 && (
+          <p className="text-[10px] text-blue-500 font-semibold pl-5">+{pkg.features.length - 4} more included</p>
+        )}
+      </div>
+    )}
+    {pkg.notIncluded?.length > 0 && (
+      <div className="mb-3">
+        {pkg.notIncluded.slice(0, 2).map((feature, idx) => (
+          <div key={idx} className="flex items-center gap-2 opacity-60">
+            <X size={11} className="text-gray-400 shrink-0" />
+            <span className="text-[10px] text-gray-400 line-through">{feature}</span>
+          </div>
+        ))}
+      </div>
+    )}
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all ${
+        isSelected
+          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
+          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+      }`}
+    >
+      {isSelected ? "✓ Selected" : "Select Package"}
+    </motion.button>
+  </motion.div>
+));
+PackageCard.displayName = "PackageCard";
+
+const CategorySpecificSection = memo(({ vendor, formatPrice }) => {
+  const category = vendor.category;
+  if (!category) return null;
+
+  const renderContent = () => {
+    switch (category) {
+      case "venues":
+        return (
+          <div className="space-y-4">
+            {(vendor.seating?.min || vendor.seating?.max || vendor.floating?.min || vendor.floating?.max) && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Users size={16} className="text-blue-500" />
+                  Capacity Details
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {(vendor.seating?.min || vendor.seating?.max) && (
+                    <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/30 dark:to-blue-800/20 rounded-xl">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Seating Capacity</p>
+                      <p className="text-lg font-black text-blue-700 dark:text-blue-400">
+                        {vendor.seating?.min || 0} - {vendor.seating?.max || 0}
+                      </p>
+                      <p className="text-[9px] text-gray-500">guests</p>
+                    </div>
+                  )}
+                  {(vendor.floating?.min || vendor.floating?.max) && (
+                    <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/30 dark:to-purple-800/20 rounded-xl">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Floating Capacity</p>
+                      <p className="text-lg font-black text-purple-700 dark:text-purple-400">
+                        {vendor.floating?.min || 0} - {vendor.floating?.max || 0}
+                      </p>
+                      <p className="text-[9px] text-gray-500">guests</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {(vendor.halls || vendor.rooms?.count || vendor.parking?.capacity) && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Building2 size={16} className="text-green-500" />
+                  Venue Facilities
+                </h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {vendor.halls && <QuickStatCard icon={Building2} label="Halls" value={vendor.halls} color="green" />}
+                  {vendor.rooms?.count && (
+                    <QuickStatCard icon={Building} label="Rooms" value={vendor.rooms.count} color="blue" />
+                  )}
+                  {vendor.parking?.capacity && (
+                    <QuickStatCard
+                      icon={Car}
+                      label="Parking"
+                      value={vendor.parking.capacity}
+                      subtext={vendor.parking.valet ? "Valet Available" : ""}
+                      color="orange"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+            {vendor.areas?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <MapPin size={16} className="text-orange-500" />
+                  Available Areas
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.areas.map((area, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {area}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {vendor.foodPolicy && (
+              <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <UtensilsCrossed size={18} className="text-amber-600" />
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold">Food Policy</p>
+                  <p className="text-sm font-bold text-amber-700 dark:text-amber-400">{vendor.foodPolicy}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case "mehendi":
+        return (
+          <div className="space-y-4">
+            {vendor.designs?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Palette size={16} className="text-amber-500" />
+                  Design Styles
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.designs
+                    .filter((d) => !d.includes(",") && !d.includes("₹"))
+                    .map((design, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 text-amber-700 dark:text-amber-300 rounded-full text-[11px] font-semibold border border-amber-200 dark:border-amber-800"
+                      >
+                        {design}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <DollarSign size={16} className="text-green-500" />
+                Pricing Details
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {vendor.pricePerHand && (
+                  <QuickStatCard icon={Hand} label="Per Hand" value={formatPrice(vendor.pricePerHand)} color="green" />
+                )}
+                {vendor.bridalPackagePrice && (
+                  <QuickStatCard
+                    icon={Crown}
+                    label="Bridal Package"
+                    value={formatPrice(vendor.bridalPackagePrice)}
+                    color="pink"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <Info size={16} className="text-blue-500" />
+                Service Details
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {vendor.teamSize && (
+                  <InfoChip icon={Users} label="Team Size" value={`${vendor.teamSize}+ Artists`} color="blue" />
+                )}
+                {vendor.dryingTime && (
+                  <InfoChip icon={Clock} label="Drying Time" value={vendor.dryingTime} color="purple" />
+                )}
+              </div>
+              <div className="mt-3 space-y-2">
+                {vendor.organic && (
+                  <div className="flex items-center gap-2 p-2.5 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                    <Leaf size={14} className="text-green-500" />
+                    <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">100% Organic Henna</span>
+                    <CheckCircle size={12} className="text-green-500 ml-auto" />
+                  </div>
+                )}
+                {vendor.travelToVenue && (
+                  <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                    <MapPin size={14} className="text-blue-500" />
+                    <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                      Travel to Venue Available
+                    </span>
+                    <CheckCircle size={12} className="text-green-500 ml-auto" />
+                  </div>
+                )}
+                {vendor.colorGuarantee && (
+                  <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+                    <Droplets size={14} className="text-amber-500" />
+                    <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                      {vendor.colorGuarantee}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case "photographers":
+        return (
+          <div className="space-y-4">
+            {vendor.services?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Camera size={16} className="text-purple-500" />
+                  Photography Services
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.services.map((s, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {vendor.deliverables?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Package size={16} className="text-blue-500" />
+                  Deliverables
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.deliverables.map((d, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {d}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <Info size={16} className="text-gray-500" />
+                Service Info
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                {vendor.deliveryTime && (
+                  <QuickStatCard icon={Clock} label="Delivery" value={`${vendor.deliveryTime} weeks`} color="blue" />
+                )}
+                {vendor.teamSize && <QuickStatCard icon={Users} label="Team" value={vendor.teamSize} color="purple" />}
+                {vendor.travelCost && (
+                  <QuickStatCard icon={MapPin} label="Travel" value={vendor.travelCost} color="green" />
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {vendor.videographyIncluded && (
+                  <div className="flex items-center gap-2 p-2.5 bg-pink-50 dark:bg-pink-900/20 rounded-xl">
+                    <Video size={14} className="text-pink-500" />
+                    <span className="text-[11px] font-medium">Videography</span>
+                    <CheckCircle size={12} className="text-green-500 ml-auto" />
+                  </div>
+                )}
+                {vendor.droneAvailable && (
+                  <div className="flex items-center gap-2 p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+                    <Camera size={14} className="text-indigo-500" />
+                    <span className="text-[11px] font-medium">Drone</span>
+                    <CheckCircle size={12} className="text-green-500 ml-auto" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case "planners":
+        return (
+          <div className="space-y-4">
+            {vendor.specializations?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Star size={16} className="text-indigo-500" />
+                  Specializations
+                </h4>
+                <div className="space-y-2">
+                  {vendor.specializations.map((s, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl"
+                    >
+                      <CheckCircle size={14} className="text-indigo-500" />
+                      <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {vendor.eventsManaged?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Calendar size={16} className="text-green-500" />
+                  Events Managed
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.eventsManaged.map((e, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {e}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <Users size={16} className="text-blue-500" />
+                Team & Network
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                {vendor.teamSize && <QuickStatCard icon={Users} label="Team" value={vendor.teamSize} color="blue" />}
+                {vendor.vendorNetwork && (
+                  <QuickStatCard icon={Globe} label="Network" value={`${vendor.vendorNetwork}+`} color="purple" />
+                )}
+                {vendor.feeStructure && (
+                  <QuickStatCard icon={DollarSign} label="Fee" value={vendor.feeStructure} color="green" />
+                )}
+              </div>
+            </div>
+            {vendor.budgetRange && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <DollarSign size={16} className="text-green-500" />
+                  Budget Range
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold">From</p>
+                    <p className="text-lg font-black text-green-700 dark:text-green-400">
+                      {formatPrice(vendor.budgetRange.min)}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold">Up To</p>
+                    <p className="text-lg font-black text-blue-700 dark:text-blue-400">
+                      {formatPrice(vendor.budgetRange.max)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {vendor.destinationWeddings !== undefined && (
+              <div
+                className={`p-3 rounded-xl flex items-center gap-3 ${
+                  vendor.destinationWeddings
+                    ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                    : "bg-gray-50 dark:bg-gray-800"
+                }`}
+              >
+                {vendor.destinationWeddings ? (
+                  <CheckCircle size={18} className="text-green-500" />
+                ) : (
+                  <X size={18} className="text-gray-400" />
+                )}
+                <div>
+                  <p className="text-[11px] font-bold text-gray-900 dark:text-white">Destination Weddings</p>
+                  <p className="text-[9px] text-gray-500">
+                    {vendor.destinationWeddings ? "Available" : "Not Available"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case "makeup":
+        return (
+          <div className="space-y-4">
+            {vendor.services?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Paintbrush2 size={16} className="text-pink-500" />
+                  Makeup Services
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.services.map((s, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {vendor.brandsUsed?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Award size={16} className="text-purple-500" />
+                  Premium Brands
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.brandsUsed.map((b, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {b}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {vendor.trialPolicy && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Calendar size={16} className="text-blue-500" />
+                  Trial Policy
+                </h4>
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle
+                      size={16}
+                      className={vendor.trialPolicy.available ? "text-green-500" : "text-gray-400"}
+                    />
+                    <span className="text-[11px] font-medium">
+                      {vendor.trialPolicy.available ? "Trial Available" : "No Trial"}
+                    </span>
+                  </div>
+                  {vendor.trialPolicy.available && vendor.trialPolicy.paid && (
+                    <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold">
+                      ₹{vendor.trialPolicy.price}
+                    </span>
+                  )}
+                  {vendor.trialPolicy.available && !vendor.trialPolicy.paid && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-bold">Free</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case "catering":
+        return (
+          <div className="space-y-4">
+            {vendor.cuisines?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <UtensilsCrossed size={16} className="text-orange-500" />
+                  Cuisines
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.cuisines.map((c, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {vendor.menuTypes?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <FileText size={16} className="text-green-500" />
+                  Menu Types
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.menuTypes.map((m, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <Users size={16} className="text-blue-500" />
+                Capacity & Pricing
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {(vendor.minCapacity || vendor.maxCapacity) && (
+                  <QuickStatCard
+                    icon={Users}
+                    label="Capacity"
+                    value={`${vendor.minCapacity || 50}-${vendor.maxCapacity || 1000}`}
+                    color="blue"
+                  />
+                )}
+                {vendor.liveCounters && (
+                  <QuickStatCard icon={Flame} label="Live Counters" value="Available" color="red" />
+                )}
+              </div>
+              {vendor.pricePerPlate && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {vendor.pricePerPlate.veg && (
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
+                      <p className="text-[9px] text-gray-500 uppercase font-bold">Veg Plate</p>
+                      <p className="text-lg font-black text-green-700">₹{vendor.pricePerPlate.veg}</p>
+                    </div>
+                  )}
+                  {vendor.pricePerPlate.nonVeg && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl text-center">
+                      <p className="text-[9px] text-gray-500 uppercase font-bold">Non-Veg Plate</p>
+                      <p className="text-lg font-black text-red-700">₹{vendor.pricePerPlate.nonVeg}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case "djs":
+        return (
+          <div className="space-y-4">
+            {vendor.genres?.length > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Music size={16} className="text-purple-500" />
+                  Music Genres
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {vendor.genres.map((g, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full text-[11px] font-semibold"
+                    >
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                <Info size={16} className="text-blue-500" />
+                Performance Details
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                {vendor.performanceDuration && (
+                  <QuickStatCard icon={Clock} label="Duration" value={vendor.performanceDuration} color="blue" />
+                )}
+                {vendor.soundSystemPower && (
+                  <QuickStatCard icon={Zap} label="Sound" value={vendor.soundSystemPower} color="orange" />
+                )}
+                {vendor.setupTime && (
+                  <QuickStatCard icon={Timer} label="Setup" value={vendor.setupTime} color="green" />
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {vendor.equipmentProvided && (
+                  <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                    <Mic2 size={14} className="text-blue-500" />
+                    <span className="text-[11px] font-medium">Equipment Provided</span>
+                  </div>
+                )}
+                {vendor.lightingIncluded && (
+                  <div className="flex items-center gap-2 p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+                    <Zap size={14} className="text-yellow-500" />
+                    <span className="text-[11px] font-medium">Lighting Included</span>
+                  </div>
+                )}
+                {vendor.backupAvailable && (
+                  <div className="flex items-center gap-2 p-2.5 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                    <Shield size={14} className="text-green-500" />
+                    <span className="text-[11px] font-medium">Backup Available</span>
+                  </div>
+                )}
+                {vendor.emceeServices && (
+                  <div className="flex items-center gap-2 p-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                    <Mic2 size={14} className="text-purple-500" />
+                    <span className="text-[11px] font-medium">Emcee Services</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const content = renderContent();
+  if (!content) return null;
+
+  const categoryConfig = CATEGORY_CONFIG[category] || { label: category, icon: FileText, color: "gray" };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className={`w-9 h-9 rounded-xl bg-${categoryConfig.color}-100 dark:bg-${categoryConfig.color}-900/30 flex items-center justify-center`}
+        >
+          <categoryConfig.icon
+            size={18}
+            className={`text-${categoryConfig.color}-600 dark:text-${categoryConfig.color}-400`}
+          />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">{categoryConfig.label} Details</h3>
+          <p className="text-[10px] text-gray-500">Category-specific information</p>
+        </div>
+      </div>
+      {content}
+    </div>
+  );
+});
+CategorySpecificSection.displayName = "CategorySpecificSection";
+
+const CollapsibleSection = memo(
+  ({ title, icon: Icon, iconColor, iconBg, children, defaultOpen = true, badge, badgeColor = "blue" }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+      <motion.div
+        layout
+        className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800"
+      >
+        <motion.button
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="w-full p-4 flex items-center justify-between text-left active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors"
+          whileTap={{ scale: 0.995 }}
+        >
+          <div className="flex items-center gap-3">
+            {Icon && (
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                  iconBg || "bg-blue-50 dark:bg-blue-900/20"
+                }`}
+              >
+                <Icon className={iconColor || "text-blue-500"} size={18} />
+              </div>
+            )}
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h3>
+              {badge && (
+                <span className={`text-[9px] font-semibold text-${badgeColor}-600 dark:text-${badgeColor}-400`}>
+                  {badge}
+                </span>
+              )}
+            </div>
+          </div>
+          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.25, ease: "easeInOut" }}>
+            <ChevronDown size={18} className="text-gray-400" />
+          </motion.div>
+        </motion.button>
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div
+              initial="collapsed"
+              animate="expanded"
+              exit="collapsed"
+              variants={collapseVariants}
+              transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+            >
+              <div className="px-4 pb-4">{children}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  }
+);
+CollapsibleSection.displayName = "CollapsibleSection";
+
+const CategoryHighlights = memo(({ vendor }) => {
+  const category = vendor.category;
+  if (!category) return null;
+
+  const renderHighlights = () => {
+    switch (category) {
+      case "mehendi":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.designs?.length > 0 && (
+              <InfoChip
+                icon={Palette}
+                label="Styles"
+                value={`${vendor.designs.filter((d) => !d.includes(",") && !d.includes("₹")).length}+ Designs`}
+                color="amber"
+              />
+            )}
+            {vendor.teamSize && (
+              <InfoChip icon={Users} label="Team Size" value={`${vendor.teamSize}+ Artists`} color="blue" />
+            )}
+            {vendor.pricePerHand && (
+              <InfoChip icon={Hand} label="Price/Hand" value={formatPrice(vendor.pricePerHand)} color="green" />
+            )}
+            {vendor.bridalPackagePrice && (
+              <InfoChip
+                icon={Crown}
+                label="Bridal Package"
+                value={formatPrice(vendor.bridalPackagePrice)}
+                color="pink"
+              />
+            )}
+            {vendor.organic && (
+              <div className="col-span-2 flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-800/30 flex items-center justify-center">
+                  <Leaf size={16} className="text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-green-700 dark:text-green-400">100% Organic Henna</p>
+                  <p className="text-[9px] text-green-600/70">Natural, chemical-free & skin-safe</p>
+                </div>
+                <CheckCircle size={16} className="text-green-500 ml-auto" />
+              </div>
+            )}
+            {/* {vendor.travelToVenue && (
+              <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                <MapPin size={14} className="text-blue-500" />
+                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">Travel to Venue</span>
+                <CheckCircle size={12} className="text-green-500 ml-auto" />
+              </div>
+            )} */}
+          </div>
+        );
+      case "venues":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.seating && (
+              <InfoChip
+                icon={Users}
+                label="Seating"
+                value={`${vendor.seating.min || 0}-${vendor.seating.max || 0}`}
+                color="blue"
+              />
+            )}
+            {vendor.floating && (
+              <InfoChip
+                icon={Users}
+                label="Floating"
+                value={`${vendor.floating.min || 0}-${vendor.floating.max || 0}`}
+                color="purple"
+              />
+            )}
+            {vendor.halls && <InfoChip icon={Building2} label="Halls" value={vendor.halls} color="green" />}
+            {vendor.parking?.capacity && (
+              <InfoChip icon={Car} label="Parking" value={`${vendor.parking.capacity} spots`} color="orange" />
+            )}
+          </div>
+        );
+      case "photographers":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.teamSize && (
+              <InfoChip icon={Users} label="Team" value={`${vendor.teamSize} members`} color="purple" />
+            )}
+            {vendor.deliveryTime && (
+              <InfoChip icon={Clock} label="Delivery" value={`${vendor.deliveryTime} weeks`} color="blue" />
+            )}
+            {vendor.videographyIncluded && <InfoChip icon={Video} label="Video" value="Included" color="pink" />}
+            {vendor.droneAvailable && <InfoChip icon={Camera} label="Drone" value="Available" color="green" />}
+          </div>
+        );
+      case "catering":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.cuisines?.length > 0 && (
+              <InfoChip
+                icon={UtensilsCrossed}
+                label="Cuisines"
+                value={`${vendor.cuisines.length}+ types`}
+                color="orange"
+              />
+            )}
+            {(vendor.minCapacity || vendor.maxCapacity) && (
+              <InfoChip
+                icon={Users}
+                label="Capacity"
+                value={`${vendor.minCapacity || 50}-${vendor.maxCapacity || 1000}`}
+                color="blue"
+              />
+            )}
+            {vendor.pricePerPlate?.veg && (
+              <InfoChip icon={Utensils} label="Veg Plate" value={formatPrice(vendor.pricePerPlate.veg)} color="green" />
+            )}
+            {vendor.liveCounters && <InfoChip icon={Flame} label="Live Counters" value="Available" color="red" />}
+          </div>
+        );
+      case "djs":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.genres?.length > 0 && (
+              <InfoChip icon={Music} label="Genres" value={`${vendor.genres.length}+ styles`} color="purple" />
+            )}
+            {vendor.performanceDuration && (
+              <InfoChip icon={Clock} label="Duration" value={vendor.performanceDuration} color="blue" />
+            )}
+            {vendor.soundSystemPower && (
+              <InfoChip icon={Mic2} label="Sound" value={vendor.soundSystemPower} color="orange" />
+            )}
+            {vendor.lightingIncluded && <InfoChip icon={Zap} label="Lighting" value="Included" color="yellow" />}
+          </div>
+        );
+      case "makeup":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.services?.length > 0 && (
+              <InfoChip icon={Paintbrush2} label="Services" value={`${vendor.services.length}+ types`} color="pink" />
+            )}
+            {vendor.brandsUsed?.length > 0 && (
+              <InfoChip icon={Award} label="Brands" value={`${vendor.brandsUsed.length}+ premium`} color="purple" />
+            )}
+            {vendor.travelToVenue && <InfoChip icon={MapPin} label="Travel" value="Available" color="blue" />}
+            {vendor.trialPolicy?.available && (
+              <InfoChip
+                icon={Calendar}
+                label="Trial"
+                value={vendor.trialPolicy.paid ? `₹${vendor.trialPolicy.price}` : "Free"}
+                color="green"
+              />
+            )}
+          </div>
+        );
+      case "planners":
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            {vendor.teamSize && (
+              <InfoChip icon={Users} label="Team" value={`${vendor.teamSize} members`} color="indigo" />
+            )}
+            {vendor.vendorNetwork && (
+              <InfoChip icon={Globe} label="Network" value={`${vendor.vendorNetwork}+ vendors`} color="purple" />
+            )}
+            {vendor.feeStructure && (
+              <InfoChip icon={DollarSign} label="Fee Type" value={vendor.feeStructure} color="green" />
+            )}
+            {vendor.destinationWeddings && (
+              <InfoChip icon={MapPin} label="Destination" value="Available" color="blue" />
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const content = renderHighlights();
+  if (!content) return null;
+
+  const categoryConfig = CATEGORY_CONFIG[category] || { label: category, icon: FileText, color: "gray" };
+
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <div
+          className={`w-8 h-8 rounded-lg bg-${categoryConfig.color}-100 dark:bg-${categoryConfig.color}-900/30 flex items-center justify-center`}
+        >
+          <categoryConfig.icon
+            size={16}
+            className={`text-${categoryConfig.color}-600 dark:text-${categoryConfig.color}-400`}
+          />
+        </div>
+        <h3 className="text-sm font-bold text-gray-900 dark:text-white">{categoryConfig.label} Highlights</h3>
+      </div>
+      {content}
+    </motion.div>
+  );
+});
+CategoryHighlights.displayName = "CategoryHighlights";
+
+const SocialLinksSection = memo(({ socialLinks }) => {
+  if (!socialLinks || !Object.values(socialLinks).some(Boolean)) return null;
+
+  const links = [
+    { key: "website", icon: Globe, label: "Website", color: "gray", bg: "bg-gray-100 dark:bg-gray-800" },
+    {
+      key: "instagram",
+      icon: Instagram,
+      label: "Instagram",
+      color: "pink",
+      bg: "bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30",
+    },
+    { key: "facebook", icon: Facebook, label: "Facebook", color: "blue", bg: "bg-blue-100 dark:bg-blue-900/30" },
+    { key: "youtube", icon: Youtube, label: "YouTube", color: "red", bg: "bg-red-100 dark:bg-red-900/30" },
+    { key: "twitter", icon: Twitter, label: "Twitter", color: "sky", bg: "bg-sky-100 dark:bg-sky-900/30" },
+    { key: "linkedin", icon: Linkedin, label: "LinkedIn", color: "blue", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  ].filter((l) => socialLinks[l.key]);
+
+  if (links.length === 0) return null;
+
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+          <Globe size={16} className="text-indigo-600" />
+        </div>
+        <h3 className="text-sm font-bold text-gray-900 dark:text-white">Connect With Us</h3>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {links.map((link) => (
+          <motion.a
+            key={link.key}
+            href={socialLinks[link.key]}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className={`p-3 ${link.bg} rounded-xl flex items-center gap-2 transition-shadow hover:shadow-md`}
+          >
+            <link.icon size={18} className={`text-${link.color}-600`} />
+            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{link.label}</span>
+          </motion.a>
+        ))}
+      </div>
+    </motion.div>
+  );
+});
+SocialLinksSection.displayName = "SocialLinksSection";
+
 const BookingDrawer = ({ isOpen, onClose, services, vendorName, onBookingConfirmed }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -2375,24 +3572,24 @@ const BookingDrawer = ({ isOpen, onClose, services, vendorName, onBookingConfirm
   );
 };
 
-const ReviewsDrawer = ({ isOpen, onClose, reviews }) => {
-  const [helpfulReviews, setHelpfulReviews] = useState(new Set());
-  const [showHelpfulFeedback, setShowHelpfulFeedback] = useState(null);
+const ReviewsDrawer = ({ isOpen, onClose, reviewsData }) => {
   useBodyScrollLock(isOpen);
 
-  const markHelpful = (id) => {
-    const newSet = new Set(helpfulReviews);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-      setShowHelpfulFeedback(id);
-      setTimeout(() => setShowHelpfulFeedback(null), 1500);
-    }
-    setHelpfulReviews(newSet);
+  if (!isOpen) return null;
+
+  // Extract data from the new structure
+  const reviews = reviewsData?.data?.reviews || [];
+  const stats = reviewsData?.data?.stats || {
+    averageRating: 0,
+    totalReviews: 0,
+    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
   };
 
-  if (!isOpen) return null;
+  // Calculate percentage for rating bars
+  const getPercentage = (rating) => {
+    if (stats.totalReviews === 0) return 0;
+    return ((stats.distribution[rating] || 0) / stats.totalReviews) * 100;
+  };
 
   return (
     <motion.div
@@ -2416,7 +3613,8 @@ const ReviewsDrawer = ({ isOpen, onClose, reviews }) => {
         }}
         className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-[32px] max-h-[88vh] overflow-hidden"
       >
-        <div className="sticky top-0 bg-white dark:bg-gray-900 px-5 pt-3 pb-4 border-b border-gray-100 dark:border-gray-800">
+        {/* Header with Stats */}
+        <div className="sticky top-0 bg-white dark:bg-gray-900 px-5 pt-3 pb-4 border-b border-gray-100 dark:border-gray-800 z-10">
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Reviews</h3>
@@ -2428,15 +3626,27 @@ const ReviewsDrawer = ({ isOpen, onClose, reviews }) => {
               <X size={20} className="text-gray-500" />
             </motion.button>
           </div>
+
+          {/* Rating Summary */}
           <div className="flex items-center gap-4 mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl">
             <div className="text-center">
-              <span className="text-4xl font-black text-gray-900 dark:text-white">4.8</span>
+              <span className="text-4xl font-black text-gray-900 dark:text-white">
+                {stats.averageRating.toFixed(1)}
+              </span>
               <div className="flex mt-1">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} size={14} className="text-yellow-500 fill-yellow-500" />
+                  <Star
+                    key={star}
+                    size={14}
+                    className={
+                      star <= Math.round(stats.averageRating) ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
+                    }
+                  />
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{reviews.length} reviews</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {stats.totalReviews} {stats.totalReviews === 1 ? "review" : "reviews"}
+              </p>
             </div>
             <div className="flex-1 space-y-1">
               {[5, 4, 3, 2, 1].map((rating) => (
@@ -2444,90 +3654,77 @@ const ReviewsDrawer = ({ isOpen, onClose, reviews }) => {
                   <span className="text-xs text-gray-500 w-3">{rating}</span>
                   <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-yellow-500 rounded-full"
-                      style={{ width: `${rating === 5 ? 70 : rating === 4 ? 20 : rating === 3 ? 7 : 3}%` }}
+                      className="h-full bg-yellow-500 rounded-full transition-all duration-300"
+                      style={{ width: `${getPercentage(rating)}%` }}
                     />
                   </div>
+                  <span className="text-xs text-gray-400 w-8 text-right">{stats.distribution[rating] || 0}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
+        {/* Reviews List */}
         <div className="overflow-y-auto max-h-[calc(88vh-220px)] p-5 space-y-4">
-          {reviews.map((review) => (
-            <motion.div
-              key={review.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 space-y-3"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-gray-700">
-                    <SmartMedia
-                      src={review.avatar}
-                      type="image"
-                      className="w-full h-full object-cover"
-                      loaderImage="/GlowLoadingGif.gif"
-                    />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm text-gray-900 dark:text-white">{review.name}</p>
-                    <p className="text-xs text-gray-500">{review.date}</p>
-                  </div>
-                </div>
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      size={12}
-                      className={star <= review.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}
-                    />
-                  ))}
-                </div>
-              </div>
-              {review.service && (
-                <span className="inline-block px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-full">
-                  {review.service}
-                </span>
-              )}
-              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{review.comment}</p>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => markHelpful(review.id)}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors relative ${
-                  helpfulReviews.has(review.id)
-                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
-                    : "text-gray-500 bg-gray-100 dark:bg-gray-800"
-                }`}
+          {reviews.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400">No reviews yet</p>
+            </div>
+          ) : (
+            reviews.map((review, index) => (
+              <motion.div
+                key={review._id || index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 space-y-3"
               >
-                <ThumbsUp size={12} />
-                <span>Helpful ({review.helpful + (helpfulReviews.has(review.id) ? 1 : 0)})</span>
-                <AnimatePresence>
-                  {showHelpfulFeedback === review.id && (
-                    <motion.span
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap"
-                    >
-                      Thanks for feedback!
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            </motion.div>
-          ))}
-        </div>
+                {/* User Info and Rating */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-gray-700 flex-shrink-0">
+                      <SmartMedia
+                        src={review.userAvatar}
+                        type="image"
+                        className="w-full h-full object-cover"
+                        loaderImage="/GlowLoadingGif.gif"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-900 dark:text-white">
+                        {review.userName || "Anonymous"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        size={12}
+                        className={
+                          star <= review.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600"
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
 
-        <div className="sticky bottom-0 bg-white dark:bg-gray-900 px-5 py-4 border-t border-gray-100 dark:border-gray-800">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-bold text-white shadow-lg shadow-blue-500/25"
-          >
-            Write a Review
-          </motion.button>
+                {/* Review Title */}
+                {review.title && (
+                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{review.title}</h4>
+                )}
+
+                {/* Review Text */}
+                {review.text && (
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{review.text}</p>
+                )}
+              </motion.div>
+            ))
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -2749,6 +3946,7 @@ const MoreOptionsDrawer = ({
 const ShareModal = ({ isOpen, onClose, vendorName }) => {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   useBodyScrollLock(isOpen);
+  console.log("ShareModal rendered with isOpen:", isOpen);
 
   if (!isOpen) return null;
 
@@ -2844,7 +4042,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end"
     >
       <motion.div
         initial={{ y: "100%" }}
@@ -3138,13 +4336,26 @@ const PostPreviewModal = ({ post, onClose }) => {
   );
 };
 
-const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare }) => {
+const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, onArchive }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editedCaption, setEditedCaption] = useState(post?.caption || "");
   useBodyScrollLock(isOpen);
 
   const handleDelete = () => {
     setShowDeleteConfirm(false);
     onDelete();
+    onClose();
+  };
+
+  const handleEdit = () => {
+    onEdit?.(editedCaption);
+    setShowEditModal(false);
+    onClose();
+  };
+
+  const handleArchive = () => {
+    onArchive?.();
     onClose();
   };
 
@@ -3160,17 +4371,8 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare }) => {
         onClose();
       },
     },
-    {
-      id: "copy",
-      label: "Copy Link",
-      icon: Link2,
-      action: () => {
-        navigator.clipboard.writeText(window.location.href);
-        onClose();
-      },
-    },
-    { id: "edit", label: "Edit Caption", icon: Type, action: onClose },
-    { id: "archive", label: "Archive", icon: Bookmark, action: onClose },
+    { id: "edit", label: "Edit Caption", icon: Type, action: () => setShowEditModal(true) },
+    { id: "archive", label: "Archive", icon: Bookmark, action: handleArchive },
     { id: "delete", label: "Delete", icon: X, action: () => setShowDeleteConfirm(true), danger: true },
   ];
 
@@ -3193,7 +4395,45 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare }) => {
         <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-5" />
 
         <AnimatePresence mode="wait">
-          {showDeleteConfirm ? (
+          {showEditModal ? (
+            <motion.div
+              key="edit-modal"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-4"
+            >
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Edit Caption</h3>
+              </div>
+              <textarea
+                value={editedCaption}
+                onChange={(e) => setEditedCaption(e.target.value)}
+                className="w-full p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-900 dark:text-white resize-none outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
+                placeholder="Write a caption..."
+              />
+              <div className="flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditedCaption(post?.caption || "");
+                  }}
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleEdit}
+                  className="flex-1 py-3 bg-blue-500 rounded-xl font-semibold text-white"
+                >
+                  Save
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : showDeleteConfirm ? (
             <motion.div
               key="delete-confirm"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -3277,15 +4517,6 @@ const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare }) => {
       icon: Share2,
       action: () => {
         onShare();
-        onClose();
-      },
-    },
-    {
-      id: "copy",
-      label: "Copy Link",
-      icon: Link2,
-      action: () => {
-        navigator.clipboard.writeText(window.location.href);
         onClose();
       },
     },
@@ -3559,7 +4790,7 @@ const formatBio = (bio) => {
 };
 
 const VendorProfilePageWrapper = () => {
-  const { id } = useParams();
+  const { id, category } = useParams();
   const router = useRouter();
 
   const [vendor, setVendor] = useState(null);
@@ -3574,6 +4805,8 @@ const VendorProfilePageWrapper = () => {
   const [showContactDrawer, setShowContactDrawer] = useState(false);
   const [showProfilePicture, setShowProfilePicture] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [expandedFaq, setExpandedFaq] = useState(null);
 
   const [selectedHighlight, setSelectedHighlight] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -3595,7 +4828,20 @@ const VendorProfilePageWrapper = () => {
   const [previewPost, setPreviewPost] = useState(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
+  const [activeDetailsTab, setActiveDetailsTab] = useState("overview");
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [archivedPosts, setArchivedPosts] = useState([]);
   const longPressTimerRef = useRef(null);
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
+  }, []);
 
   // Replace MOCK_POSTS and MOCK_REELS with state
   const [posts, setPosts] = useState(MOCK_POSTS.slice(0, 6));
@@ -3622,6 +4868,22 @@ const VendorProfilePageWrapper = () => {
     };
     if (id) fetchData();
   }, [id]);
+
+  useEffect(() => {
+    const handleFetchReviews = async () => {
+      try {
+        const res = await fetch(`/api/vendor/${id}/reviews`);
+        const data = await res.json();
+
+        if (data.success) {
+          setReviews(data.data.reviews);
+        }
+      } catch (error) {
+        console.error("Error logging profile visit:", error);
+      }
+    };
+    handleFetchReviews();
+  }, []);
 
   const showUIConfirmation = useCallback((message, type = "success", icon = Check) => {
     setShowConfirmation({ show: true, message, type, icon });
@@ -3701,6 +4963,27 @@ const VendorProfilePageWrapper = () => {
     [showUIConfirmation]
   );
 
+  const handleEditPost = useCallback(
+    (postId, newCaption) => {
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, caption: newCaption } : p)));
+      showUIConfirmation("Caption updated", "success", Check);
+    },
+    [showUIConfirmation]
+  );
+
+  const handleArchivePost = useCallback(
+    (postId) => {
+      const postToArchive = posts.find((p) => p.id === postId);
+      if (postToArchive) {
+        setArchivedPosts((prev) => [...prev, postToArchive]);
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+        setSelectedPost(null);
+        showUIConfirmation("Post archived", "success", Bookmark);
+      }
+    },
+    [posts, showUIConfirmation]
+  );
+
   const handleDeleteReel = useCallback(
     (reelId) => {
       setReels((prev) => prev.filter((r) => r.id !== reelId));
@@ -3734,6 +5017,35 @@ const VendorProfilePageWrapper = () => {
     ],
     [trustCount, hasTrusted, likesCount, hasLiked, handleTrust, handleLike]
   );
+
+  const TAB_CONFIG = useMemo(() => {
+    const tabs = [
+      { id: "overview", label: "Overview", icon: Home },
+      {
+        id: "category",
+        label: CATEGORY_CONFIG[vendor?.category]?.label || "Details",
+        icon: CATEGORY_CONFIG[vendor?.category]?.icon || Layers,
+        show: !!vendor?.category,
+      },
+      {
+        id: "services",
+        label: "Services & Awards",
+        icon: Award,
+        show: vendor?.amenities?.length > 0 || vendor?.facilities?.length > 0 || vendor?.awards?.length > 0,
+      },
+      { id: "packages", label: "Packages", icon: Gift, show: vendor?.packages?.length > 0 },
+      {
+        id: "insights",
+        label: "Insights",
+        icon: BarChart2,
+        show: vendor?.highlights?.length > 0 || vendor?.stats?.length > 0,
+      },
+      { id: "faqs", label: "FAQs", icon: FileText, show: vendor?.faqs?.length > 0 },
+      { id: "policies", label: "Policies", icon: Shield, show: vendor?.policies?.length > 0 },
+      { id: "location", label: "Location", icon: MapPin },
+    ];
+    return tabs.filter((tab) => tab.show !== false);
+  }, [vendor]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -3971,139 +5283,1021 @@ const VendorProfilePageWrapper = () => {
 
       case "portfolio":
         return (
-          <div className="grid grid-cols-2 gap-3 p-4">
-            {MOCK_PORTFOLIO.map((item) => (
-              <motion.div
-                key={item.id}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setSelectedPortfolio(item)}
-                className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden relative cursor-pointer shadow-sm"
-              >
-                <SmartMedia
-                  src={item.thumbnail}
-                  type="image"
-                  className="w-full h-full object-cover"
-                  loaderImage="/GlowLoadingGif.gif"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <p className="text-white font-bold text-sm mb-0.5 truncate">{item.title}</p>
-                  <p className="text-white/70 text-xs">{item.count} photos</p>
-                </div>
-                <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center">
-                  <LayoutGrid size={14} className="text-white" />
-                </div>
-              </motion.div>
-            ))}
+          <div className="flex flex-col space-y-4">
+            <div className="grid grid-cols-3 gap-[3px] gap-y-[6px] mx-[15px]">
+              {reels?.slice(0, 3)?.map((reel, index) => (
+                <motion.div
+                  key={reel.id}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setSelectedReelIndex(index)}
+                  className="aspect-[9/10] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
+                >
+                  <SmartMedia
+                    src={reel.thumbnail}
+                    type="image"
+                    className="w-full h-full object-cover"
+                    loaderImage="/GlowLoadingGif.gif"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-bold">
+                    <Play size={12} className="fill-white" />
+                    {reel.views}
+                  </div>
+                  <div className="absolute top-2 right-2 text-white text-[9px] font-bold bg-black/60 px-1.5 py-0.5 rounded">
+                    {reel.duration}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            <div>
+              <ReviewSection vendorId={vendor?._id} vendorName={vendor?.name} />
+            </div>
           </div>
         );
 
       case "services":
         return (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-gray-900 dark:text-white text-lg">Services & Packages</h3>
-              <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full font-medium">
-                {vendor?.packages?.length} services
-              </span>
-            </div>
-            {vendor?.packages?.map((packageItem, index) => (
+          <div className="p-4 space-y-4 pt-1">
+            {/* TAB NAVIGATION */}
+            <AnimatePresence mode="wait">
               <motion.div
-                key={packageItem._id?.$oid || index}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowBookingDrawer(true)}
-                className="p-5 rounded-2xl bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 shadow-sm space-y-3 cursor-pointer active:shadow-md transition-shadow"
+                initial={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-y border-gray-200 dark:border-gray-800 mb-0"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className="font-bold text-[13px] text-gray-900 dark:text-white line-clamp-2">
-                        {packageItem.name}
-                      </span>
-                      {packageItem.isPopular && (
-                        <span className="px-2 py-0.5 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-[9px] font-bold rounded-full flex items-center gap-1 shrink-0">
-                          <Sparkles size={8} />
-                          POPULAR
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Only show features if they exist */}
-                    {packageItem.features?.length > 0 && (
-                      <ul className="text-[11px] text-gray-600 dark:text-gray-400 space-y-1.5 mt-2">
-                        {packageItem.features.slice(0, 3).map((feature, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <Check size={12} className="text-green-500 shrink-0 mt-0.5" />
-                            <span className="line-clamp-1">{feature}</span>
-                          </li>
-                        ))}
-                        {packageItem.features.length > 3 && (
-                          <li className="text-blue-600 font-semibold text-[10px] ml-5">
-                            +{packageItem.features.length - 3} more features
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="flex flex-col items-end">
-                      <span className="text-xl font-black text-blue-600">
-                        ₹{packageItem.price.toLocaleString("en-IN")}
-                      </span>
-                      {packageItem.originalPrice && packageItem.originalPrice > packageItem.price && (
-                        <span className="text-[11px] text-gray-400 line-through mt-0.5">
-                          ₹{packageItem.originalPrice.toLocaleString("en-IN")}
-                        </span>
-                      )}
-                      {packageItem.savingsPercentage > 0 && (
-                        <span className="text-[9px] font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded mt-1">
-                          Save {packageItem.savingsPercentage}%
-                        </span>
-                      )}
-                    </div>
-                    {packageItem.duration && (
-                      <p className="text-[10px] text-gray-500 mt-2 flex items-center gap-1 justify-end">
-                        <Clock size={10} />
-                        {packageItem.duration}
-                      </p>
-                    )}
-                  </div>
+                <div className="flex gap-1.5 overflow-x-auto no-scrollbar px-3 py-2">
+                  {TAB_CONFIG.map((tab) => (
+                    <motion.button
+                      key={tab.id}
+                      onClick={() => setActiveDetailsTab(tab.id)}
+                      whileTap={{ scale: 0.95 }}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${
+                        activeDetailsTab === tab.id
+                          ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                      }`}
+                    >
+                      <tab.icon size={12} />
+                      {tab.label}
+                    </motion.button>
+                  ))}
                 </div>
-
-                {/* Only show bottom section if there's content to display */}
-                {(packageItem.notIncluded?.length > 0 || packageItem.duration) && (
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center gap-3 text-xs">
-                      {packageItem.notIncluded?.length > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] text-orange-600 dark:text-orange-400">
-                          <Info size={11} />
-                          Exclusions apply
-                        </span>
-                      )}
-                      {packageItem.duration && !packageItem.features?.length && (
-                        <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                          <Clock size={11} />
-                          {packageItem.duration}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-blue-600 text-xs font-semibold">
-                      Book Now <ChevronRight size={14} />
-                    </div>
-                  </div>
-                )}
-
-                {/* If no bottom section content, show simplified book button */}
-                {!packageItem.notIncluded?.length && !packageItem.duration && (
-                  <div className="flex justify-end pt-2">
-                    <div className="flex items-center gap-1 text-blue-600 text-xs font-semibold">
-                      Book Now <ChevronRight size={14} />
-                    </div>
-                  </div>
-                )}
               </motion.div>
-            ))}
+            </AnimatePresence>
+
+            {/* TAB CONTENT */}
+            <div className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 px-4 py-6 pt-[10px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeDetailsTab}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                  className="space-y-5"
+                >
+                  {/* OVERVIEW TAB */}
+                  {activeDetailsTab === "overview" && (
+                    <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-5">
+                      {/* 1. Short Description */}
+                      {vendor.shortDescription && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-slate-900/50 px-4 py-3 rounded-3xl shadow-sm border border-indigo-100/50 dark:border-indigo-900/30"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center shrink-0 ring-1 ring-indigo-200/50 dark:ring-indigo-800/50">
+                              <Sparkles size={16} className="text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            <div className="flex-1 pt-1.5">
+                              <p className="text-[13.5px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium italic">
+                                "{vendor.shortDescription}"
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 2. Pricing Details */}
+                      {(vendor.basePrice || vendor.perDayPrice?.min) && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/40 flex items-center justify-center shadow-inner">
+                              <IndianRupee size={20} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Pricing
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                Transparent pricing options
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            {/* Base Price */}
+                            {vendor.basePrice && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center justify-between p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/10 rounded-xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-emerald-200 dark:border-emerald-600">
+                                    <BadgeIndianRupee size={18} className="text-emerald-600 dark:text-emerald-400" />
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400 block">
+                                      Base Price
+                                    </span>
+                                    <span className="font-medium text-[11px] text-slate-500 dark:text-slate-500">
+                                      per {" " + vendor.priceUnit || "day"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-black text-[18px] text-emerald-600 dark:text-emerald-400">
+                                    ₹{vendor.basePrice.toLocaleString("en-IN")}
+                                  </span>
+                                </div>
+                              </motion.div>
+                            )}
+
+                            {/* Per Day Price Range */}
+                            {vendor.perDayPrice?.min && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.02 }}
+                                className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10 rounded-xl border border-blue-200/60 dark:border-blue-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-blue-200 dark:border-blue-600">
+                                    <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400 block">
+                                      Per {vendor.priceUnit} Rate
+                                    </span>
+                                    <span className="font-medium text-[11px] text-slate-500 dark:text-slate-500">
+                                      {vendor.perDayPrice.max ? "Price range" : "Starting from"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  {vendor.perDayPrice.max ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-black text-[16px] text-blue-600 dark:text-blue-400">
+                                        ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                                      </span>
+                                      <span className="font-bold text-[13px] text-slate-400 dark:text-slate-500">
+                                        -
+                                      </span>
+                                      <span className="font-black text-[16px] text-blue-600 dark:text-blue-400">
+                                        ₹{vendor.perDayPrice.max.toLocaleString("en-IN")}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="font-black text-[18px] text-blue-600 dark:text-blue-400">
+                                      ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                                    </span>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 3. Category Specific Highlights */}
+                      <CategoryHighlights vendor={vendor} />
+
+                      {/* 4. Event Types Supported */}
+                      {vendor.eventTypes?.length > 0 && (
+                        <CollapsibleSection
+                          title="Event Types We Serve"
+                          icon={Calendar}
+                          iconColor="text-emerald-600 dark:text-emerald-400"
+                          iconBg="bg-gradient-to-br from-emerald-100 to-teal-100"
+                          defaultOpen={true}
+                          badge={`${vendor.eventTypes?.length} specialized categories`}
+                          badgeColor="gray"
+                        >
+                          <div className="flex flex-wrap gap-2.5">
+                            {vendor.eventTypes.map((type, i) => (
+                              <motion.span
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.03 }}
+                                className="px-4 py-2.5 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 rounded-xl text-[12px] font-semibold flex items-center gap-2 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200"
+                              >
+                                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                                {type}
+                              </motion.span>
+                            ))}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+
+                      {/* 5. Operating Hours - Collapsed */}
+                      {vendor.operatingHours && (
+                        <CollapsibleSection
+                          title="Operating Hours"
+                          icon={Clock}
+                          iconColor="text-blue-600 dark:text-blue-400"
+                          iconBg="bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40"
+                          defaultOpen={false}
+                          badge={`${vendor.operatingHours.length} schedules`}
+                          badgeColor="blue"
+                        >
+                          <div className="space-y-2.5 mt-2">
+                            {vendor?.operatingHours?.length > 0 ? (
+                              vendor.operatingHours.length === 1 ? (
+                                <div className="flex justify-between items-center py-3.5 px-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm">
+                                  <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">
+                                    {vendor.operatingHours[0].day}
+                                  </span>
+                                  <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
+                                    {vendor.operatingHours[0].hours}
+                                  </span>
+                                </div>
+                              ) : (
+                                vendor.operatingHours.map((schedule, i) => (
+                                  <div
+                                    key={i}
+                                    className="flex justify-between items-center py-3.5 px-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                                  >
+                                    <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">
+                                      {schedule.day}
+                                    </span>
+                                    <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
+                                      {schedule.hours}
+                                    </span>
+                                  </div>
+                                ))
+                              )
+                            ) : (
+                              <div className="py-3.5 px-4 text-[12px] text-slate-500 dark:text-slate-400 italic">
+                                Operating hours not available
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+
+                      {/* 6. Amenities */}
+                      {vendor.amenities?.length > 0 && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 flex items-center justify-center shadow-inner">
+                              <Check size={20} className="text-violet-600 dark:text-violet-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Amenities & Services
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                {vendor.amenities.length} premium facilities
+                              </p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {vendor.amenities.map((item, idx) => {
+                              const Icon = AMENITY_ICONS[item] || Check;
+                              return (
+                                <motion.div
+                                  key={idx}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: idx * 0.02 }}
+                                  className="flex items-center gap-3 p-3.5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                                >
+                                  <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
+                                    <Icon size={16} className="text-slate-600 dark:text-slate-400" />
+                                  </div>
+                                  <span className="font-medium text-[11.5px] text-slate-700 dark:text-slate-300 leading-tight">
+                                    {item}
+                                  </span>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 7. Why Choose Us */}
+                      {vendor.highlightPoints?.length > 0 && (
+                        <CollapsibleSection
+                          title="Why Choose Us"
+                          icon={BadgeCheck}
+                          iconColor="text-amber-600 dark:text-amber-400"
+                          iconBg="bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40"
+                          defaultOpen={true}
+                          badge={`${vendor.highlightPoints?.length} unique advantages`}
+                          badgeColor="gray"
+                        >
+                          <div className="space-y-3">
+                            {vendor.highlightPoints.map((point, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -15 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="flex items-start gap-3.5 p-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border-l-2 border-amber-400 dark:border-amber-500/50 shadow-sm"
+                              >
+                                <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shrink-0 shadow-sm">
+                                  <Sparkles size={14} className="text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <span className="text-[12.5px] text-slate-700 dark:text-slate-300 font-medium leading-relaxed pt-0.5">
+                                  {point}
+                                </span>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+
+                      {/* 8. Special Offers - Collapsed */}
+                      {vendor.specialOffers?.length > 0 && (
+                        <CollapsibleSection
+                          title="Special Offers"
+                          icon={Percent}
+                          iconColor="text-rose-600 dark:text-rose-400"
+                          iconBg="bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/40 dark:to-pink-900/40"
+                          defaultOpen={false}
+                          badge={`${vendor.specialOffers.length} active deals`}
+                          badgeColor="rose"
+                        >
+                          <div className="space-y-3.5 mt-2">
+                            {vendor.specialOffers.map((offer, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="p-5 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-cyan-950/10 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 shadow-sm relative overflow-hidden"
+                              >
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-200/30 to-teal-200/30 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full blur-2xl" />
+                                <div className="relative">
+                                  <div className="flex items-start justify-between gap-3 mb-3">
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[11px] font-black rounded-xl shadow-md">
+                                        {offer.discount}
+                                      </span>
+                                      <span className="text-[13px] font-bold text-slate-800 dark:text-slate-100">
+                                        {offer.title}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                                    {offer.description}
+                                  </p>
+                                  {offer.validTill && (
+                                    <div className="flex items-center gap-2 text-[10.5px] text-slate-500 dark:text-slate-500 bg-white/70 dark:bg-slate-800/50 px-3 py-2 rounded-xl w-fit shadow-sm border border-slate-200 dark:border-slate-700">
+                                      <Clock size={12} />
+                                      <span className="font-semibold">Valid till: {offer.validTill}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+
+                      {/* 9. About Vendor - Full Description */}
+                      {vendor.description && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center shadow-inner">
+                              <Info size={20} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                About {vendor.name}
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                Our story and mission
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            className={`relative overflow-hidden transition-all duration-500 ease-out ${
+                              showFullDescription ? "max-h-[2000px]" : "max-h-[150px]"
+                            }`}
+                          >
+                            <p className="text-[12.5px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                              {vendor.description}
+                            </p>
+                            {!showFullDescription && (
+                              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white dark:from-slate-900 via-white/80 dark:via-slate-900/80 to-transparent " />
+                            )}
+                          </div>
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => setShowFullDescription(!showFullDescription)}
+                            className="mt-5 text-slate-700 dark:text-slate-300 font-semibold text-[12px] flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 px-5 py-3 rounded-xl hover:from-slate-200 hover:to-slate-100 dark:hover:from-slate-800 dark:hover:to-slate-700/50 transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-700"
+                          >
+                            {showFullDescription ? "Show Less" : "Read Full Story"}
+                            <motion.div
+                              animate={{ rotate: showFullDescription ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ChevronDown size={15} />
+                            </motion.div>
+                          </motion.button>
+                        </motion.div>
+                      )}
+
+                      {/* 11. Social Links */}
+                      <SocialLinksSection socialLinks={vendor.socialLinks} />
+                    </motion.div>
+                  )}
+
+                  {/* CATEGORY-SPECIFIC TAB */}
+                  {activeDetailsTab === "category" && (
+                    <CategorySpecificSection vendor={vendor} formatPrice={formatPrice} />
+                  )}
+
+                  {/* SERVICES & AWARDS TAB */}
+                  {activeDetailsTab === "services" && (
+                    <div className="space-y-5">
+                      {vendor.facilities?.length > 0 && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 flex items-center justify-center shadow-inner">
+                              <Star size={20} className="text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Premium Facilities
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                {vendor.facilities.length} exclusive features
+                              </p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {vendor.facilities.map((facility, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-3 p-3.5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                              >
+                                <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/40 dark:to-violet-900/40 flex items-center justify-center shrink-0 shadow-sm">
+                                  <Star size={14} className="text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <span className="text-[11.5px] font-medium text-slate-700 dark:text-slate-300">
+                                  {facility}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {vendor.awards?.length > 0 && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 flex items-center justify-center shadow-inner">
+                              <Trophy size={20} className="text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Awards & Recognition
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                {vendor.awards.length} prestigious honors
+                              </p>
+                            </div>
+                          </div>
+                          <div className="space-y-3.5">
+                            {vendor?.awards.map((award, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="flex items-start gap-4 p-4.5 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/20 dark:via-yellow-950/10 dark:to-orange-950/5 rounded-2xl border border-amber-200/60 dark:border-amber-800/40 shadow-sm"
+                              >
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-600 flex items-center justify-center shrink-0 shadow-md">
+                                  <Trophy size={22} className="text-white" />
+                                </div>
+                                <div className="flex-1 pt-1">
+                                  <p className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100 leading-relaxed mb-1">
+                                    {award.title}
+                                  </p>
+                                  {award.year && (
+                                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                                      {award.year}
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {vendor.amenities?.length > 0 && (
+                        <CollapsibleSection
+                          title="Complete Amenities List"
+                          icon={Check}
+                          iconColor="text-blue-600 dark:text-blue-400"
+                          iconBg="bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40"
+                        >
+                          <div className="grid grid-cols-2 gap-3 mt-2">
+                            {vendor.amenities.map((item, idx) => {
+                              const Icon = AMENITY_ICONS[item] || Check;
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2.5 p-3 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                                >
+                                  <Icon size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                  <span className="font-medium text-[11px] text-slate-700 dark:text-slate-300">
+                                    {item}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+                    </div>
+                  )}
+
+                  {/* PACKAGES TAB */}
+                  {activeDetailsTab === "packages" && (
+                    <div className="space-y-5">
+                      {vendor.packages?.length > 0 ? (
+                        <>
+                          {vendor.packages.map((pkg, i) => (
+                            <motion.div
+                              key={pkg._id || i}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                            >
+                              <PackageCard
+                                pkg={pkg}
+                                isSelected={selectedPackage === (pkg.id || pkg._id)}
+                                onSelect={setSelectedPackage}
+                              />
+                            </motion.div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+                          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
+                            <Gift size={36} className="text-slate-400 dark:text-slate-500" />
+                          </div>
+                          <p className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            No packages listed yet
+                          </p>
+                          <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                            Contact the vendor directly for customized pricing and package options
+                          </p>
+                        </div>
+                      )}
+
+                      {vendor.paymentMethods?.length > 0 && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shadow-inner">
+                              <HandCoins size={20} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Payment Options
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                {vendor.paymentMethods.length} secure methods
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2.5">
+                            {vendor.paymentMethods.map((method, i) => (
+                              <span
+                                key={i}
+                                className="px-4 py-2.5 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-700/60 rounded-xl text-[12px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 shadow-sm"
+                              >
+                                <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                                {method}
+                              </span>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Insights TAB */}
+                  {activeDetailsTab === "insights" && (
+                    <div className="space-y-3.5">
+                      {/* 3. Highlights & Pros */}
+                      {vendor.highlights?.length > 0 && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shadow-inner">
+                              <Sparkles size={20} className="text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Key Highlights
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                {vendor.highlights.length} standout features
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            {vendor.highlights.map((highlight, idx) => {
+                              const ICON_MAP = {
+                                trophy: Trophy,
+                                users: Users,
+                                timer: Timer,
+                                medal: Medal,
+                                star: Star,
+                                award: Award,
+                                zap: Zap,
+                                heart: Heart,
+                                thumbsup: ThumbsUp,
+                                trendingup: TrendingUp,
+                              };
+                              const key = highlight?.icon?.toLowerCase()?.replace(/\s+/g, "").replace(/_/g, "-");
+                              const IconComponent = ICON_MAP[key] || Star;
+
+                              const colorClass = highlight.color || "text-slate-600 dark:text-slate-400";
+
+                              return (
+                                <motion.div
+                                  key={idx}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: idx * 0.02 }}
+                                  className="flex items-center justify-between p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
+                                      <IconComponent size={18} className={colorClass} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="font-semibold text-[12px] text-slate-700 dark:text-slate-300 block truncate">
+                                        {highlight.label}
+                                      </span>
+                                      {highlight.value && (
+                                        <span className="font-medium text-[11px] text-slate-500 dark:text-slate-400 block truncate">
+                                          {highlight.value}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* 4. Performance Stats */}
+                      {vendor.stats?.length > 0 && (
+                        <motion.div
+                          variants={fadeInUp}
+                          className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                        >
+                          <div className="flex items-center gap-3.5 mb-5">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center shadow-inner">
+                              <TrendingUp size={20} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                Performance Stats
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                Real-time metrics & growth
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            {vendor.stats.map((stat, idx) => (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.02 }}
+                                className="p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-semibold text-[12px] text-slate-600 dark:text-slate-400">
+                                    {stat.label}
+                                  </span>
+                                  {stat.trend && (
+                                    <div
+                                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                        stat.positive
+                                          ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                                          : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                                      }`}
+                                    >
+                                      {stat.positive ? (
+                                        <TrendingUp size={11} className="shrink-0" />
+                                      ) : (
+                                        <TrendingDown size={11} className="shrink-0" />
+                                      )}
+                                      <span>{stat.trend}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                  <span className="font-black text-[24px] text-slate-800 dark:text-slate-100">
+                                    {stat.value}
+                                  </span>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* FAQS TAB */}
+                  {activeDetailsTab === "faqs" && (
+                    <div className="space-y-3.5">
+                      {vendor.faqs?.length > 0 ? (
+                        vendor.faqs.map((faq, idx) => (
+                          <motion.div
+                            key={`faq-${idx}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 relative"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                console.log("Clicked FAQ:", idx, "Current expanded:", expandedFaq);
+                                setExpandedFaq((prev) => {
+                                  console.log("Setting from", prev, "to", prev === idx ? null : idx);
+                                  return prev === idx ? null : idx;
+                                });
+                              }}
+                              className="w-full p-5 flex items-start justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors duration-200 cursor-pointer relative z-10"
+                            >
+                              <div className="flex items-start gap-4 flex-1 pr-4">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center shrink-0 shadow-sm">
+                                  <span className="text-blue-600 dark:text-blue-400 font-bold text-[13px]">Q</span>
+                                </div>
+                                <span className="font-bold text-[13px] text-slate-800 dark:text-slate-100 leading-relaxed pt-1.5">
+                                  {faq.question}
+                                </span>
+                              </div>
+                              <div className="shrink-0">
+                                <ChevronDown
+                                  size={20}
+                                  className={`text-slate-400 dark:text-slate-500 mt-1.5 transition-transform duration-200 ${
+                                    expandedFaq === idx ? "rotate-180" : "rotate-0"
+                                  }`}
+                                />
+                              </div>
+                            </button>
+                            <AnimatePresence initial={false}>
+                              {expandedFaq === idx && (
+                                <motion.div
+                                  key={`answer-${idx}`}
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                >
+                                  <div className="px-5 pb-5 pt-0">
+                                    <div className="flex items-start gap-4 p-4.5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm">
+                                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0 shadow-sm">
+                                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[13px]">
+                                          A
+                                        </span>
+                                      </div>
+                                      <p className="text-[12.5px] text-slate-700 dark:text-slate-300 leading-relaxed pt-1.5">
+                                        {faq.answer}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+                          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
+                            <FileText size={36} className="text-slate-400 dark:text-slate-500" />
+                          </div>
+                          <p className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            No FAQs available yet
+                          </p>
+                          <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                            Have questions? Feel free to contact the vendor directly for any inquiries
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* POLICIES TAB */}
+                  {activeDetailsTab === "policies" && (
+                    <div className="space-y-5">
+                      {vendor.policies?.length > 0 ? (
+                        vendor.policies.map((policy, idx) => (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                          >
+                            <div className="flex items-start gap-4 mb-5">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/40 flex items-center justify-center shrink-0 shadow-sm">
+                                <Shield size={22} className="text-indigo-600 dark:text-indigo-400" />
+                              </div>
+                              <div className="flex-1 pt-1">
+                                <h4 className="text-[14px] font-bold text-slate-800 dark:text-slate-100 mb-2 tracking-tight">
+                                  {policy.title}
+                                </h4>
+                                <p className="text-[12.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                                  {policy.content}
+                                </p>
+                              </div>
+                            </div>
+                            {policy.details?.length > 0 && (
+                              <div className="space-y-2.5 ml-16">
+                                {policy.details.map((detail, i) => (
+                                  <div
+                                    key={i}
+                                    className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                                  >
+                                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0 shadow-sm">
+                                      <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+                                    </div>
+                                    <span className="text-[11.5px] text-slate-700 dark:text-slate-300 font-medium">
+                                      {detail}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+                          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
+                            <Shield size={36} className="text-slate-400 dark:text-slate-500" />
+                          </div>
+                          <p className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            No policies listed yet
+                          </p>
+                          <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                            Contact the vendor directly for detailed terms, conditions, and policies
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* LOCATION TAB */}
+                  {activeDetailsTab === "location" && (
+                    <div className="space-y-5">
+                      <motion.div
+                        variants={fadeInUp}
+                        className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                      >
+                        <div className="flex gap-4 mb-6">
+                          <div className="w-14 h-14 bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/40 dark:to-pink-900/40 rounded-2xl flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 shadow-sm">
+                            <MapPin size={26} />
+                          </div>
+                          <div className="flex-1 pt-1">
+                            <h4 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 mb-2.5 tracking-tight">
+                              Complete Address
+                            </h4>
+                            <p className="text-[12.5px] text-slate-700 dark:text-slate-300 leading-relaxed mb-2">
+                              {vendor.address?.street}
+                            </p>
+                            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
+                              {vendor.address?.city}, {vendor.address?.state} {vendor.address?.postalCode}
+                            </p>
+                            {vendor.address?.country && (
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                                {vendor.address.country}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {vendor.address?.googleMapUrl && (
+                          <motion.a
+                            href={vendor.address.googleMapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full py-4 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white rounded-2xl font-bold text-[13px] flex items-center justify-center gap-2.5 shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            <Navigation size={19} />
+                            Open in Google Maps
+                            <ExternalLink size={16} />
+                          </motion.a>
+                        )}
+                      </motion.div>
+
+                      {vendor.landmarks?.length > 0 && (
+                        <CollapsibleSection
+                          title="Nearby Landmarks"
+                          icon={Compass}
+                          iconColor="text-blue-600 dark:text-blue-400"
+                          iconBg="bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40"
+                        >
+                          <div className="space-y-3 mt-2">
+                            {vendor.landmarks.map((landmark, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/40 flex items-center justify-center shadow-sm">
+                                    <MapPin size={15} className="text-indigo-600 dark:text-indigo-400" />
+                                  </div>
+                                  <span className="text-[12px] text-slate-700 dark:text-slate-300 font-semibold">
+                                    {landmark.name}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 px-3.5 py-2 rounded-xl shadow-sm">
+                                  {landmark.distance}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+
+                      {vendor.directions?.length > 0 && (
+                        <CollapsibleSection
+                          title="How to Reach"
+                          icon={Route}
+                          iconColor="text-emerald-600 dark:text-emerald-400"
+                          iconBg="bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40"
+                        >
+                          <div className="space-y-3.5 mt-2">
+                            {vendor.directions.map((dir, i) => (
+                              <div
+                                key={i}
+                                className="p-5 bg-gradient-to-br from-slate-50 via-white to-slate-50/50 dark:from-slate-800/30 dark:via-slate-800/20 dark:to-slate-800/10 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                              >
+                                <div className="flex items-center gap-3.5 mb-3">
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shadow-sm">
+                                    {dir.type?.includes("Metro") ? (
+                                      <MapIcon size={18} className="text-emerald-600 dark:text-emerald-400" />
+                                    ) : (
+                                      <Car size={18} className="text-emerald-600 dark:text-emerald-400" />
+                                    )}
+                                  </div>
+                                  <p className="text-[12px] font-bold text-slate-800 dark:text-slate-100">{dir.type}</p>
+                                </div>
+                                <p className="text-[12.5px] text-slate-600 dark:text-slate-400 leading-relaxed ml-13">
+                                  {dir.description}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleSection>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         );
 
@@ -4201,7 +6395,9 @@ const VendorProfilePageWrapper = () => {
         <div
           className="absolute inset-0 z-0 opacity-30"
           style={{
-            background: "radial-gradient(125% 125% at 50% 90%, #fff 40%, #7c3aed 100%)",
+            background: `radial-gradient(125% 125% at 50% 90%, #fff 40%, ${
+              CATEGORY_GRADIENTS[category]?.to || "#7c3aed"
+            } 100%)`,
           }}
         />
         <div className="bg-transparent dark:bg-gray-900 z-30">
@@ -4271,9 +6467,27 @@ const VendorProfilePageWrapper = () => {
 
             {/* Enhanced Bio Section - Instagram Style */}
             <div className="mb-4">
-              <p className="text-sm text-gray-800 dark:text-gray-200 leading-6 whitespace-pre-line">
-                {profile.bio ? formatBio(profile.bio) : formatBio(defaultBio)}
-              </p>
+              <motion.div
+                initial={false}
+                animate={{ height: isBioExpanded ? "auto" : "4.5rem" }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                className="relative overflow-hidden"
+              >
+                <p className="text-sm text-gray-800 dark:text-gray-200 leading-6 whitespace-pre-line">
+                  {profile.bio ? formatBio(profile.bio) : formatBio(defaultBio)}
+                </p>
+                {/* {!isBioExpanded && (
+                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none" />
+                )} */}
+              </motion.div>
+              {(profile.bio || defaultBio)?.length > 120 && (
+                <button
+                  onClick={() => setIsBioExpanded(!isBioExpanded)}
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mt-1 font-medium"
+                >
+                  {isBioExpanded ? "See less" : "See more"}
+                </button>
+              )}
             </div>
 
             {/* Social Links */}
@@ -4375,7 +6589,7 @@ const VendorProfilePageWrapper = () => {
       </div>
 
       {/* Tabs Section - Enhanced with subtle border */}
-      <div className="sticky top-14 z-30 bg-transparent dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80 mb-1">
+      <div className="sticky top-14 z-30 bg-white dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80 mb-1 rounded-[5px]">
         <div className="flex">
           {TABS.map((tab) => (
             <motion.button
@@ -4452,6 +6666,8 @@ const VendorProfilePageWrapper = () => {
             vendorName={vendor.name}
             vendorImage={vendorImage}
             onDelete={() => handleDeletePost(selectedPost.id)}
+            onEdit={handleEditPost}
+            onArchive={handleArchivePost}
           />
         )}
       </AnimatePresence>
@@ -4501,11 +6717,7 @@ const VendorProfilePageWrapper = () => {
       </AnimatePresence>
       <AnimatePresence>
         {showReviewsDrawer && (
-          <ReviewsDrawer
-            isOpen={showReviewsDrawer}
-            onClose={() => setShowReviewsDrawer(false)}
-            reviews={MOCK_REVIEWS}
-          />
+          <ReviewsDrawer isOpen={showReviewsDrawer} onClose={() => setShowReviewsDrawer(false)} reviews={reviews} />
         )}
       </AnimatePresence>
       <AnimatePresence>
