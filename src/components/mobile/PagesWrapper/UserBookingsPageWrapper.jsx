@@ -25,6 +25,7 @@ import {
   TrendingUp,
   ShieldCheck,
 } from "lucide-react";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 // --- MOCK DATA ---
 
@@ -203,9 +204,12 @@ const TimelineStep = ({ step, isLast }) => (
 // --- MAIN PAGE ---
 
 export default function UserBookingsPageWrapper() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const { setIsNavbarVisible } = useNavbarVisibilityStore();
   const scrollRef = useRef(null);
+  const [bookings, setBookings] = useState([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true);
 
   // Scroll Handler
   const scroll = (direction) => {
@@ -217,6 +221,81 @@ export default function UserBookingsPageWrapper() {
       });
     }
   };
+
+  const fetchBookings = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsLoadingBookings(true);
+      const response = await fetch(`/api/orders?userId=${user.id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        // Transform database data to component format
+        const transformedBookings = data.orders.map((order) => ({
+          id: order._id,
+          vendorName: order.items[0]?.name || "Unknown Vendor",
+          vendorCategory: order.event.type || "Event Service",
+          image:
+            order.items[0]?.image ||
+            "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop",
+          date: new Date(order.event.date).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          amount: `₹${order.pricing.total.toLocaleString()}`,
+          paid: order.orderStatus === "CONFIRMED" ? `₹${Math.floor(order.pricing.total * 0.3).toLocaleString()}` : "₹0",
+          due: `₹${Math.floor(order.pricing.total * 0.7).toLocaleString()}`,
+          status:
+            order.orderStatus === "CONFIRMED" ? "Confirmed" : order.orderStatus === "PENDING" ? "Pending" : "Completed",
+          location: order.user.city || order.user.address || "Not specified",
+          contact: order.user.phone || "Not provided",
+          timeline: [
+            { title: "Booking Requested", date: new Date(order.createdAt).toLocaleDateString(), completed: true },
+            {
+              title: "Payment Processed",
+              date: order.razorpay?.paymentId ? new Date(order.updatedAt).toLocaleDateString() : "Pending",
+              completed: !!order.razorpay?.paymentId,
+            },
+            {
+              title: "Vendor Confirmed",
+              date: order.orderStatus === "CONFIRMED" ? new Date(order.updatedAt).toLocaleDateString() : "Pending",
+              completed: order.orderStatus === "CONFIRMED",
+            },
+            {
+              title: "Event Day",
+              date: new Date(order.event.date).toLocaleDateString(),
+              completed: new Date(order.event.date) < new Date(),
+            },
+          ],
+          tasks:
+            order.orderStatus === "CONFIRMED"
+              ? [
+                  { id: 1, text: "Payment Confirmed", done: true },
+                  { id: 2, text: "Vendor Contact", done: false },
+                  { id: 3, text: "Final Details", done: false },
+                ]
+              : [],
+          // Store original order data for reference
+          originalOrder: order,
+        }));
+
+        setBookings(transformedBookings);
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      setBookings([]);
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchBookings();
+    }
+  }, [user?.id]);
 
   // 1. Loading State
   if (!isLoaded) {
@@ -276,37 +355,50 @@ export default function UserBookingsPageWrapper() {
 
       <div className="p-5 space-y-8">
         {/* Quick Stats / Actions */}
+        {/* Quick Stats / Actions */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-violet-600 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/20">
             <p className="text-violet-100 text-xs font-medium uppercase tracking-wide mb-1">Total Spent</p>
-            <p className="text-2xl font-bold">₹1.95L</p>
+            <p className="text-2xl font-bold">
+              ₹
+              {bookings.reduce((sum, booking) => sum + (booking.originalOrder?.pricing.total || 0), 0).toLocaleString()}
+            </p>
             <div className="mt-3 flex items-center gap-1 text-xs bg-white/20 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
-              <TrendingUp size={12} /> +12% this month
+              <TrendingUp size={12} /> {bookings.length} bookings
             </div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between">
             <div>
               <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1">Active</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{MOCK_BOOKINGS.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{bookings.length}</p>
             </div>
-            <p className="text-xs text-gray-400 mt-2">2 Pending Actions</p>
+            <p className="text-xs text-gray-400 mt-2">
+              {bookings.filter((b) => b.status === "Pending").length} Pending Actions
+            </p>
           </div>
         </div>
-
         {/* Active Bookings List */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Active Bookings</h2>
           </div>
           <div className="space-y-4">
-            {MOCK_BOOKINGS.length > 0 ? (
-              MOCK_BOOKINGS.map((booking, idx) => (
+            {isLoadingBookings ? (
+              // Loading skeleton
+              [1, 2, 3].map((i) => (
+                <div key={i} className="h-32 bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse" />
+              ))
+            ) : bookings.length > 0 ? (
+              bookings.map((booking, idx) => (
                 <motion.div
                   key={booking.id}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  onClick={() => setSelectedBooking(booking)}
+                  onClick={() => {
+                    setSelectedBooking(booking);
+                    setIsNavbarVisible(false);
+                  }}
                   className="bg-white dark:bg-gray-900 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all cursor-pointer group"
                 >
                   <div className="flex gap-4">
@@ -370,16 +462,28 @@ export default function UserBookingsPageWrapper() {
               <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
                 <CreditCard size={20} className="text-white" />
               </div>
-              <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-md font-bold">DUE SOON</span>
+              {bookings.some((b) => b.status === "Pending") && (
+                <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-md font-bold">DUE SOON</span>
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-sm text-gray-400">Total Outstanding</p>
-              <p className="text-3xl font-bold">₹1,45,000</p>
+              <p className="text-3xl font-bold">
+                ₹
+                {bookings
+                  .reduce((sum, booking) => {
+                    const dueAmount = parseInt(booking.due.replace(/[₹,]/g, ""));
+                    return sum + dueAmount;
+                  }, 0)
+                  .toLocaleString()}
+              </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center text-sm">
-              <span className="text-gray-300">Next: The Grand Heritage</span>
-              <span className="font-semibold">12 Sep</span>
-            </div>
+            {bookings.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center text-sm">
+                <span className="text-gray-300">Next: {bookings[0]?.vendorName}</span>
+                <span className="font-semibold">{bookings[0]?.date}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -473,7 +577,10 @@ export default function UserBookingsPageWrapper() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedBooking(null)}
+              onClick={() => {
+                setSelectedBooking(null);
+                setIsNavbarVisible(true);
+              }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             />
 
@@ -482,124 +589,293 @@ export default function UserBookingsPageWrapper() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 h-[85vh] bg-white dark:bg-gray-900 rounded-t-[2rem] z-50 overflow-hidden flex flex-col shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 h-[90vh] bg-white dark:bg-gray-900 rounded-t-[2rem] z-50 overflow-hidden flex flex-col shadow-2xl"
             >
-              <div className="w-full flex justify-center pt-3 pb-1" onClick={() => setSelectedBooking(null)}>
+              <div
+                className="w-full flex justify-center pt-3 pb-1"
+                onClick={() => {
+                  setSelectedBooking(null);
+                  setIsNavbarVisible(true);
+                }}
+              >
                 <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <div className="p-6 pt-2">
+                <div className="p-6 pt-2 space-y-6">
                   {/* Header */}
-                  <div className="flex justify-between items-start mb-6">
+                  <div className="flex justify-between items-start">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-1">
-                        {selectedBooking.vendorName}
+                        Order Details
                       </h2>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">{selectedBooking.vendorCategory}</span>
-                        <StatusBadge status={selectedBooking.status} />
-                      </div>
+                      <p className="text-sm text-gray-500">ID: {selectedBooking.originalOrder._id}</p>
                     </div>
                     <button
-                      onClick={() => setSelectedBooking(null)}
+                      onClick={() => {
+                        setSelectedBooking(null);
+                        setIsNavbarVisible(true);
+                      }}
                       className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
                     >
                       <X size={20} />
                     </button>
                   </div>
 
-                  {/* Tasks Section */}
-                  {selectedBooking.tasks && selectedBooking.tasks.length > 0 && (
-                    <div className="mb-8">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Required Tasks
-                        </h3>
-                        <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md font-medium">
-                          {selectedBooking.tasks.filter((t) => t.done).length}/{selectedBooking.tasks.length} Done
+                  {/* Order Status */}
+                  <div className="bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20 rounded-2xl p-4 border border-violet-100 dark:border-violet-800">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white">Order Status</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                          {selectedBooking.originalOrder.orderStatus}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">Payment Method</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.paymentMethod}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customer Information */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 text-sm">👤</span>
+                      </div>
+                      Customer Details
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Full Name</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.user.firstName} {selectedBooking.originalOrder.user.lastName}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Email</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                          {selectedBooking.originalOrder.user.email}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Phone</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.user.phone}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Pincode</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.user.pincode}
+                        </p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Address</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.user.address}, {selectedBooking.originalOrder.user.city}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Event Information */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                        <Calendar size={16} className="text-green-600" />
+                      </div>
+                      Event Information
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Event Name</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.event.name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Event Type</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.event.type}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Event Date</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {new Date(selectedBooking.originalOrder.event.date).toLocaleDateString("en-GB", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Expected Guests</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {selectedBooking.originalOrder.event.guests?.toLocaleString() || "Not specified"}
+                        </p>
+                      </div>
+                      {selectedBooking.originalOrder.event.specialRequests && (
+                        <div className="sm:col-span-2">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Special Requests</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {selectedBooking.originalOrder.event.specialRequests}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Items/Services */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-purple-600 text-sm">🛍️</span>
+                      </div>
+                      Booked Services
+                    </h3>
+                    {selectedBooking.originalOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl mb-3 last:mb-0">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900 dark:text-white">{item.name}</h4>
+                          <p className="text-sm text-gray-500">Service ID: {item.id}</p>
+                          <p className="text-lg font-bold text-violet-600 mt-1">₹{item.price?.toLocaleString()}</p>
+                          {item.addons && item.addons.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs text-gray-500">Add-ons:</p>
+                              {item.addons.map((addon, i) => (
+                                <p key={i} className="text-xs text-gray-600 dark:text-gray-300">
+                                  • {addon}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pricing Breakdown */}
+                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-5 text-white">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                      <CreditCard size={18} />
+                      Pricing Breakdown
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Subtotal</span>
+                        <span className="font-semibold">
+                          ₹{selectedBooking.originalOrder.pricing.subtotal.toLocaleString()}
                         </span>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-1 space-y-1">
-                        {selectedBooking.tasks.map((task) => (
-                          <div
-                            key={task.id}
-                            className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm"
-                          >
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                task.done ? "bg-green-500 border-green-500" : "border-gray-300"
-                              }`}
-                            >
-                              {task.done && <Check size={12} className="text-white" />}
-                            </div>
-                            <span
-                              className={`text-sm font-medium ${
-                                task.done ? "text-gray-400 line-through" : "text-gray-700 dark:text-gray-200"
-                              }`}
-                            >
-                              {task.text}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Tax</span>
+                        <span className="font-semibold">
+                          ₹{selectedBooking.originalOrder.pricing.tax.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Platform Fee</span>
+                        <span className="font-semibold">
+                          ₹{selectedBooking.originalOrder.pricing.platformFee.toLocaleString()}
+                        </span>
+                      </div>
+                      {selectedBooking.originalOrder.pricing.discount > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Discount</span>
+                          <span className="font-semibold text-green-400">
+                            -₹{selectedBooking.originalOrder.pricing.discount.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="border-t border-gray-600 pt-3 flex justify-between">
+                        <span className="text-white font-bold">Total Amount</span>
+                        <span className="font-bold text-xl">
+                          ₹{selectedBooking.originalOrder.pricing.total.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Information */}
+                  {selectedBooking.originalOrder.razorpay && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                      <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                          <span className="text-orange-600 text-sm">💳</span>
+                        </div>
+                        Payment Details
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Order ID</span>
+                          <span className="font-mono text-gray-900 dark:text-white">
+                            {selectedBooking.originalOrder.razorpay.orderId}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Payment ID</span>
+                          <span className="font-mono text-gray-900 dark:text-white">
+                            {selectedBooking.originalOrder.razorpay.paymentId}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Signature</span>
+                          <span className="font-mono text-gray-900 dark:text-white text-xs truncate max-w-32">
+                            {selectedBooking.originalOrder.razorpay.signature}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Payment Card */}
-                  <div className="bg-gradient-to-br from-violet-600 to-indigo-600 p-5 rounded-2xl text-white shadow-lg mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold flex items-center gap-2">
-                        <CreditCard size={18} /> Payment Details
-                      </h3>
-                      <span className="text-xs bg-white/20 px-2 py-1 rounded font-medium">
-                        {selectedBooking.status}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <p className="text-violet-200 text-xs">Total Amount</p>
-                        <p className="text-2xl font-bold">{selectedBooking.amount}</p>
+                  {/* Timeline */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Clock size={18} className="text-violet-600" />
+                      Order Timeline
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">Order Created</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(selectedBooking.originalOrder.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <CheckCircle2 size={20} className="text-green-600" />
                       </div>
-                      <div className="text-right">
-                        <p className="text-violet-200 text-xs">Pending</p>
-                        <p className="text-lg font-semibold">{selectedBooking.due}</p>
+
+                      <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">Last Updated</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(selectedBooking.originalOrder.updatedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <CheckCircle2 size={20} className="text-blue-600" />
                       </div>
-                    </div>
-                    <div className="w-full h-1.5 bg-black/20 rounded-full mt-4 overflow-hidden">
-                      <div className="h-full bg-white/90 w-1/3 rounded-full" />
-                    </div>
-                    <div className="flex justify-between mt-1 text-[10px] text-violet-200">
-                      <span>Paid: {selectedBooking.paid}</span>
-                      <span>33%</span>
                     </div>
                   </div>
 
-                  {/* Timeline */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                      <Clock size={20} className="text-violet-600" />
-                      Booking Journey
-                    </h3>
-                    <div className="pl-2 border-l-2 border-gray-100 dark:border-gray-800 ml-2">
-                      {selectedBooking.timeline.map((step, idx) => (
-                        <div key={idx} className="relative pl-6 pb-8 last:pb-0">
-                          <div
-                            className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-4 border-white dark:border-gray-900 ${
-                              step.completed ? "bg-violet-600" : "bg-gray-300 dark:bg-gray-700"
-                            }`}
-                          />
-                          <p
-                            className={`text-sm font-bold ${
-                              step.completed ? "text-gray-900 dark:text-white" : "text-gray-400"
-                            }`}
-                          >
-                            {step.title}
-                          </p>
-                          <p className="text-xs text-gray-500 font-medium mt-0.5">{step.date}</p>
-                        </div>
-                      ))}
-                    </div>
+                  {/* Raw Data (for debugging - you can remove this in production) */}
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4">
+                    <details>
+                      <summary className="font-semibold text-gray-700 dark:text-gray-300 cursor-pointer text-sm">
+                        Raw Database Record
+                      </summary>
+                      <pre className="mt-3 text-xs text-gray-600 dark:text-gray-400 overflow-x-auto bg-white dark:bg-gray-900 p-3 rounded-lg">
+                        {JSON.stringify(selectedBooking.originalOrder, null, 2)}
+                      </pre>
+                    </details>
                   </div>
                 </div>
               </div>
@@ -607,13 +883,13 @@ export default function UserBookingsPageWrapper() {
               {/* Sticky Bottom Actions */}
               <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-3">
                 <button
-                  onClick={() => window.open(`tel:${selectedBooking.contact}`)}
+                  onClick={() => window.open(`tel:${selectedBooking.originalOrder.user.phone}`)}
                   className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl font-bold text-gray-700 dark:text-gray-200 active:scale-95 transition-transform"
                 >
-                  <Phone size={18} /> Call
+                  <Phone size={18} /> Call Customer
                 </button>
                 <button className="flex-[2] flex items-center justify-center gap-2 py-3.5 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold shadow-lg active:scale-95 transition-transform">
-                  <MessageSquare size={18} /> Chat with Vendor
+                  <MessageSquare size={18} /> Contact Support
                 </button>
               </div>
             </motion.div>

@@ -54,6 +54,7 @@ const OrderSchema = new mongoose.Schema(
       enum: ["PLACED", "CONFIRMED", "COMPLETED", "CANCELLED"],
       default: "CONFIRMED", // Default confirmed because we save after payment
     },
+    userId: { type: String, required: true },
   },
   { timestamps: true }
 );

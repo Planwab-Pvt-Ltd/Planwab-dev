@@ -44,6 +44,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
+import { useUser } from "@clerk/clerk-react";
 
 // =============================================================================
 // CONSTANTS
@@ -440,7 +441,8 @@ const CartStep = ({
       <div className="text-center py-16">
         <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="font-bold text-gray-900">Cart is empty</h3>
-        <Link href="/m/marketplace" className="text-blue-600 text-sm font-bold mt-2 inline-block">
+
+        <Link href="/m/vendors/marketplace" className="text-blue-600 text-sm font-bold mt-2 inline-block">
           Browse Vendors
         </Link>
       </div>
@@ -708,6 +710,7 @@ export default function CheckoutPageWrapper() {
   const router = useRouter();
   const haptic = useHapticFeedback();
   const { cartItems, removeFromCart, clearCart } = useCartStore();
+  const { user } = useUser();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -783,7 +786,12 @@ export default function CheckoutPageWrapper() {
       return setToast({ isVisible: true, message: "Cart is empty", type: "error" });
     if (currentStep > 1 && !validateStep(currentStep))
       return setToast({ isVisible: true, message: "Please fill all details", type: "error" });
-
+    if (currentStep === 3) {
+      if (!user?.id) {
+        setToast({ isVisible: true, message: "Please login to proceed", type: "error" });
+        return;
+      }
+    }
     if (currentStep === 4) {
       initiatePayment();
     } else {
@@ -806,7 +814,14 @@ export default function CheckoutPageWrapper() {
       const createOrderRes = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cartItems, eventDetails, contactDetails, priceDetails, paymentMethod }),
+        body: JSON.stringify({
+          items: cartItems,
+          eventDetails,
+          contactDetails,
+          priceDetails,
+          paymentMethod,
+          userId: user?.id,
+        }),
       });
 
       const orderData = await createOrderRes.json();
@@ -913,12 +928,13 @@ export default function CheckoutPageWrapper() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
-          <Link href="/m/bookings">
+          <Link href="/m/user/bookings">
             <button className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200">
               View My Bookings
             </button>
           </Link>
-          <Link href="/m/marketplace">
+
+          <Link href="/m/vendors/marketplace">
             <button className="w-full py-4 rounded-xl text-gray-500 font-bold">Continue Shopping</button>
           </Link>
         </div>

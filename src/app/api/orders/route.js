@@ -13,7 +13,11 @@ export async function POST(req) {
   try {
     await connectToDatabase();
     const body = await req.json();
-    const { items, eventDetails, contactDetails, priceDetails, paymentMethod } = body;
+    const { items, eventDetails, contactDetails, priceDetails, paymentMethod, userId } = body;
+
+    if (!userId) {
+      return NextResponse.json({ success: false, message: "User ID is required" }, { status: 400 });
+    }
 
     // 1. Create Order on Razorpay
     const options = {
@@ -32,6 +36,7 @@ export async function POST(req) {
 
     // 2. Save Order to Database
     const newOrder = await Order.create({
+      userId: userId,
       user: contactDetails,
       event: {
         name: eventDetails.eventName,
@@ -82,7 +87,7 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
-    await dbConnect();
+    await connectToDatabase();
     const body = await req.json();
     const { orderId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = body;
 
@@ -106,6 +111,22 @@ export async function PUT(req) {
     } else {
       return NextResponse.json({ success: false, message: "Invalid Signature" }, { status: 400 });
     }
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function GET(req) {
+  try {
+    await connectToDatabase();
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json({ success: false, message: "User ID is required" }, { status: 400 });
+    }
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    return NextResponse.json({ success: true, orders });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
