@@ -1,4 +1,4 @@
-# -------------------- BUILD STAGE --------------------
+# -------------------- BUILD --------------------
 FROM node:22-alpine AS builder
 WORKDIR /app
 
@@ -9,13 +9,13 @@ COPY . .
 RUN npm run build
 
 
-# -------------------- RUNNER STAGE --------------------
+# -------------------- RUN --------------------
 FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy only the minimal standalone output
+# Copy only the files required to run the app
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
