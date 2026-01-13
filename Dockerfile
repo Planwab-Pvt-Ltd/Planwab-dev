@@ -1,23 +1,25 @@
-# ---------- Base image ----------
-FROM node:22-alpine
-
-# ---------- Set working directory ----------
+# -------------------- BUILD STAGE --------------------
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# ---------- Copy dependency files ----------
-COPY package.json package-lock.json* ./
-
-# ---------- Install dependencies (IMPORTANT FIX) ----------
+COPY package.json package-lock.json ./
 RUN npm install --legacy-peer-deps
 
-# ---------- Copy all source code ----------
 COPY . .
-
-# ---------- Build Next.js app ----------
 RUN npm run build
 
-# ---------- Expose Next.js default port ----------
+
+# -------------------- RUNNER STAGE --------------------
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy only the minimal standalone output
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
 EXPOSE 3000
 
-# ---------- Start production server ----------
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
