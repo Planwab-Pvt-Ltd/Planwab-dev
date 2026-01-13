@@ -124,6 +124,7 @@ import {
 import dynamic from "next/dynamic";
 import ReviewSection from "../ReviewSection";
 import VendorProfileOnboarding from "../VendorProfileCreate";
+import DOMPurify from "dompurify";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse rounded-xl" />,
@@ -332,25 +333,41 @@ const REAL_POST_IMAGES = [
   "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=600&h=600&fit=crop",
 ];
 
-const REAL_REEL_IMAGES = [
-  "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1485872299829-c673f5194813?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1542628682-88321d2a4828?w=400&h=700&fit=crop",
-  "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=400&h=700&fit=crop",
+const REAL_REEL_VIDEOS = [
+  "https://dms.licdn.com/playlist/vid/v2/D5605AQE5rH9A5_8txA/mp4-720p-30fp-crf28/B56ZmAC0z.H8Bo-/0/1758789861318?e=2147483647&v=beta&t=VfyPuIQDf6hr9g6Kmp7L9TuzrcXto8-lcaTuouLtuvs",
+  "https://www.shutterstock.com/shutterstock/videos/3949010553/preview/stock-footage-young-asian-man-in-headphones-playing-computer-game-winning-match-looking-at-computer-monitor.webm",
+  "https://www.shutterstock.com/shutterstock/videos/3903302373/preview/stock-footage-active-crazy-dog-dancing-jumping-on-green-grass-waiting-to-fetch-a-disc-toy-happy-young-jack.webm",
+  "https://www.shutterstock.com/shutterstock/videos/3529379197/preview/stock-footage-vertical-mobile-interface-of-a-social-media-mockup-app-featuring-looped-green-screen-chroma-key.webm",
+  "https://www.shutterstock.com/shutterstock/videos/3455204433/preview/stock-footage-vertical-screen-portrait-of-an-astronaut-floating-outside-a-spaceship-with-planet-earth-in-the.webm",
+  "https://dms.licdn.com/playlist/vid/v2/D4E05AQHQ7YKA9SYvIw/mp4-640p-30fp-crf28/B4EZmnEhqnKgBg-/0/1759444616247?e=2147483647&v=beta&t=1Bl0gmIi8Sgq9PkGd-zGHMapOjN7_x_ldHTNWfyjSXI",
+  "https://www.shutterstock.com/shutterstock/videos/3529379197/preview/stock-footage-vertical-mobile-interface-of-a-social-media-mockup-app-featuring-looped-green-screen-chroma-key.webm",
+  "https://www.shutterstock.com/shutterstock/videos/3455204433/preview/stock-footage-vertical-screen-portrait-of-an-astronaut-floating-outside-a-spaceship-with-planet-earth-in-the.webm",
+  "https://media.istockphoto.com/id/1515210353/video/deep-space-travel-to-far-away-galaxies.mp4?s=mp4-640x640-is&k=20&c=DuWaJgLqCB-XEX6paoYXN72HJ24N87FQgan8H-nskOk=",
+
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+];
+
+const REAL_REEL_THUMBNAILS = [
+  "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=600&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=600&h=600&fit=crop",
+];
+
+const FALLBACK_VIDEOS = [
+  "https://www.w3schools.com/html/mov_bbb.mp4",
+  "https://www.w3schools.com/html/movie.mp4",
+  "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAABhltZGF0AAACrQYF//+p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAABjWWIhAA3//728P4FNjuY0JcRzeidDx8rINX/2jLVlppWUt2V7xTb//xJ4N4L5N9Fy5cXGsKx8eNvvvjfJP3f3fv37773377733773377773373377733773376",
 ];
 
 const MOCK_POSTS = Array.from({ length: 24 }, (_, i) => ({
@@ -368,11 +385,12 @@ const MOCK_POSTS = Array.from({ length: 24 }, (_, i) => ({
   isSaved: Math.random() > 0.7,
 }));
 
-const MOCK_REELS = Array.from({ length: 18 }, (_, i) => ({
+const MOCK_REELS = Array.from({ length: 12 }, (_, i) => ({
   id: i + 1,
   type: "video",
-  thumbnail: REAL_REEL_IMAGES[i % REAL_REEL_IMAGES.length],
-  videoUrl: REAL_REEL_IMAGES[i % REAL_REEL_IMAGES.length],
+  thumbnail: REAL_REEL_THUMBNAILS[i % REAL_REEL_THUMBNAILS.length],
+  videoUrl: REAL_REEL_VIDEOS[i % REAL_REEL_VIDEOS.length],
+  fallbackUrl: FALLBACK_VIDEOS[i % FALLBACK_VIDEOS.length], // Added fallback
   views: `${Math.floor(Math.random() * 50) + 10}K`,
   likes: Math.floor(Math.random() * 1000) + 100,
   comments: Math.floor(Math.random() * 200) + 20,
@@ -1326,7 +1344,8 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
 
 const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, onDeleteReel }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [likedReels, setLikedReels] = useState(new Set());
   const [savedReels, setSavedReels] = useState(new Set());
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
@@ -1334,9 +1353,131 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   const [dragDirection, setDragDirection] = useState(null);
   const [showOptionsDrawer, setShowOptionsDrawer] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const videoRef = useRef(null);
+  const progressInterval = useRef(null);
+
   useBodyScrollLock(true);
 
   const currentReel = reels[currentIndex];
+
+  // Cleanup progress interval
+  useEffect(() => {
+    return () => {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+    };
+  }, []);
+
+  // Handle video source change - THIS IS THE KEY FIX
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Reset states
+    setProgress(0);
+    setIsBuffering(true);
+    setHasError(false);
+    setIsPlaying(true);
+
+    // Load and play the new video
+    video.load();
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+          setIsBuffering(false);
+        })
+        .catch((error) => {
+          console.log("Autoplay prevented:", error);
+          setIsPlaying(false);
+          setIsBuffering(false);
+        });
+    }
+  }, [currentIndex, currentReel?.videoUrl]);
+
+  // Handle mute state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  // Progress bar update
+  useEffect(() => {
+    if (progressInterval.current) {
+      clearInterval(progressInterval.current);
+    }
+
+    if (isPlaying) {
+      progressInterval.current = setInterval(() => {
+        const video = videoRef.current;
+        if (video && video.duration) {
+          const percent = (video.currentTime / video.duration) * 100;
+          setProgress(percent || 0);
+        }
+      }, 100);
+    }
+
+    return () => {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+    };
+  }, [isPlaying]);
+
+  const handlePlayPause = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPlaying) {
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      video
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.log("Play failed:", err));
+    }
+  }, [isPlaying]);
+
+  const handleVideoEnd = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+  };
+
+  const handleVideoError = (e) => {
+    console.error("Video error:", e);
+    setHasError(true);
+    setIsBuffering(false);
+  };
+
+  const handleLoadStart = () => {
+    setIsBuffering(true);
+    setHasError(false);
+  };
+
+  const handleCanPlay = () => {
+    setIsBuffering(false);
+  };
+
+  const handleWaiting = () => {
+    setIsBuffering(true);
+  };
+
+  const handlePlaying = () => {
+    setIsBuffering(false);
+    setIsPlaying(true);
+  };
 
   const handleLike = () => {
     const newLiked = new Set(likedReels);
@@ -1374,15 +1515,30 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
     [currentIndex, reels.length]
   );
 
+  const handleDragStart = () => {
+    setIsDragging(true);
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
   const handleDragEnd = (_, info) => {
     setIsDragging(false);
     const threshold = 50;
     const velocity = 300;
 
-    if (info.offset.y < -threshold || info.velocity.y < -velocity) {
+    const shouldGoUp = info.offset.y < -threshold || info.velocity.y < -velocity;
+    const shouldGoDown = info.offset.y > threshold || info.velocity.y > velocity;
+
+    if (shouldGoUp) {
       goToReel("up");
-    } else if (info.offset.y > threshold || info.velocity.y > velocity) {
+    } else if (shouldGoDown) {
       goToReel("down");
+    } else {
+      // Resume if we didn't change reels
+      if (videoRef.current && isPlaying) {
+        videoRef.current.play().catch(() => {});
+      }
     }
 
     if (info.velocity.x > 500 || info.offset.x > 150) {
@@ -1393,6 +1549,12 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   const handleDoubleTap = () => {
     if (!likedReels.has(currentReel?.id)) {
       handleLike();
+    }
+  };
+
+  const handleSingleTap = (e) => {
+    if (e.target === e.currentTarget || e.target.tagName === "VIDEO") {
+      handlePlayPause();
     }
   };
 
@@ -1417,7 +1579,13 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="fixed inset-0 z-[100] bg-black overflow-hidden"
       >
-        <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
+        {/* Progress Bar at Top */}
+        <div className="absolute top-0 left-0 right-0 z-30 h-1 bg-white/20">
+          <motion.div className="h-full bg-white" style={{ width: `${progress}%` }} transition={{ duration: 0.1 }} />
+        </div>
+
+        {/* Header */}
+        <div className="absolute top-1 left-0 right-0 z-20 px-4 py-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
@@ -1435,54 +1603,108 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           </motion.button>
         </div>
 
+        {/* Main Video Area - VIDEO IS NOW OUTSIDE ANIMATEPRESENCE */}
         <motion.div
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.1}
-          onDragStart={() => setIsDragging(true)}
+          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           onDoubleClick={handleDoubleTap}
-          className="absolute inset-0 touch-pan-y"
+          onClick={handleSingleTap}
+          className="absolute inset-0 touch-pan-y bg-black"
           style={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
+          {/* LAYER 1: Blurred Background (For Aspect Ratio Fix) */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src={currentReel?.thumbnail}
+              alt="blur-bg"
+              className="w-full h-full object-cover blur-2xl opacity-50 scale-110"
+            />
+          </div>
+
+          {/* LAYER 2: Actual Video (Centered) */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <video
+              ref={videoRef}
               key={currentReel?.id}
-              initial={{
-                opacity: 0,
-                y: dragDirection === "up" ? 100 : dragDirection === "down" ? -100 : 0,
-                scale: 0.95,
-              }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{
-                opacity: 0,
-                y: dragDirection === "up" ? -100 : dragDirection === "down" ? 100 : 0,
-                scale: 0.95,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                mass: 0.8,
-              }}
-              className="absolute inset-0"
-            >
-              <SmartMedia
-                src={currentReel?.thumbnail}
-                type="image"
-                className="w-full h-full object-cover"
-                loaderImage="/GlowLoadingGif.gif"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
-            </motion.div>
+              src={currentReel?.videoUrl}
+              poster={currentReel?.thumbnail}
+              className="w-full h-full max-h-full object-contain"
+              loop
+              muted={isMuted}
+              playsInline
+              autoPlay
+              preload="auto"
+              onLoadStart={handleLoadStart}
+              onCanPlay={handleCanPlay}
+              onCanPlayThrough={handleCanPlay}
+              onWaiting={handleWaiting}
+              onPlaying={handlePlaying}
+              onEnded={handleVideoEnd}
+              onError={handleVideoError}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+            />
+          </div>
+
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
+
+          {/* Transition Animation Overlay */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`overlay-${currentReel?.id}`}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 0 }}
+              exit={{ opacity: 0.5 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black pointer-events-none"
+            />
           </AnimatePresence>
+
+          {/* Buffering Indicator */}
+          {isBuffering && !hasError && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
+          )}
+
+          {/* Error State */}
+          {hasError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+              <div className="text-white text-center">
+                <p className="text-lg font-semibold">Video unavailable</p>
+                <p className="text-sm text-white/60 mt-2">Swipe to next reel</p>
+              </div>
+            </div>
+          )}
+
+          {/* Play/Pause Indicator */}
+          <AnimatePresence>
+            {!isPlaying && !isBuffering && !hasError && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+              >
+                <div className="w-20 h-20 rounded-full bg-black/50 flex items-center justify-center">
+                  <Play size={40} className="text-white ml-1" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Like Animation */}
           <AnimatePresence>
             {showLikeAnimation && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
               >
                 <Heart size={120} className="text-white fill-white drop-shadow-2xl" />
               </motion.div>
@@ -1490,6 +1712,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           </AnimatePresence>
         </motion.div>
 
+        {/* Right Side Actions */}
         <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-20">
           <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
             <motion.div
@@ -1539,15 +1762,11 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           </motion.button>
         </div>
 
+        {/* Bottom Info */}
         <div className="absolute left-4 right-20 bottom-10 space-y-3 z-20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/50">
-              <SmartMedia
-                src={vendorImage}
-                type="image"
-                className="w-full h-full object-cover"
-                loaderImage="/GlowLoadingGif.gif"
-              />
+              <img src={vendorImage} alt={vendorName} className="w-full h-full object-cover" />
             </div>
             <span className="text-white font-bold text-sm">{vendorName}</span>
             <motion.button
@@ -1559,22 +1778,27 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           </div>
           <p className="text-white text-sm line-clamp-2">{currentReel?.caption}</p>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-white/20 animate-pulse" />
+            <div className="w-4 h-4 rounded bg-white/20 flex items-center justify-center">
+              <span className="text-[8px]">🎵</span>
+            </div>
             <p className="text-white/80 text-xs">Original Audio • {currentReel?.views} views</p>
           </div>
         </div>
 
+        {/* Reel Counter */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
           <p className="text-white/60 text-xs" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
             {currentIndex + 1} / {reels.length}
           </p>
         </div>
 
+        {/* Hint Text */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
-          <p className="text-white/40 text-xs">Swipe up/down to navigate</p>
+          <p className="text-white/40 text-xs">Swipe up/down • Tap to pause</p>
         </div>
       </motion.div>
 
+      {/* Modals */}
       <AnimatePresence>
         {showOptionsDrawer && (
           <ReelOptionsDrawer
@@ -6408,6 +6632,25 @@ const VendorProfilePageWrapper = () => {
     }
   };
 
+  // Strip HTML tags to get plain text length
+  const getPlainTextLength = (html) => {
+    if (!html) return 0;
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || "").trim().length;
+  };
+
+  // Sanitize HTML content
+  const sanitizeHtml = (html) => {
+    if (typeof window !== "undefined") {
+      return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ["p", "br", "strong", "b", "em", "i", "u", "s", "h1", "h2", "h3", "ul", "ol", "li", "a", "span"],
+        ALLOWED_ATTR: ["href", "target", "rel", "class", "style"],
+      });
+    }
+    return html;
+  };
+
   if (loading) {
     return <VendorProfileSkeleton />;
   }
@@ -6437,9 +6680,11 @@ const VendorProfilePageWrapper = () => {
   const vendorProfile = Array.isArray(vendor?.vendorProfile) ? vendor.vendorProfile[0] : vendor?.vendorProfile;
 
   const vendorImage =
-    profile?.profilePicture ||
+    profile?.vendorAvatar ||
     vendorProfile?.profilePicture ||
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop";
+
+  console.log(profile);
 
   const defaultBio = `📸 Professional Event Photographer
 🎬 Capturing moments that last forever
@@ -6582,7 +6827,7 @@ const VendorProfilePageWrapper = () => {
               ))}
             </div>
 
-            {/* Enhanced Bio Section - Instagram Style */}
+            {/* Enhanced Bio Section - Rich Text HTML Support */}
             <div className="mb-4">
               <motion.div
                 initial={false}
@@ -6590,14 +6835,18 @@ const VendorProfilePageWrapper = () => {
                 transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="relative overflow-hidden"
               >
-                <p className="text-sm text-gray-800 dark:text-gray-200 leading-6 whitespace-pre-line">
-                  {profile.bio ? formatBio(profile.bio) : formatBio(defaultBio)}
-                </p>
-                {/* {!isBioExpanded && (
-                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none" />
-                )} */}
+                <div
+                  className="text-sm text-gray-800 dark:text-gray-200 bio-content"
+                  style={{ lineHeight: "1.4" }}
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(profile.bio || defaultBio),
+                  }}
+                />
+                {/* !isBioExpanded && getPlainTextLength(profile.bio || defaultBio) > 120 && (
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-950 to-transparent pointer-events-none" />
+                ) */}
               </motion.div>
-              {(profile.bio || defaultBio)?.length > 120 && (
+              {getPlainTextLength(profile.bio || defaultBio) > 120 && (
                 <button
                   onClick={() => setIsBioExpanded(!isBioExpanded)}
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mt-1 font-medium"

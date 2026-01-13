@@ -2,7 +2,36 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import { X, ChevronRight, CheckCircle, Store, MapPin, Tag, Lock, Sparkles } from "lucide-react";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+import "react-quill-new/dist/quill.snow.css";
+
+// Keep modules as they are
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }], // This is correct
+    [{ color: [] }, { background: [] }],
+    ["link"],
+    ["clean"],
+  ],
+};
+
+// Update formats to remove "bullet"
+const quillFormats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list", // This handles both bullet and ordered
+  "color",
+  "background",
+  "link",
+];
 
 const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose }) => {
   // REMOVED: const [isOpen, setIsOpen] = useState(false); // This was causing conflict
@@ -13,12 +42,22 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
   const [adminPassword, setAdminPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
+  const [coverImage, setCoverImage] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [bio, setBio] = useState("");
 
   const [formData, setFormData] = useState({
     vendorBusinessName: "",
     username: "",
     vendorName: "",
     category: "",
+    bio: "",
+    profilePicture: "",
+    coverImage: "",
     location: {
       address: "",
       city: "",
@@ -66,10 +105,131 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
     }
   };
 
+  // Upload single image to Cloudinary
+  const uploadImageToCloudinary = async (file) => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "planWab_vendors");
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: data,
+      }
+    );
+
+    const result = await response.json();
+
+    if (!result.secure_url) {
+      throw new Error("Upload failed");
+    }
+
+    return result.secure_url;
+  };
+
+  // Handle profile picture selection and upload
+  const handleProfilePictureChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size should be less than 5MB");
+      return;
+    }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfilePicturePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    setUploadingProfile(true);
+    setError("");
+
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setProfilePicture(url);
+      setFormData((prev) => ({ ...prev, profilePicture: url }));
+    } catch (err) {
+      setError("Failed to upload profile picture. Please try again.");
+      setProfilePicturePreview(null);
+    } finally {
+      setUploadingProfile(false);
+    }
+  };
+
+  // Handle cover image selection and upload
+  const handleCoverImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size should be less than 5MB");
+      return;
+    }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCoverImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    setUploadingCover(true);
+    setError("");
+
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setCoverImage(url);
+      setFormData((prev) => ({ ...prev, coverImage: url }));
+    } catch (err) {
+      setError("Failed to upload cover image. Please try again.");
+      setCoverImagePreview(null);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  // Remove profile picture
+  const removeProfilePicture = () => {
+    setProfilePicture(null);
+    setProfilePicturePreview(null);
+    setFormData((prev) => ({ ...prev, profilePicture: "" }));
+  };
+
+  // Remove cover image
+  const removeCoverImage = () => {
+    setCoverImage(null);
+    setCoverImagePreview(null);
+    setFormData((prev) => ({ ...prev, coverImage: "" }));
+  };
+
   const validateStep = () => {
     if (currentStep === 2) {
       if (!formData.vendorBusinessName || !formData.vendorName || !formData.category) {
         setError("Please fill all required fields");
+        return false;
+      }
+      if (!profilePicture) {
+        setError("Profile picture is required");
         return false;
       }
       if (formData.password.length < 6) {
@@ -140,6 +300,9 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
         username: formData.username,
         vendorName: formData.vendorName,
         category: formData.category,
+        bio: formData.bio || "",
+        vendorAvatar: profilePicture,
+        vendorCoverImage: coverImage || "",
         location: formData.location,
         password: formData.password,
       };
@@ -459,6 +622,220 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
                         placeholder="Enter contact person name"
                         className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-colors text-sm"
                       />
+                    </div>
+
+                    {/* Profile Picture Upload (Required) */}
+                    <div className="space-y-3 p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-purple-200 dark:border-purple-800/50">
+                      <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <Store size={16} className="text-purple-600 dark:text-purple-400" />
+                        Profile Picture *<span className="text-xs font-normal text-slate-500">(Required)</span>
+                      </label>
+
+                      {profilePicturePreview ? (
+                        <div className="relative">
+                          <div className="relative w-full aspect-square max-w-[200px] mx-auto rounded-2xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-xl">
+                            <img
+                              src={profilePicturePreview}
+                              alt="Profile preview"
+                              className="w-full h-full object-cover"
+                            />
+                            {uploadingProfile && (
+                              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-2" />
+                                  <p className="text-white text-xs font-semibold">Uploading...</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {!uploadingProfile && (
+                            <div className="flex gap-2 mt-3">
+                              <label className="flex-1 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleProfilePictureChange}
+                                  className="hidden"
+                                />
+                                <ChevronRight size={14} />
+                                Change
+                              </label>
+                              <button
+                                type="button"
+                                onClick={removeProfilePicture}
+                                className="flex-1 py-2.5 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 font-semibold text-xs hover:bg-red-100 dark:hover:bg-red-900/30 transition-all flex items-center justify-center gap-2"
+                              >
+                                <X size={14} />
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <label className="relative block w-full aspect-square max-w-[200px] mx-auto rounded-2xl border-3 border-dashed border-purple-300 dark:border-purple-700 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all cursor-pointer group overflow-hidden">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePictureChange}
+                            disabled={uploadingProfile}
+                            className="hidden"
+                          />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              <Store size={32} className="text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Upload Profile Picture
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                              Click to browse
+                              <br />
+                              (Max 5MB)
+                            </p>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Cover Image Upload (Optional) */}
+                    <div className="space-y-3 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border-2 border-blue-200 dark:border-blue-800/50">
+                      <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <MapPin size={16} className="text-blue-600 dark:text-blue-400" />
+                        Cover Image
+                        <span className="text-xs font-normal text-slate-500">(Optional)</span>
+                      </label>
+
+                      {coverImagePreview ? (
+                        <div className="relative">
+                          <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-xl">
+                            <img src={coverImagePreview} alt="Cover preview" className="w-full h-full object-cover" />
+                            {uploadingCover && (
+                              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-2" />
+                                  <p className="text-white text-xs font-semibold">Uploading...</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {!uploadingCover && (
+                            <div className="flex gap-2 mt-3">
+                              <label className="flex-1 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleCoverImageChange}
+                                  className="hidden"
+                                />
+                                <ChevronRight size={14} />
+                                Change
+                              </label>
+                              <button
+                                type="button"
+                                onClick={removeCoverImage}
+                                className="flex-1 py-2.5 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 font-semibold text-xs hover:bg-red-100 dark:hover:bg-red-900/30 transition-all flex items-center justify-center gap-2"
+                              >
+                                <X size={14} />
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <label className="relative block w-full aspect-[16/9] rounded-2xl border-3 border-dashed border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all cursor-pointer group overflow-hidden">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleCoverImageChange}
+                            disabled={uploadingCover}
+                            className="hidden"
+                          />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                              <MapPin size={32} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Upload Cover Image
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                              Click to browse
+                              <br />
+                              (Max 5MB)
+                            </p>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Bio Field - Rich Text Editor */}
+                    <div className="space-y-3 p-5 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800/50">
+                      <label className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <Sparkles size={16} className="text-indigo-600 dark:text-indigo-400" />
+                        Bio
+                        <span className="text-xs font-normal text-slate-500">(Optional)</span>
+                      </label>
+
+                      <div className="relative">
+                        {/* Rich Text Editor */}
+                        <div className="rich-text-editor-wrapper rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                          <ReactQuill
+                            theme="snow"
+                            value={formData.bio}
+                            onChange={(content, delta, source, editor) => {
+                              const plainText = editor.getText().trim();
+                              // Limit to 1000 characters (plain text)
+                              if (plainText.length <= 1000) {
+                                setFormData((prev) => ({ ...prev, bio: content }));
+                                setBio(content);
+                              }
+                            }}
+                            modules={quillModules}
+                            formats={quillFormats}
+                            placeholder="✨ Tell us about your business... Format your text, add lists, and make it stand out!"
+                            className="custom-quill-editor"
+                          />
+                        </div>
+
+                        {/* Character Counter */}
+                        <div className="flex justify-between items-center mt-3 px-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                              📝 Formatting supported
+                            </span>
+                            <div className="flex gap-1">
+                              <span className="px-2 py-0.5 bg-white dark:bg-slate-700 rounded text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                B
+                              </span>
+                              <span className="px-2 py-0.5 bg-white dark:bg-slate-700 rounded text-[10px] font-bold italic text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                I
+                              </span>
+                              <span className="px-2 py-0.5 bg-white dark:bg-slate-700 rounded text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                🔗
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500">Max 1000 chars</span>
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                                formData.bio?.replace(/<[^>]*>/g, "").trim().length > 900
+                                  ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                              }`}
+                            >
+                              {formData.bio?.replace(/<[^>]*>/g, "").trim().length || 0}/1000
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Helper Text */}
+                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                          <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                            💡 <strong>Pro tip:</strong> Use formatting to make your bio stand out! Add bullet points
+                            for services, bold your specialties, and include relevant emojis.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Category */}

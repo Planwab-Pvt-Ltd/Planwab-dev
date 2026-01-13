@@ -90,6 +90,11 @@ const vendorProfileSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    bio: {
+      type: String,
+      trim: true,
+      required: false,
+    },
     password: {
       type: String,
       required: true,
@@ -131,7 +136,6 @@ const vendorProfileSchema = new mongoose.Schema(
   }
 );
 
-vendorProfileSchema.index({ vendorId: 1 });
 vendorProfileSchema.index({ category: 1 });
 vendorProfileSchema.index({ "location.city": 1 });
 

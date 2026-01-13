@@ -15,6 +15,12 @@ import {
   DjVendor,
   HairstylingVendor,
   OtherVendor,
+  DholVendor, // New
+  DecorVendor, // New
+  BaratVendor, // New
+  FireworkVendor, // New
+  StageEntryVendor,
+  AnchorVendor,
 } from "../../../../database/models/VendorModel";
 import { connectToDatabase } from "../../../../database/mongoose";
 
@@ -32,6 +38,12 @@ const categoryModelMap = {
   invitations: InvitationVendor,
   djs: DjVendor,
   hairstyling: HairstylingVendor,
+  dhol: DholVendor,
+  decor: DecorVendor,
+  barat: BaratVendor,
+  fireworks: FireworkVendor,
+  stageEntry: StageEntryVendor,
+  anchor: AnchorVendor,
   other: OtherVendor,
 };
 

@@ -18,6 +18,7 @@ import {
   Users,
   Camera,
   Gift,
+  FlameKindling,
   Trash2,
   Plus,
   X,
@@ -91,6 +92,7 @@ import {
   Move,
   Lamp,
   Drum,
+  MicVocal,
 } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
 
@@ -772,6 +774,10 @@ function AddVendorContent({ onNavigate }) {
     { key: "hairstyling", label: "Hairstyling", icon: Scissors, description: "Hair styling services" },
     { key: "decor", label: "Decorators", icon: Lamp, description: "Event decoration services" },
     { key: "dhol", label: "Dhol", icon: Drum, description: "Traditional drum players" },
+    { key: "anchor", label: "Anchor", icon: MicVocal, description: "Event anchors and hosts" },
+    { key: "stageEntry", label: "Stage Entry", icon: Sparkles, description: "Grand stage entry & concepts" },
+    { key: "fireworks", label: "Fireworks", icon: FlameKindling, description: "Fireworks & pyro displays" },
+    { key: "barat", label: "Barat", icon: Music, description: "Bands, horses & Barat processions" },
     { key: "other", label: "Other", icon: FileText, description: "Other services" },
   ];
 

@@ -543,6 +543,82 @@ const HairstylingVendor = createDiscriminator(
   })
 );
 
+const DholVendor = createDiscriminator(
+  "dhol",
+  new Schema({
+    teamSize: { type: Number, default: 2 },
+    instruments: [String], // e.g., Dhol, Tasha, Nagada
+    performanceDuration: { type: String }, // e.g., "2 hours", "Procession only"
+    travelToVenue: { type: Boolean, default: true },
+    costumeStyle: { type: String }, // e.g., "Punjabi Traditional", "Formal"
+    backupPerformers: { type: Boolean, default: false },
+  })
+);
+
+const DecorVendor = createDiscriminator(
+  "decor",
+  new Schema({
+    specializations: [String], // e.g., Floral, Minimalist, Royal, Bohemian
+    themes: [String],
+    rentalItems: [String], // e.g., Lighting, Furniture, Props
+    setupTime: { type: String },
+    cleanupIncluded: { type: Boolean, default: true },
+    outdoorExpertise: { type: Boolean, default: false },
+    customDesign: { type: Boolean, default: true },
+    artificialFlowersOnly: { type: Boolean, default: false },
+  })
+);
+
+const BaratVendor = createDiscriminator(
+  "barat",
+  new Schema({
+    bandType: { type: String }, // e.g., Brass Band, Pipe Band
+    membersCount: { type: Number },
+    horseAvailable: { type: Boolean, default: false }, // Ghodi
+    vintageCarAvailable: { type: Boolean, default: false },
+    lightingUmbrellas: { type: Number, default: 0 },
+    carriageType: { type: String }, // e.g., Baggi, Rath
+    uniformStyle: { type: String },
+  })
+);
+
+const FireworkVendor = createDiscriminator(
+  "fireworks",
+  new Schema({
+    showDuration: { type: String },
+    safetyCertification: { type: Boolean, default: true },
+    fireworkType: [String], // e.g., Cold Pyro, Sky Shots, Sparklers
+    indoorSafe: { type: Boolean, default: false },
+    permitAssistance: { type: Boolean, default: true },
+    remoteTriggered: { type: Boolean, default: true },
+  })
+);
+
+const StageEntryVendor = createDiscriminator(
+  "stageEntry",
+  new Schema({
+    entryStyles: [String], // e.g., Palki, Smoke Cloud, Revolving Stage, Hydraulic
+    propsIncluded: [String],
+    choreographyIncluded: { type: Boolean, default: false },
+    technicalTeamSize: { type: Number },
+    powerRequirement: { type: String },
+    setupDuration: { type: String },
+  })
+);
+
+const AnchorVendor = createDiscriminator(
+  "anchor",
+  new Schema({
+    languages: [String],
+    specialization: [String], // e.g., Sangeet, Wedding Reception, Corporate
+    performanceStyle: { type: String }, // e.g., Humorous, Formal, Energetic
+    scriptCustomization: { type: Boolean, default: true },
+    travelCost: { type: String, enum: ["Included", "Extra", ""] },
+    experienceYears: { type: Number },
+    videoSamplesAvailable: { type: Boolean, default: true },
+  })
+);
+
 const OtherVendor = createDiscriminator(
   "other",
   new Schema({
@@ -566,6 +642,12 @@ export {
   InvitationVendor,
   DjVendor,
   HairstylingVendor,
+  DholVendor, // New
+  DecorVendor, // New
+  BaratVendor, // New
+  FireworkVendor, // New
+  StageEntryVendor, // New
+  AnchorVendor,
   OtherVendor,
 };
 

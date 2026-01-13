@@ -80,9 +80,29 @@ export async function POST(request) {
     await connectToDatabase();
 
     const body = await request.json();
-    const { vendorId, vendorBusinessName, username, vendorName, location, category, password } = body;
+    const {
+      vendorId,
+      vendorBusinessName,
+      username,
+      vendorName,
+      location,
+      category,
+      password,
+      vendorAvatar,
+      vendorCoverImage,
+      bio,
+    } = body;
 
-    if (!vendorId || !vendorBusinessName || !username || !vendorName || !category || !password) {
+    if (
+      !vendorId ||
+      !vendorBusinessName ||
+      !username ||
+      !vendorName ||
+      !category ||
+      !password ||
+      !vendorAvatar ||
+      !bio
+    ) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
     }
 
@@ -97,6 +117,9 @@ export async function POST(request) {
       vendorId,
       vendorBusinessName,
       vendorName,
+      vendorAvatar,
+      vendorCoverImage,
+      bio,
       location,
       category,
       username,
