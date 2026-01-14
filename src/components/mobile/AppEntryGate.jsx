@@ -3,25 +3,20 @@
 import { useState, useEffect } from "react";
 import PlanWABLoader from "./LoaderStarter";
 
-export default function AppEntryGate({ children }) {
-  // 1. State: Manages the loader visibility
-  const [showLoader, setShowLoader] = useState(true);
+let hasAppLoaded = false;
 
-  // 2. Professional Scroll Locking Strategy
-  // We lock the BODY, not just the main container.
-  // This prevents "overscroll" (pull-to-refresh) effects on mobile while loading.
+export default function AppEntryGate({ children }) {
+  const [showLoader, setShowLoader] = useState(!hasAppLoaded);
+
   useEffect(() => {
     if (showLoader) {
-      // Save original style
       const originalOverflow = document.body.style.overflow;
       const originalHeight = document.body.style.height;
 
-      // Lock scroll
       document.body.style.overflow = "hidden";
-      document.body.style.height = "100vh"; // Locks iOS elastic scroll
-      document.body.style.touchAction = "none"; // Disables touch interactions
+      document.body.style.height = "100vh";
+      document.body.style.touchAction = "none";
 
-      // Cleanup function: Unlocks scroll when loader finishes
       return () => {
         document.body.style.overflow = originalOverflow;
         document.body.style.height = originalHeight;
@@ -30,24 +25,31 @@ export default function AppEntryGate({ children }) {
     }
   }, [showLoader]);
 
+  const handleLoaderComplete = () => {
+    hasAppLoaded = true; 
+    setShowLoader(false); 
+  };
+  if (hasAppLoaded) {
+    return <>{children}</>;
+  }
+
   return (
     <>
       <div
         aria-hidden={showLoader}
         className={
           showLoader
-            ? "pointer-events-none select-none opacity-90 transition-all duration-500"
+            ? "pointer-events-none select-none opacity-90 transition-all duration-500" 
             : "opacity-100 transition-all duration-500"
         }
       >
         {children}
       </div>
+      
       {showLoader && (
         <PlanWABLoader
           videoSrc="/Loading/loading1.mp4"
-          onComplete={() => {
-            setShowLoader(false);
-          }}
+          onComplete={handleLoaderComplete}
         />
       )}
     </>
