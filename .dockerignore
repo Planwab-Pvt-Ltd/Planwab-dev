@@ -1,8 +1,10 @@
 node_modules
 .next
+.next/cache
 .git
-.gitignore
+.env*
 Dockerfile
+.gitignore
 npm-debug.log
 .vscode
 *.log
