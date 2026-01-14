@@ -1,5 +1,6 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+ output: "standalone",
 
   images: {
     unoptimized: true,      // 🚀 KILLS sharp (huge)
@@ -12,4 +13,6 @@ const nextConfig = {
   compress: true,          // gzip + brotli
 
   poweredByHeader: false, 
-}
+};
+
+export default nextConfig;
