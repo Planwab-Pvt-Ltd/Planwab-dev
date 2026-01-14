@@ -5,6 +5,8 @@ import ThemeClerkProvider from "../lib/ThemeClerkProvider";
 import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "sonner";
 
+export const dynamic = "force-dynamic";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
