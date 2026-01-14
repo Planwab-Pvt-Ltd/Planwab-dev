@@ -1,17 +1,24 @@
-export default function sitemap() {
+import connectToDatabase from "../database/mongoose";
+import VendorProfile from './../database/models/VendorProfileModel';
+
+export default async function sitemap() {
   const baseUrl = "https://www.planwab.com";
 
-  return [
-    // 1. HOME PAGE (Highest Priority)
+  // 1. Static Routes
+  const staticRoutes = [
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1.0,
     },
-
-    // 2. MAIN CATEGORY PAGES (High Priority)
-    // These are major entry points for users
+    {
+      url: `${baseUrl}/m/vendors/marketplace`,
+      lastModified: new Date(),
+      changeFrequency: "hourly",
+      priority: 0.9,
+    },
+    // Category Pages
     {
       url: `${baseUrl}/m?category=Wedding`,
       lastModified: new Date(),
@@ -30,70 +37,61 @@ export default function sitemap() {
       changeFrequency: "weekly",
       priority: 0.9,
     },
-
-    // 3. VENDOR MARKETPLACE (Crucial for Business)
+    // Event Pages
     {
-      url: `${baseUrl}/m/vendors/marketplace`,
-      lastModified: new Date(),
-      changeFrequency: "daily", // Likely updates often with new vendors
-      priority: 0.9,
-    },
-
-    // 4. SPECIFIC EVENT LISTINGS
-    {
-      url: `${baseUrl}/m/events/Wedding`,
+      url: `${baseUrl}/m/events/wedding`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/m/events/Anniversary`,
+      url: `${baseUrl}/m/events/anniversary`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/m/events/Birthday`,
+      url: `${baseUrl}/m/events/birthday`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     },
-
-    // 5. PLANNING TOOLS ("Plan My Event")
-    // Highly engaging pages for conversion
+    // Planning Tools
     {
       url: `${baseUrl}/m/plan-my-event/wedding`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.8,
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/m/plan-my-event/anniversary`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.8,
+      priority: 0.7,
     },
     {
-      url: `${baseUrl}/m/plan-my-event/Birthday`,
+      url: `${baseUrl}/m/plan-my-event/birthday`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.8,
-    },
-
-    // 6. USER PAGES (Lower Priority for Search)
-    // Note: Technically, Google can't access these if they are behind a login,
-    // but including them in sitemap helps discoverability of the login structure.
-    {
-      url: `${baseUrl}/m/user/bookings`,
-      lastModified: new Date(),
-      changeFrequency: "always",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/m/user/profile`,
-      lastModified: new Date(),
-      changeFrequency: "always",
-      priority: 0.5,
+      priority: 0.7,
     },
   ];
+
+  // 2. Dynamic Vendor Routes (Enhancement)
+  let vendorRoutes = [];
+  try {
+    await connectToDatabase();
+    const vendors = await VendorProfile.find({}, "vendorId updatedAt").lean();
+
+    vendorRoutes = vendors.map((vendor) => ({
+      url: `${baseUrl}/m/vendor/${vendor.vendorId}/profile`, // Verify your actual vendor profile route
+      lastModified: vendor.updatedAt || new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
+  } catch (error) {
+    console.error("Sitemap generation error:", error);
+  }
+
+  return [...staticRoutes, ...vendorRoutes];
 }

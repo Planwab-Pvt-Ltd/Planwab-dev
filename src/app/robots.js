@@ -3,16 +3,15 @@ export default function robots() {
 
   return {
     rules: {
-      userAgent: "*", // Applies to all bots (Google, Bing, Yahoo, etc.)
-      allow: "/", // Allow crawling of the entire site by default
+      userAgent: "*",
+      allow: "/",
       disallow: [
-        "/m/user/", // BLOCK: Private user dashboard (Profile, Bookings)
-        "/api/", // BLOCK: API endpoints (Save crawl budget for real pages)
-        "/admin/", // BLOCK: Admin panel (if you have one)
-        "/_next/", // BLOCK: Next.js internal build files
-        "/private/", // BLOCK: Any other private folders
+        "/api/",            // Block backend API routes
+        "/m/user/",         // Block user dashboard/private pages
+        "/admin/",          // Block admin panels
+        "/_next/",          // Block internal Next.js files
       ],
     },
-    sitemap: `${baseUrl}/sitemap.xml`, // Point Google to your Sitemap
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
