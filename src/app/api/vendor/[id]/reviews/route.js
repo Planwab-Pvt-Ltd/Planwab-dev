@@ -151,7 +151,7 @@ export async function POST(request, { params }) {
         success: false,
         message: error.message || "Server Error",
       },
-      { status: 500 }
+      { status: 500 } 
     );
   }
 }
