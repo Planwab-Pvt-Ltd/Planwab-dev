@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import connectToDatabase from "../../../../../database/mongoose"; // Adjust path as needed
-import Review from "../../../../../database/models/VendorsReviewsModel"; // Ensure this matches your model file path
-import { sanitizeText, calculateReviewStats, formatReviewResponse, getEmptyStats } from "@/lib/reviewUtils"; // Ensure these exist
+import connectToDatabase from "../../../../../database/mongoose"; 
+import Review from "../../../../../database/models/VendorsReviewsModel"; 
+import { sanitizeText, calculateReviewStats, formatReviewResponse, getEmptyStats } from "@/lib/reviewUtils"; 
 
 // Force dynamic to prevent caching of reviews
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
 
     // 1. Safe Param Resolution
     const resolvedParams = await params;
-    const vendorId = resolvedParams.id; // Use 'id' to match folder structure
+    const vendorId = resolvedParams.id; 
 
     // 2. Parse Query Params
     const { searchParams } = new URL(request.url);
@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
     }
 
     // Apply Sorting
-    let sortOptions = { createdAt: -1 }; // Default: Recent
+    let sortOptions = { createdAt: -1 }; 
     switch (sortBy) {
       case "helpful":
         sortOptions = { "helpful.count": -1, createdAt: -1 };
@@ -47,8 +47,7 @@ export async function GET(request, { params }) {
         break;
     }
 
-    // 4. Fetch Data & Calculate Stats (Fixes Disappearing Graph)
-    // We add calculateReviewStats back into the Promise.all
+    // 4. Fetch Data & Calculate Stats 
     const [reviews, total, stats] = await Promise.all([
       Review.find(query)
         .sort(sortOptions)
@@ -56,11 +55,9 @@ export async function GET(request, { params }) {
         .limit(limit)
         .lean(),
       Review.countDocuments(query),
-      // Recalculate stats every time to ensure graph is accurate
       calculateReviewStats(Review, vendorId),
     ]);
 
-    // Check user's auth status for "hasUserReviewed" flag
     let hasUserReviewed = false;
     try {
       const { userId } = await auth();
@@ -74,7 +71,7 @@ export async function GET(request, { params }) {
       success: true,
       data: {
         reviews,
-        stats, // <--- This was missing, causing the graph to vanish
+        stats,
         hasUserReviewed,
         pagination: {
           page,
@@ -120,19 +117,17 @@ export async function POST(request, { params }) {
     }
 
     // 4. Create Review
-    // We map Clerk fields to your Mongoose Schema fields
     const review = await Review.create({
       vendorId,
       clerkUserId: userId,
-      // Fallbacks for username
       userName: user.firstName ? `${user.firstName} ${user.lastName || ""}` : user.username || "User",
       userAvatar: user.imageUrl,
       userEmail: user.emailAddresses[0]?.emailAddress,
       rating,
-      text: sanitizeText ? sanitizeText(text) : text, // Handle if util is missing
+      text: sanitizeText ? sanitizeText(text) : text, 
       title: title || "Review",
       eventType: eventType || "General",
-      status: "approved", // Auto-approve for now
+      status: "approved",
       createdAt: new Date(),
     });
 
