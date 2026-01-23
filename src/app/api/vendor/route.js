@@ -436,9 +436,10 @@ export async function GET(request) {
     const sortBy = searchParams.get("sortBy") || "rating";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    // =============================================================================
-    // HANDLE SINGLE VENDOR REQUEST
-    // =============================================================================
+    // Extract landing page parameter to determine if this request is for the landing page
+    const landing = searchParams.get("landing");
+
+    // Handle single vendor request
     if (vendorId) {
       const vendor = await Vendor.findById(vendorId).select("-reviewsList -likedBy -bookmarkedBy").lean().exec();
 
@@ -454,22 +455,46 @@ export async function GET(request) {
     const query = {};
     const andConditions = [];
 
+    // Apply landing page specific filtering logic for featured/high-quality vendors
+    if (landing === "true") {
+      // For landing page, we want to showcase the best vendors
+      query.isActive = true;
+      query.$or = [
+        { isFeatured: true },           // Vendors marked as featured
+        { rating: { $gte: 4.5 } },      // Highly rated vendors (4.5+ stars)
+        { bookings: { $gte: 50 } }      // Popular vendors with 50+ bookings
+      ];
+
+      // Apply category filter if specified for landing page
+      if (category && category !== "all") {
+        query.category = category;
+      }
+
+      // Apply featured filter if specifically requested for landing page
+      if (featured === "true") {
+        query.isFeatured = true;
+      }
+    }
+
     // ---------------------------------------------------------------------------
     // 1. CATEGORY FILTERING
     // ---------------------------------------------------------------------------
-    if (categories) {
-      const categoryArray = categories
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean);
+    // Skip category filtering for landing page requests since it's already handled above
+    if (landing !== "true") {
+      if (categories) {
+        const categoryArray = categories
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean);
 
-      if (categoryArray.length === 1) {
-        query.category = categoryArray[0];
-      } else if (categoryArray.length > 1) {
-        query.category = { $in: categoryArray };
+        if (categoryArray.length === 1) {
+          query.category = categoryArray[0];
+        } else if (categoryArray.length > 1) {
+          query.category = { $in: categoryArray };
+        }
+      } else if (category && category !== "all") {
+        query.category = category;
       }
-    } else if (category && category !== "all") {
-      query.category = category;
     }
 
     // ---------------------------------------------------------------------------
@@ -490,7 +515,8 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 4. FEATURED VENDORS
     // ---------------------------------------------------------------------------
-    if (featured === "true") {
+    // Skip featured vendors filtering for landing page requests since it's already handled above
+    if (featured === "true" && landing !== "true") {
       query.isFeatured = true;
     }
 
@@ -640,12 +666,95 @@ export async function GET(request) {
     // =============================================================================
     // OPTIMIZED: DATA PROCESSING (Minimize operations)
     // =============================================================================
-    const processedVendors = vendors.map((vendor) => ({
+    let processedVendors = vendors.map((vendor) => ({
       ...vendor,
       bookings: vendor.bookings ?? vendor.totalBookings ?? 0,
       reviews: vendor.reviews ?? vendor.reviewCount ?? vendor.totalReviews ?? 0,
       rating: vendor.rating ?? vendor.averageRating ?? 0,
     }));
+
+    // Transform vendor data structure to match frontend expectations for landing page display
+    if (landing === "true") {
+      processedVendors = processedVendors.map(vendor => {
+        // Determine the primary image to display for each vendor
+        const image = vendor.defaultImage || 
+                     (vendor.images && vendor.images.length > 0 ? vendor.images[0] : null) ||
+                     (vendor.vendorProfile?.profilePicture) ||
+                     "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
+
+        // Convert category from plural to singular (e.g., "venues" -> "venue")
+        const type = vendor.category?.slice(0, -1) || vendor.category;
+
+        // Create vendor object with structure expected by frontend components
+        const transformedVendor = {
+          id: vendor._id,
+          _id: vendor._id,
+          type: type,
+          name: vendor.name,
+          category: vendor.category,
+          image: image,
+          rating: vendor.rating || 0,
+          verified: vendor.isVerified || false,
+          bookings: vendor.bookings || 0,
+          reviewCount: vendor.reviewCount || 0,
+          isFeatured: vendor.isFeatured || false,
+          responseTime: vendor.responseTime || "2 hours",
+          address: vendor.address,
+          defaultImage: vendor.defaultImage,
+          images: vendor.images,
+          basePrice: vendor.basePrice,
+          perDayPrice: vendor.perDayPrice,
+        };
+
+        // Add type-specific fields based on vendor category for detailed display
+        switch (type) {
+          case "Venue":
+            transformedVendor.location = vendor.address?.city ? 
+              `${vendor.address.city}${vendor.address?.state ? ', ' + vendor.address.state : ''}` : 
+              "Location not specified";
+            transformedVendor.capacity = vendor.capacity || 0;
+            transformedVendor.price = vendor.basePrice || vendor.perDayPrice?.min ? 
+              `₹${vendor.basePrice || vendor.perDayPrice.min.toLocaleString('en-IN')}` : 
+              "Price on request";
+            break;
+
+          case "Photographer":
+            transformedVendor.specialty = vendor.specialties?.[0] || vendor.services?.[0] || "Professional Photography";
+            transformedVendor.experience = vendor.experience || vendor.vendorProfile?.yearsExperience || 0;
+            transformedVendor.portfolio = vendor.portfolio || vendor.reviewCount || 0;
+            transformedVendor.price = vendor.basePrice || vendor.perDayPrice?.min ? 
+              `₹${vendor.basePrice || vendor.perDayPrice.min.toLocaleString('en-IN')}` : 
+              "Contact for price";
+            break;
+
+          case "Decorator":
+            transformedVendor.style = vendor.style || vendor.services?.[0] || "Modern Design";
+            transformedVendor.services = vendor.services || ["Floral Design", "Lighting"];
+            transformedVendor.projects = vendor.projects || vendor.bookings || 0;
+            transformedVendor.price = vendor.basePrice || vendor.perDayPrice?.min ? 
+              `₹${vendor.basePrice || vendor.perDayPrice.min.toLocaleString('en-IN')}` : 
+              "Contact for price";
+            break;
+
+          case "Planner":
+            transformedVendor.experience = vendor.experience || `${vendor.vendorProfile?.yearsExperience || 0} Years`;
+            transformedVendor.tagline = vendor.tagline || vendor.shortDescription || "Making your events memorable";
+            transformedVendor.events = vendor.events || vendor.bookings || 0;
+            transformedVendor.price = vendor.basePrice || vendor.perDayPrice?.min ? 
+              `₹${vendor.basePrice || vendor.perDayPrice.min.toLocaleString('en-IN')}` : 
+              "Contact for price";
+            break;
+
+          default:
+            transformedVendor.subtitle = vendor.shortDescription || "Professional Service";
+            transformedVendor.price = vendor.basePrice || vendor.perDayPrice?.min ? 
+              `₹${vendor.basePrice || vendor.perDayPrice.min.toLocaleString('en-IN')}` : 
+              "Contact for price";
+        }
+
+        return transformedVendor;
+      });
+    }
 
     // =============================================================================
     // CALCULATE PAGINATION METADATA
@@ -688,6 +797,21 @@ export async function GET(request) {
     // =============================================================================
     // PREPARE OPTIMIZED RESPONSE
     // =============================================================================
+    
+    // Return simplified response structure for landing page requests
+    if (landing === "true") {
+      return NextResponse.json({
+        success: true,
+        data: processedVendors,
+        meta: {
+          count: processedVendors.length,
+          category: category || "all",
+          featured: featured === "true"
+        }
+      });
+    }
+    
+    // Standard response for marketplace
     return NextResponse.json({
       success: true,
       data: processedVendors,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -17,97 +17,52 @@ import {
   Phone,
   Mail,
   Calendar,
+  Music,
+  Drum,
+  Mic,
+  Sparkles as Fireworks,
+  Users2,
+  MoreHorizontal,
+  Palette,
+  Utensils,
+  Shirt,
+  HandHeart,
+  Cake,
+  Gem,
+  MailOpen,
+  Disc,
+  Scissors,
+  Heart,
+  ChevronDown,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
+import MobileStyleVendorCard from "../vendor/VendorCard";
 
-const vendorsData = [
-  {
-    id: 1,
-    type: "Venue",
-    name: "The Marble Palace",
-    location: "Udaipur, Rajasthan",
-    image: "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80",
-    capacity: 500,
-    price: "5,00,000",
-    rating: 4.9,
-    verified: true,
-    bookings: 150,
-  },
-  {
-    id: 2,
-    type: "Photographer",
-    name: "Rohan Mehta",
-    specialty: "Candid Wedding Photographer",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
-    rating: 4.9,
-    experience: 8,
-    verified: true,
-    portfolio: 200,
-  },
-  {
-    id: 3,
-    type: "Decorator",
-    name: "Bloom & Petal",
-    style: "Modern & Minimalist",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80",
-    services: ["Floral Design", "Lighting", "Theming"],
-    verified: true,
-    projects: 120,
-  },
-  {
-    id: 4,
-    type: "Venue",
-    name: "Coastal Dreams Resort",
-    location: "Goa",
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80",
-    capacity: 200,
-    price: "3,50,000",
-    rating: 4.8,
-    verified: true,
-    bookings: 85,
-  },
-  {
-    id: 5,
-    type: "Planner",
-    name: "Priya Sharma",
-    experience: "10 Years",
-    image: "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80",
-    tagline: "Flawless execution, unforgettable moments.",
-    verified: true,
-    events: 300,
-  },
-  {
-    id: 6,
-    type: "Photographer",
-    name: "Frames & Vows",
-    specialty: "Fine Art Storytelling",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&q=80",
-    rating: 5.0,
-    experience: 12,
-    verified: true,
-    portfolio: 350,
-  },
-  {
-    id: 7,
-    type: "Decorator",
-    name: "The Gilded Lily",
-    style: "Royal & Opulent",
-    image: "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&q=80",
-    services: ["Luxury Drapery", "Chandeliers", "Floral"],
-    verified: true,
-    projects: 95,
-  },
-  {
-    id: 8,
-    type: "Planner",
-    name: "The Event Architects",
-    experience: "15 Years",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&q=80",
-    tagline: "Your vision, our passion.",
-    verified: true,
-    events: 450,
-  },
-];
+// Map user-friendly filter labels to database category names for API compatibility
+const categoryMap = {
+  "All": null,
+  "Venues": "venues",
+  "Photographers": "photographers", 
+  "Decorators": "decorators",
+  "Planners": "planners",
+  "Makeup": "makeup",
+  "Catering": "catering",
+  "Clothes": "clothes",
+  "Mehendi": "mehendi",
+  "Cakes": "cakes",
+  "Jewellery": "jewellery",
+  "Invitations": "invitations",
+  "DJs": "djs",
+  "Hairstyling": "hairstyling",
+  "Dhol": "dhol",
+  "Anchor": "anchor",
+  "Stage Entry": "stage-entry",
+  "Fireworks": "fireworks",
+  "Barat": "barat",
+  "Other": "other"
+};
+
 const filters = [
   {
     label: "All",
@@ -134,348 +89,257 @@ const filters = [
     icon: <UserCheck size={18} />,
     gradient: "from-amber-400 to-orange-500",
   },
+  {
+    label: "Makeup",
+    icon: <Palette size={18} />,
+    gradient: "from-pink-400 to-rose-500",
+  },
+  {
+    label: "Catering",
+    icon: <Utensils size={18} />,
+    gradient: "from-orange-400 to-amber-500",
+  },
+  {
+    label: "Clothes",
+    icon: <Shirt size={18} />,
+    gradient: "from-purple-400 to-indigo-500",
+  },
+  {
+    label: "Mehendi",
+    icon: <HandHeart size={18} />,
+    gradient: "from-red-400 to-pink-500",
+  },
+  {
+    label: "Cakes",
+    icon: <Cake size={18} />,
+    gradient: "from-yellow-400 to-orange-500",
+  },
+  {
+    label: "Jewellery",
+    icon: <Gem size={18} />,
+    gradient: "from-emerald-400 to-teal-500",
+  },
+  {
+    label: "Invitations",
+    icon: <MailOpen size={18} />,
+    gradient: "from-blue-400 to-cyan-500",
+  },
+  {
+    label: "DJs",
+    icon: <Disc size={18} />,
+    gradient: "from-violet-400 to-purple-500",
+  },
+  {
+    label: "Hairstyling",
+    icon: <Scissors size={18} />,
+    gradient: "from-teal-400 to-green-500",
+  },
+  {
+    label: "Dhol",
+    icon: <Drum size={18} />,
+    gradient: "from-purple-400 to-violet-500",
+  },
+  {
+    label: "Anchor",
+    icon: <Mic size={18} />,
+    gradient: "from-cyan-400 to-blue-500",
+  },
+  {
+    label: "Stage Entry",
+    icon: <Music size={18} />,
+    gradient: "from-pink-400 to-rose-500",
+  },
+  {
+    label: "Fireworks",
+    icon: <Fireworks size={18} />,
+    gradient: "from-orange-400 to-red-500",
+  },
+  {
+    label: "Barat",
+    icon: <Users2 size={18} />,
+    gradient: "from-indigo-400 to-purple-500",
+  },
+  {
+    label: "Other",
+    icon: <MoreHorizontal size={18} />,
+    gradient: "from-gray-400 to-gray-500",
+  },
 ];
 
-export const VenueCard = ({ vendor }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 30, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: -30, scale: 0.95 }}
-    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group relative bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
-  >
-    <div className="relative overflow-hidden h-56 flex-shrink-0">
-      <img
-        src={vendor?.image}
-        alt={vendor?.name}
-        loading="lazy" // ADD THIS
-        decoding="async" // ADD THIS
-        className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-        onError={(e) => {
-          // Prevent infinite reload loop
-          if (!e.target.dataset.fallbackApplied) {
-            e.target.dataset.fallbackApplied = "true";
-            e.target.src = "https://images.unsplash.com/photo-1519167758481-83f29c1fe8ea?w=800&q=80";
-          }
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-      <div className="absolute top-4 right-4 flex gap-2">
-        {vendor?.verified && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-emerald-500 p-2 rounded-full shadow-lg"
-          >
-            <CheckCircle size={16} className="text-white" />
-          </motion.div>
-        )}
-        <div className="bg-white/95 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1.5 shadow-lg">
-          <Star size={16} className="text-amber-500 fill-amber-500" />
-          <span className="font-bold text-gray-900">{vendor?.rating}</span>
-        </div>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">{vendor?.name}</h3>
-        <div className="flex items-center text-white/90 text-sm">
-          <MapPin size={14} className="mr-2" />
-          <span>{vendor?.location}</span>
-        </div>
-      </div>
-    </div>
-    <div className="p-6 flex-1 flex flex-col">
-      <div className="flex items-center justify-between mb-4 flex-1">
-        <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-          <div className="bg-amber-50 dark:bg-amber-900/50 p-2.5 rounded-xl">
-            <Users size={18} className="text-amber-600 dark:text-amber-400" />
-          </div>
-          <div>
-            <p className="font-semibold text-sm">Capacity</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Up to {vendor?.capacity} guests</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Starting from</p>
-          <p className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
-            ₹{vendor?.price}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
-        <div className="flex items-center gap-1">
-          <Calendar size={12} />
-          <span>{vendor?.bookings} bookings</span>
-        </div>
-        <div className="bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full font-medium">
-          Available
-        </div>
-      </div>
-      <motion.button
-        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 mt-auto"
-        whileHover={{ scale: 1.02, y: -2 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        Book Venue <ArrowRight size={16} />
-      </motion.button>
-    </div>
-  </motion.div>
-);
+// Collapsible Filters Component
+const CollapsibleFilters = ({ activeFilter, setActiveFilter }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const visibleCount = 8; // Show 8 filters initially
+  
+  const visibleFilters = isExpanded ? filters : filters.slice(0, visibleCount);
+  const hasMore = filters.length > visibleCount;
 
-export const PhotographerCard = ({ vendor }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 30, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: -30, scale: 0.95 }}
-    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group relative bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
-  >
-    <div className="relative h-64 flex-shrink-0">
-      <img
-        src={vendor?.image}
-        alt={vendor?.name}
-        loading="lazy" // ADD THIS
-        decoding="async" // ADD THIS
-        className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-        onError={(e) => {
-          if (!e.target.dataset.fallbackApplied) {
-            e.target.dataset.fallbackApplied = "true";
-            e.target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80";
-          }
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-      <div className="absolute top-4 right-4">
-        {vendor?.verified && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-emerald-500 p-2 rounded-full shadow-lg"
-          >
-            <CheckCircle size={16} className="text-white" />
-          </motion.div>
-        )}
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <h3 className="text-2xl font-bold text-white mb-1">{vendor?.name}</h3>
-        <p className="text-white/80 text-sm mb-3">{vendor?.specialty}</p>
-        <div className="flex items-center justify-between bg-white/15 dark:bg-black/30 backdrop-blur-sm rounded-2xl p-3">
-          <div className="flex items-center gap-2">
-            <Star size={16} className="text-amber-400 fill-amber-400" />
-            <span className="font-bold text-white">{vendor?.rating}</span>
-          </div>
-          <div className="flex items-center gap-2 bg-white/20 dark:bg-black/20 px-3 py-1.5 rounded-full">
-            <Clock size={14} className="text-white" />
-            <span className="text-sm font-medium text-white">{vendor?.experience}Y Exp</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div className="p-6 flex-1 flex flex-col">
-      <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
-        <div className="flex items-center gap-1">
-          <Camera size={12} />
-          <span>{vendor?.portfolio} photos</span>
-        </div>
-        <div className="bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full font-medium">
-          Portfolio Ready
-        </div>
-      </div>
-      <motion.button
-        className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 mt-auto"
-        whileHover={{ scale: 1.02, y: -2 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        View Portfolio <Camera size={16} />
-      </motion.button>
-    </div>
-  </motion.div>
-);
-
-export const DecoratorCard = ({ vendor }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 30, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: -30, scale: 0.95 }}
-    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
-  >
-    <div className="p-6 flex-1 flex flex-col">
-      <div className="relative w-full h-48 rounded-2xl overflow-hidden mb-6 flex-shrink-0">
-        <img
-          src={vendor?.image}
-          alt={vendor?.name}
-          loading="lazy" // ADD THIS
-          decoding="async" // ADD THIS
-          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-          onError={(e) => {
-            if (!e.target.dataset.fallbackApplied) {
-              e.target.dataset.fallbackApplied = "true";
-              e.target.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80";
-            }
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        {vendor?.verified && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="absolute top-3 right-3 bg-emerald-500 p-2 rounded-full shadow-lg"
-          >
-            <CheckCircle size={14} className="text-white" />
-          </motion.div>
-        )}
-      </div>
-      <div className="flex-1 flex flex-col">
-        <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">{vendor?.name}</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">{vendor?.style}</p>
-        </div>
-        <div className="flex flex-wrap gap-2 mb-4 flex-1">
-          {vendor?.services?.slice(0, 3).map((service, index) => (
-            <motion.span
-              key={service}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 + index * 0.1 }}
-              className="bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/50 dark:to-pink-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-rose-200 dark:border-rose-800/60"
+  return (
+    <div className="flex flex-col items-center gap-3 w-full max-w-6xl mx-auto">
+      {/* Filter Container */}
+      <div className="bg-white rounded-3xl shadow-lg border border-gray-200 px-6 py-4 w-full">
+        <div className="flex items-center justify-center gap-2">
+          {/* Filter Pills Container */}
+          <div className={`flex items-center gap-2 transition-all duration-300 ${
+            isExpanded ? 'flex-wrap max-h-40 overflow-y-auto' : 'overflow-x-auto scrollbar-hide'
+          }`}>
+            {/* "All" Button - Special Yellow Styling */}
+            <motion.button
+              onClick={() => setActiveFilter("All")}
+              className={`relative px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-50 flex-shrink-0 ${
+                activeFilter === "All" 
+                  ? "text-white" 
+                  : "text-gray-600 hover:text-gray-900 bg-yellow-50 hover:bg-yellow-100"
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.02 }}
             >
-              {service}
-            </motion.span>
-          ))}
-        </div>
-        <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
-          <div className="flex items-center gap-1">
-            <Brush size={12} />
-            <span>{vendor?.projects} projects</span>
-          </div>
-          <div className="bg-rose-50 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 px-2 py-1 rounded-full font-medium">
-            Available
-          </div>
-        </div>
-        <motion.button
-          className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 mt-auto"
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          View Designs <Brush size={16} />
-        </motion.button>
-      </div>
-    </div>
-  </motion.div>
-);
+              {activeFilter === "All" && (
+                <motion.div
+                  layoutId="activeFilter"
+                  className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl"
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.7">
+                <Sparkles size={16} />
+                All
+              </span>
+            </motion.button>
 
-export const PlannerCard = ({ vendor }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 30, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: -30, scale: 0.95 }}
-    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="group bg-white/90 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-amber-100/50 dark:border-gray-700/50 min-h-[480px] flex flex-col"
-  >
-    <div className="p-6 flex-1 flex flex-col">
-      <div className="flex items-start gap-4 mb-6">
-        <div className="relative flex-shrink-0">
-          <img
-            src={vendor?.image}
-            alt={vendor?.name}
-            loading="lazy" // ADD THIS
-            decoding="async" // ADD THIS
-            className="w-20 h-20 rounded-2xl object-cover border-4 border-white dark:border-gray-700 shadow-lg transition-all duration-300 group-hover:scale-105"
-            onError={(e) => {
-              if (!e.target.dataset.fallbackApplied) {
-                e.target.dataset.fallbackApplied = "true";
-                e.target.src = "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
-              }
-            }}
-          />
-          {vendor?.verified && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="absolute -top-1 -right-1 bg-emerald-500 p-1.5 rounded-full shadow-lg"
-            >
-              <CheckCircle size={12} className="text-white" />
-            </motion.div>
-          )}
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
-              <Award size={12} />
-              VERIFIED PLANNER
-            </div>
+            {/* Other Filters */}
+            {visibleFilters.slice(1).map((filter, index) => (
+              <motion.button
+                key={filter.label}
+                onClick={() => setActiveFilter(filter.label)}
+                className={`relative px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
+                  activeFilter === filter.label
+                    ? "text-white"
+                    : "text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100"
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: (index + 1) * 0.02 }}
+              >
+                {activeFilter === filter.label && (
+                  <motion.div
+                    layoutId="activeFilter"
+                    className={`absolute inset-0 bg-gradient-to-r ${filter.gradient} rounded-2xl`}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.7">
+                  {filter.icon}
+                  {filter.label}
+                </span>
+              </motion.button>
+            ))}
+            
+            {/* Show More/Less Button - After Filters */}
+            {hasMore && (
+              <motion.button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="relative px-5 py-2.5 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 flex-shrink-0 shadow-md hover:shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: visibleCount * 0.02 }}
+              >
+                <span className="flex items-center gap-1.5">
+                  {isExpanded ? (
+                    <>
+                      Show Less
+                      <ChevronDown size={14} className="rotate-180" />
+                    </>
+                  ) : (
+                    <>
+                      Show More
+                      <ChevronDown size={14} />
+                    </>
+                  )}
+                </span>
+              </motion.button>
+            )}
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">{vendor?.name}</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-1">
-            <Clock size={14} />
-            {vendor?.experience} Experience
-          </p>
         </div>
       </div>
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-2xl p-4 mb-4 flex-1 flex items-center">
-        <p className="text-gray-700 dark:text-gray-300 italic text-center leading-relaxed text-sm">
-          "{vendor?.tagline}"
-        </p>
-      </div>
-      <div className="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
-        <div className="flex items-center gap-1">
-          <Calendar size={12} />
-          <span>{vendor?.events} events</span>
-        </div>
-        <div className="bg-amber-50 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full font-medium">
-          Taking Bookings
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <motion.button
-          className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300"
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+      
+      {/* Status Indicator */}
+      {hasMore && !isExpanded && (
+        <motion.p
+          className="text-xs text-gray-500"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
         >
-          <Phone size={14} />
-          Contact
-        </motion.button>
-        <motion.button
-          className="px-4 py-3 bg-white dark:bg-gray-700 border-2 border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-300 rounded-2xl font-semibold hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-all duration-300"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Mail size={16} />
-        </motion.button>
-      </div>
+          {filters.length - visibleCount} more categories
+        </motion.p>
+      )}
     </div>
-  </motion.div>
-);
+  );
+};
+
+// Mobile-style vendor card component
+
 
 export default function VendorsSection() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [vendorsData, setVendorsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const MotionLink = motion(Link);
-  const filteredVendors =
-    activeFilter === "All" ? vendorsData : vendorsData.filter((vendor) => vendor.type === activeFilter.slice(0, -1));
+  // Fetch vendors from API
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Convert user-friendly filter label to database category name
+        const category = categoryMap[activeFilter];
+        
+        // Build query parameters for API request to main vendor endpoint
+        const queryParams = new URLSearchParams();
+        queryParams.set("landing", "true");        // Indicate this is a landing page request
+        queryParams.set("limit", "12");            // Limit to 12 vendors for display
+        
+        // Add category filter if a specific category is selected (not "All")
+        if (category) queryParams.set("category", category);
+        
+        // Fetch vendor data from consolidated API endpoint
+        const response = await fetch(`/api/vendor?${queryParams.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch vendors');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setVendorsData(result.data);
+        } else {
+          throw new Error(result.message || 'Failed to fetch vendors');
+        }
+      } catch (err) {
+        console.error('Error fetching vendors:', err);
+        setError(err.message);
+        // Fallback to empty array on error
+        setVendorsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getCardComponent = (vendor) => {
-    const cardProps = { vendor };
-    switch (vendor.type) {
-      case "Venue":
-        return <VenueCard {...cardProps} key={vendor.id} />;
-      case "Photographer":
-        return <PhotographerCard {...cardProps} key={vendor.id} />;
-      case "Decorator":
-        return <DecoratorCard {...cardProps} key={vendor.id} />;
-      case "Planner":
-        return <PlannerCard {...cardProps} key={vendor.id} />;
-      default:
-        return null;
-    }
-  };
+    fetchVendors();
+  }, [activeFilter]);
+
+  const filteredVendors = vendorsData;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -536,47 +400,113 @@ export default function VendorsSection() {
           </motion.p>
         </motion.div>
         <motion.div variants={itemVariants} className="flex justify-center mb-12 sm:mb-16">
-          <div className="bg-white/90 dark:bg-gray-800/50 backdrop-blur-lg rounded-3xl p-2 shadow-xl border border-amber-100/50 dark:border-gray-700/50">
-            <div className="flex flex-wrap justify-center gap-2">
-              {filters.map((filter) => (
-                <motion.button
-                  key={filter.label}
-                  onClick={() => setActiveFilter(filter.label)}
-                  className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-2xl transition-all duration-400 ${
-                    activeFilter === filter.label
-                      ? "text-white shadow-lg scale-105"
-                      : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-amber-50/50 dark:hover:bg-gray-700/50"
-                  }`}
-                  whileHover={{
-                    scale: activeFilter !== filter.label ? 1.05 : 1.05,
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {activeFilter === filter.label && (
-                    <motion.div
-                      layoutId="activeFilter"
-                      className={`absolute inset-0 bg-gradient-to-r ${filter.gradient} rounded-2xl shadow-lg`}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 25,
-                      }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-2">
-                    {filter.icon} {filter.label}
-                  </span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
+          <CollapsibleFilters activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
         </motion.div>
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr"
+          className="grid grid-cols-4 gap-6 auto-rows-fr max-w-6xl mx-auto"
           layout
           variants={containerVariants}
         >
-          <AnimatePresence mode="wait">{filteredVendors.map((vendor) => getCardComponent(vendor))}</AnimatePresence>
+          <AnimatePresence mode="wait">
+            {loading ? (
+              // Loading skeleton cards matching mobile style - 8 cards total (7 vendors + 1 view all)
+              Array.from({ length: 8 }).map((_, index) => (
+                <motion.div
+                  key={`loading-${index}`}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -40 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex-shrink-0 w-full bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm"
+                >
+                  <div className="h-48 bg-gray-200 animate-pulse" />
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 rounded mb-3 animate-pulse" />
+                    <div className="h-3 bg-gray-200 rounded mb-2 animate-pulse" />
+                    <div className="h-3 bg-gray-200 rounded mb-3 animate-pulse w-3/4" />
+                    <div className="flex justify-between pt-3 border-t border-gray-100">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : error ? (
+              // Error state
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full text-center py-12"
+              >
+                <div className="text-red-500 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Vendors</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </motion.div>
+            ) : filteredVendors.length === 0 ? (
+              // Empty state
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full text-center py-12"
+              >
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Vendors Found</h3>
+                <p className="text-gray-600">Try adjusting your filters or check back later for new vendors.</p>
+              </motion.div>
+            ) : (
+              <>
+                {/* Vendor cards using mobile-style design - first 7 vendors */}
+                {filteredVendors.slice(0, 7).map((vendor) => (
+                  <motion.div
+                    key={vendor.id}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -40 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <MobileStyleVendorCard vendor={vendor} />
+                  </motion.div>
+                ))}
+
+                {/* View All Card - 8th card (Row 2, Col 4) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -40 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  whileHover={{ y: -5, shadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+                  className="flex-shrink-0 w-full bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 border-2 border-dashed border-purple-200 rounded-xl flex flex-col items-center justify-center p-6 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                >
+                  {/* Icon */}
+                  <Link href="/vendors/marketplace">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mb-4 hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </div>
+                  </Link>
+                  
+                  {/* Text */}
+                  <h3 className="text-xl font-bold text-gray-800 mb-1">View All</h3>
+                  <p className="text-sm text-gray-600">Explore more vendors</p>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </motion.div>
         <motion.div variants={itemVariants} className="text-center mt-16">
           <MotionLink
