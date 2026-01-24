@@ -34,7 +34,7 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
   const { user } = useUser();
   const haptic = useHapticFeedback();
 
-  if (!vendor || !vendor.id) {
+  if (!vendor || (!vendor.id && !vendor._id)) {
     return null;
   }
 

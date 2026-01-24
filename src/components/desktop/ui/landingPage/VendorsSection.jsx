@@ -291,6 +291,7 @@ const CollapsibleFilters = ({ activeFilter, setActiveFilter }) => {
 export default function VendorsSection() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [vendorsData, setVendorsData] = useState([]);
+  const [verifiedVendorsCount, setVerifiedVendorsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const MotionLink = motion(Link);
@@ -323,6 +324,7 @@ export default function VendorsSection() {
         
         if (result.success) {
           setVendorsData(result.data);
+          setVerifiedVendorsCount(result.meta?.verifiedVendorsCount || 0);
         } else {
           throw new Error(result.message || 'Failed to fetch vendors');
         }
@@ -472,7 +474,7 @@ export default function VendorsSection() {
                 {/* Vendor cards using mobile-style design - first 7 vendors */}
                 {filteredVendors.slice(0, 7).map((vendor) => (
                   <motion.div
-                    key={vendor.id}
+                    key={vendor._id || vendor.id}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -40 }}
