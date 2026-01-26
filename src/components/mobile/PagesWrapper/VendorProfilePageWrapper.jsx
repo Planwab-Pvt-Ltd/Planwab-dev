@@ -1,20 +1,30 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, PanInfo } from "framer-motion";
 import {
   ArrowLeft,
   Share2,
   MoreVertical,
+  Download,
+  Pencil,
+  Lock,
+  Trash2,
+  Loader2,
+  EyeOff,
+  KeyRound,
   MapPin,
+  MoreHorizontal,
   Star,
   Home,
   Layers,
   Heart,
+  Film,
   CheckCircle,
   Phone,
   MessageCircle,
+  Pause,
   Calendar,
   Mail,
   ExternalLink,
@@ -114,17 +124,25 @@ import {
   Medal,
   TrendingUp,
   Route,
+  Smartphone,
   MapIcon,
   Navigation,
   RotateCcw,
   MessageSquareQuote,
   Store,
   Eye,
+  Edit3,
+  Edit2Icon,
+  ShieldCheck,
+  InfoIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import ReviewSection from "../ReviewSection";
 import VendorProfileOnboarding from "../VendorProfileCreate";
 import DOMPurify from "dompurify";
+import { SignInButton, useUser } from "@clerk/clerk-react";
+import { QRCodeSVG } from "qrcode.react";
+import UpdateProfileDrawer from "../UpdateProfileDrawer";
 
 const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
   loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse rounded-xl" />,
@@ -306,100 +324,6 @@ const MOCK_HIGHLIGHTS = [
   },
 ];
 
-const REAL_POST_IMAGES = [
-  "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1502635385003-ee1e6a1a742d?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=600&h=600&fit=crop",
-];
-
-const REAL_REEL_VIDEOS = [
-  "https://dms.licdn.com/playlist/vid/v2/D5605AQE5rH9A5_8txA/mp4-720p-30fp-crf28/B56ZmAC0z.H8Bo-/0/1758789861318?e=2147483647&v=beta&t=VfyPuIQDf6hr9g6Kmp7L9TuzrcXto8-lcaTuouLtuvs",
-  "https://www.shutterstock.com/shutterstock/videos/3949010553/preview/stock-footage-young-asian-man-in-headphones-playing-computer-game-winning-match-looking-at-computer-monitor.webm",
-  "https://www.shutterstock.com/shutterstock/videos/3903302373/preview/stock-footage-active-crazy-dog-dancing-jumping-on-green-grass-waiting-to-fetch-a-disc-toy-happy-young-jack.webm",
-  "https://www.shutterstock.com/shutterstock/videos/3529379197/preview/stock-footage-vertical-mobile-interface-of-a-social-media-mockup-app-featuring-looped-green-screen-chroma-key.webm",
-  "https://www.shutterstock.com/shutterstock/videos/3455204433/preview/stock-footage-vertical-screen-portrait-of-an-astronaut-floating-outside-a-spaceship-with-planet-earth-in-the.webm",
-  "https://dms.licdn.com/playlist/vid/v2/D4E05AQHQ7YKA9SYvIw/mp4-640p-30fp-crf28/B4EZmnEhqnKgBg-/0/1759444616247?e=2147483647&v=beta&t=1Bl0gmIi8Sgq9PkGd-zGHMapOjN7_x_ldHTNWfyjSXI",
-  "https://www.shutterstock.com/shutterstock/videos/3529379197/preview/stock-footage-vertical-mobile-interface-of-a-social-media-mockup-app-featuring-looped-green-screen-chroma-key.webm",
-  "https://www.shutterstock.com/shutterstock/videos/3455204433/preview/stock-footage-vertical-screen-portrait-of-an-astronaut-floating-outside-a-spaceship-with-planet-earth-in-the.webm",
-  "https://media.istockphoto.com/id/1515210353/video/deep-space-travel-to-far-away-galaxies.mp4?s=mp4-640x640-is&k=20&c=DuWaJgLqCB-XEX6paoYXN72HJ24N87FQgan8H-nskOk=",
-
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-];
-
-const REAL_REEL_THUMBNAILS = [
-  "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=600&h=600&fit=crop",
-];
-
-const FALLBACK_VIDEOS = [
-  "https://www.w3schools.com/html/mov_bbb.mp4",
-  "https://www.w3schools.com/html/movie.mp4",
-  "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAABhltZGF0AAACrQYF//+p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTMgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAABjWWIhAA3//728P4FNjuY0JcRzeidDx8rINX/2jLVlppWUt2V7xTb//xJ4N4L5N9Fy5cXGsKx8eNvvvjfJP3f3fv37773377733773377773373377733773376",
-];
-
-const MOCK_POSTS = Array.from({ length: 24 }, (_, i) => ({
-  id: i + 1,
-  type: "image",
-  thumbnail: REAL_POST_IMAGES[i % REAL_POST_IMAGES.length],
-  fullImage: REAL_POST_IMAGES[i % REAL_POST_IMAGES.length],
-  likes: Math.floor(Math.random() * 500) + 50,
-  comments: Math.floor(Math.random() * 100) + 10,
-  caption: `Beautiful moment captured at event #${
-    i + 1
-  }. Working with amazing clients! ✨ #photography #events #wedding #celebration`,
-  date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-  isLiked: Math.random() > 0.5,
-  isSaved: Math.random() > 0.7,
-}));
-
-const MOCK_REELS = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  type: "video",
-  thumbnail: REAL_REEL_THUMBNAILS[i % REAL_REEL_THUMBNAILS.length],
-  videoUrl: REAL_REEL_VIDEOS[i % REAL_REEL_VIDEOS.length],
-  fallbackUrl: FALLBACK_VIDEOS[i % FALLBACK_VIDEOS.length], // Added fallback
-  views: `${Math.floor(Math.random() * 50) + 10}K`,
-  likes: Math.floor(Math.random() * 1000) + 100,
-  comments: Math.floor(Math.random() * 200) + 20,
-  duration: `0:${Math.floor(Math.random() * 50) + 10}`,
-  caption: `Amazing reel from recent event! 🎬 #trending #viral #eventplanning`,
-  isLiked: false,
-  isSaved: false,
-}));
-
 const PORTFOLIO_IMAGES = [
   "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=600&fit=crop",
   "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=600&fit=crop",
@@ -571,6 +495,36 @@ const formatPrice = (price) => {
   return `₹${Number(price).toLocaleString("en-IN")}`;
 };
 
+const getVideoThumbnail = (videoUrl, time = 1) => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.src = videoUrl;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+
+    video.onloadedmetadata = () => {
+      if (video.duration < time) time = 0;
+      video.currentTime = time;
+    };
+
+    video.onseeked = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const thumbnail = canvas.toDataURL("image/jpeg", 0.8);
+      resolve(thumbnail);
+    };
+
+    video.onerror = () => reject("Failed to load video");
+  });
+};
+
 const VendorProfileSkeleton = () => {
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-black pb-24">
@@ -720,8 +674,11 @@ const useBodyScrollLock = (isLocked) => {
       document.body.style.touchAction = "";
     }
     return () => {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
+      const openModals = document.querySelectorAll(".fixed.inset-0.z-\\[100\\]");
+      if (openModals.length <= 1) {
+        document.body.style.overflow = "";
+        document.body.style.touchAction = "";
+      }
     };
   }, [isLocked]);
 };
@@ -804,6 +761,224 @@ const ThumbsUpAnimation = ({ show }) => {
               className="absolute w-4 h-4 rounded-full bg-green-400"
             />
           ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const PasswordVerificationModal = ({ isOpen, onClose, onSuccess, vendorId, vendorName }) => {
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState("");
+  const [shake, setShake] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPassword("");
+      setError("");
+      setShake(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
+
+  const handleVerify = async () => {
+    if (!password.trim()) {
+      setError("Please enter your password");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+
+    setIsVerifying(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/vendor/${vendorId}/profile/verify-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: password.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onClose();
+        setTimeout(() => onSuccess(), 150);
+      } else {
+        setError(result.error || "Invalid password");
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+        setPassword("");
+      }
+    } catch (err) {
+      console.error("Verification error:", err);
+      setError("Network error. Please try again.");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !isVerifying) {
+      handleVerify();
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="password-verification-modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+        >
+          {/* Backdrop */}
+          <motion.div
+            key="password-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+
+          {/* Modal Content */}
+          <motion.div
+            key="password-modal-content"
+            initial={{ opacity: 0, y: 100, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className={`relative w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden ${shake ? "animate-shake" : ""}`}
+          >
+            {/* Header */}
+            <div className="relative px-6 pt-6 pb-4">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={onClose}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+              >
+                <X size={18} />
+              </motion.button>
+
+              <div className="flex justify-center mb-4">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", damping: 15, delay: 0.1 }}
+                  className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30"
+                >
+                  <Shield size={32} className="text-white" />
+                </motion.div>
+              </div>
+
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white text-center mb-1">
+                Verify Authorization
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                Enter your profile password to upload content
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 pb-6">
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Profile Password
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <KeyRound size={18} />
+                  </div>
+                  <input
+                    ref={inputRef}
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError("");
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Enter your password"
+                    disabled={isVerifying}
+                    className={`w-full pl-12 pr-12 py-4 bg-slate-100 dark:bg-slate-800 border-2 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all ${
+                      error ? "border-red-500 focus:border-red-500" : "border-transparent focus:border-blue-500"
+                    } ${isVerifying ? "opacity-60 cursor-not-allowed" : ""}`}
+                  />
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </motion.button>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {error && (
+                    <motion.div
+                      key="password-error"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="flex items-center gap-2 mt-2 text-red-500 text-sm"
+                    >
+                      <AlertCircle size={14} />
+                      <span>{error}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div className="mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                <div className="flex items-start gap-2">
+                  <Lock size={14} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                    This password was set during profile creation. Only authorized vendors can upload content.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onClose}
+                  disabled={isVerifying}
+                  className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-semibold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: isVerifying ? 1 : 0.95 }}
+                  onClick={handleVerify}
+                  disabled={isVerifying || !password.trim()}
+                  className="flex-[2] py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={18} />
+                      Verify & Continue
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </div>
+
+            <div className="h-safe-area-inset-bottom bg-white dark:bg-slate-900" />
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -936,7 +1111,7 @@ const StoryViewer = ({ highlight, onClose }) => {
       else if (info.velocity.x > 500 || info.offset.x > 100) goPrev();
       if (Math.abs(info.velocity.y) > 500 || info.offset.y > 150) onClose();
     },
-    [goNext, goPrev, onClose]
+    [goNext, goPrev, onClose],
   );
 
   const handleSendMessage = useCallback(() => {
@@ -966,7 +1141,7 @@ const StoryViewer = ({ highlight, onClose }) => {
       ];
       return baseImages[(highlight.id + itemIndex) % baseImages.length];
     },
-    [highlight.id]
+    [highlight.id],
   );
 
   return (
@@ -1115,33 +1290,386 @@ const StoryViewer = ({ highlight, onClose }) => {
   );
 };
 
-const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onEdit, onArchive }) => {
-  const [isLiked, setIsLiked] = useState(post?.isLiked || false);
-  const [isSaved, setIsSaved] = useState(post?.isSaved || false);
-  const [likes, setLikes] = useState(post?.likes || 0);
+const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onEdit, onArchive, vendorId }) => {
+  const { user, isSignedIn } = useUser();
+
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [likes, setLikes] = useState(0);
   const [comment, setComment] = useState("");
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const [comments, setComments] = useState([]);
   const [showOptionsDrawer, setShowOptionsDrawer] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
+
+  // Review states
+  const [reviews, setReviews] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [userReview, setUserReview] = useState(null);
+  const [editingReview, setEditingReview] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [isLoadingInteractions, setIsLoadingInteractions] = useState(true);
+
+  // Video specific states
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const [poster, setPoster] = useState(null);
+
+  const videoRef = useRef(null);
+  const controlsTimeoutRef = useRef(null);
+
   useBodyScrollLock(true);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
-    if (!isLiked) {
+  const isVideo = post?.mediaType === "video";
+
+  useEffect(() => {
+    if (!post?.mediaUrl && !isVideo) return;
+
+    getVideoThumbnail(post?.mediaUrl, 3)
+      .then(setPoster)
+      .catch(() => {});
+  }, [post?.mediaUrl]);
+
+  // Add this useEffect
+  useEffect(() => {
+    // Reset video states when post changes
+    if (isVideo) {
+      setIsBuffering(true);
+      setHasError(false);
+      setProgress(0);
+      setIsPlaying(true);
+    }
+  }, [post?._id, isVideo]);
+
+  // Fetch initial interaction status
+  useEffect(() => {
+    const fetchInteractionStatus = async () => {
+      if (!post?._id) return;
+
+      const postId = post._id;
+      setIsLoadingInteractions(true);
+
+      try {
+        if (!vendorId) {
+          setIsLoadingInteractions(false);
+          return;
+        }
+
+        const params = new URLSearchParams({
+          postId,
+          ...(user?.id && { userId: user.id }),
+        });
+
+        const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions?${params}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setLikes(data.data.likesCount || 0);
+          setIsLiked(data.data.isLiked || false);
+          setIsSaved(data.data.isSaved || false);
+          setReviews(data.data.reviews || []);
+          setUserReview(data.data.userReview || null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch interaction status:", error);
+      } finally {
+        setIsLoadingInteractions(false);
+      }
+    };
+
+    fetchInteractionStatus();
+  }, [post?._id, user?.id, vendorId]);
+
+  // Video progress tracking - REPLACE the entire useEffect
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return;
+
+    const video = videoRef.current;
+
+    const handleTimeUpdate = () => {
+      if (video.duration) {
+        setProgress((video.currentTime / video.duration) * 100);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+    };
+
+    const handleEnded = () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+
+    const handleLoadStart = () => {
+      setIsBuffering(true);
+      setHasError(false);
+    };
+
+    const handleCanPlay = () => {
+      setIsBuffering(false);
+      video.play().catch(() => setIsPlaying(false));
+    };
+
+    const handleWaiting = () => {
+      setIsBuffering(true);
+    };
+
+    const handlePlaying = () => {
+      setIsBuffering(false);
+      setIsPlaying(true);
+    };
+
+    const handleError = () => {
+      setHasError(true);
+      setIsBuffering(false);
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("loadstart", handleLoadStart);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("waiting", handleWaiting);
+    video.addEventListener("playing", handlePlaying);
+    video.addEventListener("error", handleError);
+
+    return () => {
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("loadstart", handleLoadStart);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("waiting", handleWaiting);
+      video.removeEventListener("playing", handlePlaying);
+      video.removeEventListener("error", handleError);
+    };
+  }, [isVideo]);
+
+  // Auto-hide controls
+  useEffect(() => {
+    if (showControls && isVideo) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, [showControls, isVideo]);
+
+  const getVendorId = () => {
+    return vendorId;
+  };
+
+  const handleLike = async () => {
+    if (!isSignedIn || !user?.id) {
+      alert("Please sign in to like posts");
+      return;
+    }
+
+    if (isInteracting) return;
+
+    const newLikedState = !isLiked;
+    const previousLikes = likes;
+    const previousLiked = isLiked;
+
+    // Optimistic update
+    setIsLiked(newLikedState);
+    setLikes((prev) => (newLikedState ? prev + 1 : Math.max(0, prev - 1)));
+
+    if (newLikedState) {
       setShowLikeAnimation(true);
       setTimeout(() => setShowLikeAnimation(false), 600);
     }
+
+    setIsInteracting(true);
+
+    try {
+      const vendorId = getVendorId();
+      const postId = post._id;
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          action: "like",
+          userId: user.id,
+          value: newLikedState,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        // Revert on failure
+        setIsLiked(previousLiked);
+        setLikes(previousLikes);
+        console.error("Like failed:", data.error);
+      } else {
+        setLikes(data.data.likesCount);
+      }
+    } catch (error) {
+      // Revert on error
+      setIsLiked(previousLiked);
+      setLikes(previousLikes);
+      console.error("Like error:", error);
+    } finally {
+      setIsInteracting(false);
+    }
   };
 
-  const handleSave = () => {
-    if (!isSaved) {
-      setIsSaved(true);
-      onArchieve?.(post.id);
-    } else {
-      setIsSaved(false);
-      onArchive?.(post.id);
+  const handleSave = async () => {
+    if (!isSignedIn || !user?.id) {
+      alert("Please sign in to save posts");
+      return;
+    }
+
+    if (isInteracting) return;
+
+    const newSavedState = !isSaved;
+    const previousSaved = isSaved;
+
+    // Optimistic update
+    setIsSaved(newSavedState);
+
+    setIsInteracting(true);
+
+    try {
+      const vendorId = getVendorId();
+      const postId = post._id;
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          action: "save",
+          userId: user.id,
+          value: newSavedState,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setIsSaved(previousSaved);
+        console.error("Save failed:", data.error);
+      }
+    } catch (error) {
+      setIsSaved(previousSaved);
+      console.error("Save error:", error);
+    } finally {
+      setIsInteracting(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!isSignedIn || !user?.id) {
+      alert("Please sign in to review");
+      return;
+    }
+
+    if (reviewSubmitting) return;
+
+    setReviewSubmitting(true);
+
+    try {
+      const vendorId = getVendorId();
+      const postId = post._id;
+
+      const action = editingReview ? "editReview" : "addReview";
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          action,
+          userId: user.id,
+          reviewData: {
+            rating: reviewRating,
+            comment: reviewComment,
+          },
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        if (editingReview) {
+          setUserReview(data.data.review);
+          setReviews((prev) => prev.map((r) => (r.userId?.toString() === user.id ? data.data.review : r)));
+        } else {
+          setUserReview(data.data.review);
+          setReviews((prev) => [...prev, data.data.review]);
+        }
+        setShowReviewModal(false);
+        setReviewComment("");
+        setReviewRating(5);
+        setEditingReview(false);
+      } else {
+        alert(data.error || "Failed to submit review");
+      }
+    } catch (error) {
+      console.error("Review submit error:", error);
+      alert("Failed to submit review");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!isSignedIn || !user?.id || !userReview) return;
+
+    if (!confirm("Are you sure you want to delete your review?")) return;
+
+    try {
+      const vendorId = getVendorId();
+      const postId = post._id;
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          action: "deleteReview",
+          userId: user.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUserReview(null);
+        setReviews((prev) => prev.filter((r) => r.userId?.toString() !== user.id));
+      } else {
+        alert(data.error || "Failed to delete review");
+      }
+    } catch (error) {
+      console.error("Delete review error:", error);
+      alert("Failed to delete review");
+    }
+  };
+
+  const openEditReview = () => {
+    if (userReview) {
+      setReviewRating(userReview.rating);
+      setReviewComment(userReview.comment || "");
+      setEditingReview(true);
+      setShowReviewModal(true);
     }
   };
 
@@ -1158,18 +1686,102 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
     }
   };
 
+  const handleVideoTap = () => {
+    if (!videoRef.current || isBuffering || hasError) return;
+
+    setShowControls(true);
+
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play().catch(() => setIsPlaying(false));
+      setIsPlaying(true);
+    }
+  };
+
+  const handleRetryVideo = () => {
+    if (videoRef.current) {
+      setHasError(false);
+      setIsBuffering(true);
+      videoRef.current.load();
+      videoRef.current.play().catch(() => setIsPlaying(false));
+    }
+  };
+
+  const handleProgressClick = (e) => {
+    if (!videoRef.current || !duration) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    const newTime = percentage * duration;
+
+    videoRef.current.currentTime = newTime;
+    setProgress(percentage * 100);
+  };
+
+  const toggleMute = (e) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const handleDelete = () => {
     onDelete?.();
     onClose();
   };
 
-  const handleEdit = (newCaption) => {
-    onEdit?.(post.id, newCaption);
+  const handleEditCaption = (newCaption) => {
+    onEdit?.(post._id, newCaption);
   };
 
-  const handleArchive = () => {
-    onArchive?.(post.id);
+  const handleArchivePost = () => {
+    onArchive?.(post._id);
   };
+
+  const InteractionsSkeleton = () => (
+    <div className="p-4 space-y-4 animate-pulse">
+      {/* Action Buttons Skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <div className="w-7 h-7 bg-white/20 rounded-full" />
+          <div className="w-7 h-7 bg-white/20 rounded-full" />
+          <div className="w-7 h-7 bg-white/20 rounded-full" />
+        </div>
+        <div className="w-7 h-7 bg-white/20 rounded-full" />
+      </div>
+
+      {/* Likes Skeleton */}
+      <div className="h-4 w-20 bg-white/20 rounded" />
+
+      {/* Caption Skeleton */}
+      <div className="space-y-2">
+        <div className="h-4 w-3/4 bg-white/20 rounded" />
+        <div className="h-4 w-1/2 bg-white/20 rounded" />
+      </div>
+
+      {/* Reviews Section Skeleton */}
+      <div className="border-t border-white/10 pt-4 mt-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="h-4 w-28 bg-white/20 rounded" />
+          <div className="h-8 w-24 bg-white/20 rounded-full" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-16 bg-white/10 rounded-xl" />
+          <div className="h-10 bg-white/10 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
 
   if (!post) return null;
 
@@ -1190,6 +1802,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
           }}
           className="flex-1 flex flex-col"
         >
+          {/* Header */}
           <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-xl px-4 py-3 flex items-center justify-between border-b border-white/10">
             <motion.button whileTap={{ scale: 0.9 }} onClick={onClose} className="p-1">
               <ArrowLeft size={24} className="text-white" />
@@ -1201,6 +1814,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
           </div>
 
           <div className="flex-1 overflow-y-auto">
+            {/* Vendor Info */}
             <div className="px-4 py-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/20">
                 <SmartMedia
@@ -1216,123 +1830,373 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
               </div>
             </div>
 
-            <div className="aspect-square bg-gray-900 relative" onDoubleClick={handleDoubleTap}>
-              <SmartMedia
-                src={post.fullImage || post.thumbnail}
-                type="image"
-                className="w-full h-full object-cover"
-                loaderImage="/GlowLoadingGif.gif"
-              />
-              <AnimatePresence>
-                {showLikeAnimation && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  >
-                    <Heart size={100} className="text-white fill-white drop-shadow-2xl" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Media Container */}
+            <div
+              className={`relative bg-black w-full ${isVideo ? "min-h-[300px] max-h-[70vh]" : "aspect-square"}`}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              {isVideo ? (
+                <div
+                  className="relative w-full h-full flex items-center justify-center"
+                  onClick={handleVideoTap}
+                  onDoubleClick={handleDoubleTap}
+                >
+                  <video
+                    ref={videoRef}
+                    src={post.mediaUrl}
+                    {...(typeof poster === "string" && poster.trim() ? { poster } : {})}
+                    className="w-full h-full object-contain"
+                    playsInline
+                    loop
+                    muted={isMuted}
+                    autoPlay
+                    preload="auto"
+                  />
 
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-5">
-                  <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike}>
-                    <Heart
-                      size={28}
-                      className={`transition-colors ${isLiked ? "text-red-500 fill-red-500" : "text-white"}`}
-                    />
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.8 }}
-                    onClick={() => document.getElementById("comment-input")?.focus()}
-                  >
-                    <MessageCircle size={28} className="text-white" />
-                  </motion.button>
-                  <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowShareModal(true)}>
-                    <Send size={28} className="text-white" />
-                  </motion.button>
-                </div>
-                <motion.button whileTap={{ scale: 0.8 }} onClick={handleSave}>
-                  {isSaved ? (
-                    <BookmarkCheck size={28} className="text-white fill-white" />
-                  ) : (
-                    <Bookmark size={28} className="text-white" />
+                  {/* Buffering Indicator - ADD THIS */}
+                  {isBuffering && !hasError && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
                   )}
-                </motion.button>
-              </div>
 
-              <motion.p animate={{ scale: isLiked ? [1, 1.1, 1] : 1 }} className="text-white font-bold text-sm">
-                {likes.toLocaleString()} likes
-              </motion.p>
+                  {/* Error State */}
+                  {hasError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
+                      <div className="text-white text-center">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
+                          <X size={32} className="text-red-400" />
+                        </div>
+                        <p className="text-lg font-semibold">Video unavailable</p>
+                        <p className="text-sm text-white/60 mt-2">Unable to load this video</p>
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={handleRetryVideo}
+                          className="mt-4 px-6 py-2 bg-white/20 rounded-full text-white text-sm font-semibold"
+                        >
+                          Retry
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
 
-              <div className="space-y-2">
-                <p className="text-white text-sm leading-relaxed">
-                  <span className="font-bold">{vendorName}</span> {post.caption}
-                </p>
-                <p className="text-gray-400 text-sm">{post.comments + comments.length} comments</p>
-              </div>
+                  {/* Play/Pause Indicator */}
+                  <AnimatePresence>
+                    {showControls && !isBuffering && !hasError && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                      >
+                        <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20">
+                          {isPlaying ? (
+                            <Pause size={40} className="text-white" />
+                          ) : (
+                            <Play size={40} className="text-white fill-white ml-1" />
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-              {comments.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-white/10">
-                  {comments.map((c) => (
-                    <p key={c.id} className="text-white text-sm">
-                      <span className="font-bold">{c.name}</span> {c.text}
-                    </p>
-                  ))}
+                  {/* Progress Bar */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                    <div className="flex items-center justify-between text-white/70 text-xs mb-2 px-1">
+                      <span>{formatTime((progress / 100) * duration)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                    <div
+                      className="relative h-1 bg-white/30 rounded-full cursor-pointer group"
+                      onClick={handleProgressClick}
+                    >
+                      <motion.div
+                        className="absolute top-0 left-0 h-full bg-white rounded-full"
+                        style={{ width: `${progress}%` }}
+                      />
+                      <motion.div
+                        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ left: `calc(${progress}% - 6px)` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mute Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={toggleMute}
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20"
+                  >
+                    {isMuted ? (
+                      <VolumeX size={18} className="text-white" />
+                    ) : (
+                      <Volume2 size={18} className="text-white" />
+                    )}
+                  </motion.button>
+
+                  {/* Like Animation */}
+                  <AnimatePresence>
+                    {showLikeAnimation && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                      >
+                        <Heart size={100} className="text-white fill-white drop-shadow-2xl" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              )}
-
-              <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700">
+              ) : (
+                <div className="relative w-full h-full" onDoubleClick={handleDoubleTap}>
                   <SmartMedia
-                    src={vendorImage}
+                    src={post.mediaUrl}
                     type="image"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     loaderImage="/GlowLoadingGif.gif"
                   />
+                  <AnimatePresence>
+                    {showLikeAnimation && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                      >
+                        <Heart size={100} className="text-white fill-white drop-shadow-2xl" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <input
-                  id="comment-input"
-                  type="text"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="flex-1 bg-transparent text-white placeholder-gray-500 text-sm outline-none"
-                  onKeyDown={(e) => e.key === "Enter" && handleComment()}
-                />
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleComment}
-                  className={`text-sm font-bold transition-colors ${
-                    comment.trim() ? "text-blue-500" : "text-blue-500/50"
-                  }`}
-                >
-                  Post
-                </motion.button>
-              </div>
+              )}
             </div>
+
+            {/* Actions & Comments */}
+
+            {isLoadingInteractions ? (
+              <InteractionsSkeleton />
+            ) : (
+              <div className="p-4 space-y-4">
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-5">
+                    <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} disabled={isInteracting}>
+                      <Heart
+                        size={28}
+                        className={`transition-colors ${isLiked ? "text-red-500 fill-red-500" : "text-white"}`}
+                      />
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.8 }}
+                      onClick={() => document.getElementById("comment-input")?.focus()}
+                    >
+                      <MessageCircle size={28} className="text-white" />
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowShareModal(true)}>
+                      <Send size={28} className="text-white" />
+                    </motion.button>
+                  </div>
+                  <motion.button whileTap={{ scale: 0.8 }} onClick={handleSave} disabled={isInteracting}>
+                    {isSaved ? (
+                      <BookmarkCheck size={28} className="text-white fill-white" />
+                    ) : (
+                      <Bookmark size={28} className="text-white" />
+                    )}
+                  </motion.button>
+                </div>
+
+                {/* Likes Count */}
+                <motion.p animate={{ scale: isLiked ? [1, 1.1, 1] : 1 }} className="text-white font-bold text-sm">
+                  {likes.toLocaleString()} likes
+                </motion.p>
+
+                {/* Caption */}
+                <div className="space-y-2">
+                  <p className="text-white text-sm leading-relaxed">
+                    <span className="font-bold">{vendorName}</span> {post.caption || post.description}
+                  </p>
+                  {post.location && (
+                    <p className="text-blue-400 text-xs flex items-center gap-1">
+                      <MapPin size={12} />
+                      {post.location}
+                    </p>
+                  )}
+                </div>
+
+                {/* Reviews Section */}
+                <div className="border-t border-white/10 pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-white font-bold text-sm">Comments ({reviews.length})</h4>
+                    {isSignedIn && !userReview && (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowReviewModal(true)}
+                        className="px-3 py-1.5 bg-white/10 rounded-full text-white text-xs font-semibold"
+                      >
+                        Add Comment
+                      </motion.button>
+                    )}
+                  </div>
+
+                  {/* User's Review */}
+                  {userReview && (
+                    <div className="bg-white/10 rounded-xl p-3 mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-semibold text-sm">Your Comment</span>
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={12}
+                                className={i < userReview.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-500"}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={openEditReview}
+                            className="p-1.5 bg-white/10 rounded-full"
+                          >
+                            <Pencil size={12} className="text-white" />
+                          </motion.button>
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleDeleteReview}
+                            className="p-1.5 bg-red-500/20 rounded-full"
+                          >
+                            <Trash2 size={12} className="text-red-400" />
+                          </motion.button>
+                        </div>
+                      </div>
+                      {userReview.comment && <p className="text-white/80 text-xs">{userReview.comment}</p>}
+                    </div>
+                  )}
+
+                  {/* Other Reviews */}
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {reviews
+                      .filter((r) => r.userId?.toString() !== user?.id)
+                      .slice(0, 5)
+                      .map((review, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={10}
+                                className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}
+                              />
+                            ))}
+                          </div>
+                          <p className="text-white/70 text-xs">{review.comment || "No comment"}</p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>
 
+      {/* Review Modal */}
+      <AnimatePresence>
+        {showReviewModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setShowReviewModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900 rounded-2xl p-6 w-full max-w-sm"
+            >
+              <h3 className="text-white font-bold text-lg mb-4">{editingReview ? "Edit Review" : "Add Review"}</h3>
+
+              {/* Rating Stars */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <motion.button key={star} whileTap={{ scale: 0.8 }} onClick={() => setReviewRating(star)}>
+                    <Star
+                      size={32}
+                      className={star <= reviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}
+                    />
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* Comment */}
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Write your Comment (optional)"
+                className="w-full bg-gray-800 text-white rounded-xl p-3 text-sm outline-none resize-none h-24 mb-4"
+              />
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    setEditingReview(false);
+                    setReviewComment("");
+                    setReviewRating(5);
+                  }}
+                  className="flex-1 py-3 bg-gray-700 rounded-xl text-white font-semibold"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSubmitReview}
+                  disabled={reviewSubmitting}
+                  className="flex-1 py-3 bg-blue-600 rounded-xl text-white font-semibold disabled:opacity-50"
+                >
+                  {reviewSubmitting ? "Submitting..." : editingReview ? "Update" : "Submit"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Options Drawer */}
       <AnimatePresence>
         {showOptionsDrawer && (
           <PostOptionsDrawer
             isOpen={showOptionsDrawer}
             onClose={() => setShowOptionsDrawer(false)}
             post={post}
-            onDelete={handleDelete}
-            onShare={() => setShowShareModal(true)}
-            onEdit={handleEdit}
-            onArchive={handleArchive}
+            onDelete={() => {
+              onDelete();
+              setShowOptionsDrawer(false);
+            }}
+            onShare={() => {
+              setShowShareModal(true);
+              setShowOptionsDrawer(false);
+            }}
+            onEdit={async (newCaption) => {
+              await onEdit(newCaption);
+            }}
+            onArchive={() => {
+              onArchive();
+              setShowOptionsDrawer(false);
+            }}
           />
         )}
       </AnimatePresence>
 
+      {/* Share Modal */}
       <AnimatePresence>
         {showShareModal && (
           <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendorName} />
@@ -1342,7 +2206,9 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
   );
 };
 
-const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, onDeleteReel }) => {
+const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, onDeleteReel, onEditReel, vendorId }) => {
+  const { user, isSignedIn } = useUser();
+
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -1356,6 +2222,11 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   const [progress, setProgress] = useState(0);
   const [isBuffering, setIsBuffering] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [reelLikeCounts, setReelLikeCounts] = useState({});
+  const [reelViewCounts, setReelViewCounts] = useState({});
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [viewTracked, setViewTracked] = useState(new Set());
+  const [isLoadingInteractions, setIsLoadingInteractions] = useState(true);
 
   const videoRef = useRef(null);
   const progressInterval = useRef(null);
@@ -1363,6 +2234,99 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   useBodyScrollLock(true);
 
   const currentReel = reels[currentIndex];
+
+  const getVendorId = () => {
+    return vendorId;
+  };
+
+  useEffect(() => {
+    // Reset loading state when changing reels
+    setIsLoadingInteractions(true);
+  }, [currentIndex]);
+
+  // Fetch interaction status for current reel
+  useEffect(() => {
+    const fetchReelStatus = async () => {
+      if (!currentReel?._id) return;
+
+      const reelId = currentReel._id;
+      setIsLoadingInteractions(true);
+
+      try {
+        const vendorId = getVendorId();
+        if (!vendorId) {
+          setIsLoadingInteractions(false); // Add this
+          return;
+        }
+
+        const params = new URLSearchParams({
+          reelId,
+          ...(user?.id && { userId: user.id }),
+        });
+
+        const res = await fetch(`/api/vendor/${vendorId}/profile/reels/interactions?${params}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setReelLikeCounts((prev) => ({ ...prev, [reelId]: data.data.likesCount || 0 }));
+          setReelViewCounts((prev) => ({ ...prev, [reelId]: data.data.views || 0 }));
+
+          if (data.data.isLiked) {
+            setLikedReels((prev) => new Set([...prev, reelId]));
+          }
+          if (data.data.isSaved) {
+            setSavedReels((prev) => new Set([...prev, reelId]));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch reel status:", error);
+      } finally {
+        setIsLoadingInteractions(false); // Add this
+      }
+    };
+
+    fetchReelStatus();
+  }, [currentReel?._id, user?.id]);
+
+  // Track view count
+  useEffect(() => {
+    const trackView = async () => {
+      if (!currentReel?._id) return;
+
+      const reelId = currentReel._id;
+
+      // Only track once per reel per session
+      if (viewTracked.has(reelId)) return;
+
+      try {
+        const vendorId = getVendorId();
+        if (!vendorId) return;
+
+        const res = await fetch(`/api/vendor/${vendorId}/profile/reels/interactions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reelId,
+            action: "view",
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          setViewTracked((prev) => new Set([...prev, reelId]));
+          setReelViewCounts((prev) => ({ ...prev, [reelId]: data.data.views }));
+        }
+      } catch (error) {
+        console.error("Failed to track view:", error);
+      }
+    };
+
+    // Track view after 2 seconds of watching
+    const timer = setTimeout(trackView, 2000);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, currentReel?._id]);
 
   // Cleanup progress interval
   useEffect(() => {
@@ -1373,18 +2337,16 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
     };
   }, []);
 
-  // Handle video source change - THIS IS THE KEY FIX
+  // Handle video source change
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Reset states
     setProgress(0);
     setIsBuffering(true);
     setHasError(false);
     setIsPlaying(true);
 
-    // Load and play the new video
     video.load();
 
     const playPromise = video.play();
@@ -1479,40 +2441,150 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
     setIsPlaying(true);
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!isSignedIn || !user?.id) {
+      alert("Please sign in to like reels");
+      return;
+    }
+
+    if (isInteracting) return;
+
+    const reelId = currentReel._id;
+    const isCurrentlyLiked = likedReels.has(reelId);
+    const newLikedState = !isCurrentlyLiked;
+
+    console.log(currentReel._id, reelId, currentReel);
+
+    // Optimistic update
     const newLiked = new Set(likedReels);
-    if (newLiked.has(currentReel.id)) {
-      newLiked.delete(currentReel.id);
-    } else {
-      newLiked.add(currentReel.id);
+    if (newLikedState) {
+      newLiked.add(reelId);
       setShowLikeAnimation(true);
       setTimeout(() => setShowLikeAnimation(false), 600);
+    } else {
+      newLiked.delete(reelId);
     }
     setLikedReels(newLiked);
+
+    setReelLikeCounts((prev) => ({
+      ...prev,
+      [reelId]: newLikedState ? (prev[reelId] || 0) + 1 : Math.max(0, (prev[reelId] || 0) - 1),
+    }));
+
+    setIsInteracting(true);
+
+    try {
+      const vendorId = getVendorId();
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/reels/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reelId,
+          action: "like",
+          userId: user.id,
+          value: newLikedState,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        // Revert on failure
+        const revertedLiked = new Set(likedReels);
+        if (isCurrentlyLiked) {
+          revertedLiked.add(reelId);
+        } else {
+          revertedLiked.delete(reelId);
+        }
+        setLikedReels(revertedLiked);
+        console.error("Like failed:", data.error);
+      } else {
+        setReelLikeCounts((prev) => ({ ...prev, [reelId]: data.data.likesCount }));
+      }
+    } catch (error) {
+      console.error("Like error:", error);
+    } finally {
+      setIsInteracting(false);
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!isSignedIn || !user?.id) {
+      alert("Please sign in to save reels");
+      return;
+    }
+
+    if (isInteracting) return;
+
+    const reelId = currentReel._id;
+    const isCurrentlySaved = savedReels.has(reelId);
+    const newSavedState = !isCurrentlySaved;
+
+    // Optimistic update
     const newSaved = new Set(savedReels);
-    if (newSaved.has(currentReel.id)) {
-      newSaved.delete(currentReel.id);
+    if (newSavedState) {
+      newSaved.add(reelId);
     } else {
-      newSaved.add(currentReel.id);
+      newSaved.delete(reelId);
     }
     setSavedReels(newSaved);
+
+    setIsInteracting(true);
+
+    try {
+      const vendorId = getVendorId();
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/reels/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reelId,
+          action: "save",
+          userId: user.id,
+          value: newSavedState,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        // Revert on failure
+        const revertedSaved = new Set(savedReels);
+        if (isCurrentlySaved) {
+          revertedSaved.add(reelId);
+        } else {
+          revertedSaved.delete(reelId);
+        }
+        setSavedReels(revertedSaved);
+        console.error("Save failed:", data.error);
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+    } finally {
+      setIsInteracting(false);
+    }
   };
 
   const goToReel = useCallback(
     (direction) => {
+      const params = new URLSearchParams(window.location.search);
+
       if (direction === "up" && currentIndex < reels.length - 1) {
         setCurrentIndex(currentIndex + 1);
         setDragDirection("up");
+        params.set("reel", currentIndex + 1);
       } else if (direction === "down" && currentIndex > 0) {
         setCurrentIndex(currentIndex - 1);
         setDragDirection("down");
+        params.set("reel", currentIndex - 1);
       }
+
+      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+
       setTimeout(() => setDragDirection(null), 300);
     },
-    [currentIndex, reels.length]
+    [currentIndex, reels.length],
   );
 
   const handleDragStart = () => {
@@ -1535,7 +2607,6 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
     } else if (shouldGoDown) {
       goToReel("down");
     } else {
-      // Resume if we didn't change reels
       if (videoRef.current && isPlaying) {
         videoRef.current.play().catch(() => {});
       }
@@ -1547,7 +2618,8 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   };
 
   const handleDoubleTap = () => {
-    if (!likedReels.has(currentReel?.id)) {
+    const reelId = currentReel?._id;
+    if (!likedReels.has(reelId)) {
       handleLike();
     }
   };
@@ -1559,7 +2631,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   };
 
   const handleDeleteReel = () => {
-    onDeleteReel?.(currentReel.id);
+    onDeleteReel?.(currentReel._id);
     if (reels.length <= 1) {
       onClose();
     } else if (currentIndex >= reels.length - 1) {
@@ -1567,8 +2639,54 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
     }
   };
 
-  const isLiked = likedReels.has(currentReel?.id);
-  const isSaved = savedReels.has(currentReel?.id);
+  const handleEditReel = async (newCaption, newTitle) => {
+    try {
+      const vendorId = getVendorId();
+      const reelId = currentReel._id;
+
+      const formData = new FormData();
+      if (newCaption !== undefined) formData.append("caption", newCaption);
+      if (newTitle !== undefined) formData.append("title", newTitle);
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/reels?reelId=${reelId}`, {
+        method: "PUT",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Update local state
+        currentReel.caption = newCaption ?? currentReel.caption;
+        currentReel.title = newTitle ?? currentReel.title;
+        return { success: true };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error("Edit reel error:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const ReelActionsSkeleton = () => (
+    <div className="flex flex-col items-center gap-6 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex flex-col items-center gap-1">
+          <div className="w-12 h-12 rounded-full bg-white/20" />
+          <div className="w-8 h-3 bg-white/20 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+
+  if (!currentReel) return null;
+
+  const reelId = currentReel._id;
+  const isLiked = likedReels.has(reelId);
+  const isSaved = savedReels.has(reelId);
+  const likesCount = reelLikeCounts[reelId] ?? currentReel?.likes?.length ?? 0;
+  const viewsCount = reelViewCounts[reelId] ?? currentReel?.views ?? 0;
 
   return (
     <>
@@ -1603,7 +2721,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           </motion.button>
         </div>
 
-        {/* Main Video Area - VIDEO IS NOW OUTSIDE ANIMATEPRESENCE */}
+        {/* Main Video Area */}
         <motion.div
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
@@ -1615,7 +2733,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           className="absolute inset-0 touch-pan-y bg-black"
           style={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
-          {/* LAYER 1: Blurred Background (For Aspect Ratio Fix) */}
+          {/* Blurred Background */}
           <div className="absolute inset-0 z-0">
             <img
               src={currentReel?.thumbnail}
@@ -1624,11 +2742,11 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
             />
           </div>
 
-          {/* LAYER 2: Actual Video (Centered) */}
+          {/* Video */}
           <div className="absolute inset-0 z-10 flex items-center justify-center">
             <video
               ref={videoRef}
-              key={currentReel?.id}
+              key={reelId}
               src={currentReel?.videoUrl}
               poster={currentReel?.thumbnail}
               className="w-full h-full max-h-full object-contain"
@@ -1655,7 +2773,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
           {/* Transition Animation Overlay */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={`overlay-${currentReel?.id}`}
+              key={`overlay-${reelId}`}
               initial={{ opacity: 0.5 }}
               animate={{ opacity: 0 }}
               exit={{ opacity: 0.5 }}
@@ -1714,46 +2832,53 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
 
         {/* Right Side Actions */}
         <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-20">
-          <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} className="flex flex-col items-center gap-1">
-            <motion.div
-              animate={isLiked ? { scale: [1, 1.3, 1] } : {}}
-              className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center"
-            >
-              <Heart size={26} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />
-            </motion.div>
-            <span className="text-white text-xs font-bold">
-              {(currentReel?.likes + (isLiked ? 1 : 0)).toLocaleString()}
-            </span>
-          </motion.button>
+          {isLoadingInteractions ? (
+            <ReelActionsSkeleton />
+          ) : (
+            <>
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={handleLike}
+                className="flex flex-col items-center gap-1"
+                disabled={isInteracting}
+              >
+                <motion.div
+                  animate={isLiked ? { scale: [1, 1.3, 1] } : {}}
+                  className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center"
+                >
+                  <Heart size={26} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />
+                </motion.div>
+                <span className="text-white text-xs font-bold">{likesCount.toLocaleString()}</span>
+              </motion.button>
 
-          <motion.button whileTap={{ scale: 0.8 }} className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center">
-              <MessageCircle size={26} className="text-white" />
-            </div>
-            <span className="text-white text-xs font-bold">{currentReel?.comments}</span>
-          </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={handleSave}
+                className="flex flex-col items-center gap-1"
+                disabled={isInteracting}
+              >
+                <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center">
+                  {isSaved ? (
+                    <BookmarkCheck size={26} className="text-white fill-white" />
+                  ) : (
+                    <Bookmark size={26} className="text-white" />
+                  )}
+                </div>
+                <span className="text-white text-xs font-bold">Save</span>
+              </motion.button>
 
-          <motion.button whileTap={{ scale: 0.8 }} onClick={handleSave} className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center">
-              {isSaved ? (
-                <BookmarkCheck size={26} className="text-white fill-white" />
-              ) : (
-                <Bookmark size={26} className="text-white" />
-              )}
-            </div>
-            <span className="text-white text-xs font-bold">Save</span>
-          </motion.button>
-
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={() => setShowShareModal(true)}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center">
-              <Send size={26} className="text-white" />
-            </div>
-            <span className="text-white text-xs font-bold">Share</span>
-          </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={() => setShowShareModal(true)}
+                className="flex flex-col items-center gap-1"
+              >
+                <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center">
+                  <Send size={26} className="text-white" />
+                </div>
+                <span className="text-white text-xs font-bold">Share</span>
+              </motion.button>
+            </>
+          )}
 
           <motion.button whileTap={{ scale: 0.8 }} onClick={() => setIsMuted(!isMuted)}>
             <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center">
@@ -1781,7 +2906,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
             <div className="w-4 h-4 rounded bg-white/20 flex items-center justify-center">
               <span className="text-[8px]">🎵</span>
             </div>
-            <p className="text-white/80 text-xs">Original Audio • {currentReel?.views} views</p>
+            <p className="text-white/80 text-xs">Original Audio • {viewsCount.toLocaleString()} views</p>
           </div>
         </div>
 
@@ -1798,19 +2923,30 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
         </div>
       </motion.div>
 
-      {/* Modals */}
+      {/* Options Drawer */}
       <AnimatePresence>
         {showOptionsDrawer && (
           <ReelOptionsDrawer
             isOpen={showOptionsDrawer}
             onClose={() => setShowOptionsDrawer(false)}
-            reel={currentReel}
-            onDelete={handleDeleteReel}
-            onShare={() => setShowShareModal(true)}
+            reel={reels[currentIndex]}
+            onDelete={() => {
+              onDeleteReel(reels[currentIndex].id);
+              setShowOptionsDrawer(false);
+            }}
+            onShare={() => {
+              setShowShareModal(true);
+              setShowOptionsDrawer(false);
+            }}
+            onEdit={async (newCaption, newTitle) => {
+              const result = await onEditReel(reels[currentIndex]._id, newCaption, newTitle);
+              return result;
+            }}
           />
         )}
       </AnimatePresence>
 
+      {/* Share Modal */}
       <AnimatePresence>
         {showShareModal && (
           <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendorName} />
@@ -1919,22 +3055,37 @@ const PortfolioViewer = ({ portfolio, onClose, onBookService }) => {
   );
 };
 
-const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, reelsCount }) => {
+const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, reelsCount, vendorId }) => {
   const [uploadType, setUploadType] = useState(null);
   const [caption, setCaption] = useState("");
+  const [title, setTitle] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [location, setLocation] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileRaw, setSelectedFileRaw] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [locationMode, setLocationMode] = useState(null);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [aspectRatioError, setAspectRatioError] = useState("");
+  const [videoDimensions, setVideoDimensions] = useState(null);
+
   const fileInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
+  const xhrRef = useRef(null);
+
   useBodyScrollLock(isOpen);
 
   const MAX_POSTS = 6;
   const MAX_REELS = 12;
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
 
   const isPostsFull = postsCount >= MAX_POSTS;
   const isReelsFull = reelsCount >= MAX_REELS;
@@ -1943,14 +3094,278 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedFile(reader.result);
+  const handleThumbnailSelect = () => {
+    thumbnailInputRef.current?.click();
+  };
+
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      if (xhrRef.current) xhrRef.current.abort();
+    };
+  }, []);
+
+  // Validate aspect ratio for reels (9:16)
+  const validateReelAspectRatio = (file) => {
+    return new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+
+      const timeoutId = setTimeout(() => {
+        URL.revokeObjectURL(video.src);
+        resolve({ valid: true }); // Allow if validation times out
+      }, 10000);
+
+      video.onloadedmetadata = () => {
+        clearTimeout(timeoutId);
+        URL.revokeObjectURL(video.src);
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+        const aspectRatio = width / height;
+        const targetRatio = 9 / 16;
+        const tolerance = 0.15; // Increased tolerance to 15%
+
+        setVideoDimensions({ width, height });
+
+        if (Math.abs(aspectRatio - targetRatio) <= tolerance) {
+          resolve({ valid: true, width, height });
+        } else {
+          resolve({
+            valid: false,
+            width,
+            height,
+            message: `Video should be in 9:16 portrait format. Current: ${width}x${height} (${aspectRatio.toFixed(2)} ratio)`,
+          });
+        }
       };
-      reader.readAsDataURL(file);
+
+      video.onerror = () => {
+        clearTimeout(timeoutId);
+        URL.revokeObjectURL(video.src);
+        resolve({ valid: true }); // Allow if we can't validate
+      };
+
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const validateFileSize = (file, type, isVideo) => {
+    if (type === "reel") {
+      if (file.size > MAX_VIDEO_SIZE) {
+        return `Video size exceeds ${Math.round(MAX_VIDEO_SIZE / (1024 * 1024))}MB limit`;
+      }
+    } else {
+      const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+      if (file.size > maxSize) {
+        return `File size exceeds ${Math.round(maxSize / (1024 * 1024))}MB limit`;
+      }
+    }
+    return null;
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError("");
+    setAspectRatioError("");
+
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+
+    // Validate file type based on upload type
+    if (uploadType === "reel") {
+      if (!isVideo) {
+        setUploadError("Only video files are allowed for reels");
+        return;
+      }
+
+      // Validate aspect ratio for reels
+      const aspectResult = await validateReelAspectRatio(file);
+      if (!aspectResult.valid) {
+        setAspectRatioError(aspectResult.message);
+        return;
+      }
+    } else if (uploadType === "post") {
+      if (!isVideo && !isImage) {
+        setUploadError("Only image or video files are allowed");
+        return;
+      }
+    }
+
+    // Validate file size
+    const sizeError = validateFileSize(file, uploadType, isVideo);
+    if (sizeError) {
+      setUploadError(sizeError);
+      setSelectedFile(null); // ADD THIS - clear any partial selection
+      setSelectedFileRaw(null);
+      return;
+    }
+
+    setSelectedFileRaw(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedFile(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Thumbnail must be an image");
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setUploadError("Thumbnail size exceeds 10MB limit");
+      return;
+    }
+
+    setThumbnailFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setThumbnailPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload with real progress using XMLHttpRequest
+  const uploadWithProgress = (url, formData, onProgress) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          onProgress(percentComplete);
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response);
+          } catch {
+            reject(new Error("Invalid response"));
+          }
+        } else {
+          try {
+            const error = JSON.parse(xhr.responseText);
+            reject(new Error(error.error || `Upload failed: ${xhr.status}`));
+          } catch {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        reject(new Error("Network error"));
+      });
+
+      xhr.addEventListener("abort", () => {
+        reject(new Error("Upload cancelled"));
+      });
+
+      xhr.open("POST", url);
+      xhr.send(formData);
+    });
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFileRaw) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError("");
+    setUploadStatus("Preparing upload...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFileRaw);
+
+      if (uploadType === "post") {
+        formData.append("description", `${caption} ${hashtags}`.trim());
+        formData.append("location", location);
+
+        setUploadStatus("Uploading post...");
+
+        const result = await uploadWithProgress(`/api/vendor/${vendorId}/profile/posts`, formData, (progress) => {
+          setUploadProgress(Math.min(progress, 95));
+          if (progress < 30) setUploadStatus("Uploading...");
+          else if (progress < 60) setUploadStatus("Processing...");
+          else if (progress < 90) setUploadStatus("Almost done...");
+          else setUploadStatus("Finalizing...");
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || "Upload failed");
+        }
+
+        if (!isMounted.current) return;
+
+        setUploadProgress(100);
+        setUploadStatus("Complete!");
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        onUploadPost?.(result.data);
+      } else {
+        // Reel upload
+        formData.append("title", title || "Untitled Reel");
+        formData.append("caption", `${caption} ${hashtags}`.trim());
+
+        if (thumbnailFile) {
+          formData.append("thumbnail", thumbnailFile);
+        }
+
+        setUploadStatus("Uploading reel...");
+
+        const result = await uploadWithProgress(`/api/vendor/${vendorId}/profile/reels`, formData, (progress) => {
+          setUploadProgress(Math.min(progress, 95));
+          if (progress < 20) setUploadStatus("Starting upload...");
+          else if (progress < 40) setUploadStatus("Uploading video...");
+          else if (progress < 60) setUploadStatus("Processing...");
+          else if (progress < 80) setUploadStatus("Optimizing...");
+          else setUploadStatus("Finalizing...");
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || "Upload failed");
+        }
+
+        setUploadProgress(100);
+        setUploadStatus("Complete!");
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        onUploadReel?.(result.data);
+      }
+
+      setUploadSuccess(true);
+    } catch (error) {
+      console.error("Upload error:", error);
+
+      if (error.message === "Upload cancelled") {
+        setUploadError("Upload cancelled");
+      } else {
+        setUploadError(error.message || "Upload failed. Please try again.");
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadStatus("");
+      xhrRef.current = null;
+    }
+  };
+
+  const handleCancelUpload = () => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
     }
   };
 
@@ -1958,7 +3373,6 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
     setIsDetectingLocation(true);
     setLocationError("");
 
-    // Check if geolocation is supported
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");
       setIsDetectingLocation(false);
@@ -1966,11 +3380,10 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
     }
 
     try {
-      // Step 1: Get user's coordinates with more lenient settings
       const position = await new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
-          reject(new Error("Location request timed out after 15 seconds"));
-        }, 15000); // Increased timeout to 15 seconds
+          reject(new Error("Location request timed out"));
+        }, 15000);
 
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -1982,173 +3395,145 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
             reject(error);
           },
           {
-            enableHighAccuracy: false, // Changed to false for faster response
-            timeout: 15000, // Increased from 10s to 15s
-            maximumAge: 60000, // Allow cached position up to 1 minute old
-          }
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 60000,
+          },
         );
       });
 
       const { latitude, longitude } = position.coords;
-
-      // Step 2: Try multiple reverse geocoding APIs for reliability
       let locationData = null;
 
-      // Try OpenStreetMap first (with retry logic)
       try {
         const osmResponse = await Promise.race([
           fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18`,
-            {
-              headers: {
-                "User-Agent": "VendorProfileApp/1.0", // Required by Nominatim
-              },
-            }
+            { headers: { "User-Agent": "VendorProfileApp/1.0" } },
           ),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("API timeout")), 8000)),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000)),
         ]);
 
         if (osmResponse.ok) {
           locationData = await osmResponse.json();
         }
-      } catch (osmError) {
-        console.warn("OpenStreetMap API failed, trying fallback...", osmError);
+      } catch (e) {
+        console.warn("OpenStreetMap failed:", e);
       }
 
-      // Fallback to bigdatacloud if OpenStreetMap fails
       if (!locationData) {
         try {
-          const bigDataResponse = await Promise.race([
+          const bdcResponse = await Promise.race([
             fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
             ),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("API timeout")), 8000)),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000)),
           ]);
 
-          if (bigDataResponse.ok) {
-            const bigData = await bigDataResponse.json();
+          if (bdcResponse.ok) {
+            const bdcData = await bdcResponse.json();
             locationData = {
               address: {
-                neighbourhood: bigData.locality,
-                city: bigData.city,
-                state: bigData.principalSubdivision,
-                country: bigData.countryName,
+                neighbourhood: bdcData.locality,
+                city: bdcData.city,
+                state: bdcData.principalSubdivision,
+                country: bdcData.countryName,
               },
             };
           }
-        } catch (fallbackError) {
-          console.warn("Fallback API also failed", fallbackError);
+        } catch (e) {
+          console.warn("BigDataCloud failed:", e);
         }
       }
 
-      // Step 3: Format the location string
-      if (locationData && locationData.address) {
-        const address = locationData.address;
-        const locationParts = [];
+      if (locationData?.address) {
+        const {
+          neighbourhood,
+          suburb,
+          residential,
+          locality,
+          city,
+          town,
+          village,
+          municipality,
+          state,
+          state_district,
+          country,
+        } = locationData.address;
+        const parts = [
+          neighbourhood || suburb || residential || locality,
+          city || town || village || municipality,
+          state || state_district,
+          country,
+        ]
+          .filter(Boolean)
+          .slice(0, 3);
 
-        // Area/Locality
-        if (address.neighbourhood || address.suburb || address.residential || address.locality) {
-          locationParts.push(address.neighbourhood || address.suburb || address.residential || address.locality);
-        }
-
-        // City/Town
-        if (address.city || address.town || address.village || address.municipality) {
-          locationParts.push(address.city || address.town || address.village || address.municipality);
-        }
-
-        // State
-        if (address.state || address.state_district) {
-          locationParts.push(address.state || address.state_district);
-        }
-
-        // Country
-        if (address.country) {
-          locationParts.push(address.country);
-        }
-
-        // Use up to 3 parts for a clean address
-        const formattedLocation = locationParts.filter(Boolean).slice(0, 3).join(", ");
-
-        if (formattedLocation) {
-          setLocation(formattedLocation);
+        if (parts.length > 0) {
+          setLocation(parts.join(", "));
           setLocationMode("detect");
           return;
         }
       }
 
-      // Fallback: If geocoding completely fails, show coordinates
-      const coordsLocation = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-      setLocation(coordsLocation);
+      setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
       setLocationMode("detect");
-      setLocationError("Location detected (coordinates only). You may edit for better accuracy.");
+      setLocationError("Location detected (coordinates only)");
     } catch (error) {
-      console.error("Location detection error:", error);
-
-      // Provide user-friendly error messages
-      if (error.code === 1 || error.message?.includes("denied")) {
-        setLocationError("Location access denied. Please enable location permissions in your browser settings.");
-      } else if (error.code === 2 || error.message?.includes("unavailable")) {
-        setLocationError("Location currently unavailable. Please check your device's location settings.");
-      } else if (error.code === 3 || error.message?.includes("timeout") || error.message?.includes("Timeout")) {
-        setLocationError("Location request timed out. Please ensure location services are enabled and try again.");
-      } else if (error.message?.includes("network") || error.message?.includes("fetch")) {
-        setLocationError("Network error. Please check your internet connection and try again.");
+      console.error("Location error:", error);
+      if (error.code === 1) {
+        setLocationError("Location access denied. Please enable permissions.");
+      } else if (error.code === 2) {
+        setLocationError("Location unavailable. Check device settings.");
+      } else if (error.code === 3 || error.message?.includes("timeout")) {
+        setLocationError("Location request timed out. Try again.");
       } else {
-        setLocationError("Unable to detect location. Please enter your location manually.");
+        setLocationError("Unable to detect location. Enter manually.");
       }
     } finally {
       setIsDetectingLocation(false);
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    setIsUploading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const newItem = {
-      id: Date.now(),
-      type: uploadType === "post" ? "image" : "video",
-      thumbnail: selectedFile,
-      fullImage: selectedFile,
-      videoUrl: selectedFile,
-      likes: 0,
-      comments: 0,
-      views: "0",
-      duration: "0:30",
-      caption: `${caption} ${hashtags}`.trim(),
-      date: new Date().toLocaleDateString(),
-      location: location,
-      isLiked: false,
-      isSaved: false,
-    };
-
-    if (uploadType === "post") {
-      onUploadPost?.(newItem);
-    } else {
-      onUploadReel?.(newItem);
+  const resetAndClose = () => {
+    if (isUploading) {
+      handleCancelUpload();
     }
 
-    setIsUploading(false);
-    setUploadSuccess(true);
-  };
-
-  const resetAndClose = () => {
     onClose();
+
     setTimeout(() => {
       setUploadType(null);
       setCaption("");
+      setTitle("");
       setHashtags("");
       setLocation("");
       setSelectedFile(null);
+      setSelectedFileRaw(null);
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
       setUploadSuccess(false);
+      setUploadProgress(0);
+      setUploadStatus("");
+      setUploadError("");
+      setAspectRatioError("");
+      setVideoDimensions(null);
       setLocationMode(null);
       setLocationError("");
     }, 300);
   };
 
+  useEffect(() => {
+    return () => {
+      if (xhrRef.current) {
+        xhrRef.current.abort();
+      }
+    };
+  }, []);
+
   if (!isOpen) return null;
+
+  const isVideo = selectedFileRaw?.type?.startsWith("video/");
 
   return (
     <motion.div
@@ -2168,32 +3553,36 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.5 }}
         onDragEnd={(_, info) => {
-          if (info.offset.y > 100) resetAndClose();
+          if (info.offset.y > 100 && !isUploading) resetAndClose();
         }}
         className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-[32px] max-h-[92vh] overflow-hidden shadow-2xl"
       >
-        <div className="sticky top-0 bg-white dark:bg-gray-900 px-5 pt-3 pb-4 border-b border-gray-100 dark:border-gray-800">
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-gray-900 px-5 pt-3 pb-4 border-b border-gray-100 dark:border-gray-800 z-10">
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               {uploadSuccess
                 ? "Upload Complete!"
                 : uploadType
-                ? `New ${uploadType === "post" ? "Post" : "Reel"}`
-                : "Create"}
+                  ? `New ${uploadType === "post" ? "Post" : "Reel"}`
+                  : "Create"}
             </h3>
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={resetAndClose}
-              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"
+              disabled={isUploading}
+              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full disabled:opacity-50"
             >
               <X size={20} className="text-gray-500" />
             </motion.button>
           </div>
         </div>
 
+        {/* Content */}
         <div className="overflow-y-auto max-h-[calc(92vh-80px)] p-5">
           <AnimatePresence mode="wait">
+            {/* Success State */}
             {uploadSuccess ? (
               <motion.div
                 key="success"
@@ -2220,6 +3609,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                 </motion.button>
               </motion.div>
             ) : !uploadType ? (
+              /* Type Selection */
               <motion.div
                 key="select-type"
                 initial={{ opacity: 0, y: 20 }}
@@ -2229,6 +3619,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
               >
                 <p className="text-gray-500 text-sm text-center mb-6">What would you like to create?</p>
 
+                {/* Post Button */}
                 <motion.button
                   whileTap={{ scale: isPostsFull ? 1 : 0.98 }}
                   onClick={() => !isPostsFull && setUploadType("post")}
@@ -2249,15 +3640,16 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                   <div className="text-left flex-1">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-1">New Post</h4>
                     <p className="text-sm text-gray-500">
-                      {isPostsFull ? `Maximum ${MAX_POSTS} posts reached` : "Share a photo with your followers"}
+                      {isPostsFull ? `Maximum ${MAX_POSTS} posts reached` : "Share a photo or video"}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {postsCount}/{MAX_POSTS} posts
+                      {postsCount}/{MAX_POSTS} posts • Images (10MB) or Videos (500MB)
                     </p>
                   </div>
                   <ChevronRight size={20} className="text-gray-400" />
                 </motion.button>
 
+                {/* Reel Button */}
                 <motion.button
                   whileTap={{ scale: isReelsFull ? 1 : 0.98 }}
                   onClick={() => !isReelsFull && setUploadType("reel")}
@@ -2278,16 +3670,17 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                   <div className="text-left flex-1">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-1">New Reel</h4>
                     <p className="text-sm text-gray-500">
-                      {isReelsFull ? `Maximum ${MAX_REELS} reels reached` : "Create a short video clip"}
+                      {isReelsFull ? `Maximum ${MAX_REELS} reels reached` : "Upload a 9:16 vertical video"}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {reelsCount}/{MAX_REELS} reels
+                      {reelsCount}/{MAX_REELS} reels • Portrait format only (500MB)
                     </p>
                   </div>
                   <ChevronRight size={20} className="text-gray-400" />
                 </motion.button>
               </motion.div>
             ) : (
+              /* Upload Form */
               <motion.div
                 key="upload-form"
                 initial={{ opacity: 0, x: 20 }}
@@ -2299,173 +3692,388 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept={uploadType === "post" ? "image/*" : "video/*"}
+                  accept={
+                    uploadType === "reel"
+                      ? "video/mp4,video/quicktime,video/webm"
+                      : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
+                  }
                   className="hidden"
                 />
 
+                {uploadType === "reel" && (
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    onChange={handleThumbnailChange}
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                  />
+                )}
+
+                {/* File Selection Area */}
                 <motion.button
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={{ scale: isUploading ? 1 : 0.98 }}
                   onClick={handleFileSelect}
-                  className={`w-full aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-4 overflow-hidden ${
+                  disabled={isUploading}
+                  className={`w-full ${uploadType === "reel" ? "aspect-[9/16]" : "aspect-square"} rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-4 overflow-hidden ${
                     selectedFile
-                      ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                      ? aspectRatioError
+                        ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                        : "border-green-500 bg-green-50 dark:bg-green-900/20"
                       : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                  }`}
+                  } ${isUploading ? "pointer-events-none" : ""}`}
                 >
                   {selectedFile ? (
-                    uploadType === "post" ? (
-                      <img src={selectedFile} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <video src={selectedFile} className="w-full h-full object-cover" />
-                    )
+                    <div className="relative w-full h-full">
+                      {isVideo ? (
+                        <video src={selectedFile} className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={selectedFile} alt="Preview" className="w-full h-full object-cover" />
+                      )}
+
+                      {/* Video dimensions badge */}
+                      {videoDimensions && (
+                        <div className="absolute top-3 left-3 bg-black/70 text-white text-xs font-mono px-2 py-1 rounded">
+                          {videoDimensions.width}x{videoDimensions.height}
+                        </div>
+                      )}
+
+                      {/* Overlay during upload */}
+                      {isUploading && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="text-center px-6">
+                            {/* Circular Progress */}
+                            <div className="relative w-24 h-24 mx-auto mb-4">
+                              <svg className="w-full h-full transform -rotate-90">
+                                <circle
+                                  cx="48"
+                                  cy="48"
+                                  r="42"
+                                  stroke="rgba(255,255,255,0.2)"
+                                  strokeWidth="6"
+                                  fill="none"
+                                />
+                                <circle
+                                  cx="48"
+                                  cy="48"
+                                  r="42"
+                                  stroke="white"
+                                  strokeWidth="6"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeDasharray={`${2 * Math.PI * 42}`}
+                                  strokeDashoffset={`${2 * Math.PI * 42 * (1 - uploadProgress / 100)}`}
+                                  className="transition-all duration-300"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">{uploadProgress}%</span>
+                              </div>
+                            </div>
+                            <p className="text-white font-semibold">{uploadStatus}</p>
+                            <p className="text-white/60 text-sm mt-1">
+                              {uploadType === "reel"
+                                ? "Uploading to Bunny.net"
+                                : isVideo
+                                  ? "Uploading video"
+                                  : "Uploading to Cloudinary"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <>
                       <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                        <Upload size={32} className="text-gray-400" />
+                        {uploadType === "reel" ? (
+                          <Video size={32} className="text-gray-400" />
+                        ) : (
+                          <Upload size={32} className="text-gray-400" />
+                        )}
                       </div>
-                      <div className="text-center">
+                      <div className="text-center px-4">
                         <p className="font-semibold text-gray-900 dark:text-white">
-                          Tap to upload {uploadType === "post" ? "photo" : "video"}
+                          Tap to upload {uploadType === "reel" ? "video" : "photo or video"}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {uploadType === "post" ? "JPG, PNG up to 10MB" : "MP4, MOV up to 100MB"}
+                        <p className="text-sm text-gray-500 mt-1">
+                          {uploadType === "reel"
+                            ? "9:16 portrait video only (MP4, MOV, WebM)"
+                            : "JPG, PNG, WebP, GIF, MP4, MOV, WebM"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          {uploadType === "reel" ? "Max 500MB" : "Images: 10MB • Videos: 500MB"}
                         </p>
                       </div>
                     </>
                   )}
                 </motion.button>
 
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Type size={18} className="absolute left-4 top-4 text-gray-400" />
-                    <textarea
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      placeholder="Write a caption..."
-                      className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none resize-none min-h-[100px]"
-                    />
-                  </div>
+                {/* Aspect Ratio Error */}
+                {aspectRatioError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
+                  >
+                    <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                    <p className="text-xs text-red-600 dark:text-red-400 flex-1">{aspectRatioError}</p>
+                    <button onClick={() => setAspectRatioError("")} className="text-red-400 hover:text-red-600">
+                      <X size={14} />
+                    </button>
+                  </motion.div>
+                )}
 
-                  <div className="relative">
-                    <Hash size={18} className="absolute left-4 top-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={hashtags}
-                      onChange={(e) => setHashtags(e.target.value)}
-                      placeholder="Add hashtags (e.g., #wedding #photography)"
-                      className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none"
-                    />
-                  </div>
-
-                  {/* Enhanced Location Section */}
-                  <div className="space-y-3">
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Location</p>
-
-                    {!locationMode ? (
-                      <div className="flex gap-3">
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setLocationMode("manual")}
-                          className="flex-1 p-4 rounded-xl bg-gray-100 dark:bg-gray-800 flex flex-col items-center gap-2"
-                        >
-                          <Type size={20} className="text-gray-600 dark:text-gray-400" />
-                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Enter Manually</span>
-                        </motion.button>
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={detectLocation}
-                          disabled={isDetectingLocation}
-                          className="flex-1 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 flex flex-col items-center gap-2"
-                        >
-                          {isDetectingLocation ? (
-                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <MapPin size={20} className="text-blue-600" />
-                          )}
-                          <span className="text-xs font-medium text-blue-600">
-                            {isDetectingLocation ? "Detecting..." : "Detect Location"}
-                          </span>
-                        </motion.button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="relative">
-                          <MapPin size={18} className="absolute left-4 top-4 text-gray-400" />
-                          <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder="Enter location"
-                            className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none"
-                          />
+                {/* Thumbnail selection for reels */}
+                {uploadType === "reel" && selectedFile && !aspectRatioError && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Thumbnail (Optional)
+                    </label>
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleThumbnailSelect}
+                      disabled={isUploading}
+                      className="w-full p-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center gap-4 disabled:opacity-50"
+                    >
+                      {thumbnailPreview ? (
+                        <img src={thumbnailPreview} alt="Thumbnail" className="w-16 h-16 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <Image size={24} className="text-gray-400" />
                         </div>
-                        <div className="flex items-center justify-between">
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                              setLocationMode(null);
-                              setLocation("");
-                              setLocationError("");
-                            }}
-                            className="text-xs text-blue-600 font-medium"
-                          >
-                            Change method
-                          </motion.button>
-                          {locationMode === "manual" && (
+                      )}
+                      <div className="text-left flex-1">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">
+                          {thumbnailPreview ? "Change thumbnail" : "Add custom thumbnail"}
+                        </p>
+                        <p className="text-xs text-gray-500">JPG, PNG, WebP (max 10MB)</p>
+                      </div>
+                    </motion.button>
+                  </div>
+                )}
+
+                {/* Progress Bar */}
+                {isUploading && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400 font-medium">{uploadStatus}</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${uploadProgress}%` }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full relative"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                      </motion.div>
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleCancelUpload}
+                      className="text-sm text-red-500 font-medium"
+                    >
+                      Cancel Upload
+                    </motion.button>
+                  </motion.div>
+                )}
+
+                {/* Error Message */}
+                {uploadError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
+                  >
+                    <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                    <p className="text-xs text-red-600 dark:text-red-400 flex-1">{uploadError}</p>
+                    <button onClick={() => setUploadError("")} className="text-red-400 hover:text-red-600">
+                      <X size={14} />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Form Fields */}
+                {!aspectRatioError && (
+                  <div className="space-y-4">
+                    {/* Title (for reels) */}
+                    {uploadType === "reel" && (
+                      <div className="relative">
+                        <Type size={18} className="absolute left-4 top-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Reel title..."
+                          disabled={isUploading}
+                          maxLength={100}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none disabled:opacity-50"
+                        />
+                      </div>
+                    )}
+
+                    {/* Caption */}
+                    <div className="relative">
+                      <Type size={18} className="absolute left-4 top-4 text-gray-400" />
+                      <textarea
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        placeholder="Write a caption..."
+                        disabled={isUploading}
+                        maxLength={2200}
+                        className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none resize-none min-h-[100px] disabled:opacity-50"
+                      />
+                      <span className="absolute bottom-2 right-3 text-[10px] text-gray-400">{caption.length}/2200</span>
+                    </div>
+
+                    {/* Hashtags */}
+                    <div className="relative">
+                      <Hash size={18} className="absolute left-4 top-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={hashtags}
+                        onChange={(e) => setHashtags(e.target.value)}
+                        placeholder="Add hashtags (e.g., #wedding #photography)"
+                        disabled={isUploading}
+                        className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none disabled:opacity-50"
+                      />
+                    </div>
+
+                    {/* Location (only for posts) */}
+                    {uploadType === "post" && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Location</p>
+
+                        {!locationMode ? (
+                          <div className="flex gap-3">
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => setLocationMode("manual")}
+                              disabled={isUploading}
+                              className="flex-1 p-4 rounded-xl bg-gray-100 dark:bg-gray-800 flex flex-col items-center gap-2 disabled:opacity-50"
+                            >
+                              <Type size={20} className="text-gray-600 dark:text-gray-400" />
+                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                Enter Manually
+                              </span>
+                            </motion.button>
                             <motion.button
                               whileTap={{ scale: 0.95 }}
                               onClick={detectLocation}
-                              disabled={isDetectingLocation}
-                              className="text-xs text-blue-600 font-medium flex items-center gap-1"
+                              disabled={isDetectingLocation || isUploading}
+                              className="flex-1 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 flex flex-col items-center gap-2 disabled:opacity-50"
                             >
                               {isDetectingLocation ? (
-                                <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                               ) : (
-                                <MapPin size={12} />
+                                <MapPin size={20} className="text-blue-600" />
                               )}
-                              Auto-detect
+                              <span className="text-xs font-medium text-blue-600">
+                                {isDetectingLocation ? "Detecting..." : "Detect Location"}
+                              </span>
                             </motion.button>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="relative">
+                              <MapPin size={18} className="absolute left-4 top-4 text-gray-400" />
+                              <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="Enter location"
+                                disabled={isUploading}
+                                className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none disabled:opacity-50"
+                              />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                  setLocationMode(null);
+                                  setLocation("");
+                                  setLocationError("");
+                                }}
+                                disabled={isUploading}
+                                className="text-xs text-blue-600 font-medium disabled:opacity-50"
+                              >
+                                Change method
+                              </motion.button>
+                              {locationMode === "manual" && (
+                                <motion.button
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={detectLocation}
+                                  disabled={isDetectingLocation || isUploading}
+                                  className="text-xs text-blue-600 font-medium flex items-center gap-1 disabled:opacity-50"
+                                >
+                                  {isDetectingLocation ? (
+                                    <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <MapPin size={12} />
+                                  )}
+                                  Auto-detect
+                                </motion.button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {locationError && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl"
+                          >
+                            <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
+                            <p className="text-xs text-amber-600 dark:text-amber-400">{locationError}</p>
+                          </motion.div>
+                        )}
+
+                        {location && locationMode === "detect" && !locationError && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl"
+                          >
+                            <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                            <p className="text-xs text-green-600 dark:text-green-400">Location detected successfully</p>
+                          </motion.div>
+                        )}
                       </div>
                     )}
-
-                    {locationError && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl"
-                      >
-                        <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
-                        <p className="text-xs text-red-600 dark:text-red-400">{locationError}</p>
-                      </motion.div>
-                    )}
-
-                    {location && locationMode === "detect" && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl"
-                      >
-                        <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                        <p className="text-xs text-green-600 dark:text-green-400">Location detected successfully</p>
-                      </motion.div>
-                    )}
                   </div>
-                </div>
+                )}
 
+                {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setUploadType(null)}
-                    className="px-6 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-bold text-gray-700 dark:text-gray-300"
+                    onClick={() => {
+                      setUploadType(null);
+                      setSelectedFile(null);
+                      setSelectedFileRaw(null);
+                      setThumbnailFile(null);
+                      setThumbnailPreview(null);
+                      setUploadError("");
+                      setAspectRatioError("");
+                      setVideoDimensions(null);
+                      setCaption("");
+                      setTitle("");
+                      setHashtags("");
+                      setLocation("");
+                      setLocationMode(null);
+                      setLocationError("");
+                    }}
+                    disabled={isUploading}
+                    className="px-6 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-bold text-gray-700 dark:text-gray-300 disabled:opacity-50"
                   >
                     Back
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleUpload}
-                    disabled={!selectedFile || isUploading}
+                    disabled={!selectedFile || isUploading || !!aspectRatioError}
                     className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-bold text-white disabled:opacity-50 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
                   >
                     {isUploading ? (
@@ -2486,6 +4094,20 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
           </AnimatePresence>
         </div>
       </motion.div>
+
+      <style jsx>{`
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 1.5s infinite;
+        }
+      `}</style>
     </motion.div>
   );
 };
@@ -3261,7 +4883,7 @@ const CollapsibleSection = memo(
         </AnimatePresence>
       </motion.div>
     );
-  }
+  },
 );
 CollapsibleSection.displayName = "CollapsibleSection";
 
@@ -3810,7 +5432,7 @@ const ReviewsDrawer = ({ isOpen, onClose, reviewsData }) => {
   if (!isOpen) return null;
 
   // Extract data from the new structure
-  const reviews = reviewsData?.data?.reviews || [];
+  const reviews = reviewsData || reviewsData?.data || [];
   const stats = reviewsData?.data?.stats || {
     averageRating: 0,
     totalReviews: 0,
@@ -3976,6 +5598,9 @@ const MoreOptionsDrawer = ({
   onShowQR,
   onShowAbout,
   onCopyLink,
+  setShowUpdateProfileDrawer,
+  onVerifyIdentity, // Add this new prop
+  isVerified,
 }) => {
   const [showReportConfirm, setShowReportConfirm] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -4004,6 +5629,31 @@ const MoreOptionsDrawer = ({
         onSave();
       },
     },
+    {
+      id: "verify",
+      label: isVerified ? "Identity Verified" : "Verify Identity",
+      icon: isVerified ? ShieldCheck : Shield,
+      action: () => {
+        if (!isVerified) {
+          onVerifyIdentity?.();
+          onClose();
+        }
+      },
+      verified: isVerified,
+    },
+    ...(isVerified
+      ? [
+          {
+            id: "updateProfile",
+            label: "Update Profile",
+            icon: Edit3,
+            action: () => {
+              setShowUpdateProfileDrawer(true);
+              onClose();
+            },
+          },
+        ]
+      : []),
     {
       id: "notify",
       label: isNotifying ? "Turn Off Notifications" : "Turn On Notifications",
@@ -4177,8 +5827,16 @@ const MoreOptionsDrawer = ({
 
 const ShareModal = ({ isOpen, onClose, vendorName }) => {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
+
   useBodyScrollLock(isOpen);
-  console.log("ShareModal rendered with isOpen:", isOpen);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -4189,7 +5847,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: MessageCircle,
       color: "bg-green-500",
       action: () => {
-        window.open(`https://wa.me/?text=Check out ${vendorName}! ${window.location.href}`);
+        window.open(`https://wa.me/?text=Check out ${vendorName}! ${currentUrl}`);
         onClose();
       },
     },
@@ -4199,7 +5857,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Facebook,
       color: "bg-blue-600",
       action: () => {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -4209,7 +5867,9 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Twitter,
       color: "bg-sky-500",
       action: () => {
-        window.open(`https://twitter.com/intent/tweet?text=Check out ${vendorName}!&url=${window.location.href}`);
+        window.open(
+          `https://twitter.com/intent/tweet?text=Check out ${vendorName}!&url=${encodeURIComponent(currentUrl)}`,
+        );
         onClose();
       },
     },
@@ -4219,7 +5879,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Linkedin,
       color: "bg-blue-700",
       action: () => {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${window.location.href}`);
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -4238,7 +5898,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Mail,
       color: "bg-gray-600",
       action: () => {
-        window.open(`mailto:?subject=Check out ${vendorName}&body=${window.location.href}`);
+        window.open(`mailto:?subject=Check out ${vendorName}&body=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -4248,7 +5908,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: MessageSquare,
       color: "bg-green-600",
       action: () => {
-        window.open(`sms:?body=Check out ${vendorName}! ${window.location.href}`);
+        window.open(`sms:?body=Check out ${vendorName}! ${currentUrl}`);
         onClose();
       },
     },
@@ -4258,7 +5918,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Copy,
       color: "bg-gray-500",
       action: () => {
-        navigator.clipboard.writeText(window.location.href);
+        navigator.clipboard.writeText(currentUrl);
         setCopiedFeedback(true);
         setTimeout(() => {
           setCopiedFeedback(false);
@@ -4267,6 +5927,32 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       },
     },
   ];
+
+  const handleDownloadQR = () => {
+    const svg = document.getElementById("share-qr-code");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new window.Image();
+
+    img.onload = () => {
+      canvas.width = img.width * 2;
+      canvas.height = img.height * 2;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${vendorName?.replace(/\s+/g, "_") || "profile"}_QR.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
 
   return (
     <motion.div
@@ -4291,34 +5977,125 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
         className="w-full bg-white dark:bg-gray-900 rounded-t-[32px] p-5 pb-8"
       >
         <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-5" />
-        <h3 className="text-lg font-bold text-center mb-6 text-gray-900 dark:text-white">Share Profile</h3>
-        <div className="grid grid-cols-4 gap-5">
-          {shareOptions.map((option) => (
-            <motion.button
-              key={option.id}
-              whileTap={{ scale: 0.9 }}
-              onClick={option.action}
-              className="flex flex-col items-center gap-2 relative"
+
+        <AnimatePresence mode="wait">
+          {showQR ? (
+            <motion.div
+              key="qr-view"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-4"
             >
-              <div className={`w-14 h-14 rounded-2xl ${option.color} flex items-center justify-center shadow-lg`}>
-                {option.id === "copy" && copiedFeedback ? (
-                  <Check size={24} className="text-white" />
-                ) : (
-                  <option.icon size={24} className="text-white" />
-                )}
+              <div className="flex items-center justify-between mb-2">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowQR(false)}
+                  className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full"
+                >
+                  <ArrowLeft size={18} className="text-gray-600 dark:text-gray-400" />
+                </motion.button>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">QR Code</h3>
+                <div className="w-10" />
               </div>
-              <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">
-                {option.id === "copy" && copiedFeedback ? "Copied!" : option.label}
-              </span>
-            </motion.button>
-          ))}
-        </div>
+
+              {/* QR Code */}
+              <div className="flex justify-center py-4">
+                <div className="bg-white p-4 rounded-2xl shadow-lg">
+                  <QRCodeSVG
+                    id="share-qr-code"
+                    value={currentUrl}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                  />
+                </div>
+              </div>
+
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">Scan to visit this profile</p>
+
+              {/* URL display */}
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400 break-all text-center">{currentUrl}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleDownloadQR}
+                  className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
+                >
+                  <Download size={18} />
+                  Download
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(currentUrl);
+                    setCopiedFeedback(true);
+                    setTimeout(() => setCopiedFeedback(false), 2000);
+                  }}
+                  className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2"
+                >
+                  {copiedFeedback ? <Check size={18} /> : <Copy size={18} />}
+                  {copiedFeedback ? "Copied!" : "Copy Link"}
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div key="share-options" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <h3 className="text-lg font-bold text-center mb-6 text-gray-900 dark:text-white">Share Profile</h3>
+
+              {/* QR Code Button */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowQR(true)}
+                className="w-full flex items-center gap-4 p-4 mb-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700"
+              >
+                <div className="w-14 h-14 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
+                  <QrCode size={28} className="text-gray-700 dark:text-gray-300" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-gray-900 dark:text-white">QR Code</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Scan to share instantly</p>
+                </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </motion.button>
+
+              {/* Share Options Grid */}
+              <div className="grid grid-cols-4 gap-5">
+                {shareOptions.map((option) => (
+                  <motion.button
+                    key={option.id}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={option.action}
+                    className="flex flex-col items-center gap-2 relative"
+                  >
+                    <div className={`w-14 h-14 rounded-2xl ${option.color} flex items-center justify-center shadow-lg`}>
+                      {option.id === "copy" && copiedFeedback ? (
+                        <Check size={24} className="text-white" />
+                      ) : (
+                        <option.icon size={24} className="text-white" />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">
+                      {option.id === "copy" && copiedFeedback ? "Copied!" : option.label}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   );
 };
 
-const QRCodeModal = ({ isOpen, onClose }) => {
+const QRCodeModal = ({ isOpen, onClose, vendorName }) => {
   const [copied, setCopied] = useState(false);
   useBodyScrollLock(isOpen);
 
@@ -4328,6 +6105,32 @@ const QRCodeModal = ({ isOpen, onClose }) => {
     navigator.clipboard.writeText(currentUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadQR = () => {
+    const svg = document.getElementById("qr-modal-code");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width * 2;
+      canvas.height = img.height * 2;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = "profile_QR.png";
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   if (!isOpen) return null;
@@ -4359,56 +6162,21 @@ const QRCodeModal = ({ isOpen, onClose }) => {
           </motion.button>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl mb-4 flex items-center justify-center">
-          <div className="w-48 h-48 bg-gray-100 rounded-xl flex items-center justify-center relative overflow-hidden">
-            {/* QR Code SVG Pattern */}
-            <svg viewBox="0 0 200 200" className="w-full h-full p-2">
-              <rect fill="#000" x="10" y="10" width="60" height="60" rx="4" />
-              <rect fill="#fff" x="20" y="20" width="40" height="40" rx="2" />
-              <rect fill="#000" x="28" y="28" width="24" height="24" rx="2" />
-
-              <rect fill="#000" x="130" y="10" width="60" height="60" rx="4" />
-              <rect fill="#fff" x="140" y="20" width="40" height="40" rx="2" />
-              <rect fill="#000" x="148" y="28" width="24" height="24" rx="2" />
-
-              <rect fill="#000" x="10" y="130" width="60" height="60" rx="4" />
-              <rect fill="#fff" x="20" y="140" width="40" height="40" rx="2" />
-              <rect fill="#000" x="28" y="148" width="24" height="24" rx="2" />
-
-              <rect fill="#000" x="80" y="10" width="12" height="12" />
-              <rect fill="#000" x="100" y="10" width="12" height="12" />
-              <rect fill="#000" x="80" y="30" width="12" height="12" />
-              <rect fill="#000" x="100" y="50" width="12" height="12" />
-              <rect fill="#000" x="80" y="50" width="12" height="12" />
-
-              <rect fill="#000" x="10" y="80" width="12" height="12" />
-              <rect fill="#000" x="30" y="80" width="12" height="12" />
-              <rect fill="#000" x="50" y="100" width="12" height="12" />
-              <rect fill="#000" x="10" y="100" width="12" height="12" />
-
-              <rect fill="#000" x="80" y="80" width="40" height="40" rx="4" />
-              <rect fill="#fff" x="88" y="88" width="24" height="24" rx="2" />
-              <rect fill="#000" x="94" y="94" width="12" height="12" rx="1" />
-
-              <rect fill="#000" x="130" y="80" width="12" height="12" />
-              <rect fill="#000" x="150" y="80" width="12" height="12" />
-              <rect fill="#000" x="170" y="100" width="12" height="12" />
-              <rect fill="#000" x="130" y="100" width="12" height="12" />
-
-              <rect fill="#000" x="80" y="130" width="12" height="12" />
-              <rect fill="#000" x="100" y="150" width="12" height="12" />
-              <rect fill="#000" x="80" y="170" width="12" height="12" />
-
-              <rect fill="#000" x="130" y="130" width="60" height="12" />
-              <rect fill="#000" x="130" y="150" width="12" height="12" />
-              <rect fill="#000" x="160" y="150" width="12" height="12" />
-              <rect fill="#000" x="130" y="170" width="40" height="12" />
-              <rect fill="#000" x="178" y="170" width="12" height="12" />
-            </svg>
-          </div>
+        {/* Real QR Code */}
+        <div className="bg-white p-4 rounded-2xl mb-4 flex items-center justify-center shadow-inner">
+          <QRCodeSVG
+            id="qr-modal-code"
+            value={currentUrl}
+            size={192}
+            level="H"
+            includeMargin={true}
+            bgColor="#ffffff"
+            fgColor="#000000"
+          />
         </div>
 
-        <p className="text-center text-sm text-gray-500 mb-4 break-all px-2">{currentUrl}</p>
+        {/* <p className="text-center text-sm text-gray-500 mb-4 break-all px-2">{currentUrl}</p> */}
+        <p className="text-center text-sm text-gray-500 mb-4 break-all px-2">{`${vendorName}'s Profile Page`}</p>
 
         <div className="flex gap-3">
           <motion.button
@@ -4421,17 +6189,27 @@ const QRCodeModal = ({ isOpen, onClose }) => {
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({ url: currentUrl });
-              }
-            }}
+            onClick={handleDownloadQR}
             className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2"
           >
-            <Share2 size={18} />
-            Share
+            <Download size={18} />
+            Download
           </motion.button>
         </div>
+
+        {/* Share button */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({ url: currentUrl });
+            }
+          }}
+          className="w-full mt-3 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
+        >
+          <Share2 size={18} />
+          Share
+        </motion.button>
       </motion.div>
     </motion.div>
   );
@@ -4543,7 +6321,7 @@ const PostPreviewModal = ({ post, onClose }) => {
         className="w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl"
       >
         <SmartMedia
-          src={post.fullImage || post.thumbnail}
+          src={post.mediaUrl || post.thumbnail}
           type="image"
           className="w-full h-full object-cover"
           loaderImage="/GlowLoadingGif.gif"
@@ -4571,8 +6349,17 @@ const PostPreviewModal = ({ post, onClose }) => {
 const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, onArchive }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editedCaption, setEditedCaption] = useState(post?.caption || "");
+  const [editedCaption, setEditedCaption] = useState(post?.caption || post?.description || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useBodyScrollLock(isOpen);
+
+  // Reset caption when post changes
+  useEffect(() => {
+    if (post) {
+      setEditedCaption(post.caption || post.description || "");
+    }
+  }, [post]);
 
   const handleDelete = () => {
     setShowDeleteConfirm(false);
@@ -4580,15 +6367,49 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, o
     onClose();
   };
 
-  const handleEdit = () => {
-    onEdit?.(editedCaption);
-    setShowEditModal(false);
-    onClose();
+  const handleEdit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      if (onEdit) {
+        await onEdit(editedCaption);
+      }
+      setShowEditModal(false);
+      onClose();
+    } catch (error) {
+      console.error("Edit error:", error);
+      alert("Failed to update caption");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleArchive = () => {
     onArchive?.();
     onClose();
+  };
+
+  const handleDownload = async () => {
+    if (!post?.mediaUrl) return;
+
+    try {
+      const response = await fetch(post.mediaUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const extension = post.mediaType === "video" ? "mp4" : "jpg";
+      a.download = `post_${post._id || Date.now()}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      onClose();
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download");
+    }
   };
 
   if (!isOpen) return null;
@@ -4603,9 +6424,31 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, o
         onClose();
       },
     },
-    { id: "edit", label: "Edit Caption", icon: Type, action: () => setShowEditModal(true) },
-    { id: "archive", label: "Archive", icon: Bookmark, action: handleArchive },
-    { id: "delete", label: "Delete", icon: X, action: () => setShowDeleteConfirm(true), danger: true },
+    {
+      id: "download",
+      label: "Download",
+      icon: Download,
+      action: handleDownload,
+    },
+    {
+      id: "edit",
+      label: "Edit Caption",
+      icon: Type,
+      action: () => setShowEditModal(true),
+    },
+    // {
+    //   id: "archive",
+    //   label: "Archive",
+    //   icon: Bookmark,
+    //   action: handleArchive,
+    // },
+    {
+      id: "delete",
+      label: "Delete",
+      icon: Trash2,
+      action: () => setShowDeleteConfirm(true),
+      danger: true,
+    },
   ];
 
   return (
@@ -4650,18 +6493,27 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, o
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setShowEditModal(false);
-                    setEditedCaption(post?.caption || "");
+                    setEditedCaption(post?.caption || post?.description || "");
                   }}
-                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-gray-700 dark:text-gray-300"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-gray-700 dark:text-gray-300 disabled:opacity-50"
                 >
                   Cancel
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleEdit}
-                  className="flex-1 py-3 bg-blue-500 rounded-xl font-semibold text-white"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-500 rounded-xl font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Save
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
                 </motion.button>
               </div>
             </motion.div>
@@ -4705,9 +6557,9 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, o
               exit={{ opacity: 0 }}
               className="space-y-1"
             >
-              {options.map((option, idx) => (
+              {options.map((option) => (
                 <React.Fragment key={option.id}>
-                  {idx === 4 && <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />}
+                  {option.danger && <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />}
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={option.action}
@@ -4730,14 +6582,73 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, o
   );
 };
 
-const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare }) => {
+const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare, onEdit }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState(reel?.title || "");
+  const [editCaption, setEditCaption] = useState(reel?.caption || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useBodyScrollLock(isOpen);
+
+  // Reset edit fields when reel changes
+  useEffect(() => {
+    if (reel) {
+      setEditTitle(reel.title || "");
+      setEditCaption(reel.caption || "");
+    }
+  }, [reel]);
 
   const handleDelete = () => {
     setShowDeleteConfirm(false);
     onDelete();
     onClose();
+  };
+
+  const handleSaveEdit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      if (onEdit) {
+        const result = await onEdit(editCaption, editTitle);
+        if (result?.success !== false) {
+          setShowEditModal(false);
+          onClose();
+        } else {
+          alert(result?.error || "Failed to update reel");
+        }
+      } else {
+        setShowEditModal(false);
+        onClose();
+      }
+    } catch (error) {
+      console.error("Edit error:", error);
+      alert("Failed to update reel");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!reel?.videoUrl) return;
+
+    try {
+      const response = await fetch(reel.videoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reel_${reel._id || Date.now()}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      onClose();
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download video");
+    }
   };
 
   if (!isOpen) return null;
@@ -4752,9 +6663,25 @@ const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare }) => {
         onClose();
       },
     },
-    { id: "download", label: "Download", icon: Upload, action: onClose },
-    { id: "edit", label: "Edit Caption", icon: Type, action: onClose },
-    { id: "delete", label: "Delete Reel", icon: X, action: () => setShowDeleteConfirm(true), danger: true },
+    {
+      id: "download",
+      label: "Download",
+      icon: Download,
+      action: handleDownload,
+    },
+    {
+      id: "edit",
+      label: "Edit Reel",
+      icon: Type,
+      action: () => setShowEditModal(true),
+    },
+    {
+      id: "delete",
+      label: "Delete Reel",
+      icon: Trash2,
+      action: () => setShowDeleteConfirm(true),
+      danger: true,
+    },
   ];
 
   return (
@@ -4776,7 +6703,73 @@ const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare }) => {
         <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-5" />
 
         <AnimatePresence mode="wait">
-          {showDeleteConfirm ? (
+          {showEditModal ? (
+            <motion.div
+              key="edit-modal"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-4"
+            >
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Edit Reel</h3>
+              </div>
+
+              {/* Title Input */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter title..."
+                />
+              </div>
+
+              {/* Caption Input */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Caption</label>
+                <textarea
+                  value={editCaption}
+                  onChange={(e) => setEditCaption(e.target.value)}
+                  className="w-full p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-900 dark:text-white resize-none outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={4}
+                  placeholder="Write a caption..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditTitle(reel?.title || "");
+                    setEditCaption(reel?.caption || "");
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSaveEdit}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-500 rounded-xl font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : showDeleteConfirm ? (
             <motion.div
               key="delete-confirm"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -4818,7 +6811,7 @@ const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare }) => {
             >
               {options.map((option, idx) => (
                 <React.Fragment key={option.id}>
-                  {idx === 4 && <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />}
+                  {option.danger && <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />}
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={option.action}
@@ -5024,14 +7017,31 @@ const formatBio = (bio) => {
 const VendorProfilePageWrapper = () => {
   const { id, category } = useParams();
   const router = useRouter();
+  const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
 
   const [vendor, setVendor] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [vendorLoading, setVendorLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
-  const [activeTab, setActiveTab] = useState("posts");
+  const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["posts", "reels", "portfolio", "services"].includes(tab)) {
+        return tab;
+      }
+    }
+    return "posts";
+  });
+
+  const [playingVideoId, setPlayingVideoId] = useState(null);
+  const videoRefs = useRef({});
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -5048,22 +7058,35 @@ const VendorProfilePageWrapper = () => {
   const [selectedReelIndex, setSelectedReelIndex] = useState(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState(null);
 
-  const [trustCount, setTrustCount] = useState(248);
+  const [trustCount, setTrustCount] = useState(0);
   const [hasTrusted, setHasTrusted] = useState(false);
-  const [likesCount, setLikesCount] = useState(2534);
+  const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
+  const [userStateReady, setUserStateReady] = useState(false);
+  const [interactionsLoading, setInteractionsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
 
   const [showThumbsUpAnimation, setShowThumbsUpAnimation] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState({ show: false, message: "", type: "success", icon: Check });
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [signInPromptMessage, setSignInPromptMessage] = useState("Please sign in to continue");
 
   const [showQRModal, setShowQRModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [previewPost, setPreviewPost] = useState(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
-  const [activeDetailsTab, setActiveDetailsTab] = useState("overview");
+  const [activeDetailsTab, setActiveDetailsTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const detailsTab = params.get("details");
+      if (detailsTab) {
+        return detailsTab;
+      }
+    }
+    return "overview";
+  });
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [reviews, setReviews] = useState([]);
@@ -5076,150 +7099,438 @@ const VendorProfilePageWrapper = () => {
   const dragStartX = useRef(0);
   const isDragging = useRef(false);
 
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "smooth",
-    });
-  }, []);
+  const lastFetchedVendorId = useRef(null);
+  const lastFetchedProfileId = useRef(null);
+  const lastFetchedReviewsId = useRef(null);
 
-  // Replace MOCK_POSTS and MOCK_REELS with state
-  const [posts, setPosts] = useState(MOCK_POSTS.slice(0, 6));
-  const [reels, setReels] = useState(MOCK_REELS.slice(0, 12));
+  const [posts, setPosts] = useState([]);
+  const [reels, setReels] = useState([]);
 
   const { scrollY } = useScroll();
   const headerOpacity = useTransform(scrollY, [0, 60], [0, 1]);
 
   const highlightsContainerRef = useRef(null);
+  const urlParamsProcessedRef = useRef(false);
+  const initialFetchDoneRef = useRef(false);
+  const onboardingHandledRef = useRef(false);
+
+  const handleVerifyIdentity = () => {
+    setShowVerifyModal(true);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`/api/vendor/${id}`);
-        if (!response.ok) throw new Error("Failed to fetch");
-        const data = await response.json();
-        setVendor(data);
-        setProfile(data.vendorProfile || (Array.isArray(data.vendorProfile) ? data.vendorProfile[0] : {}));
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchData();
-  }, [id]);
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, []);
 
-  // NEW: Separate useEffect to check vendor profile existence
+  // ============ VENDOR DATA FETCH ============
   useEffect(() => {
-    const checkVendorProfile = async () => {
-      if (!id) return;
+    if (!id || lastFetchedVendorId.current === id) return;
+    // DON'T set ref here - move it to after successful fetch
 
-      setProfileLoading(true);
+    let cancelled = false;
+
+    const fetchVendorData = async () => {
+      setVendorLoading(true);
       try {
-        const response = await fetch(`/api/vendor/${id}/profile?vendorId=${id}`);
-        const data = await response.json();
-
-        if (response.ok && data.success && data.data) {
-          // Profile exists
-          setProfile(data.data);
-          setShowOnboarding(false);
-        } else {
-          // Profile doesn't exist - set empty object to show page
-          setProfile({});
-          setShowOnboarding(true);
+        const res = await fetch(`/api/vendor/${id}`);
+        const data = res.ok ? await res.json() : null;
+        if (!cancelled) {
+          setVendor(data);
+          lastFetchedVendorId.current = id; // SET HERE after successful update
         }
       } catch (error) {
-        console.error("Error checking vendor profile:", error);
-        // On error, assume profile doesn't exist
-        setProfile(null);
-        setShowOnboarding(true);
+        console.error("Vendor fetch error:", error);
+        if (!cancelled) {
+          setVendor(null);
+          lastFetchedVendorId.current = id; // Also set on error to prevent retry loops
+        }
       } finally {
-        setProfileLoading(false);
+        if (!cancelled) {
+          setVendorLoading(false);
+        }
       }
     };
 
-    // Only check profile after vendor data is loaded
-    if (vendor && !loading) {
-      checkVendorProfile();
-    }
-  }, [id, vendor, loading]);
+    fetchVendorData();
 
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  // ============ PROFILE DATA FETCH ============
   useEffect(() => {
-    const handleFetchReviews = async () => {
+    if (!id || lastFetchedProfileId.current === id) return;
+    // DON'T set ref here - move it to after successful fetch
+
+    let cancelled = false;
+
+    const fetchProfileData = async () => {
+      setProfileLoading(true);
+      try {
+        const res = await fetch(`/api/vendor/${id}/profile?vendorId=${id}`);
+        const data = await res.json();
+        if (!cancelled) {
+          const profileData = data?.success ? data.data : null;
+          setProfile(profileData || {});
+          setShowOnboarding(!profileData);
+
+          // Initialize counts from profile
+          if (profileData) {
+            setTrustCount(profileData?.trust || 0);
+            setLikesCount(profileData.likes?.length || 0);
+
+            setPosts(Array.isArray(profileData.posts) ? profileData.posts : []);
+            setReels(Array.isArray(profileData.reels) ? profileData.reels : []);
+          }
+
+          initialFetchDoneRef.current = true;
+          lastFetchedProfileId.current = id; // SET HERE after successful update
+        }
+      } catch (error) {
+        console.error("Profile fetch error:", error);
+        if (!cancelled) {
+          setProfile({});
+          setShowOnboarding(true);
+          initialFetchDoneRef.current = true;
+          lastFetchedProfileId.current = id; // Also set on error
+        }
+      } finally {
+        if (!cancelled) {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    fetchProfileData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  // ============ REVIEWS DATA FETCH ============
+  useEffect(() => {
+    if (!id || lastFetchedReviewsId.current === id) return;
+    // DON'T set ref here - move it to after successful fetch
+
+    let cancelled = false;
+
+    const fetchReviewsData = async () => {
       try {
         const res = await fetch(`/api/vendor/${id}/reviews`);
         const data = await res.json();
-
-        if (data.success) {
-          setReviews(data.data.reviews);
+        if (!cancelled) {
+          setReviews(data?.success ? data?.data?.reviews : []);
+          lastFetchedReviewsId.current = id; // SET HERE after successful update
         }
       } catch (error) {
-        console.error("Error logging profile visit:", error);
+        console.error("Reviews fetch error:", error);
+        if (!cancelled) {
+          setReviews([]);
+          lastFetchedReviewsId.current = id; // Also set on error
+        }
       }
     };
-    handleFetchReviews();
+
+    fetchReviewsData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (profileLoading || !isUserLoaded) return;
+
+    if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
+      setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
+      setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
+    }
+    setUserStateReady(true);
+  }, [profileLoading, isUserLoaded, isSignedIn, user?.id, profile]);
+
+  useEffect(() => {
+    // Reset URL-related refs when vendor ID changes
+    urlParamsProcessedRef.current = false;
+    initialFetchDoneRef.current = false;
+    onboardingHandledRef.current = false;
+  }, [id]);
+
+  // ============ URL PARAMS - READ ON MOUNT ============
+  useEffect(() => {
+    if (profileLoading || urlParamsProcessedRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get("post");
+    const reelIndex = params.get("reel");
+
+    if (postId && posts.length > 0) {
+      const post = posts.find((p) => p._id === postId);
+      if (post) setSelectedPost(post);
+    }
+
+    if (reelIndex !== null && reels.length > 0) {
+      const index = parseInt(reelIndex, 10);
+      if (!isNaN(index) && index >= 0 && index < reels.length) {
+        setSelectedReelIndex(index);
+      }
+    }
+
+    urlParamsProcessedRef.current = true;
+  }, [profileLoading, posts, reels]);
+
+  // ============ URL PARAMS - WRITE UPDATES (DEBOUNCED) ============
+  const updateURLParamsDebounced = useCallback(() => {
+    if (typeof window === "undefined" || !initialFetchDoneRef.current) return;
+
+    const url = new URL(window.location.href);
+
+    // Tab param
+    url.searchParams.set("tab", activeTab);
+
+    // Details tab (only for services)
+    if (activeTab === "services") {
+      url.searchParams.set("details", activeDetailsTab);
+    } else {
+      url.searchParams.delete("details");
+    }
+
+    // Post param
+    if (selectedPost) {
+      url.searchParams.set("post", selectedPost._id);
+    } else {
+      url.searchParams.delete("post");
+    }
+
+    // Reel param
+    if (selectedReelIndex !== null) {
+      url.searchParams.set("reel", selectedReelIndex.toString());
+    } else {
+      url.searchParams.delete("reel");
+    }
+
+    window.history.replaceState({}, "", url.toString());
+  }, [activeTab, activeDetailsTab, selectedPost, selectedReelIndex]);
+
+  // Single useEffect for URL updates with debounce
+  useEffect(() => {
+    if (!initialFetchDoneRef.current) return;
+
+    const timer = setTimeout(updateURLParamsDebounced, 100);
+    return () => clearTimeout(timer);
+  }, [updateURLParamsDebounced]);
+
+  const requireSignIn = useCallback((message = "Please sign in to continue") => {
+    setSignInPromptMessage(message);
+    setShowSignInPrompt(true);
   }, []);
+
+  const updateURLParams = useCallback((updates) => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") {
+        url.searchParams.delete(key);
+      } else {
+        url.searchParams.set(key, value);
+      }
+    });
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["posts", "reels", "portfolio", "services"].includes(tab)) {
+        setActiveTab(tab);
+      }
+      const detailsTab = params.get("details");
+      if (detailsTab) {
+        setActiveDetailsTab(detailsTab);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!isSignedIn && !isVerified) {
+      showUIConfirmation("Verify your identity to access all features", "info", InfoIcon);
+      return;
+    }
+    const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+
+    const uploadParam = params.get("upload");
+    const updateParam = params.get("update");
+
+    if (uploadParam === "true") {
+      setShowUploadModal(true);
+    }
+
+    if (updateParam === "true") {
+      setShowUpdateProfileDrawer(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (onboardingHandledRef.current || profileLoading || !isUserLoaded) return;
+
+    const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const onboardingParam = params?.get("onboarding");
+
+    if (onboardingParam === "true" && showOnboarding && !openOnboardingDrawer) {
+      onboardingHandledRef.current = true;
+      if (!isSignedIn || !user?.id) {
+        requireSignIn("Please sign in to proceed");
+      } else {
+        setOpenOnboardingDrawer(true);
+      }
+    }
+  }, [profileLoading, isUserLoaded, isSignedIn, user?.id, showOnboarding, openOnboardingDrawer, requireSignIn]);
 
   const showUIConfirmation = useCallback((message, type = "success", icon = Check) => {
     setShowConfirmation({ show: true, message, type, icon });
     setTimeout(() => setShowConfirmation({ show: false, message: "", type: "success", icon: Check }), 2000);
   }, []);
 
+  useEffect(() => {
+    if (showSignInPrompt) {
+      const timer = setTimeout(() => setShowSignInPrompt(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSignInPrompt]);
+
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
 
   const handleShare = useCallback(() => {
-    if (navigator.share) {
-      navigator
-        .share({ title: vendor?.name, text: `Check out ${vendor?.name}!`, url: window.location.href })
-        .catch(() => setShowShareModal(true));
-    } else {
-      setShowShareModal(true);
-    }
+    // if (navigator.share) {
+    //   navigator
+    //     .share({ title: vendor?.name, text: `Check out ${vendor?.name}!`, url: window.location.href })
+    //     .catch(() => setShowShareModal(true));
+    // } else {
+    setShowShareModal(true);
+    // }
   }, [vendor]);
 
   const handleProfileCreated = useCallback(
     (newProfile) => {
       setProfile(newProfile);
       setShowOnboarding(false);
-
-      setVendor((prev) => ({
-        ...prev,
-        vendorProfile: newProfile,
-      }));
-
+      setVendor((prev) => ({ ...prev, vendorProfile: newProfile }));
       showUIConfirmation("Profile created successfully!", "success", CheckCircle);
       window.location.reload();
     },
-    [showUIConfirmation]
+    [showUIConfirmation],
   );
 
-  const handleTrust = useCallback(() => {
-    if (!hasTrusted) {
+  const handleTrust = useCallback(async () => {
+    if (!isSignedIn || !user?.id) {
+      requireSignIn("Please sign in to trust vendors");
+      return;
+    }
+    if (interactionsLoading) return;
+
+    const newTrustState = !hasTrusted;
+    const previousTrustState = hasTrusted;
+    const previousTrustCount = trustCount;
+    const trustChange = newTrustState ? 5 : -5;
+    const newTrustCount = Math.max(0, previousTrustCount + trustChange);
+
+    setHasTrusted(newTrustState);
+    setTrustCount(newTrustCount);
+
+    if (newTrustState) {
       setShowThumbsUpAnimation(true);
       setTimeout(() => setShowThumbsUpAnimation(false), 1200);
-      setTrustCount((prev) => prev + 5);
-      setHasTrusted(true);
-    } else {
-      setTrustCount((prev) => prev - 5);
-      setHasTrusted(false);
-      showUIConfirmation("Trust removed", "info", Shield);
     }
-  }, [hasTrusted, showUIConfirmation]);
 
-  const handleLike = useCallback(() => {
-    if (!hasLiked) {
-      setLikesCount((prev) => prev + 1);
-      setHasLiked(true);
-      showUIConfirmation("Vendor liked!", "success", Heart);
-    } else {
-      setLikesCount((prev) => prev - 1);
-      setHasLiked(false);
-      showUIConfirmation("Like removed", "info", Heart);
+    setInteractionsLoading(true);
+
+    try {
+      const response = await fetch(`/api/vendor/${id}/profile/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "trust", value: newTrustState, userId: user.id }),
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        setHasTrusted(previousTrustState);
+        setTrustCount(previousTrustCount);
+        showUIConfirmation(result.error || "Failed to update trust", "error", AlertCircle);
+        return;
+      }
+
+      const serverTrustCount = Math.max(0, result.data?.trust ?? newTrustCount);
+      setTrustCount(serverTrustCount);
+
+      if (newTrustState) {
+        showUIConfirmation("Vendor trusted! +5", "success", Shield);
+      } else {
+        showUIConfirmation("Trust removed", "info", Shield);
+      }
+    } catch (error) {
+      console.error("Trust update error:", error);
+      setHasTrusted(previousTrustState);
+      setTrustCount(previousTrustCount);
+      showUIConfirmation("Network error. Please try again.", "error", AlertCircle);
+    } finally {
+      setInteractionsLoading(false);
     }
-  }, [hasLiked, showUIConfirmation]);
+  }, [hasTrusted, trustCount, id, interactionsLoading, showUIConfirmation, isSignedIn, user?.id, requireSignIn]);
+
+  const handleLike = useCallback(async () => {
+    if (!isSignedIn || !user?.id) {
+      requireSignIn("Please sign in to Like/dislike vendors");
+      return;
+    }
+    if (interactionsLoading) return;
+
+    const newLikeState = !hasLiked;
+    const previousLikeState = hasLiked;
+    const previousLikesCount = likesCount;
+    const newLikesCount = newLikeState ? previousLikesCount + 1 : Math.max(0, previousLikesCount - 1);
+
+    setHasLiked(newLikeState);
+    setLikesCount(newLikesCount);
+    setInteractionsLoading(true);
+
+    try {
+      const response = await fetch(`/api/vendor/${id}/profile/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "like", value: newLikeState, userId: user.id }),
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        setHasLiked(previousLikeState);
+        setLikesCount(previousLikesCount);
+        showUIConfirmation(result.error || "Failed to update like", "error", AlertCircle);
+        return;
+      }
+
+      const serverLikesCount = Math.max(0, result.data?.likesCount ?? newLikesCount);
+      setLikesCount(serverLikesCount);
+
+      if (newLikeState) {
+        showUIConfirmation("Vendor liked!", "success", Heart);
+      } else {
+        showUIConfirmation("Like removed", "info", Heart);
+      }
+    } catch (error) {
+      console.error("Like update error:", error);
+      setHasLiked(previousLikeState);
+      setLikesCount(previousLikesCount);
+      showUIConfirmation("Network error. Please try again.", "error", AlertCircle);
+    } finally {
+      setInteractionsLoading(false);
+    }
+  }, [hasLiked, likesCount, id, interactionsLoading, showUIConfirmation, isSignedIn, user?.id, requireSignIn]);
 
   const handleSaveProfile = useCallback(() => {
     setIsSaved((prev) => !prev);
@@ -5247,56 +7558,126 @@ const VendorProfilePageWrapper = () => {
   }, [showUIConfirmation]);
 
   const handleDeletePost = useCallback(
-    (postId) => {
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      setSelectedPost(null);
-      showUIConfirmation("Post deleted", "success", Check);
+    async (postId) => {
+      try {
+        const response = await fetch(`/api/vendor/${id}/profile/posts?postId=${postId}`, { method: "DELETE" });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "Delete failed");
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+        setSelectedPost(null);
+        showUIConfirmation("Post deleted", "success", Check);
+      } catch (error) {
+        console.error("Delete post error:", error);
+        showUIConfirmation(error.message || "Failed to delete post", "error", AlertCircle);
+      }
     },
-    [showUIConfirmation]
+    [id, showUIConfirmation],
   );
 
   const handleEditPost = useCallback(
-    (postId, newCaption) => {
-      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, caption: newCaption } : p)));
-      showUIConfirmation("Caption updated", "success", Check);
+    async (postId, newCaption) => {
+      try {
+        const formData = new FormData();
+        formData.append("description", newCaption);
+        const response = await fetch(`/api/vendor/${id}/profile/posts?postId=${postId}`, {
+          method: "PUT",
+          body: formData,
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "Update failed");
+        setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, caption: newCaption } : p)));
+        showUIConfirmation("Caption updated", "success", Check);
+      } catch (error) {
+        console.error("Edit post error:", error);
+        showUIConfirmation(error.message || "Failed to update post", "error", AlertCircle);
+      }
     },
-    [showUIConfirmation]
+    [id, showUIConfirmation],
   );
 
   const handleArchivePost = useCallback(
     (postId) => {
       const postToArchive = posts.find((p) => p.id === postId);
       if (postToArchive) {
-        setArchivedPosts((prev) => [...prev, postToArchive]);
+        setArchivedPosts((prev) => [...prev, { ...postToArchive, archivedAt: new Date().toISOString() }]);
         setPosts((prev) => prev.filter((p) => p.id !== postId));
         setSelectedPost(null);
         showUIConfirmation("Post archived", "success", Bookmark);
       }
     },
-    [posts, showUIConfirmation]
+    [posts, showUIConfirmation],
   );
 
   const handleDeleteReel = useCallback(
-    (reelId) => {
-      setReels((prev) => prev.filter((r) => r.id !== reelId));
-      showUIConfirmation("Reel deleted", "success", Check);
+    async (reelId) => {
+      try {
+        const response = await fetch(`/api/vendor/${id}/profile/reels?reelId=${reelId}`, { method: "DELETE" });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "Delete failed");
+        setReels((prev) => prev.filter((r) => r.id !== reelId));
+        setSelectedReelIndex(null);
+        showUIConfirmation("Reel deleted", "success", Check);
+      } catch (error) {
+        console.error("Delete reel error:", error);
+        showUIConfirmation(error.message || "Failed to delete reel", "error", AlertCircle);
+      }
     },
-    [showUIConfirmation]
+    [id, showUIConfirmation],
   );
 
   const handleUploadPost = useCallback((newPost) => {
-    setPosts((prev) => [newPost, ...prev].slice(0, 6));
+    if (!newPost || !newPost.mediaUrl) {
+      console.error("Invalid post data received:", newPost);
+      return;
+    }
+    const transformedPost = {
+      id: newPost._id?.toString() || newPost._id || Date.now().toString(),
+      thumbnail: newPost.mediaUrl,
+      mediaUrl: newPost.mediaUrl,
+      mediaType: newPost.mediaType || "image",
+      storagePath: newPost.storagePath || null,
+      caption: newPost.description || "",
+      likes: 0,
+      comments: 0,
+      date: new Date().toLocaleDateString(),
+      location: newPost.location || "",
+      isLiked: false,
+      isSaved: false,
+    };
+    setPosts((prev) => [transformedPost, ...prev].slice(0, 6));
   }, []);
 
   const handleUploadReel = useCallback((newReel) => {
-    setReels((prev) => [newReel, ...prev].slice(0, 12));
+    if (!newReel || !newReel.videoUrl) {
+      console.error("Invalid reel data received");
+      return;
+    }
+    const transformedReel = {
+      id: newReel._id?.toString() || newReel._id || Date.now().toString(),
+      thumbnail: newReel.thumbnail || newReel.videoUrl,
+      videoUrl: newReel.videoUrl,
+      storagePath: newReel.storagePath,
+      thumbnailPath: newReel.thumbnailPath,
+      title: newReel.title || "Untitled",
+      caption: newReel.caption || "",
+      views: 0,
+      likes: 0,
+      duration: "0:30",
+      date: new Date().toLocaleDateString(),
+      isLiked: false,
+      isSaved: false,
+    };
+    setReels((prev) => [transformedReel, ...prev].slice(0, 12));
   }, []);
 
   const handleCopyLink = useCallback(() => {
+    navigator.clipboard?.writeText(window.location.href);
     showUIConfirmation("Link copied!", "success", Copy);
   }, [showUIConfirmation]);
 
   const openImageModal = useCallback((index) => {
+    // Reset zoom when opening new image
+    setImageZoom(1);
     setModalImageIndex(index);
     setShowImageModal(true);
   }, []);
@@ -5319,10 +7700,55 @@ const VendorProfilePageWrapper = () => {
         preloadLinks.push(link);
       }
     });
-    return () => {
-      preloadLinks.forEach((link) => link.remove());
-    };
+    return () => preloadLinks.forEach((link) => link.remove());
   }, [images]);
+
+  const handleEditReel = useCallback(
+    async (reelId, newCaption, newTitle = null) => {
+      try {
+        const formData = new FormData();
+        if (newCaption !== null && newCaption !== undefined) formData.append("caption", newCaption);
+        if (newTitle !== null && newTitle !== undefined) formData.append("title", newTitle);
+        const response = await fetch(`/api/vendor/${id}/profile/reels?reelId=${reelId}`, {
+          method: "PUT",
+          body: formData,
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "Update failed");
+        setReels((prev) =>
+          prev.map((r) =>
+            r.id === reelId ? { ...r, caption: newCaption ?? r.caption, title: newTitle ?? r.title } : r,
+          ),
+        );
+        showUIConfirmation("Reel updated", "success", Check);
+        return { success: true };
+      } catch (error) {
+        console.error("Edit reel error:", error);
+        showUIConfirmation(error.message || "Failed to update reel", "error", AlertCircle);
+        return { success: false, error: error.message };
+      }
+    },
+    [id, showUIConfirmation],
+  );
+
+  const handleRestorePost = useCallback(
+    (postId) => {
+      const postToRestore = archivedPosts.find((p) => p.id === postId);
+      if (!postToRestore) {
+        showUIConfirmation("Archived post not found", "error", AlertCircle);
+        return;
+      }
+      if (posts.length >= 6) {
+        showUIConfirmation("Maximum posts limit reached", "error", AlertCircle);
+        return;
+      }
+      const { archivedAt, ...restoredPost } = postToRestore;
+      setPosts((prev) => [restoredPost, ...prev]);
+      setArchivedPosts((prev) => prev.filter((p) => p.id !== postId));
+      showUIConfirmation("Post restored", "success", Check);
+    },
+    [posts, archivedPosts, showUIConfirmation],
+  );
 
   const handleTouchStart = useCallback((e) => {
     if (e.touches.length !== 1) return;
@@ -5330,18 +7756,54 @@ const VendorProfilePageWrapper = () => {
     isDragging.current = true;
   }, []);
 
+  // Add this callback function (with other handlers)
+  const handleProfileUpdated = useCallback(
+    (updatedProfile) => {
+      setProfile(updatedProfile);
+      showUIConfirmation("Profile updated successfully!", "success", CheckCircle);
+    },
+    [showUIConfirmation],
+  );
+
   const stats = useMemo(
     () => [
-      { label: "Reviews", value: "124", action: () => setShowReviewsDrawer(true) },
-      { label: "Trust", value: trustCount.toString(), action: handleTrust, active: hasTrusted },
+      {
+        label: "Reviews",
+        value: reviews?.length?.toString(),
+        action: () => setShowReviewsDrawer(true),
+        active: false,
+        loading: false,
+        showSkeleton: false, // Reviews have their own loading, no skeleton needed here
+      },
+      {
+        label: "Trust",
+        value: trustCount >= 1000 ? `${(trustCount / 1000).toFixed(1)}K` : trustCount?.toString(),
+        action: handleTrust,
+        active: hasTrusted && isSignedIn,
+        loading: interactionsLoading,
+        showSkeleton: profileLoading, // Shows skeleton while profile is loading
+      },
       {
         label: "Likes",
-        value: likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount.toString(),
+        value: likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount?.toString(),
         action: handleLike,
-        active: hasLiked,
+        active: hasLiked && isSignedIn,
+        loading: interactionsLoading,
+        showSkeleton: profileLoading, // Shows skeleton while profile is loading
       },
     ],
-    [trustCount, hasTrusted, likesCount, hasLiked, handleTrust, handleLike]
+    [
+      trustCount,
+      hasTrusted,
+      likesCount,
+      hasLiked,
+      handleTrust,
+      handleLike,
+      reviews?.length,
+      interactionsLoading,
+      isSignedIn,
+      profileLoading,
+    ],
   );
 
   const TAB_CONFIG = useMemo(() => {
@@ -5373,88 +7835,401 @@ const VendorProfilePageWrapper = () => {
     return tabs.filter((tab) => tab.show !== false);
   }, [vendor]);
 
+  const StatSkeleton = () => (
+    <div className="flex flex-col items-center gap-0.5 px-4 py-2">
+      <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+      <div className="w-10 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-1" />
+    </div>
+  );
+
+  const BioSkeleton = () => (
+    <div className="mb-4 space-y-2">
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6 animate-pulse" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6 animate-pulse" />
+    </div>
+  );
+
+  const HighlightsSkeleton = () => (
+    <div className="flex gap-3 py-1">
+      {[...Array(4)].map((_, idx) => (
+        <div key={idx} className="flex flex-col items-center gap-3" style={{ width: "calc((100vw - 64px) / 4)" }}>
+          <div className="w-16 h-16 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="w-12 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
+
+  const EmptyPostsState = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-16 px-6"
+    >
+      <div className="relative mb-6">
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.1, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20"
+        />
+        <motion.div
+          animate={{ scale: [1.1, 1.3, 1.1], opacity: [0.2, 0.05, 0.2] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+          className="absolute inset-0 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20"
+        />
+        <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center shadow-xl border border-slate-200/50 dark:border-slate-700/50">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 flex items-center justify-center">
+            <Camera size={36} className="text-slate-400 dark:text-slate-500" />
+          </div>
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 text-center">No Posts Yet</h3>
+      {/* <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xs mb-6 leading-relaxed">
+        Share your best moments with your audience. Upload photos and videos to showcase your work.
+      </p> */}
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        {[
+          { icon: Image, label: "Photos" },
+          { icon: Video, label: "Videos" },
+          { icon: MapPin, label: "Locations" },
+        ].map((item, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 + idx * 0.1 }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"
+          >
+            <item.icon size={12} className="text-slate-500 dark:text-slate-400" />
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{item.label}</span>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  const EmptyReelsState = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-16 px-6"
+    >
+      <div className="relative mb-6">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 w-32 h-32 rounded-full"
+          style={{
+            background:
+              "conic-gradient(from 0deg, rgba(236,72,153,0.2), rgba(168,85,247,0.2), rgba(59,130,246,0.2), rgba(236,72,153,0.2))",
+          }}
+        />
+        <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center shadow-xl border border-slate-200/50 dark:border-slate-700/50">
+          <div className="w-16 h-24 rounded-xl bg-gradient-to-br from-pink-500/10 to-orange-500/10 dark:from-pink-500/20 dark:to-orange-500/20 flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-600">
+            <Film size={28} className="text-slate-400 dark:text-slate-500" />
+          </div>
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 text-center">No Reels Yet</h3>
+      {/* <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xs mb-6 leading-relaxed">
+        Create engaging short-form videos to captivate your audience and boost engagement.
+      </p> */}
+      {/* <div className="bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-4 mb-6 max-w-xs">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center">
+            <Smartphone size={16} className="text-white" />
+          </div>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Reel Specifications</span>
+        </div>
+      </div> */}
+    </motion.div>
+  );
+
+  const PostsLoadingSkeleton = () => (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
+        {[...Array(6)].map((_, idx) => (
+          <div key={idx} className="aspect-square rounded-[10px] overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 animate-pulse relative">
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-5 mx-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+              <div className="space-y-2">
+                <div className="w-24 h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                <div className="w-16 h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ReelsLoadingSkeleton = () => (
+    <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
+      {[...Array(6)].map((_, idx) => (
+        <div key={idx} className="aspect-[9/16] rounded-[10px] overflow-hidden">
+          <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 animate-pulse relative">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="absolute bottom-2 left-2 flex items-center gap-1">
+              <div className="w-8 h-4 bg-slate-300 dark:bg-slate-600 rounded animate-pulse" />
+            </div>
+            <div className="absolute top-2 right-2">
+              <div className="w-8 h-4 bg-slate-300 dark:bg-slate-600 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const SignInPrompt = ({ message, onClose }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 50, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="fixed bottom-32 left-4 right-4 z-[60] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+          <AlertCircle size={24} className="text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{message}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Sign in to interact with this vendor</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <X size={18} />
+          </motion.button>
+          <SignInButton mode="modal">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25"
+            >
+              Sign In
+            </motion.button>
+          </SignInButton>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case "posts":
         return (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
-              {posts.map((post) => (
-                <motion.div
-                  key={post.id}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setSelectedPost(post)}
-                  onTouchStart={() => {
-                    longPressTimerRef.current = setTimeout(() => {
-                      setPreviewPost(post);
-                      setIsLongPressing(true);
-                    }, 500);
-                  }}
-                  onTouchEnd={() => {
-                    if (longPressTimerRef.current) {
-                      clearTimeout(longPressTimerRef.current);
+            {profileLoading ? (
+              <PostsLoadingSkeleton />
+            ) : posts.length === 0 ? (
+              <EmptyPostsState />
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
+                  {posts.map((post) => {
+                    let poster;
+                    if (post.mediaType === "video") {
+                      poster = getVideoThumbnail(post?.mediaUrl, 3);
                     }
-                    if (isLongPressing) {
-                      setPreviewPost(null);
-                      setIsLongPressing(false);
-                    }
-                  }}
-                  onTouchMove={() => {
-                    if (longPressTimerRef.current) {
-                      clearTimeout(longPressTimerRef.current);
-                    }
-                  }}
-                  onMouseDown={() => {
-                    longPressTimerRef.current = setTimeout(() => {
-                      setPreviewPost(post);
-                      setIsLongPressing(true);
-                    }, 500);
-                  }}
-                  onMouseUp={() => {
-                    if (longPressTimerRef.current) {
-                      clearTimeout(longPressTimerRef.current);
-                    }
-                    if (isLongPressing) {
-                      setPreviewPost(null);
-                      setIsLongPressing(false);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (longPressTimerRef.current) {
-                      clearTimeout(longPressTimerRef.current);
-                    }
-                    if (isLongPressing) {
-                      setPreviewPost(null);
-                      setIsLongPressing(false);
-                    }
-                  }}
-                  className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer select-none rounded-[10px]"
-                >
-                  <SmartMedia
-                    src={post.thumbnail}
-                    type="image"
-                    className="w-full h-full object-cover"
-                    loaderImage="/GlowLoadingGif.gif"
-                  />
-                  <div className="absolute inset-0 bg-black/0 active:bg-black/40 transition-colors flex items-center justify-center gap-3 text-white text-xs font-bold opacity-0 active:opacity-100">
-                    <span className="flex items-center gap-1">
-                      <Heart size={14} className="fill-white" />
-                      {post.likes}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageCircle size={14} className="fill-white" />
-                      {post.comments}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            <div className="space-y-5 mx-4">
+                    return (
+                      <motion.div
+                        key={post?._id || `post-${Math.random()}`}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          if (playingVideoId) {
+                            const video = videoRefs.current[playingVideoId];
+                            if (video) {
+                              video.pause();
+                              video.currentTime = 0;
+                            }
+                            setPlayingVideoId(null);
+                          }
+                          setSelectedPost(post);
+                        }}
+                        onTouchStart={() => {
+                          longPressTimerRef.current = setTimeout(() => {
+                            if (post.mediaType === "video") {
+                              const video = videoRefs.current[post._id];
+                              if (video) {
+                                video.play();
+                                setPlayingVideoId(post._id);
+                              }
+                            } else {
+                              setPreviewPost(post);
+                            }
+                            setIsLongPressing(true);
+                          }, 500);
+                        }}
+                        onTouchEnd={() => {
+                          if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                          if (isLongPressing) {
+                            if (post.mediaType === "video" && playingVideoId === post._id) {
+                              const video = videoRefs.current[post._id];
+                              if (video) {
+                                video.pause();
+                                video.currentTime = 0;
+                              }
+                              setPlayingVideoId(null);
+                            }
+                            setPreviewPost(null);
+                            setIsLongPressing(false);
+                          }
+                        }}
+                        onTouchMove={() => {
+                          if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                        }}
+                        onMouseDown={() => {
+                          longPressTimerRef.current = setTimeout(() => {
+                            if (post.mediaType === "video") {
+                              const video = videoRefs.current[post._id];
+                              if (video) {
+                                video.play();
+                                setPlayingVideoId(post._id);
+                              }
+                            } else {
+                              setPreviewPost(post);
+                            }
+                            setIsLongPressing(true);
+                          }, 500);
+                        }}
+                        onMouseUp={() => {
+                          if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                          if (isLongPressing) {
+                            if (post.mediaType === "video" && playingVideoId === post._id) {
+                              const video = videoRefs.current[post._id];
+                              if (video) {
+                                video.pause();
+                                video.currentTime = 0;
+                              }
+                              setPlayingVideoId(null);
+                            }
+                            setPreviewPost(null);
+                            setIsLongPressing(false);
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                          if (isLongPressing) {
+                            if (post.mediaType === "video" && playingVideoId === post._id) {
+                              const video = videoRefs.current[post._id];
+                              if (video) {
+                                video.pause();
+                                video.currentTime = 0;
+                              }
+                              setPlayingVideoId(null);
+                            }
+                            setPreviewPost(null);
+                            setIsLongPressing(false);
+                          }
+                        }}
+                        className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer select-none rounded-[10px] group"
+                      >
+                        {post.mediaType === "video" ? (
+                          <div className="relative w-full h-full">
+                            <video
+                              ref={(el) => {
+                                if (el) videoRefs.current[post._id] = el;
+                              }}
+                              src={post.mediaUrl}
+                              {...(typeof poster === "string" && poster.trim() ? { poster } : {})}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                              loop
+                              preload="metadata"
+                            />
+                            <AnimatePresence>
+                              {playingVideoId !== post._id && (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"
+                                >
+                                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
+                                    <Play size={12} className="text-white fill-white" />
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            <AnimatePresence>
+                              {playingVideoId === post._id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                >
+                                  <div className="absolute inset-0 bg-black/10" />
+                                  <motion.div
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                    className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30"
+                                  >
+                                    <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                                      <Pause size={16} className="text-gray-900" />
+                                    </div>
+                                  </motion.div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ) : (
+                          <SmartMedia
+                            src={post?.mediaUrl}
+                            type="image"
+                            className="w-full h-full object-cover"
+                            loaderImage="/GlowLoadingGif.gif"
+                          />
+                        )}
+                        {(post?.mediaType !== "video" || playingVideoId !== post._id) && (
+                          <div className="absolute inset-0 bg-black/0 group-active:bg-black/40 transition-colors flex items-center justify-center gap-3 text-white text-xs font-bold opacity-0 group-active:opacity-100">
+                            <span className="flex items-center gap-1">
+                              <Heart size={14} className="fill-white" />
+                              {post?.likes?.length}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle size={14} className="fill-white" />
+                              {post?.reviews?.length}
+                            </span>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            <div className="space-y-5 mx-4 relative isolate">
               {vendor?.images?.length > 0 ? (
                 <>
-                  {/* Image Count Header */}
-                  <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
-                    <div className="flex items-center justify-between">
+                  {/* HEADER CONTAINER */}
+                  <div className="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors overflow-hidden group">
+                    {/* VISUAL LAYER (Passive - just looks good) */}
+                    <div className="p-4 flex items-center justify-between pointer-events-none">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 flex items-center justify-center">
                           <ImageIcon size={20} className="text-purple-600 dark:text-purple-400" />
@@ -5462,114 +8237,93 @@ const VendorProfilePageWrapper = () => {
                         <div>
                           <h3 className="text-[14px] font-bold text-slate-800 dark:text-slate-100">Photo Gallery</h3>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {vendor?.images.length} photos available
+                            {vendor?.images?.length} photos available
                           </p>
                         </div>
                       </div>
-
-                      {/* Collapsible Toggle Button */}
-                      <motion.button
-                        onClick={() => setIsGalleryExpanded(!isGalleryExpanded)}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                      >
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                         <motion.div
                           animate={{ rotate: isGalleryExpanded ? 180 : 0 }}
                           transition={{ duration: 0.3, ease: "easeInOut" }}
                         >
                           <ChevronDown size={18} className="text-slate-600 dark:text-slate-400" />
                         </motion.div>
-                      </motion.button>
+                      </div>
                     </div>
+
+                    {/* INTERACTION LAYER (The "Force Click" Overlay) */}
+                    {/* This transparent button covers the entire header area absolutely. */}
+                    {/* z-10 ensures it sits on top of everything. */}
+                    <button
+                      type="button"
+                      className="absolute inset-0 w-full h-full z-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                      onClickCapture={(e) => {
+                        // Using Capture ensures this fires before any bubble-cancellation
+                        e.preventDefault();
+                        console.log("Gallery Toggle Clicked"); // Debug check
+                        setIsGalleryExpanded((prev) => !prev);
+                      }}
+                      aria-label="Toggle Gallery"
+                    />
                   </div>
 
-                  {/* Image Grid with Collapse Animation */}
-                  <AnimatePresence initial={false}>
+                  <AnimatePresence mode="wait">
                     {isGalleryExpanded && (
                       <motion.div
+                        key="gallery-content"
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{
-                          height: "auto",
-                          opacity: 1,
-                        }}
-                        exit={{
-                          height: 0,
-                          opacity: 0,
-                        }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
                         transition={{
-                          height: {
-                            duration: 0.5,
-                            ease: [0.32, 0.72, 0, 1], // Custom easing for ultra-smooth motion
-                          },
-                          opacity: {
-                            duration: 0.4,
-                            ease: "easeInOut",
-                            delay: isGalleryExpanded ? 0.1 : 0, // Slight delay on expand
-                          },
+                          height: { duration: 0.4, ease: [0.32, 0.72, 0, 1] },
+                          opacity: { duration: 0.3 },
                         }}
-                        className="overflow-hidden origin-top"
+                        className="overflow-hidden"
                       >
-                        <motion.div
-                          initial={{ y: -20 }}
-                          animate={{ y: 0 }}
-                          exit={{ y: -20 }}
-                          transition={{
-                            duration: 0.4,
-                            ease: [0.32, 0.72, 0, 1],
-                          }}
-                          className="grid grid-cols-2 gap-3"
-                        >
+                        <div className="grid grid-cols-2 gap-3 pt-4 pb-2">
                           {vendor?.images.map((img, idx) => (
                             <motion.div
-                              key={idx}
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: idx * 0.03, duration: 0.3 }}
-                              whileTap={{ scale: 0.97 }}
-                              onClick={() => openImageModal(idx)}
-                              className="relative aspect-square rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300"
+                              key={`gallery-img-${idx}`}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.02 }}
+                              whileTap={{ scale: 0.96 }}
+                              className="relative aspect-square rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 cursor-pointer group shadow-sm z-0"
+                              // Image clicks are separate from the header logic
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openImageModal(idx);
+                              }}
                             >
                               <SmartMedia
                                 src={img}
                                 type="image"
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                style={{ objectPosition: "center center" }}
+                                className="w-full h-full object-cover pointer-events-none"
                                 loaderImage="/GlowLoadingGif.gif"
                               />
-
-                              {/* Hover Overlay */}
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                                  <span className="text-white text-[10px] font-bold bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg">
-                                    Photo {idx + 1}
-                                  </span>
-                                  <div className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                                    <ZoomIn size={16} className="text-slate-800" />
-                                  </div>
-                                </div>
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                <ZoomIn size={20} className="text-white" />
                               </div>
-
-                              {/* Top Badge for first image */}
                               {idx === 0 && (
-                                <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
+                                <div className="absolute top-2 left-2 bg-purple-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-lg flex items-center gap-1 pointer-events-none">
                                   <Star size={10} className="fill-white" />
                                   Featured
                                 </div>
                               )}
                             </motion.div>
                           ))}
-                        </motion.div>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </>
               ) : (
                 <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
-                    <ImageIcon size={36} className="text-slate-400 dark:text-slate-500" />
+                  <div className="w-20 h-20 rounded-3xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mx-auto mb-5">
+                    <ImageIcon size={36} className="text-slate-400" />
                   </div>
                   <p className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-2">No images available</p>
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                  <p className="text-[12px] text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
                     The vendor hasn't uploaded any gallery images yet
                   </p>
                 </div>
@@ -5580,71 +8334,105 @@ const VendorProfilePageWrapper = () => {
 
       case "reels":
         return (
-          <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
-            {reels.map((reel, index) => (
-              <motion.div
-                key={reel.id}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setSelectedReelIndex(index)}
-                className="aspect-[9/16] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
-              >
-                <SmartMedia
-                  src={reel.thumbnail}
-                  type="image"
-                  className="w-full h-full object-cover"
-                  loaderImage="/GlowLoadingGif.gif"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-bold">
-                  <Play size={12} className="fill-white" />
-                  {reel.views}
-                </div>
-                <div className="absolute top-2 right-2 text-white text-[9px] font-bold bg-black/60 px-1.5 py-0.5 rounded">
-                  {reel.duration}
-                </div>
-              </motion.div>
-            ))}
+          <div className="min-h-[50vh]">
+            {profileLoading ? (
+              <ReelsLoadingSkeleton />
+            ) : reels.length === 0 ? (
+              <EmptyReelsState />
+            ) : (
+              <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
+                {reels.map((reel, index) => (
+                  <motion.div
+                    key={reel?.id || reel?._id || `reel-${Math.random()}`}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setSelectedReelIndex(index)}
+                    className="aspect-[9/16] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
+                  >
+                    <SmartMedia
+                      src={reel.thumbnail}
+                      type="image"
+                      className="w-full h-full object-cover"
+                      loaderImage="/GlowLoadingGif.gif"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-bold">
+                      <Play size={12} className="fill-white" />
+                      {reel.views}
+                    </div>
+                    <div className="absolute top-2 right-2 text-white text-[9px] font-bold bg-black/60 px-1.5 py-0.5 rounded">
+                      {reel.duration}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         );
 
       case "portfolio":
         return (
           <div className="flex flex-col space-y-4">
-            <div className="grid grid-cols-3 gap-[3px] gap-y-[6px] mx-[15px]">
-              {reels?.slice(0, 3)?.map((reel, index) => (
-                <motion.div
-                  key={reel.id}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setSelectedReelIndex(index)}
-                  className="aspect-[9/10] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
-                >
-                  <SmartMedia
-                    src={reel.thumbnail}
-                    type="image"
-                    className="w-full h-full object-cover"
-                    loaderImage="/GlowLoadingGif.gif"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-bold">
-                    <Play size={12} className="fill-white" />
-                    {reel.views}
-                  </div>
-                  <div className="absolute top-2 right-2 text-white text-[9px] font-bold bg-black/60 px-1.5 py-0.5 rounded">
-                    {reel.duration}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            <div>
-              <ReviewSection vendorId={vendor?._id} vendorName={vendor?.name} />
-            </div>
+            {vendorLoading ? (
+              <div className="p-4">
+                <div className="grid grid-cols-3 gap-[3px] gap-y-[6px]">
+                  {[...Array(3)].map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="aspect-[9/10] rounded-[10px] bg-gray-200 dark:bg-gray-700 animate-pulse"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-[3px] gap-y-[6px] mx-[15px]">
+                  {reels?.slice(0, 3)?.map((reel, index) => (
+                    <motion.div
+                      key={reel?.id || reel?._id}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setSelectedReelIndex(index)}
+                      className="aspect-[9/10] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
+                    >
+                      <SmartMedia
+                        src={reel.thumbnail}
+                        type="image"
+                        className="w-full h-full object-cover"
+                        loaderImage="/GlowLoadingGif.gif"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-bold">
+                        <Play size={12} className="fill-white" />
+                        {reel.views}
+                      </div>
+                      <div className="absolute top-2 right-2 text-white text-[9px] font-bold bg-black/60 px-1.5 py-0.5 rounded">
+                        {reel.duration}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div>
+                  <ReviewSection vendorId={vendor?._id} vendorName={vendor?.name} />
+                </div>
+              </>
+            )}
           </div>
         );
 
       case "services":
+        if (vendorLoading) {
+          return (
+            <div className="p-4 space-y-4">
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+              <div className="space-y-3">
+                {[...Array(3)].map((_, idx) => (
+                  <div key={idx} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="p-4 space-y-4 pt-1">
-            {/* TAB NAVIGATION */}
             <AnimatePresence mode="wait">
               <motion.div
                 initial={{ opacity: 1, y: 0 }}
@@ -5656,13 +8444,15 @@ const VendorProfilePageWrapper = () => {
                   {TAB_CONFIG.map((tab) => (
                     <motion.button
                       key={tab.id}
-                      onClick={() => setActiveDetailsTab(tab.id)}
+                      onClick={() => {
+                        setActiveDetailsTab(tab.id);
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("tab", "services");
+                        url.searchParams.set("details", tab.id);
+                        window.history.pushState({}, "", url.toString());
+                      }}
                       whileTap={{ scale: 0.95 }}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${
-                        activeDetailsTab === tab.id
-                          ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                      }`}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${activeDetailsTab === tab.id ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}
                     >
                       <tab.icon size={12} />
                       {tab.label}
@@ -5671,8 +8461,6 @@ const VendorProfilePageWrapper = () => {
                 </div>
               </motion.div>
             </AnimatePresence>
-
-            {/* TAB CONTENT */}
             <div className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 px-4 py-6 pt-[10px]">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -5683,10 +8471,8 @@ const VendorProfilePageWrapper = () => {
                   transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
                   className="space-y-5"
                 >
-                  {/* OVERVIEW TAB */}
                   {activeDetailsTab === "overview" && (
                     <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-5">
-                      {/* 1. Short Description */}
                       {vendor.shortDescription && (
                         <motion.div
                           variants={fadeInUp}
@@ -5704,8 +8490,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </motion.div>
                       )}
-
-                      {/* 2. Pricing Details */}
                       {(vendor.basePrice || vendor.perDayPrice?.min) && (
                         <motion.div
                           variants={fadeInUp}
@@ -5724,9 +8508,7 @@ const VendorProfilePageWrapper = () => {
                               </p>
                             </div>
                           </div>
-
                           <div className="grid grid-cols-1 gap-3">
-                            {/* Base Price */}
                             {vendor.basePrice && (
                               <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -5753,8 +8535,6 @@ const VendorProfilePageWrapper = () => {
                                 </div>
                               </motion.div>
                             )}
-
-                            {/* Per Day Price Range */}
                             {vendor.perDayPrice?.min && (
                               <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -5799,11 +8579,7 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </motion.div>
                       )}
-
-                      {/* 3. Category Specific Highlights */}
                       <CategoryHighlights vendor={vendor} />
-
-                      {/* 4. Event Types Supported */}
                       {vendor.eventTypes?.length > 0 && (
                         <CollapsibleSection
                           title="Event Types We Serve"
@@ -5830,8 +8606,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </CollapsibleSection>
                       )}
-
-                      {/* 5. Operating Hours - Collapsed */}
                       {vendor.operatingHours && (
                         <CollapsibleSection
                           title="Operating Hours"
@@ -5876,8 +8650,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </CollapsibleSection>
                       )}
-
-                      {/* 6. Amenities */}
                       {vendor.amenities?.length > 0 && (
                         <motion.div
                           variants={fadeInUp}
@@ -5919,8 +8691,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </motion.div>
                       )}
-
-                      {/* 7. Why Choose Us */}
                       {vendor.highlightPoints?.length > 0 && (
                         <CollapsibleSection
                           title="Why Choose Us"
@@ -5951,8 +8721,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </CollapsibleSection>
                       )}
-
-                      {/* 8. Special Offers - Collapsed */}
                       {vendor.specialOffers?.length > 0 && (
                         <CollapsibleSection
                           title="Special Offers"
@@ -5999,8 +8767,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </CollapsibleSection>
                       )}
-
-                      {/* 9. About Vendor - Full Description */}
                       {vendor.description && (
                         <motion.div
                           variants={fadeInUp}
@@ -6020,9 +8786,7 @@ const VendorProfilePageWrapper = () => {
                             </div>
                           </div>
                           <div
-                            className={`relative overflow-hidden transition-all duration-500 ease-out ${
-                              showFullDescription ? "max-h-[2000px]" : "max-h-[150px]"
-                            }`}
+                            className={`relative overflow-hidden transition-all duration-500 ease-out ${showFullDescription ? "max-h-[2000px]" : "max-h-[150px]"}`}
                           >
                             <p className="text-[12.5px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                               {vendor.description}
@@ -6046,18 +8810,12 @@ const VendorProfilePageWrapper = () => {
                           </motion.button>
                         </motion.div>
                       )}
-
-                      {/* 11. Social Links */}
                       <SocialLinksSection socialLinks={vendor.socialLinks} />
                     </motion.div>
                   )}
-
-                  {/* CATEGORY-SPECIFIC TAB */}
                   {activeDetailsTab === "category" && (
                     <CategorySpecificSection vendor={vendor} formatPrice={formatPrice} />
                   )}
-
-                  {/* SERVICES & AWARDS TAB */}
                   {activeDetailsTab === "services" && (
                     <div className="space-y-5">
                       {vendor.facilities?.length > 0 && (
@@ -6095,7 +8853,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </motion.div>
                       )}
-
                       {vendor.awards?.length > 0 && (
                         <motion.div
                           variants={fadeInUp}
@@ -6141,7 +8898,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </motion.div>
                       )}
-
                       {vendor.amenities?.length > 0 && (
                         <CollapsibleSection
                           title="Complete Amenities List"
@@ -6169,27 +8925,23 @@ const VendorProfilePageWrapper = () => {
                       )}
                     </div>
                   )}
-
-                  {/* PACKAGES TAB */}
                   {activeDetailsTab === "packages" && (
                     <div className="space-y-5">
                       {vendor.packages?.length > 0 ? (
-                        <>
-                          {vendor.packages.map((pkg, i) => (
-                            <motion.div
-                              key={pkg._id || i}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: i * 0.1 }}
-                            >
-                              <PackageCard
-                                pkg={pkg}
-                                isSelected={selectedPackage === (pkg.id || pkg._id)}
-                                onSelect={setSelectedPackage}
-                              />
-                            </motion.div>
-                          ))}
-                        </>
+                        vendor.packages.map((pkg, i) => (
+                          <motion.div
+                            key={pkg._id || i}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                          >
+                            <PackageCard
+                              pkg={pkg}
+                              isSelected={selectedPackage === (pkg.id || pkg._id)}
+                              onSelect={setSelectedPackage}
+                            />
+                          </motion.div>
+                        ))
                       ) : (
                         <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
                           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
@@ -6203,7 +8955,6 @@ const VendorProfilePageWrapper = () => {
                           </p>
                         </div>
                       )}
-
                       {vendor.paymentMethods?.length > 0 && (
                         <motion.div
                           variants={fadeInUp}
@@ -6237,11 +8988,8 @@ const VendorProfilePageWrapper = () => {
                       )}
                     </div>
                   )}
-
-                  {/* Insights TAB */}
                   {activeDetailsTab === "insights" && (
                     <div className="space-y-3.5">
-                      {/* 3. Highlights & Pros */}
                       {vendor.highlights?.length > 0 && (
                         <motion.div
                           variants={fadeInUp}
@@ -6260,7 +9008,6 @@ const VendorProfilePageWrapper = () => {
                               </p>
                             </div>
                           </div>
-
                           <div className="grid grid-cols-1 gap-3">
                             {vendor.highlights.map((highlight, idx) => {
                               const ICON_MAP = {
@@ -6277,9 +9024,7 @@ const VendorProfilePageWrapper = () => {
                               };
                               const key = highlight?.icon?.toLowerCase()?.replace(/\s+/g, "").replace(/_/g, "-");
                               const IconComponent = ICON_MAP[key] || Star;
-
                               const colorClass = highlight.color || "text-slate-600 dark:text-slate-400";
-
                               return (
                                 <motion.div
                                   key={idx}
@@ -6309,8 +9054,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </motion.div>
                       )}
-
-                      {/* 4. Performance Stats */}
                       {vendor.stats?.length > 0 && (
                         <motion.div
                           variants={fadeInUp}
@@ -6329,7 +9072,6 @@ const VendorProfilePageWrapper = () => {
                               </p>
                             </div>
                           </div>
-
                           <div className="grid grid-cols-1 gap-3">
                             {vendor.stats.map((stat, idx) => (
                               <motion.div
@@ -6345,11 +9087,7 @@ const VendorProfilePageWrapper = () => {
                                   </span>
                                   {stat.trend && (
                                     <div
-                                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                        stat.positive
-                                          ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                                          : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                                      }`}
+                                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${stat.positive ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"}`}
                                     >
                                       {stat.positive ? (
                                         <TrendingUp size={11} className="shrink-0" />
@@ -6372,8 +9110,6 @@ const VendorProfilePageWrapper = () => {
                       )}
                     </div>
                   )}
-
-                  {/* FAQS TAB */}
                   {activeDetailsTab === "faqs" && (
                     <div className="space-y-3.5">
                       {vendor.faqs?.length > 0 ? (
@@ -6387,13 +9123,7 @@ const VendorProfilePageWrapper = () => {
                           >
                             <button
                               type="button"
-                              onClick={() => {
-                                console.log("Clicked FAQ:", idx, "Current expanded:", expandedFaq);
-                                setExpandedFaq((prev) => {
-                                  console.log("Setting from", prev, "to", prev === idx ? null : idx);
-                                  return prev === idx ? null : idx;
-                                });
-                              }}
+                              onClick={() => setExpandedFaq((prev) => (prev === idx ? null : idx))}
                               className="w-full p-5 flex items-start justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors duration-200 cursor-pointer relative z-10"
                             >
                               <div className="flex items-start gap-4 flex-1 pr-4">
@@ -6407,9 +9137,7 @@ const VendorProfilePageWrapper = () => {
                               <div className="shrink-0">
                                 <ChevronDown
                                   size={20}
-                                  className={`text-slate-400 dark:text-slate-500 mt-1.5 transition-transform duration-200 ${
-                                    expandedFaq === idx ? "rotate-180" : "rotate-0"
-                                  }`}
+                                  className={`text-slate-400 dark:text-slate-500 mt-1.5 transition-transform duration-200 ${expandedFaq === idx ? "rotate-180" : "rotate-0"}`}
                                 />
                               </div>
                             </button>
@@ -6454,8 +9182,6 @@ const VendorProfilePageWrapper = () => {
                       )}
                     </div>
                   )}
-
-                  {/* POLICIES TAB */}
                   {activeDetailsTab === "policies" && (
                     <div className="space-y-5">
                       {vendor.policies?.length > 0 ? (
@@ -6514,8 +9240,6 @@ const VendorProfilePageWrapper = () => {
                       )}
                     </div>
                   )}
-
-                  {/* LOCATION TAB */}
                   {activeDetailsTab === "location" && (
                     <div className="space-y-5">
                       <motion.div
@@ -6557,7 +9281,6 @@ const VendorProfilePageWrapper = () => {
                           </motion.a>
                         )}
                       </motion.div>
-
                       {vendor.landmarks?.length > 0 && (
                         <CollapsibleSection
                           title="Nearby Landmarks"
@@ -6587,7 +9310,6 @@ const VendorProfilePageWrapper = () => {
                           </div>
                         </CollapsibleSection>
                       )}
-
                       {vendor.directions?.length > 0 && (
                         <CollapsibleSection
                           title="How to Reach"
@@ -6632,7 +9354,6 @@ const VendorProfilePageWrapper = () => {
     }
   };
 
-  // Strip HTML tags to get plain text length
   const getPlainTextLength = (html) => {
     if (!html) return 0;
     const tmp = document.createElement("DIV");
@@ -6640,7 +9361,6 @@ const VendorProfilePageWrapper = () => {
     return (tmp.textContent || tmp.innerText || "").trim().length;
   };
 
-  // Sanitize HTML content
   const sanitizeHtml = (html) => {
     if (typeof window !== "undefined") {
       return DOMPurify.sanitize(html, {
@@ -6651,11 +9371,12 @@ const VendorProfilePageWrapper = () => {
     return html;
   };
 
-  if (loading) {
+  console.log("Vendor Loading:", vendorLoading);
+
+  if (vendorLoading) {
     return <VendorProfileSkeleton />;
   }
 
-  // If vendor doesn't exist at all, show error page
   if (!vendor) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-6">
@@ -6678,13 +9399,10 @@ const VendorProfilePageWrapper = () => {
   }
 
   const vendorProfile = Array.isArray(vendor?.vendorProfile) ? vendor.vendorProfile[0] : vendor?.vendorProfile;
-
   const vendorImage =
     profile?.vendorAvatar ||
     vendorProfile?.profilePicture ||
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop";
-
-  console.log(profile);
 
   const defaultBio = `📸 Professional Event Photographer
 🎬 Capturing moments that last forever
@@ -6699,7 +9417,10 @@ const VendorProfilePageWrapper = () => {
         id={id}
         onProfileCreated={handleProfileCreated}
         isOpen={openOnboardingDrawer}
-        onClose={() => setOpenOnboardingDrawer(false)}
+        onClose={() => {
+          setOpenOnboardingDrawer(false);
+          updateURLParams({ onboarding: null });
+        }}
       />
 
       <ThumbsUpAnimation show={showThumbsUpAnimation} />
@@ -6710,7 +9431,6 @@ const VendorProfilePageWrapper = () => {
         type={showConfirmation.type}
       />
 
-      {/* Enhanced Header */}
       {!openOnboardingDrawer && (
         <motion.header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-b-2xl">
           <motion.div
@@ -6757,14 +9477,11 @@ const VendorProfilePageWrapper = () => {
         <div
           className="absolute inset-0 z-0 opacity-30"
           style={{
-            background: `radial-gradient(125% 125% at 50% 90%, #fff 40%, ${
-              CATEGORY_GRADIENTS[category]?.to || "#7c3aed"
-            } 100%)`,
+            background: `radial-gradient(125% 125% at 50% 90%, #fff 40%, ${CATEGORY_GRADIENTS[category]?.to || "#7c3aed"} 100%)`,
           }}
         />
         <div className="bg-transparent dark:bg-gray-900 z-30">
           <div className="px-4 pt-5 pb-1">
-            {/* Profile Info Section - Increased Size */}
             <div className="flex items-start gap-5 mb-2">
               <motion.div
                 whileTap={{ scale: 0.95 }}
@@ -6808,56 +9525,73 @@ const VendorProfilePageWrapper = () => {
               </div>
             </div>
 
-            {/* Stats Section - Removed Bookings and Item BG */}
             <div className="flex justify-around mb-1 py-3 mx-10">
               {stats.map((stat, idx) => (
-                <motion.button
-                  key={idx}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={stat.action}
-                  className="flex flex-col items-center gap-0.3 px-4"
-                >
-                  <span
-                    className={`text-xl font-black ${stat.active ? "text-blue-600" : "text-gray-900 dark:text-white"}`}
-                  >
-                    {stat.value}
-                  </span>
-                  <span className="text-[11px] text-gray-500 font-medium">{stat.label}</span>
-                </motion.button>
+                <React.Fragment key={idx}>
+                  {stat.showSkeleton ? (
+                    <StatSkeleton />
+                  ) : (
+                    <motion.button
+                      whileTap={{ scale: stat.loading ? 1 : 0.95 }}
+                      onClick={stat.action}
+                      disabled={stat.loading}
+                      className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all cursor-pointer ${stat.loading ? "opacity-70" : "hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"}`}
+                    >
+                      <span
+                        className={`text-xl font-black transition-colors ${stat.active ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white"}`}
+                      >
+                        {stat.loading ? (
+                          <motion.span
+                            animate={{ opacity: [1, 0.5, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          >
+                            {stat.value}
+                          </motion.span>
+                        ) : (
+                          stat.value
+                        )}
+                      </span>
+                      <span
+                        className={`text-[11px] font-medium transition-colors ${stat.active ? "text-blue-500 dark:text-blue-400" : "text-gray-500"}`}
+                      >
+                        {stat.label}
+                      </span>
+                    </motion.button>
+                  )}
+                </React.Fragment>
               ))}
             </div>
 
-            {/* Enhanced Bio Section - Rich Text HTML Support */}
             <div className="mb-4">
-              <motion.div
-                initial={false}
-                animate={{ height: isBioExpanded ? "auto" : "4.5rem" }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="relative overflow-hidden"
-              >
-                <div
-                  className="text-sm text-gray-800 dark:text-gray-200 bio-content"
-                  style={{ lineHeight: "1.4" }}
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeHtml(profile.bio || defaultBio),
-                  }}
-                />
-                {/* !isBioExpanded && getPlainTextLength(profile.bio || defaultBio) > 120 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-950 to-transparent pointer-events-none" />
-                ) */}
-              </motion.div>
-              {getPlainTextLength(profile.bio || defaultBio) > 120 && (
-                <button
-                  onClick={() => setIsBioExpanded(!isBioExpanded)}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mt-1 font-medium"
-                >
-                  {isBioExpanded ? "See less" : "See more"}
-                </button>
+              {profileLoading ? (
+                <BioSkeleton />
+              ) : (
+                <>
+                  <motion.div
+                    initial={false}
+                    animate={{ height: isBioExpanded ? "auto" : "4.5rem" }}
+                    transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    className="relative overflow-hidden"
+                  >
+                    <div
+                      className="text-sm text-gray-800 dark:text-gray-200 bio-content"
+                      style={{ lineHeight: "1.4" }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(profile?.bio || defaultBio) }}
+                    />
+                  </motion.div>
+                  {getPlainTextLength(profile?.bio || defaultBio) > 120 && (
+                    <button
+                      onClick={() => setIsBioExpanded(!isBioExpanded)}
+                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mt-1 font-medium"
+                    >
+                      {isBioExpanded ? "See less" : "See more"}
+                    </button>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Social Links */}
-            {(profile.website || profile.socialLinks?.instagram) && (
+            {(profile?.website || profile?.socialLinks?.instagram) && (
               <div className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar">
                 {profile.website && (
                   <a
@@ -6885,16 +9619,11 @@ const VendorProfilePageWrapper = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex gap-2 mb-4">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleTrust}
-                className={`flex-[2] py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                  hasTrusted
-                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25"
-                    : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25"
-                }`}
+                className={`flex-[2] py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${hasTrusted ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25" : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25"}`}
               >
                 <motion.div
                   animate={hasTrusted ? { rotate: [0, -20, 20, 0], scale: [1, 1.2, 1] } : {}}
@@ -6904,7 +9633,6 @@ const VendorProfilePageWrapper = () => {
                 </motion.div>
                 {hasTrusted ? "Trusted" : "Trust"}
               </motion.button>
-
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowBookingDrawer(true)}
@@ -6912,7 +9640,6 @@ const VendorProfilePageWrapper = () => {
               >
                 Book
               </motion.button>
-
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowContactDrawer(true)}
@@ -6922,45 +9649,53 @@ const VendorProfilePageWrapper = () => {
               </motion.button>
             </div>
 
-            {/* Highlights Section - Horizontal Scrollable with 4 visible */}
             <div ref={highlightsContainerRef} className="overflow-x-auto no-scrollbar -mx-4 px-4">
-              <div className="flex gap-3 py-1" style={{ minWidth: "max-content" }}>
-                {MOCK_HIGHLIGHTS.map((highlight) => (
-                  <motion.button
-                    key={highlight.id}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedHighlight(highlight)}
-                    className="flex flex-col items-center gap-3"
-                    style={{ width: "calc((100vw - 64px) / 4)" }}
-                  >
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden p-[2px] bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-md">
-                      <div className="w-full h-full rounded-[14px] overflow-hidden bg-white dark:bg-gray-900">
-                        <SmartMedia
-                          src={highlight.image}
-                          type="image"
-                          className="w-full h-full object-cover"
-                          loaderImage="/GlowLoadingGif.gif"
-                        />
+              {profileLoading ? (
+                <HighlightsSkeleton />
+              ) : (
+                <div className="flex gap-3 py-1" style={{ minWidth: "max-content" }}>
+                  {MOCK_HIGHLIGHTS.map((highlight) => (
+                    <motion.button
+                      key={highlight.id}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedHighlight(highlight)}
+                      className="flex flex-col items-center gap-3"
+                      style={{ width: "calc((100vw - 64px) / 4)" }}
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden p-[2px] bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-md">
+                        <div className="w-full h-full rounded-[14px] overflow-hidden bg-white dark:bg-gray-900">
+                          <SmartMedia
+                            src={highlight.image}
+                            type="image"
+                            className="w-full h-full object-cover"
+                            loaderImage="/GlowLoadingGif.gif"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 truncate w-full text-center">
-                      {highlight.title}
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
+                      <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 truncate w-full text-center">
+                        {highlight.title}
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs Section - Enhanced with subtle border */}
       <div className="sticky top-14 z-30 bg-white dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80 mb-1 rounded-[5px]">
         <div className="flex">
           {TABS.map((tab) => (
             <motion.button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                const url = new URL(window.location.href);
+                url.searchParams.set("tab", tab.id);
+                if (tab.id !== "services") url.searchParams.delete("details");
+                window.history.pushState({}, "", url.toString());
+              }}
               whileTap={{ scale: 0.95 }}
               className="flex-1 py-3.5 flex items-center justify-center gap-2 relative"
             >
@@ -6968,13 +9703,6 @@ const VendorProfilePageWrapper = () => {
                 size={20}
                 className={activeTab === tab.id ? "text-gray-900 dark:text-white" : "text-gray-400"}
               />
-              {/* <span
-                className={`text-xs font-semibold ${
-                  activeTab === tab.id ? "text-gray-900 dark:text-white" : "text-gray-400"
-                }`}
-              >
-                {tab.label}
-              </span> */}
               {activeTab === tab.id && (
                 <motion.div
                   layoutId="activeTab"
@@ -6987,7 +9715,6 @@ const VendorProfilePageWrapper = () => {
         </div>
       </div>
 
-      {/* Tab Content Section */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -7001,9 +9728,8 @@ const VendorProfilePageWrapper = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-        {/* Create Profile Button - Only show when no profile */}
+        {/* Create Profile Button - Only show if no profile exists */}
         {!profileLoading && showOnboarding && !profile?.vendorBusinessName && !openOnboardingDrawer && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
@@ -7011,12 +9737,17 @@ const VendorProfilePageWrapper = () => {
             exit={{ scale: 0, rotate: 180 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => setOpenOnboardingDrawer(true)}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to proceed");
+                return;
+              }
+              setOpenOnboardingDrawer(true);
+              updateURLParams({ onboarding: "true" });
+            }}
             className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-2xl shadow-green-500/40 flex items-center justify-center group relative"
           >
             <Store size={26} className="text-white" />
-
-            {/* Tooltip */}
             <motion.div
               initial={{ opacity: 0, x: 10 }}
               whileHover={{ opacity: 1, x: 0 }}
@@ -7028,19 +9759,53 @@ const VendorProfilePageWrapper = () => {
           </motion.button>
         )}
 
-        {/* Upload Button - Only show when profile exists */}
-        {!profileLoading && profile?.vendorBusinessName && !openOnboardingDrawer && (
+        {/* Edit Profile Button - Only show if profile exists */}
+        {isVerified && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to edit profile");
+                return;
+              }
+              setShowUpdateProfileDrawer(true);
+              updateURLParams({ update: "true" });
+            }}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl shadow-indigo-500/40 flex items-center justify-center group relative"
+          >
+            <Edit2Icon size={26} className="text-white" />
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              whileHover={{ opacity: 1, x: 0 }}
+              className="absolute right-full mr-3 px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+            >
+              Edit Profile
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45" />
+            </motion.div>
+          </motion.button>
+        )}
+
+        {/* Upload Content Button - Only show if profile exists */}
+        {isVerified && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to upload content");
+                return;
+              }
+              setShowUploadModal(true);
+              updateURLParams({ upload: "true" });
+            }}
             className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-500/40 flex items-center justify-center group relative"
           >
             <Plus size={28} className="text-white" />
-
-            {/* Tooltip */}
             <motion.div
               initial={{ opacity: 0, x: 10 }}
               whileHover={{ opacity: 1, x: 0 }}
@@ -7053,7 +9818,6 @@ const VendorProfilePageWrapper = () => {
         )}
       </div>
 
-      {/* All Modals */}
       <AnimatePresence>
         {showProfilePicture && (
           <ProfilePictureModal
@@ -7074,9 +9838,10 @@ const VendorProfilePageWrapper = () => {
             onClose={() => setSelectedPost(null)}
             vendorName={vendor.name}
             vendorImage={vendorImage}
-            onDelete={() => handleDeletePost(selectedPost.id)}
-            onEdit={handleEditPost}
-            onArchive={handleArchivePost}
+            onDelete={() => handleDeletePost(selectedPost._id)}
+            onEdit={(newCaption) => handleEditPost(selectedPost._id, newCaption)}
+            onArchive={() => handleArchivePost(selectedPost._id)}
+            vendorId={id}
           />
         )}
       </AnimatePresence>
@@ -7088,7 +9853,9 @@ const VendorProfilePageWrapper = () => {
             onClose={() => setSelectedReelIndex(null)}
             vendorName={vendor.name}
             vendorImage={vendorImage}
-            onDeleteReel={handleDeleteReel}
+            onDeleteReel={() => handleDeleteReel(reels[selectedReelIndex]._id)}
+            onEditReel={(newCaption) => handleEditReel(reels[selectedReelIndex]._id, newCaption)}
+            vendorId={id}
           />
         )}
       </AnimatePresence>
@@ -7105,11 +9872,15 @@ const VendorProfilePageWrapper = () => {
         {showUploadModal && (
           <UploadModal
             isOpen={showUploadModal}
-            onClose={() => setShowUploadModal(false)}
+            onClose={() => {
+              setShowUploadModal(false);
+              updateURLParams({ upload: null });
+            }}
             onUploadPost={handleUploadPost}
             onUploadReel={handleUploadReel}
             postsCount={posts.length}
             reelsCount={reels.length}
+            vendorId={id}
           />
         )}
       </AnimatePresence>
@@ -7126,7 +9897,13 @@ const VendorProfilePageWrapper = () => {
       </AnimatePresence>
       <AnimatePresence>
         {showReviewsDrawer && (
-          <ReviewsDrawer isOpen={showReviewsDrawer} onClose={() => setShowReviewsDrawer(false)} reviews={reviews} />
+          <ReviewsDrawer
+            isOpen={showReviewsDrawer}
+            onClose={() => setShowReviewsDrawer(false)}
+            reviewsData={reviews}
+            vendorId={id}
+            vendorName={vendor?.name}
+          />
         )}
       </AnimatePresence>
       <AnimatePresence>
@@ -7149,6 +9926,9 @@ const VendorProfilePageWrapper = () => {
             onShowQR={() => setShowQRModal(true)}
             onShowAbout={() => setShowAboutModal(true)}
             onCopyLink={handleCopyLink}
+            setShowUpdateProfileDrawer={setShowUpdateProfileDrawer}
+            onVerifyIdentity={handleVerifyIdentity} // Add this
+            isVerified={isVerified}
           />
         )}
       </AnimatePresence>
@@ -7158,7 +9938,9 @@ const VendorProfilePageWrapper = () => {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {showQRModal && <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} />}
+        {showQRModal && (
+          <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} vendorName={vendor.name} />
+        )}
       </AnimatePresence>
       <AnimatePresence>
         {showAboutModal && (
@@ -7167,6 +9949,38 @@ const VendorProfilePageWrapper = () => {
       </AnimatePresence>
       <AnimatePresence>
         {previewPost && <PostPreviewModal post={previewPost} onClose={() => setPreviewPost(null)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showSignInPrompt && <SignInPrompt message={signInPromptMessage} onClose={() => setShowSignInPrompt(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showVerifyModal && (
+          <PasswordVerificationModal
+            isOpen={showVerifyModal}
+            onClose={() => {
+              setShowVerifyModal(false);
+              updateURLParams({ upload: null });
+            }}
+            onSuccess={() => setIsVerified(true)}
+            vendorId={id}
+            vendorName={vendor?.name}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showUpdateProfileDrawer && (
+          <UpdateProfileDrawer
+            vendor={vendor}
+            profile={profile}
+            id={id}
+            onProfileUpdated={handleProfileUpdated}
+            isOpen={showUpdateProfileDrawer}
+            onClose={() => {
+              setShowUpdateProfileDrawer(false);
+              updateURLParams({ update: null });
+            }}
+          />
+        )}
       </AnimatePresence>
 
       {/* IMAGE GALLERY MODAL */}
