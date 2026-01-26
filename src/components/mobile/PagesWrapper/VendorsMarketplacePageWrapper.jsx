@@ -1820,8 +1820,7 @@ const VendorCard = memo(
           <div className="flex justify-between items-center mb-1.5">
             {/* Profile Photo Section - Only in List View and when profile picture exists */}
             {!isGrid &&
-              (vendor?.vendorProfile?.profilePicture ||
-                (Array.isArray(vendor?.vendorProfile) && vendor?.vendorProfile[0]?.profilePicture)) && (
+              (vendor?.defaultImage || vendor?.images?.[0]) && (
                 <div
                   onClick={(e) => {
                     e.preventDefault();
@@ -1833,11 +1832,7 @@ const VendorCard = memo(
                   <div className="relative">
                     <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-green-500 to-green-800 shadow-sm">
                       <Image
-                        src={
-                          vendor?.vendorProfile?.profilePicture ||
-                          (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ||
-                          "/placeholder-profile.jpg"
-                        }
+                        src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
                         alt={`${vendor.name} Profile Picture`}
                         width={500}
                         height={500}
@@ -1938,7 +1933,11 @@ const VendorCard = memo(
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={handleAddToCart}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddToCart();
+                }}
                 className={`flex items-center justify-center gap-1.5 font-bold shadow-md transition-all ${
                   isGrid ? "p-2.5 rounded-xl" : "px-5 py-2.5 rounded-xl text-sm"
                 } ${inCart ? "bg-green-500 text-white" : isGrid ? "bg-gray-900 text-white" : "text-white"}`}

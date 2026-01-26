@@ -269,6 +269,10 @@ const VendorBaseSchema = new Schema(
     awards: [AwardSchema],
     specialOffers: [SpecialOfferSchema],
 
+    vendorProfileCreated: {
+      type: Boolean, default: false, required: false
+    },
+
     // --- Event Types Supported ---
     eventTypes: {
       type: [String],

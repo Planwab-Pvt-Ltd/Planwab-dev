@@ -3,10 +3,14 @@ const nextConfig = {
  output: "standalone",
 
   images: {
-    unoptimized: true,      // 🚀 KILLS sharp (huge)
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "**" },
-      { protocol: "http", hostname: "**" }
+      { protocol: "http", hostname: "**" },
+      { protocol: "https", hostname: "https://res.cloudinary.com" },
+      { protocol: "https", hostname: "https://cdn.bunnycdn.com" },
+      { protocol: "https", hostname: "https://planwab-videos.b-cdn.net" },
+      { protocol: "https", hostname: "https://planwab.b-cdn.net" },
     ],
   },
 

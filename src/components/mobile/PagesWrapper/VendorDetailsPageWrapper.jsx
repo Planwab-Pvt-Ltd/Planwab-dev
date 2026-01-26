@@ -2917,16 +2917,10 @@ const VendorDetailsPageWrapper = () => {
               href={`/vendor/${vendor.category}/${vendor._id}/profile`}
               className="group block relative rounded-full border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01]"
             >
-              {vendor?.vendorProfile?.profilePicture ||
-              (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full p-[3px] bg-gradient-to-tr from-green-500 to-green-800 shadow-md">
                     <Image
-                      src={
-                        vendor?.vendorProfile?.profilePicture ||
-                        (Array.isArray(vendor?.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ||
-                        "/placeholder-profile.jpg"
-                      }
+                      src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
                       alt={`${vendor.name} Profile Picture`}
                       width={500}
                       height={500}
@@ -2945,16 +2939,6 @@ const VendorDetailsPageWrapper = () => {
                     <Eye size={10} />
                   </div>
                 </div>
-              ) : (
-                <div className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden">
-                  <SmartMedia
-                    src={vendor?.defaultImage || vendor?.images?.[0] || ""}
-                    type="image"
-                    alt={`${vendor.name} Profile Picture`}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-              )}
             </Link>
             <div className="flex flex-col items-start justify-center flex-1 min-h-full min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
@@ -3488,26 +3472,14 @@ const VendorDetailsPageWrapper = () => {
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           {/* Profile Picture or Fallback Icon */}
                           <div className="relative flex-shrink-0">
-                            {vendor?.vendorProfile?.profilePicture ||
-                            (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0]?.profilePicture : "") ? (
                               <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
                                 <SmartMedia
-                                  src={
-                                    vendor?.vendorProfile?.profilePicture ||
-                                    (Array.isArray(vendor.vendorProfile)
-                                      ? vendor?.vendorProfile[0]?.profilePicture
-                                      : "")
-                                  }
+                                  src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg" }
                                   type="image"
                                   alt={`${vendor.name} Profile Picture`}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                            ) : (
-                              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
-                                <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
-                              </div>
-                            )}
                             {/* Status indicator dot */}
                             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                           </div>
@@ -4314,7 +4286,6 @@ const VendorDetailsPageWrapper = () => {
 
         {/* Vendor Profile Link */}
         {activeTab !== "overview" &&
-          (Array.isArray(vendor.vendorProfile) ? vendor.vendorProfile[0] : vendor.vendorProfile)?.bio && (
             <motion.div variants={fadeInUp}>
               <Link
                 href={`/vendor/${vendor.category}/${vendor._id}/profile`}
@@ -4327,24 +4298,14 @@ const VendorDetailsPageWrapper = () => {
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     {/* Profile Picture or Fallback Icon */}
                     <div className="relative flex-shrink-0">
-                      {vendor?.vendorProfile?.profilePicture ||
-                      (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0].profilePicture : "") ? (
                         <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
                           <SmartMedia
-                            src={
-                              vendor?.vendorProfile?.profilePicture ||
-                              (Array.isArray(vendor.vendorProfile) ? vendor?.vendorProfile[0].profilePicture : "")
-                            }
+                            src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
                             type="image"
                             alt={`${vendor.name} Profile Picture`}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
-                          <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                      )}
                       {/* Status indicator dot */}
                       <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                     </div>
@@ -4370,7 +4331,7 @@ const VendorDetailsPageWrapper = () => {
                 </div>
               </Link>
             </motion.div>
-          )}
+          }
 
         {/* SIMILAR VENDORS */}
         {similarVendors.length > 0 && (

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectToDatabase from "../../../../../database/mongoose";
 import VendorProfile from "../../../../../database/models/VendorProfileModel";
+import Vendor from "../../../../../database/models/VendorModel";
 
 // Helper: Verify password
 const verifyPassword = async (vendorId, password) => {
@@ -133,6 +134,11 @@ export async function POST(request) {
     const profileData = profile.toObject();
     delete profileData.password;
 
+    await Vendor.findOneAndUpdate(
+      { _id: vendorId },
+      { $set: { vendorProfileCreated: true } }
+    );
+
     return NextResponse.json(
       {
         success: true,
@@ -147,53 +153,83 @@ export async function POST(request) {
 }
 
 // PUT - Update vendor profile (excluding highlights, reels, posts)
-export async function PUT(request) {
+export async function PUT(request, { params }) {
   try {
     await connectToDatabase();
 
+    const { id } = await params;
     const body = await request.json();
-    const { vendorId, password, ...updateData } = body;
 
-    if (!vendorId || !password) {
-      return NextResponse.json({ success: false, message: "Vendor ID and password are required" }, { status: 400 });
+    const {
+      vendorBusinessName,
+      username,
+      vendorName,
+      category,
+      bio,
+      vendorAvatar,
+      vendorCoverImage,
+      location,
+      newPassword,
+    } = body;
+
+    // Find existing profile
+    const existingProfile = await VendorProfile.findOne({ vendorId: id });
+
+    if (!existingProfile) {
+      return NextResponse.json(
+        { success: false, error: "Profile not found" },
+        { status: 404 }
+      );
     }
 
-    const isPasswordValid = await verifyPassword(vendorId, password);
-    if (!isPasswordValid) {
-      return NextResponse.json({ success: false, message: "Invalid password" }, { status: 401 });
-    }
-
-    const allowedUpdates = {
-      vendorBusinessName: updateData.vendorBusinessName,
-      vendorName: updateData.vendorName,
-      location: updateData.location,
-      category: updateData.category,
-      trust: updateData.trust,
+    // Build update object
+    const updateData = {
+      vendorBusinessName: vendorBusinessName || existingProfile.vendorBusinessName,
+      username: username || existingProfile.username,
+      vendorName: vendorName || existingProfile.vendorName,
+      category: category || existingProfile.category,
+      bio: bio !== undefined ? bio : existingProfile.bio,
+      vendorAvatar: vendorAvatar || existingProfile.vendorAvatar,
+      vendorCoverImage: vendorCoverImage !== undefined ? vendorCoverImage : existingProfile.vendorCoverImage,
+      location: location || existingProfile.location,
+      updatedAt: new Date(),
     };
 
-    Object.keys(allowedUpdates).forEach((key) => allowedUpdates[key] === undefined && delete allowedUpdates[key]);
+    // Handle password change if requested
+    if (newPassword) {
 
-    if (Object.keys(allowedUpdates).length === 0) {
-      return NextResponse.json({ success: false, message: "No valid fields to update" }, { status: 400 });
+      // Validate new password
+      if (newPassword.length < 6) {
+        return NextResponse.json(
+          { success: false, error: "New password must be at least 6 characters" },
+          { status: 400 }
+        );
+      }
+
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      updateData.password = hashedPassword;
     }
 
-    const profile = await VendorProfile.findOneAndUpdate(
-      { vendorId },
-      { $set: allowedUpdates },
+    // Update profile
+    const updatedProfile = await VendorProfile.findOneAndUpdate(
+      { vendorId: id },
+      { $set: updateData },
       { new: true, runValidators: true }
-    ).select("-password");
-
-    if (!profile) {
-      return NextResponse.json({ success: false, message: "Vendor profile not found" }, { status: 404 });
-    }
+    );
 
     return NextResponse.json({
       success: true,
       message: "Profile updated successfully",
-      data: profile,
+      data: updatedProfile,
     });
   } catch (error) {
-    return NextResponse.json({ success: false, message: "Server error", error: error.message }, { status: 500 });
+    console.error("Profile update error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to update profile" },
+      { status: 500 }
+    );
   }
 }
 

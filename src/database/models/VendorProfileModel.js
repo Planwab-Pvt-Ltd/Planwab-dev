@@ -1,5 +1,3 @@
-// models/VendorProfile.js
-
 import mongoose from "mongoose";
 
 const highlightItemSchema = new mongoose.Schema({
@@ -21,17 +19,24 @@ const highlightSchema = new mongoose.Schema({
 });
 
 const postSchema = new mongoose.Schema({
-  description: { type: String, required: true },
-  image: { type: String, required: true },
+  description: { type: String, default: "" },
+  mediaUrl: { type: String, required: true },
+  mediaType: {
+    type: String,
+    enum: ["image", "video"],
+    default: "image",
+  },
+  storagePath: { type: String },
+  location: { type: String, default: "" },
   likes: [
     {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      userId: { type: String, required: true },
       likedAt: { type: Date, default: Date.now },
     },
   ],
   reviews: [
     {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      userId: { type: String, required: true },
       rating: { type: Number, min: 1, max: 5, required: true },
       comment: { type: String },
       createdAt: { type: Date, default: Date.now },
@@ -39,7 +44,7 @@ const postSchema = new mongoose.Schema({
   ],
   savedBy: [
     {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      userId: { type: String, required: true },
       savedAt: { type: Date, default: Date.now },
     },
   ],
@@ -47,20 +52,22 @@ const postSchema = new mongoose.Schema({
 });
 
 const reelSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  caption: { type: String },
+  title: { type: String, default: "Untitled Reel" },
+  caption: { type: String, default: "" },
   videoUrl: { type: String, required: true },
   thumbnail: { type: String },
+  storagePath: { type: String },
+  thumbnailPath: { type: String },
   views: { type: Number, default: 0 },
   likes: [
     {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      userId: { type: String, required: true },
       likedAt: { type: Date, default: Date.now },
     },
   ],
   savedBy: [
     {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      userId: { type: String, required: true },
       savedAt: { type: Date, default: Date.now },
     },
   ],
@@ -126,6 +133,16 @@ const vendorProfileSchema = new mongoose.Schema(
     trust: {
       type: Number,
       default: 0,
+      min: 0,
+    },
+    likes: {
+      type: [String],
+      default: [],
+      unique: true,
+    },
+    trustedBy: {
+      type: [String],
+      default: [],
     },
     highlights: [highlightSchema],
     posts: [postSchema],
@@ -133,7 +150,7 @@ const vendorProfileSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 vendorProfileSchema.index({ category: 1 });
