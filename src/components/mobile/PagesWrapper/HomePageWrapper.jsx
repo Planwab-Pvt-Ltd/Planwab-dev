@@ -268,7 +268,7 @@ const HeroSection = memo(() => {
 
 // --- Main Page Structure ---
 
-const MainContent = () => {
+const MainContent = ({ initialPlanners, initialTrending, initialMostBooked }) => {
   const MotionLink = motion(Link);
   const mounted = useFirstMount();
   const haptic = useHapticFeedback();
@@ -276,10 +276,10 @@ const MainContent = () => {
   const currentCategory = searchParams.get("category") || "Default";
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [planners, setPlanners] = useState([]);
-  const [trendingVendors, setTrendingVendors] = useState([]);
-  const [isPlannersLoading, setIsPlannersLoading] = useState(true);
-  const [isTrendingLoading, setIsTrendingLoading] = useState(true);
+  const [planners, setPlanners] = useState(initialPlanners || []);
+  const [trendingVendors, setTrendingVendors] = useState(initialTrending || []);
+  const [isPlannersLoading, setIsPlannersLoading] = useState(false);
+  const [isTrendingLoading, setIsTrendingLoading] = useState(false);
   const { setIsNavbarVisible } = useNavbarVisibilityStore();
 
   const handleCloseDrawer = () => {
@@ -294,59 +294,6 @@ const MainContent = () => {
     anniversary: "banner7.png",
     default: "banner10.png",
   };
-
-  useEffect(() => {
-    const fetchDynamicData = async () => {
-      const startTime = Date.now(); // ✅ ADD: Track start time
-
-      try {
-        // 1. Fetch Top Planners
-        const plannerParams = new URLSearchParams({
-          categories: "planners",
-          sortBy: "rating",
-          limit: "5",
-        });
-
-        const plannersRes = await fetch(`/api/vendor?${plannerParams.toString()}`);
-        const plannersData = await plannersRes.json();
-        if (plannersData.success) setPlanners(plannersData.data);
-
-        // 2. Fetch Trending Vendors
-        const trendingParams = new URLSearchParams({
-          featured: "true",
-          sortBy: "bookings",
-          limit: "5",
-        });
-
-        const trendingRes = await fetch(`/api/vendor?${trendingParams.toString()}`);
-        const trendingData = await trendingRes.json();
-        if (trendingData.success) setTrendingVendors(trendingData.data);
-
-        // ✅ ADD: Ensure minimum 500ms loading time for skeleton visibility
-        const elapsedTime = Date.now() - startTime;
-        const minimumLoadingTime = 500; // milliseconds
-
-        if (elapsedTime < minimumLoadingTime) {
-          await new Promise((resolve) => setTimeout(resolve, minimumLoadingTime - elapsedTime));
-        }
-
-        setIsPlannersLoading(false);
-        setIsTrendingLoading(false);
-      } catch (err) {
-        if (err.name !== "AbortError") console.error("Home dynamic fetch error:", err);
-        // ✅ CHANGE: Still maintain minimum loading time on error
-        const elapsedTime = Date.now() - startTime;
-        if (elapsedTime < 500) {
-          await new Promise((resolve) => setTimeout(resolve, 500 - elapsedTime));
-        }
-      } finally {
-        setIsPlannersLoading(false);
-        setIsTrendingLoading(false);
-      }
-    };
-
-    fetchDynamicData();
-  }, []);
 
   // Note: Removed the `useScroll` listener.
   // It was calculating `isNavVisible` but never using it.
@@ -419,7 +366,7 @@ const MainContent = () => {
           </Link>
         </div>
 
-        <MostBooked />
+        < MostBooked initialData={initialMostBooked}/>
 
         {/* Static Banner 3 - High Priority */}
         <div className="mx-1 mt-2 px-2 mb-6 pb-4">
@@ -503,10 +450,14 @@ const MainContent = () => {
 
 // 3. Suspense Wrapper
 // Required for useSearchParams() in Next.js 13+ App Router
-const HomePageWrapper = () => {
+const HomePageWrapper = ({ initialPlanners, initialTrending, initialMostBooked }) => {
   return (
     <Suspense fallback={<HomePageShimmer />}>
-      <MainContent />
+     <MainContent 
+        initialPlanners={initialPlanners} 
+        initialTrending={initialTrending} 
+        initialMostBooked={initialMostBooked}
+      />
     </Suspense>
   );
 };

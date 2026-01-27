@@ -230,7 +230,7 @@ const ScrollButton = React.memo(({ onClick, disabled, direction }) => (
   </button>
 ));
 
-const MostBooked = () => {
+const MostBooked = ({ initialData }) => {
   const searchParams = useSearchParams();
   const haptic = useHapticFeedback();
   const rawCategory = searchParams.get("category");
@@ -241,11 +241,12 @@ const MostBooked = () => {
 
   const filterParam = searchParams.get("filter") || "all";
   const [activeFilterId, setActiveFilterId] = useState(filterParam);
-  const [services, setServices] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [services, setServices] = useState(initialData || []);
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const isFirstRender = useRef(true);
 
   const currentFilter = useMemo(() => FILTERS.find((f) => f.id === activeFilterId), [activeFilterId]);
 
@@ -269,29 +270,29 @@ const MostBooked = () => {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      setIsLoading(true);
-      try {
-        const params = new URLSearchParams(currentFilter.apiQuery);
-        const response = await fetch(`/api/vendor?${params.toString()}`);
-        const data = await response.json();
+   const fetchServicesData = async (filterId) => {
+    setIsLoading(true);
 
-        if (data.success && data.data) {
-          setServices(data.data);
-        } else {
-          setServices([]);
-        }
-      } catch (error) {
-        console.error("Error fetching services:", error);
+    try {
+      const filterConfig = FILTERS.find(f => f.id === filterId);
+      if (!filterConfig) return;
+
+      const params = new URLSearchParams(filterConfig.apiQuery);
+      const response = await fetch(`/api/vendor?${params.toString()}`);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setServices(data.data);
+      } else {
         setServices([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchServices();
-  }, [currentFilter]);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      setServices([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFilterClick = useCallback((id) => {
     setActiveFilterId(id);
@@ -303,7 +304,24 @@ const MostBooked = () => {
     window.history.pushState({ filter: id }, "", newUrl);
 
     if (scrollRef.current) scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+
+    fetchServicesData(id);
   }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const newFilter = params.get("filter") || "all";
+      
+      if (newFilter !== activeFilterId && FILTERS.some((f) => f.id === newFilter)) {
+        setActiveFilterId(newFilter);
+        fetchServicesData(newFilter); // Fetch data to match the URL we just went back to
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [activeFilterId]);
 
   const checkScroll = useCallback(() => {
     if (!scrollRef.current) return;

@@ -342,31 +342,6 @@ const PORTFOLIO_IMAGES = [
   "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=600&fit=crop",
 ];
 
-const MOCK_PORTFOLIO = Array.from({ length: 15 }, (_, i) => ({
-  id: i + 1,
-  type: "collection",
-  title: [
-    "Wedding",
-    "Corporate",
-    "Birthday",
-    "Anniversary",
-    "Product",
-    "Fashion",
-    "Portraits",
-    "Travel",
-    "Food",
-    "Architecture",
-    "Sports",
-    "Music",
-    "Art",
-    "Nature",
-    "Street",
-  ][i],
-  thumbnail: PORTFOLIO_IMAGES[i % PORTFOLIO_IMAGES.length],
-  count: Math.floor(Math.random() * 20) + 5,
-  images: Array.from({ length: 8 }, (_, j) => PORTFOLIO_IMAGES[(i + j) % PORTFOLIO_IMAGES.length]),
-}));
-
 const MOCK_SERVICES = [
   {
     id: 1,
@@ -1290,6 +1265,171 @@ const StoryViewer = ({ highlight, onClose }) => {
   );
 };
 
+// --- NEW COMPONENT: Individual Comment Item with User Fetching ---
+const CommentItem = memo(({ review, currentUserId, onDelete, isPreview = false }) => {
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUserData = async () => {
+      if (!review.userId) return;
+      try {
+        // Assuming your API accepts a query param like ?clerkId= or ?id=
+        // Adjust the query param name based on your specific backend route
+        const res = await fetch(`/api/user?userId=${review.userId}`);
+        const data = await res.json();
+        if (isMounted && data) {
+          // Handle both array response or single object response
+          const user = Array.isArray(data) ? data[0] : data;
+          setUserData(user);
+        }
+      } catch (err) {
+        console.error("Failed to load user", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchUserData();
+    return () => {
+      isMounted = false;
+    };
+  }, [review.userId]);
+
+  const isOwner = currentUserId && review.userId === currentUserId;
+  const avatar = userData?.photo || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&fit=crop";
+  const username = userData?.username || userData?.firstName || "User";
+
+  return (
+    <div className={`flex items-start gap-3 ${isPreview ? "mb-2" : "mb-4"}`}>
+      <div className={`${isPreview ? "w-6 h-6" : "w-8 h-8"} rounded-full overflow-hidden flex-shrink-0 bg-gray-200`}>
+        {loading ? (
+          <div className="w-full h-full animate-pulse bg-gray-300" />
+        ) : (
+          <SmartMedia src={avatar} type="image" className="w-full h-full object-cover" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between">
+          <p className="text-sm">
+            <span className="font-bold text-white mr-2">{username}</span>
+            <span className="text-white/80 font-light">{review.comment}</span>
+          </p>
+          {isOwner && !isPreview && (
+            <button onClick={() => onDelete(review._id || review.id)} className="text-xs text-red-400 ml-2">
+              <Trash2 size={12} />
+            </button>
+          )}
+        </div>
+        {!isPreview && (
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] text-gray-500">
+              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : "Just now"}
+            </span>
+            {/* Optional: Add Reply button here later */}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+CommentItem.displayName = "CommentItem";
+
+// --- NEW COMPONENT: Instagram-style Comments Drawer ---
+const CommentsDrawer = ({ isOpen, onClose, reviews, onAddComment, onDeleteComment, submitting, currentUserId }) => {
+  const [newComment, setNewComment] = useState("");
+  useBodyScrollLock(isOpen); // Lock background scrolling
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-[121] bg-[#121212] rounded-t-[20px] h-[75vh] flex flex-col border-t border-white/10"
+          >
+            {/* Drawer Handle */}
+            <div className="w-full flex justify-center pt-3 pb-2" onClick={onClose}>
+              <div className="w-10 h-1 bg-gray-600 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="px-4 pb-3 border-b border-white/10 text-center relative">
+              <span className="font-bold text-white">Comments</span>
+            </div>
+
+            {/* Comments List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {reviews.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 pb-12">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-inner"
+                  >
+                    <MessageCircle size={32} className="text-white/40" />
+                  </motion.div>
+                  <div className="space-y-1">
+                    <p className="text-white font-semibold text-lg">No comments yet</p>
+                    <p className="text-white/40 text-sm max-w-[200px] mx-auto leading-relaxed">
+                      Start the conversation by leaving a comment below.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                reviews.map((review, idx) => (
+                  <CommentItem
+                    key={review._id || idx}
+                    review={review}
+                    currentUserId={currentUserId}
+                    onDelete={onDeleteComment}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Input Section */}
+            <div className="p-3 border-t border-white/10 bg-[#121212] pb-8">
+              <div className="flex items-center gap-3 bg-white/10 rounded-full px-4 py-2">
+                {/* Assuming current user avatar is available, else generic */}
+                <div className="w-7 h-7 rounded-full bg-gray-500 overflow-hidden">
+                  {/* Placeholder for current user avatar */}
+                  <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500" />
+                </div>
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none"
+                  onKeyDown={(e) => e.key === "Enter" && newComment.trim() && onAddComment(newComment, setNewComment)}
+                />
+                <button
+                  disabled={!newComment.trim() || submitting}
+                  onClick={() => onAddComment(newComment, setNewComment)}
+                  className={`text-sm font-semibold ${newComment.trim() ? "text-blue-500" : "text-blue-500/50"}`}
+                >
+                  Post
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onEdit, onArchive, vendorId }) => {
   const { user, isSignedIn } = useUser();
 
@@ -1305,13 +1445,14 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
 
   // Review states
   const [reviews, setReviews] = useState([]);
+  const [showCommentsDrawer, setShowCommentsDrawer] = useState(false); // NEW STATE
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [isLoadingInteractions, setIsLoadingInteractions] = useState(true);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [userReview, setUserReview] = useState(null);
   const [editingReview, setEditingReview] = useState(false);
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [isLoadingInteractions, setIsLoadingInteractions] = useState(true);
 
   // Video specific states
   const [isPlaying, setIsPlaying] = useState(true);
@@ -1573,6 +1714,77 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
       console.error("Save error:", error);
     } finally {
       setIsInteracting(false);
+    }
+  };
+
+  // Wrapper to handle comment submission from Drawer
+  const handleAddComment = async (text, clearInputFn) => {
+    if (!isSignedIn || !user?.id) {
+      alert("Please sign in to comment");
+      return;
+    }
+
+    // Optimistic Update
+    const tempId = Date.now();
+    const tempComment = {
+      _id: tempId,
+      userId: user.id,
+      comment: text,
+      createdAt: new Date().toISOString(),
+      rating: 5, // Default for comments
+    };
+
+    setReviews((prev) => [...prev, tempComment]);
+    clearInputFn(""); // Clear drawer input
+    setReviewSubmitting(true);
+
+    try {
+      const vendorId = getVendorId();
+      const postId = post._id;
+
+      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          action: "addReview",
+          userId: user.id,
+          reviewData: { rating: 5, comment: text }, // Treating simple comments as 5-star reviews or adjust backend
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Replace temp comment with real one
+        setReviews((prev) => prev.map((r) => (r._id === tempId ? data.data.review : r)));
+      } else {
+        // Revert
+        setReviews((prev) => prev.filter((r) => r._id !== tempId));
+        alert("Failed to post comment");
+      }
+    } catch (error) {
+      setReviews((prev) => prev.filter((r) => r._id !== tempId));
+      console.error(error);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleDeleteCommentId = async (reviewId) => {
+    if (!confirm("Delete this comment?")) return;
+
+    setReviews((prev) => prev.filter((r) => (r._id || r.id) !== reviewId));
+
+    try {
+      const vendorId = getVendorId();
+      const postId = post._id;
+      await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, action: "deleteReview", userId: user.id, reviewId }),
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -1987,10 +2199,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
                         className={`transition-colors ${isLiked ? "text-red-500 fill-red-500" : "text-white"}`}
                       />
                     </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.8 }}
-                      onClick={() => document.getElementById("comment-input")?.focus()}
-                    >
+                    <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowCommentsDrawer(true)}>
                       <MessageCircle size={28} className="text-white" />
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowShareModal(true)}>
@@ -2025,76 +2234,67 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
                 </div>
 
                 {/* Reviews Section */}
-                <div className="border-t border-white/10 pt-4 mt-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="border-t border-white/10 pt-1">
+                  <div className="flex items-center justify-between">
                     <h4 className="text-white font-bold text-sm">Comments ({reviews.length})</h4>
-                    {isSignedIn && !userReview && (
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setShowReviewModal(true)}
-                        className="px-3 py-1.5 bg-white/10 rounded-full text-white text-xs font-semibold"
-                      >
-                        Add Comment
-                      </motion.button>
-                    )}
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowCommentsDrawer(true)}
+                      className="px-3 py-1.5 bg-white/10 rounded-full text-white text-xs font-semibold"
+                    >
+                      Add Comment
+                    </motion.button>
                   </div>
 
-                  {/* User's Review */}
-                  {userReview && (
-                    <div className="bg-white/10 rounded-xl p-3 mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-semibold text-sm">Your Comment</span>
-                          <div className="flex items-center gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={12}
-                                className={i < userReview.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-500"}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={openEditReview}
-                            className="p-1.5 bg-white/10 rounded-full"
-                          >
-                            <Pencil size={12} className="text-white" />
-                          </motion.button>
-                          <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleDeleteReview}
-                            className="p-1.5 bg-red-500/20 rounded-full"
-                          >
-                            <Trash2 size={12} className="text-red-400" />
-                          </motion.button>
-                        </div>
-                      </div>
-                      {userReview.comment && <p className="text-white/80 text-xs">{userReview.comment}</p>}
-                    </div>
-                  )}
+                  {/* Comments Preview Section */}
+                  <div className="pt-2 mb-1">
+                    {reviews.length > 0 && (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setShowCommentsDrawer(true)}
+                        className="text-gray-400 text-sm mb-2 font-medium"
+                      >
+                        View all {reviews.length} comments
+                      </motion.button>
+                    )}
 
-                  {/* Other Reviews */}
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {reviews
-                      .filter((r) => r.userId?.toString() !== user?.id)
-                      .slice(0, 5)
-                      .map((review, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={10}
-                                className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}
-                              />
-                            ))}
-                          </div>
-                          <p className="text-white/70 text-xs">{review.comment || "No comment"}</p>
+                    {/* Top 3 Comments Preview */}
+                    <div className="mt-2">
+                      {reviews.length === 0 ? (
+                        <div className="py-8 flex flex-col items-center justify-center text-center border-t border-white/5 mt-2">
+                          <p className="text-white/30 text-sm italic mb-2">No comments yet</p>
+                          <button
+                            onClick={() => setShowCommentsDrawer(true)}
+                            className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            Be the first to comment
+                          </button>
                         </div>
-                      ))}
+                      ) : (
+                        <div className="space-y-3">
+                          {reviews.slice(0, 3).map((review, idx) => (
+                            <CommentItem
+                              key={review._id || idx}
+                              review={review}
+                              currentUserId={user?.id}
+                              isPreview={true} // Minimal style for preview
+                              onDelete={() => {}} // Disable delete in preview
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Comment Prompt (Fake Input) */}
+                    <div className="flex items-center gap-3 mt-4 border-t border-white/10">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex-shrink-0" />
+                      <button
+                        onClick={() => setShowCommentsDrawer(true)}
+                        className="text-gray-400 text-xs text-left flex-1"
+                      >
+                        Add a comment...
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2202,6 +2402,15 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
           <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendorName} />
         )}
       </AnimatePresence>
+      <CommentsDrawer
+        isOpen={showCommentsDrawer}
+        onClose={() => setShowCommentsDrawer(false)}
+        reviews={reviews}
+        onAddComment={handleAddComment}
+        onDeleteComment={handleDeleteCommentId}
+        submitting={reviewSubmitting}
+        currentUserId={user?.id}
+      />
     </>
   );
 };
@@ -7014,15 +7223,16 @@ const formatBio = (bio) => {
   });
 };
 
-const VendorProfilePageWrapper = () => {
+const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendor }) => {
   const { id, category } = useParams();
   const router = useRouter();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
 
-  const [vendor, setVendor] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [vendorLoading, setVendorLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [vendor, setVendor] = useState(initialVendor);
+  const [profile, setProfile] = useState(initialProfile || {});
+  const [reviews, setReviews] = useState(initialReviews || []);
+  const [vendorLoading, setVendorLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
@@ -7058,9 +7268,9 @@ const VendorProfilePageWrapper = () => {
   const [selectedReelIndex, setSelectedReelIndex] = useState(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState(null);
 
-  const [trustCount, setTrustCount] = useState(0);
+  const [trustCount, setTrustCount] = useState(initialProfile?.trust || 0);
   const [hasTrusted, setHasTrusted] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [likesCount, setLikesCount] = useState(initialProfile?.likes?.length || 0);
   const [hasLiked, setHasLiked] = useState(false);
   const [userStateReady, setUserStateReady] = useState(false);
   const [interactionsLoading, setInteractionsLoading] = useState(false);
@@ -7089,7 +7299,6 @@ const VendorProfilePageWrapper = () => {
   });
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
-  const [reviews, setReviews] = useState([]);
   const [archivedPosts, setArchivedPosts] = useState([]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
@@ -7103,15 +7312,15 @@ const VendorProfilePageWrapper = () => {
   const lastFetchedProfileId = useRef(null);
   const lastFetchedReviewsId = useRef(null);
 
-  const [posts, setPosts] = useState([]);
-  const [reels, setReels] = useState([]);
+  const [posts, setPosts] = useState(initialProfile?.posts || []);
+  const [reels, setReels] = useState(initialProfile?.reels || []);
 
   const { scrollY } = useScroll();
   const headerOpacity = useTransform(scrollY, [0, 60], [0, 1]);
 
   const highlightsContainerRef = useRef(null);
   const urlParamsProcessedRef = useRef(false);
-  const initialFetchDoneRef = useRef(false);
+  const initialFetchDoneRef = useRef(true);
   const onboardingHandledRef = useRef(false);
 
   const handleVerifyIdentity = () => {
@@ -7122,133 +7331,16 @@ const VendorProfilePageWrapper = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, []);
 
-  // ============ VENDOR DATA FETCH ============
+  // Only update "My Interaction" status (Liked/Trusted) when user loads
   useEffect(() => {
-    if (!id || lastFetchedVendorId.current === id) return;
-    // DON'T set ref here - move it to after successful fetch
-
-    let cancelled = false;
-
-    const fetchVendorData = async () => {
-      setVendorLoading(true);
-      try {
-        const res = await fetch(`/api/vendor/${id}`);
-        const data = res.ok ? await res.json() : null;
-        if (!cancelled) {
-          setVendor(data);
-          lastFetchedVendorId.current = id; // SET HERE after successful update
-        }
-      } catch (error) {
-        console.error("Vendor fetch error:", error);
-        if (!cancelled) {
-          setVendor(null);
-          lastFetchedVendorId.current = id; // Also set on error to prevent retry loops
-        }
-      } finally {
-        if (!cancelled) {
-          setVendorLoading(false);
-        }
-      }
-    };
-
-    fetchVendorData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  // ============ PROFILE DATA FETCH ============
-  useEffect(() => {
-    if (!id || lastFetchedProfileId.current === id) return;
-    // DON'T set ref here - move it to after successful fetch
-
-    let cancelled = false;
-
-    const fetchProfileData = async () => {
-      setProfileLoading(true);
-      try {
-        const res = await fetch(`/api/vendor/${id}/profile?vendorId=${id}`);
-        const data = await res.json();
-        if (!cancelled) {
-          const profileData = data?.success ? data.data : null;
-          setProfile(profileData || {});
-          setShowOnboarding(!profileData);
-
-          // Initialize counts from profile
-          if (profileData) {
-            setTrustCount(profileData?.trust || 0);
-            setLikesCount(profileData.likes?.length || 0);
-
-            setPosts(Array.isArray(profileData.posts) ? profileData.posts : []);
-            setReels(Array.isArray(profileData.reels) ? profileData.reels : []);
-          }
-
-          initialFetchDoneRef.current = true;
-          lastFetchedProfileId.current = id; // SET HERE after successful update
-        }
-      } catch (error) {
-        console.error("Profile fetch error:", error);
-        if (!cancelled) {
-          setProfile({});
-          setShowOnboarding(true);
-          initialFetchDoneRef.current = true;
-          lastFetchedProfileId.current = id; // Also set on error
-        }
-      } finally {
-        if (!cancelled) {
-          setProfileLoading(false);
-        }
-      }
-    };
-
-    fetchProfileData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  // ============ REVIEWS DATA FETCH ============
-  useEffect(() => {
-    if (!id || lastFetchedReviewsId.current === id) return;
-    // DON'T set ref here - move it to after successful fetch
-
-    let cancelled = false;
-
-    const fetchReviewsData = async () => {
-      try {
-        const res = await fetch(`/api/vendor/${id}/reviews`);
-        const data = await res.json();
-        if (!cancelled) {
-          setReviews(data?.success ? data?.data?.reviews : []);
-          lastFetchedReviewsId.current = id; // SET HERE after successful update
-        }
-      } catch (error) {
-        console.error("Reviews fetch error:", error);
-        if (!cancelled) {
-          setReviews([]);
-          lastFetchedReviewsId.current = id; // Also set on error
-        }
-      }
-    };
-
-    fetchReviewsData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  useEffect(() => {
-    if (profileLoading || !isUserLoaded) return;
+    if (!isUserLoaded) return;
 
     if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
       setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
       setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
     }
     setUserStateReady(true);
-  }, [profileLoading, isUserLoaded, isSignedIn, user?.id, profile]);
+  }, [isUserLoaded, isSignedIn, user?.id, profile]); // Removed profileLoading dependency
 
   useEffect(() => {
     // Reset URL-related refs when vendor ID changes
@@ -7259,7 +7351,7 @@ const VendorProfilePageWrapper = () => {
 
   // ============ URL PARAMS - READ ON MOUNT ============
   useEffect(() => {
-    if (profileLoading || urlParamsProcessedRef.current) return;
+    if (urlParamsProcessedRef.current) return;
 
     const params = new URLSearchParams(window.location.search);
     const postId = params.get("post");
@@ -7282,7 +7374,7 @@ const VendorProfilePageWrapper = () => {
 
   // ============ URL PARAMS - WRITE UPDATES (DEBOUNCED) ============
   const updateURLParamsDebounced = useCallback(() => {
-    if (typeof window === "undefined" || !initialFetchDoneRef.current) return;
+    if (typeof window === "undefined") return;
 
     const url = new URL(window.location.href);
 
@@ -7315,8 +7407,7 @@ const VendorProfilePageWrapper = () => {
 
   // Single useEffect for URL updates with debounce
   useEffect(() => {
-    if (!initialFetchDoneRef.current) return;
-
+    // ✅ FIX: Removed the ref check. Updates happen whenever dependencies change.
     const timer = setTimeout(updateURLParamsDebounced, 100);
     return () => clearTimeout(timer);
   }, [updateURLParamsDebounced]);
@@ -8049,14 +8140,14 @@ const VendorProfilePageWrapper = () => {
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
-                  {posts.map((post) => {
+                  {posts.map((post, index) => {
                     let poster;
                     if (post.mediaType === "video") {
                       poster = getVideoThumbnail(post?.mediaUrl, 3);
                     }
                     return (
                       <motion.div
-                        key={post?._id || `post-${Math.random()}`}
+                        key={post?._id || `post-${index}`}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => {
                           if (playingVideoId) {
@@ -8343,7 +8434,7 @@ const VendorProfilePageWrapper = () => {
               <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
                 {reels.map((reel, index) => (
                   <motion.div
-                    key={reel?.id || reel?._id || `reel-${Math.random()}`}
+                    key={reel?.id || reel?._id || `reel-${index}`}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setSelectedReelIndex(index)}
                     className="aspect-[9/16] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
@@ -9356,9 +9447,8 @@ const VendorProfilePageWrapper = () => {
 
   const getPlainTextLength = (html) => {
     if (!html) return 0;
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return (tmp.textContent || tmp.innerText || "").trim().length;
+    // Replaces all HTML tags with an empty string to get raw text length
+    return html.replace(/<[^>]*>/g, "").trim().length;
   };
 
   const sanitizeHtml = (html) => {
@@ -9372,10 +9462,6 @@ const VendorProfilePageWrapper = () => {
   };
 
   console.log("Vendor Loading:", vendorLoading);
-
-  if (vendorLoading) {
-    return <VendorProfileSkeleton />;
-  }
 
   if (!vendor) {
     return (
@@ -9432,12 +9518,12 @@ const VendorProfilePageWrapper = () => {
       />
 
       {!openOnboardingDrawer && (
-        <motion.header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-b-2xl">
+        <motion.header className="fixed top-0 left-0 right-0 z-50 bg-white/50 dark:bg-gray-900/80 backdrop-blur-xl rounded-b-3xl">
           <motion.div
             style={{ opacity: headerOpacity }}
             className="absolute inset-0 bg-white dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800/50"
           />
-          <div className="relative flex items-center justify-between px-4 py-3">
+          <div className="relative flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-3">
               <motion.button
                 whileTap={{ scale: 0.9 }}
@@ -9481,8 +9567,8 @@ const VendorProfilePageWrapper = () => {
           }}
         />
         <div className="bg-transparent dark:bg-gray-900 z-30">
-          <div className="px-4 pt-5 pb-1">
-            <div className="flex items-start gap-5 mb-2">
+          <div className="px-4 pt-2 pb-1">
+            <div className="flex items-start gap-5 mb-0">
               <motion.div
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowProfilePicture(true)}
@@ -9525,7 +9611,7 @@ const VendorProfilePageWrapper = () => {
               </div>
             </div>
 
-            <div className="flex justify-around mb-1 py-3 mx-10">
+            <div className="flex justify-around mb-1 py-3 pt-0 mx-10">
               {stats.map((stat, idx) => (
                 <React.Fragment key={idx}>
                   {stat.showSkeleton ? (
@@ -9684,7 +9770,7 @@ const VendorProfilePageWrapper = () => {
         </div>
       </div>
 
-      <div className="sticky top-14 z-30 bg-white dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80 mb-1 rounded-[5px]">
+      <div className="sticky top-12 z-30 bg-white dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80 mb-1 rounded-[5px]">
         <div className="flex">
           {TABS.map((tab) => (
             <motion.button

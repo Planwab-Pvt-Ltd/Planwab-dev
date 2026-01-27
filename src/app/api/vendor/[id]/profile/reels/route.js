@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectToDatabase } from "../../../../../../database/mongoose";
@@ -142,6 +144,14 @@ export async function POST(request, context) {
     let form;
     try {
       form = await request.formData();
+
+      if (!form) {
+  return NextResponse.json(
+    { success: false, error: "Invalid form data" },
+    { status: 400 }
+  );
+}
+
     } catch (formError) {
       console.error("Form data parsing error:", formError);
       return NextResponse.json({ success: false, error: "Invalid form data" }, { status: 400 });
