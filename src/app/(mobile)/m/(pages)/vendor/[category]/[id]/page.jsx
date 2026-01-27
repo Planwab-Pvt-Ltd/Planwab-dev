@@ -7,6 +7,32 @@ const getBaseUrl = () => {
   return "http://localhost:3000"; // Fallback for local dev
 };
 
+async function getVendorDetails(id) {
+  try {
+    const res = await fetch(`${getBaseUrl()}/api/vendor/${id}`, {
+      cache: "no-store", // Ensure fresh data
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch (error) {
+    console.error("Fetch vendor error:", error);
+    return null;
+  }
+}
+
+async function getRelatedVendors(id) {
+  try {
+    const res = await fetch(`${getBaseUrl()}/api/vendor/lists/${id}`, {
+      next: { revalidate: 3600 }, // Cache these lists for an hour
+    });
+    if (!res.ok) return { similarVendors: [], recommendedVendors: [] };
+    return res.json();
+  } catch (error) {
+    console.error("Fetch related error:", error);
+    return { similarVendors: [], recommendedVendors: [] };
+  }
+}
+
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
@@ -47,10 +73,26 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default function VendorDetailsPage() {
+export default async function VendorDetailsPage({ params }) {
+  const { id } = await params;
+
+  // 3. Fetch Data in Parallel
+  const [vendor, relatedData] = await Promise.all([
+    getVendorDetails(id),
+    getRelatedVendors(id),
+  ]);
+
+  // 4. Handle 404
+  if (!vendor) {
+    return notFound();
+  }
+
+  // 5. Pass data as props
   return (
-    <>
-      <VendorDetailsPageWrapper />
-    </>
+    <VendorDetailsPageWrapper 
+      initialVendor={vendor}
+      initialSimilar={relatedData?.similarVendors || []}
+      initialRecommended={relatedData?.recommendedVendors || []}
+    />
   );
 }

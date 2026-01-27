@@ -2019,7 +2019,7 @@ const SocialLinksSection = memo(({ socialLinks }) => {
 });
 SocialLinksSection.displayName = "SocialLinksSection";
 
-const VendorDetailsPageWrapper = () => {
+const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecommended }) => {
   const { id } = useParams();
   const redirectWithReturn = useRedirectWithReturn();
   const router = useRouter();
@@ -2044,12 +2044,12 @@ const VendorDetailsPageWrapper = () => {
   const carouselScale = useTransform(scrollY, [0, 500], [1, 1.1]);
   const carouselOpacity = useTransform(scrollY, [0, 400], [1, 0.3]);
 
-  const [vendor, setVendor] = useState(null);
+  const [vendor, setVendor] = useState(initialVendor);
+  const [similarVendors, setSimilarVendors] = useState(initialSimilar || []);
+  const [recommendedVendors, setRecommendedVendors] = useState(initialRecommended || []);
   const [activeDrawer, setActiveDrawer] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [similarVendors, setSimilarVendors] = useState([]);
-  const [recommendedVendors, setRecommendedVendors] = useState([]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [slideDirection, setSlideDirection] = useState(0);
@@ -2237,26 +2237,6 @@ const VendorDetailsPageWrapper = () => {
     redirectWithReturn("/m/plan-my-event/event");
   }, [redirectWithReturn]);
 
-  const fetchVendor = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/vendor/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch vendor data.");
-      const data = await response.json();
-      setVendor(data);
-      console.log("Fetched vendor data:", data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchVendor();
-  }, [fetchVendor]);
-
   useEffect(() => {
     let rafId = null;
 
@@ -2287,38 +2267,6 @@ const VendorDetailsPageWrapper = () => {
       }
     };
   }, [showHeaderTabs]);
-
-  useEffect(() => {
-    if (!vendor?._id) return;
-
-    let isMounted = true;
-
-    const fetchLists = async () => {
-      try {
-        const response = await fetch(`/api/vendor/lists/${vendor._id}`);
-
-        if (!isMounted) return;
-
-        if (response.ok) {
-          const data = await response.json();
-          if (isMounted) {
-            setSimilarVendors(data.similarVendors || []);
-            setRecommendedVendors(data.recommendedVendors || []);
-          }
-        }
-      } catch (e) {
-        if (isMounted) {
-          console.error("Failed to load recommendations", e);
-        }
-      }
-    };
-
-    fetchLists();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [vendor?._id]);
 
   const images = useMemo(() => vendor?.images || [], [vendor]);
 
@@ -2620,7 +2568,8 @@ const VendorDetailsPageWrapper = () => {
     [showHeaderTabs]
   );
 
-  if (loading) return <DetailsPageSkeleton />;
+  // Only show skeleton if vendor is somehow null (fallback)
+  if (!vendor) return <DetailsPageSkeleton />;
   if (error || !vendor)
     return (
       <div className="h-screen flex flex-col items-center justify-center text-gray-500 gap-3 px-4">
