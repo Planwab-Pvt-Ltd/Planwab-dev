@@ -458,19 +458,38 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 1. CATEGORY FILTERING
     // ---------------------------------------------------------------------------
-    if (categories) {
-      const categoryArray = categories
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean);
-
-      if (categoryArray.length === 1) {
-        query.category = categoryArray[0];
-      } else if (categoryArray.length > 1) {
-        query.category = { $in: categoryArray };
+    // Handle both landing page and marketplace category filtering
+    if (landing === "true") {
+      // Landing page: use 'categories' parameter
+      if (categories && categories !== "all") {
+        const categoryArray = categories.split(",").map((c) => c.trim()).filter(Boolean);
+        if (categoryArray.length === 1) {
+          query.category = categoryArray[0];
+        } else if (categoryArray.length > 1) {
+          query.category = { $in: categoryArray };
+        }
       }
-    } else if (category && category !== "all") {
-      query.category = category;
+      
+      // Apply featured filter if specifically requested for landing page
+      if (featured === "true") {
+        query.isFeatured = true;
+      }
+    } else {
+      // Marketplace: use both 'categories' and 'category' parameters
+      if (categories) {
+        const categoryArray = categories
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean);
+
+        if (categoryArray.length === 1) {
+          query.category = categoryArray[0];
+        } else if (categoryArray.length > 1) {
+          query.category = { $in: categoryArray };
+        }
+      } else if (category && category !== "all") {
+        query.category = category;
+      }
     }
 
     // ---------------------------------------------------------------------------
@@ -491,7 +510,8 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 4. FEATURED VENDORS
     // ---------------------------------------------------------------------------
-    if (featured === "true") {
+    // Skip featured vendors filtering for landing page requests since it's already handled above
+    if (featured === "true" && landing !== "true") {
       query.isFeatured = true;
     }
 
@@ -682,22 +702,28 @@ export async function GET(request) {
       console.log("Sort Mapping Used:", sortBy, "->", SORT_MAPPINGS[sortBy] ? "Custom" : "Dynamic");
       console.log("Pagination:", { skip, limit });
       console.log(`Query returned ${processedVendors.length} vendors out of ${total} total`);
+      console.log("Execution Time:", Date.now() - startTime, "ms");
       console.log("=======================");
     }
 
     // =============================================================================
-    // GET VERIFIED VENDORS COUNT FOR DISPLAY
+    // PREPARE OPTIMIZED RESPONSE
     // =============================================================================
-    let verifiedVendorsCount = 0;
-    try {
-      const verifiedCount = await Vendor.countDocuments({ isVerified: true });
-      verifiedVendorsCount = verifiedCount;
-    } catch (error) {
-      console.error("Error fetching verified vendors count:", error);
-      verifiedVendorsCount = 0;
+    
+    // Return simplified response structure for landing page requests
+    if (landing === "true") {
+      return NextResponse.json({
+        success: true,
+        data: processedVendors,
+        meta: {
+          count: processedVendors.length,
+          category: categories || "all",
+          featured: featured === "true"
+        }
+      });
     }
-
-    // Standard response for both marketplace and landing page
+    
+    // Standard response for marketplace
     return NextResponse.json({
       success: true,
       data: processedVendors,
@@ -734,14 +760,19 @@ export async function GET(request) {
           sortOrder,
           sortMapping: SORT_MAPPINGS[sortBy] ? "predefined" : "dynamic",
         },
-        verifiedVendorsCount: verifiedVendorsCount,
-        landing: landing === "true",
       },
     });
   } catch (error) {
     // =============================================================================
     // OPTIMIZED: ERROR HANDLING (Conditional logging)
     // =============================================================================
+    if (process.env.NODE_ENV === "development") {
+      console.error("=== VENDOR API ERROR ===");
+      console.error("Error details:", error);
+      console.error("Stack trace:", error.stack);
+      console.error("=======================");
+    }
+
     // Handle specific error types
     if (error.name === "CastError") {
       return NextResponse.json(

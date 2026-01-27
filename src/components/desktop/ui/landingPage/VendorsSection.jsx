@@ -311,7 +311,7 @@ export default function VendorsSection() {
         queryParams.set("limit", "12");            // Limit to 12 vendors for display
         
         // Add category filter if a specific category is selected (not "All")
-        if (category) queryParams.set("category", category);
+        if (category) queryParams.set("categories", category);
         
         // Fetch vendor data from consolidated API endpoint
         const response = await fetch(`/api/vendor?${queryParams.toString()}`);
