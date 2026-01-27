@@ -19,7 +19,6 @@ import {
 } from "@/database/models/VendorModel";
 import { connectToDatabase } from "@/database/mongoose";
 
-// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
