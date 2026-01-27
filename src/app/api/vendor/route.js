@@ -430,6 +430,7 @@ export async function GET(request) {
     const cities = searchParams.get("cities");
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
+    const guestCapacity = searchParams.get("guestCapacity");
     const search = searchParams.get("search");
 
     // Sort parameters
@@ -567,7 +568,23 @@ export async function GET(request) {
     }
 
     // ---------------------------------------------------------------------------
-    // 8. SEARCH QUERY (Full-text search across multiple fields)
+    // 8. GUEST CAPACITY FILTERING
+    // ---------------------------------------------------------------------------
+    if (guestCapacity && !isNaN(parseInt(guestCapacity))) {
+      const capacityValue = parseInt(guestCapacity);
+      if (capacityValue > 0) {
+        andConditions.push({
+          $or: [
+            { "seating.max": { $gte: capacityValue } },
+            { "capacity": { $gte: capacityValue } },
+            { "maxGuests": { $gte: capacityValue } }
+          ]
+        });
+      }
+    }
+
+    // ---------------------------------------------------------------------------
+    // 9. SEARCH QUERY (Full-text search across multiple fields)
     // ---------------------------------------------------------------------------
     if (search && search.trim() !== "") {
       const searchRegex = new RegExp(search.trim(), "i");
@@ -590,7 +607,7 @@ export async function GET(request) {
     }
 
     // ---------------------------------------------------------------------------
-    // 9. COMBINE ALL CONDITIONS
+    // 10. COMBINE ALL CONDITIONS
     // ---------------------------------------------------------------------------
     if (andConditions.length > 0) {
       query.$and = andConditions;
@@ -691,6 +708,7 @@ export async function GET(request) {
         cities,
         minPrice,
         maxPrice,
+        guestCapacity,
         minRating,
         search,
         sortBy,
