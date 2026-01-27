@@ -19,6 +19,7 @@ import {
 } from "@/database/models/VendorModel";
 import { connectToDatabase } from "@/database/mongoose";
 
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
@@ -435,10 +436,9 @@ export async function GET(request) {
     const sortBy = searchParams.get("sortBy") || "rating";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    // Extract landing page parameter to determine if this request is for the landing page
-    const landing = searchParams.get("landing");
-
-    // Handle single vendor request
+    // =============================================================================
+    // HANDLE SINGLE VENDOR REQUEST
+    // =============================================================================
     if (vendorId) {
       const vendor = await Vendor.findById(vendorId).select("-reviewsList -likedBy -bookmarkedBy").lean().exec();
 
@@ -457,38 +457,19 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 1. CATEGORY FILTERING
     // ---------------------------------------------------------------------------
-    // Handle both landing page and marketplace category filtering
-    if (landing === "true") {
-      // Landing page: use 'categories' parameter
-      if (categories && categories !== "all") {
-        const categoryArray = categories.split(",").map((c) => c.trim()).filter(Boolean);
-        if (categoryArray.length === 1) {
-          query.category = categoryArray[0];
-        } else if (categoryArray.length > 1) {
-          query.category = { $in: categoryArray };
-        }
-      }
-      
-      // Apply featured filter if specifically requested for landing page
-      if (featured === "true") {
-        query.isFeatured = true;
-      }
-    } else {
-      // Marketplace: use both 'categories' and 'category' parameters
-      if (categories) {
-        const categoryArray = categories
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean);
+    if (categories) {
+      const categoryArray = categories
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
 
-        if (categoryArray.length === 1) {
-          query.category = categoryArray[0];
-        } else if (categoryArray.length > 1) {
-          query.category = { $in: categoryArray };
-        }
-      } else if (category && category !== "all") {
-        query.category = category;
+      if (categoryArray.length === 1) {
+        query.category = categoryArray[0];
+      } else if (categoryArray.length > 1) {
+        query.category = { $in: categoryArray };
       }
+    } else if (category && category !== "all") {
+      query.category = category;
     }
 
     // ---------------------------------------------------------------------------
@@ -509,8 +490,7 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 4. FEATURED VENDORS
     // ---------------------------------------------------------------------------
-    // Skip featured vendors filtering for landing page requests since it's already handled above
-    if (featured === "true" && landing !== "true") {
+    if (featured === "true") {
       query.isFeatured = true;
     }
 
@@ -660,7 +640,7 @@ export async function GET(request) {
     // =============================================================================
     // OPTIMIZED: DATA PROCESSING (Minimize operations)
     // =============================================================================
-    let processedVendors = vendors.map((vendor) => ({
+    const processedVendors = vendors.map((vendor) => ({
       ...vendor,
       bookings: vendor.bookings ?? vendor.totalBookings ?? 0,
       reviews: vendor.reviews ?? vendor.reviewCount ?? vendor.totalReviews ?? 0,
@@ -708,21 +688,6 @@ export async function GET(request) {
     // =============================================================================
     // PREPARE OPTIMIZED RESPONSE
     // =============================================================================
-    
-    // Return simplified response structure for landing page requests
-    if (landing === "true") {
-      return NextResponse.json({
-        success: true,
-        data: processedVendors,
-        meta: {
-          count: processedVendors.length,
-          category: categories || "all",
-          featured: featured === "true"
-        }
-      });
-    }
-    
-    // Standard response for marketplace
     return NextResponse.json({
       success: true,
       data: processedVendors,
