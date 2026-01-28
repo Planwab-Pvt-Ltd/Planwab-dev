@@ -1,10 +1,20 @@
+import { headers } from "next/headers";
 import HomePageWrapper from "@/components/mobile/PagesWrapper/HomePageWrapper";
 
-// Helper for API URL
-const getBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
+const getServerBaseUrl = async () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  const h = await headers();
+  const host = h.get("host");
+  const protocol = h.get("x-forwarded-proto") || "http";
+  
+  return `${protocol}://${host}`;
 };
 
 async function getMostBookedVendors() {
@@ -15,7 +25,8 @@ async function getMostBookedVendors() {
       sortBy: "rating",
       limit: "8",
     });
-    const res = await fetch(`${getBaseUrl()}/api/vendor?${params}`, {
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor?${params}`, {
       next: { revalidate: 3600 } 
     });
     const data = await res.json();
@@ -34,7 +45,8 @@ async function getTopPlanners() {
       sortBy: "rating",
       limit: "5",
     });
-    const res = await fetch(`${getBaseUrl()}/api/vendor?${params}`, {
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor?${params}`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });
     const data = await res.json();
@@ -53,7 +65,8 @@ async function getTrendingVendors() {
       sortBy: "bookings",
       limit: "5",
     });
-    const res = await fetch(`${getBaseUrl()}/api/vendor?${params}`, {
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor?${params}`, {
       next: { revalidate: 3600 }
     });
     const data = await res.json();
@@ -82,7 +95,7 @@ export default async function HomePage() {
     <>
       <HomePageWrapper 
         initialPlanners={planners} 
-        initialTrending={trending} 
+        initialTrending={trending}
         initialMostBooked={mostBooked}
       />
     </>
