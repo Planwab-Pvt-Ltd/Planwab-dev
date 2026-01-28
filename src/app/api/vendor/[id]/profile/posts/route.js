@@ -1,4 +1,6 @@
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes timeout for Vercel
 
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -6,7 +8,7 @@ import crypto from "crypto";
 import { connectToDatabase } from "../../../../../../database/mongoose";
 import VendorProfile from "../../../../../../database/models/VendorProfileModel";
 
-// Cloudinary config - initialize only once
+// Cloudinary config
 const getCloudinary = () => {
   if (!cloudinary.config().cloud_name) {
     cloudinary.config({
@@ -26,8 +28,8 @@ const getBunnyConfig = () => ({
 });
 
 const MAX_POSTS = 6;
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 
@@ -36,18 +38,47 @@ function generateUniqueFilename(original) {
   return `${Date.now()}_${crypto.randomBytes(6).toString("hex")}.${ext}`;
 }
 
-// Upload video to Bunny with retry logic
+// Stream file to buffer in chunks (memory efficient)
+async function fileToBuffer(file) {
+  try {
+    // For smaller files, use arrayBuffer directly
+    if (file.size < 50 * 1024 * 1024) { // 50MB threshold
+      const arrayBuffer = await file.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+    
+    // For larger files, read in chunks
+    const chunks = [];
+    const reader = file.stream().getReader();
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    
+    return Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+  } catch (error) {
+    console.error("File to buffer error:", error);
+    throw new Error("Failed to process file. Please try a smaller file or check your connection.");
+  }
+}
+
+// Upload video to Bunny with streaming
 async function uploadToBunny(buffer, path, contentType, retries = 3) {
   const config = getBunnyConfig();
 
   if (!config.storageZoneName || !config.storageZonePassword || !config.pullZoneUrl) {
-    throw new Error("Bunny.net configuration is incomplete. Check environment variables.");
+    throw new Error("Bunny.net configuration is incomplete.");
   }
 
   const url = `https://storage.bunnycdn.com/${config.storageZoneName}/${path}`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+
       const res = await fetch(url, {
         method: "PUT",
         headers: {
@@ -56,7 +87,10 @@ async function uploadToBunny(buffer, path, contentType, retries = 3) {
           "Content-Length": buffer.length.toString(),
         },
         body: buffer,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         const errorText = await res.text().catch(() => "Unknown error");
@@ -67,43 +101,36 @@ async function uploadToBunny(buffer, path, contentType, retries = 3) {
     } catch (error) {
       console.error(`Bunny upload attempt ${attempt} failed:`, error.message);
       if (attempt === retries) throw error;
-      await new Promise((r) => setTimeout(r, 1000 * attempt)); // Exponential backoff
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
     }
   }
 }
 
-// Delete from Bunny
 async function deleteFromBunny(path) {
   if (!path) return;
   const config = getBunnyConfig();
 
   if (!config.storageZoneName || !config.storageZonePassword) {
-    console.warn("Bunny config incomplete, skipping delete");
     return;
   }
 
   const url = `https://storage.bunnycdn.com/${config.storageZoneName}/${path}`;
 
   try {
-    const res = await fetch(url, {
+    await fetch(url, {
       method: "DELETE",
       headers: { AccessKey: config.storageZonePassword },
     });
-
-    if (!res.ok && res.status !== 404) {
-      console.warn(`Failed to delete from Bunny: ${res.status}`);
-    }
   } catch (error) {
     console.warn("Bunny delete error:", error.message);
   }
 }
 
-// Upload image to Cloudinary with promise wrapper
 async function uploadToCloudinary(buffer, vendorId) {
   const cloud = getCloudinary();
 
-  if (!cloud.config().cloud_name || !cloud.config().api_key || !cloud.config().api_secret) {
-    throw new Error("Cloudinary configuration is incomplete. Check environment variables.");
+  if (!cloud.config().cloud_name) {
+    throw new Error("Cloudinary configuration is incomplete.");
   }
 
   return new Promise((resolve, reject) => {
@@ -112,10 +139,10 @@ async function uploadToCloudinary(buffer, vendorId) {
         folder: `vendors/${vendorId}/posts`,
         resource_type: "image",
         transformation: [{ quality: "auto:good" }, { fetch_format: "auto" }],
+        timeout: 120000,
       },
       (error, result) => {
         if (error) {
-          console.error("Cloudinary upload error:", error);
           reject(new Error(`Cloudinary upload failed: ${error.message}`));
         } else {
           resolve(result);
@@ -127,7 +154,6 @@ async function uploadToCloudinary(buffer, vendorId) {
   });
 }
 
-// Delete from Cloudinary
 async function deleteFromCloudinary(publicId) {
   try {
     const cloud = getCloudinary();
@@ -137,12 +163,11 @@ async function deleteFromCloudinary(publicId) {
   }
 }
 
-// GET - Fetch all posts for a vendor
+// GET - Fetch all posts
 export async function GET(request, context) {
   try {
     await connectToDatabase();
 
-    // Handle params properly for Next.js 13+
     const params = await context.params;
     const vendorId = params.id;
 
@@ -174,15 +199,12 @@ export async function POST(request, context) {
   try {
     await connectToDatabase();
 
-    // Handle params properly for Next.js 13+
     const params = await context.params;
     const vendorId = params.id;
 
     if (!vendorId) {
       return NextResponse.json({ success: false, error: "Vendor ID is required" }, { status: 400 });
     }
-
-    console.log(`Processing post upload for vendor: ${vendorId}`);
 
     const profile = await VendorProfile.findOne({ vendorId });
     if (!profile) {
@@ -193,13 +215,34 @@ export async function POST(request, context) {
       return NextResponse.json({ success: false, error: `Maximum ${MAX_POSTS} posts allowed` }, { status: 400 });
     }
 
-    // Parse form data
+    // Parse form data with error handling for mobile
     let form;
     try {
+      const contentType = request.headers.get("content-type") || "";
+      
+      if (!contentType.includes("multipart/form-data")) {
+        return NextResponse.json(
+          { success: false, error: "Invalid content type. Expected multipart/form-data" },
+          { status: 400 }
+        );
+      }
+
       form = await request.formData();
     } catch (formError) {
       console.error("Form data parsing error:", formError);
-      return NextResponse.json({ success: false, error: "Invalid form data" }, { status: 400 });
+      
+      // Provide specific error messages for common issues
+      if (formError.message?.includes("body") || formError.message?.includes("size")) {
+        return NextResponse.json(
+          { success: false, error: "File too large. Please try a smaller file or compress the video." },
+          { status: 413 }
+        );
+      }
+      
+      return NextResponse.json(
+        { success: false, error: "Failed to process upload. Please try again." },
+        { status: 400 }
+      );
     }
 
     const file = form.get("file");
@@ -210,73 +253,63 @@ export async function POST(request, context) {
       return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
     const fileType = file.type || "";
     const isImage = ALLOWED_IMAGE_TYPES.includes(fileType);
     const isVideo = ALLOWED_VIDEO_TYPES.includes(fileType);
 
     if (!isImage && !isVideo) {
       return NextResponse.json(
-        {
-          success: false,
-          error: `Invalid file type: ${fileType}. Allowed: images (JPEG, PNG, WebP, GIF) and videos (MP4, MOV, WebM)`,
-        },
-        { status: 400 },
+        { success: false, error: `Invalid file type: ${fileType}` },
+        { status: 400 }
       );
     }
 
-    // Validate file size
     const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
     if (file.size > maxSize) {
       return NextResponse.json(
-        {
-          success: false,
-          error: `File size (${Math.round(file.size / (1024 * 1024))}MB) exceeds ${Math.round(maxSize / (1024 * 1024))}MB limit`,
-        },
-        { status: 400 },
+        { success: false, error: `File size exceeds ${Math.round(maxSize / (1024 * 1024))}MB limit` },
+        { status: 400 }
       );
     }
 
-    console.log(`Uploading ${isImage ? "image" : "video"}: ${file.name} (${Math.round(file.size / 1024)}KB)`);
+    console.log(`Processing ${isImage ? "image" : "video"}: ${file.name} (${Math.round(file.size / (1024 * 1024))}MB)`);
 
-    // Convert file to buffer
+    // Convert file to buffer with memory-efficient method
     let buffer;
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      buffer = Buffer.from(arrayBuffer);
+      buffer = await fileToBuffer(file);
     } catch (bufferError) {
-      console.error("Buffer conversion error:", bufferError);
-      return NextResponse.json({ success: false, error: "Failed to process file" }, { status: 500 });
+      console.error("Buffer error:", bufferError);
+      return NextResponse.json(
+        { success: false, error: bufferError.message },
+        { status: 500 }
+      );
     }
 
     let mediaUrl, storagePath, mediaType;
 
     if (isImage) {
-      // Upload image to Cloudinary
-      console.log("Uploading to Cloudinary...");
       const result = await uploadToCloudinary(buffer, vendorId);
       mediaUrl = result.secure_url;
       storagePath = result.public_id;
       mediaType = "image";
       uploadedPath = storagePath;
       uploadedType = "cloudinary";
-      console.log("Cloudinary upload successful:", mediaUrl);
     } else {
-      // Upload video to Bunny
-      console.log("Uploading to Bunny.net...");
       const filename = generateUniqueFilename(file.name);
       storagePath = `posts/${vendorId}/${filename}`;
       mediaUrl = await uploadToBunny(buffer, storagePath, fileType);
       mediaType = "video";
       uploadedPath = storagePath;
       uploadedType = "bunny";
-      console.log("Bunny upload successful:", mediaUrl);
     }
 
-    // Create new post document
+    // Clear buffer from memory
+    buffer = null;
+
     const newPost = {
       description: description.trim(),
-      mediaUrl: mediaUrl,
+      mediaUrl,
       mediaType,
       storagePath,
       location: location.trim(),
@@ -286,7 +319,6 @@ export async function POST(request, context) {
       createdAt: new Date(),
     };
 
-    // Add to profile
     if (!profile.posts) {
       profile.posts = [];
     }
@@ -294,36 +326,28 @@ export async function POST(request, context) {
 
     await profile.save();
 
-    const savedPost = profile.posts[0];
-    console.log("Post saved successfully:", savedPost._id);
-
     return NextResponse.json({
       success: true,
-      data: savedPost,
+      data: profile.posts[0],
     });
   } catch (error) {
-    console.error("POST posts error:", error);
+    console.error("POST error:", error);
 
-    // Cleanup uploaded file on error
     if (uploadedPath) {
       try {
         if (uploadedType === "cloudinary") {
           await deleteFromCloudinary(uploadedPath);
-        } else if (uploadedType === "bunny") {
+        } else {
           await deleteFromBunny(uploadedPath);
         }
-        console.log("Cleaned up uploaded file after error");
-      } catch (cleanupError) {
-        console.warn("Cleanup failed:", cleanupError.message);
+      } catch (e) {
+        console.warn("Cleanup failed:", e);
       }
     }
 
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Upload failed",
-      },
-      { status: 500 },
+      { success: false, error: error.message || "Upload failed" },
+      { status: 500 }
     );
   }
 }
@@ -335,16 +359,11 @@ export async function PUT(request, context) {
 
     const params = await context.params;
     const vendorId = params.id;
-
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get("postId");
 
-    if (!vendorId) {
-      return NextResponse.json({ success: false, error: "Vendor ID is required" }, { status: 400 });
-    }
-
-    if (!postId) {
-      return NextResponse.json({ success: false, error: "postId query parameter is required" }, { status: 400 });
+    if (!vendorId || !postId) {
+      return NextResponse.json({ success: false, error: "Vendor ID and Post ID required" }, { status: 400 });
     }
 
     const profile = await VendorProfile.findOne({ vendorId });
@@ -358,73 +377,17 @@ export async function PUT(request, context) {
     }
 
     const form = await request.formData();
-    const file = form.get("file");
     const description = form.get("description");
     const location = form.get("location");
 
     const post = profile.posts[postIndex];
 
-    // Update text fields if provided
     if (description !== null && description !== undefined) {
       post.description = description.trim();
     }
 
     if (location !== null && location !== undefined) {
       post.location = location.trim();
-    }
-
-    // Replace media if new file provided
-    if (file && typeof file !== "string" && file.size > 0) {
-      const fileType = file.type || "";
-      const isImage = ALLOWED_IMAGE_TYPES.includes(fileType);
-      const isVideo = ALLOWED_VIDEO_TYPES.includes(fileType);
-
-      if (!isImage && !isVideo) {
-        return NextResponse.json({ success: false, error: "Invalid file type" }, { status: 400 });
-      }
-
-      const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
-      if (file.size > maxSize) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `File size exceeds ${Math.round(maxSize / (1024 * 1024))}MB limit`,
-          },
-          { status: 400 },
-        );
-      }
-
-      // Delete old media
-      if (post.storagePath) {
-        try {
-          if (post.mediaType === "image") {
-            await deleteFromCloudinary(post.storagePath);
-          } else {
-            await deleteFromBunny(post.storagePath);
-          }
-        } catch (storageError) {
-          console.warn("Failed to delete from storage:", storageError.message);
-        }
-      }
-
-      const buffer = Buffer.from(await file.arrayBuffer());
-      let mediaUrl, storagePath, mediaType;
-
-      if (isImage) {
-        const result = await uploadToCloudinary(buffer, vendorId);
-        mediaUrl = result.secure_url;
-        storagePath = result.public_id;
-        mediaType = "image";
-      } else {
-        const filename = generateUniqueFilename(file.name);
-        storagePath = `posts/${vendorId}/${filename}`;
-        mediaUrl = await uploadToBunny(buffer, storagePath, fileType);
-        mediaType = "video";
-      }
-
-      post.image = mediaUrl;
-      post.storagePath = storagePath;
-      post.mediaType = mediaType;
     }
 
     await profile.save();
@@ -434,7 +397,7 @@ export async function PUT(request, context) {
       data: profile.posts[postIndex],
     });
   } catch (error) {
-    console.error("PUT posts error:", error);
+    console.error("PUT error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -446,16 +409,11 @@ export async function DELETE(request, context) {
 
     const params = await context.params;
     const vendorId = params.id;
-
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get("postId");
 
-    if (!vendorId) {
-      return NextResponse.json({ success: false, error: "Vendor ID is required" }, { status: 400 });
-    }
-
-    if (!postId) {
-      return NextResponse.json({ success: false, error: "postId query parameter is required" }, { status: 400 });
+    if (!vendorId || !postId) {
+      return NextResponse.json({ success: false, error: "Vendor ID and Post ID required" }, { status: 400 });
     }
 
     const profile = await VendorProfile.findOne({ vendorId });
@@ -470,7 +428,6 @@ export async function DELETE(request, context) {
 
     const post = profile.posts[postIndex];
 
-    // Delete media from storage
     if (post.storagePath) {
       if (post.mediaType === "image") {
         await deleteFromCloudinary(post.storagePath);
@@ -484,7 +441,7 @@ export async function DELETE(request, context) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("DELETE posts error:", error);
+    console.error("DELETE error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -1863,12 +1863,6 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
         className="fixed inset-0 z-[100] bg-black flex flex-col"
       >
         <motion.div
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.3}
-          onDragEnd={(_, info) => {
-            if (info.velocity.y > 500 || info.offset.y > 150) onClose();
-          }}
           className="flex-1 flex flex-col"
         >
           {/* Header */}
@@ -1882,7 +1876,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
             </motion.button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {/* Vendor Info */}
             <div className="px-4 py-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/20">
@@ -2143,7 +2137,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
                     </div>
 
                     {/* Add Comment Prompt (Fake Input) */}
-                    <div className="flex items-center gap-3 mt-4 border-t border-white/10">
+                    <div className="fixed bottom-0 left-0 right-0 flex items-center gap-3 p-4 border-t border-white/10 bg-gray-900">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex-shrink-0" />
                       <button
                         onClick={() => setShowCommentsDrawer(true)}
@@ -3141,6 +3135,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
   const [locationError, setLocationError] = useState("");
   const [aspectRatioError, setAspectRatioError] = useState("");
   const [videoDimensions, setVideoDimensions] = useState(null);
+  const [compressionSuggested, setCompressionSuggested] = useState(false);
 
   const fileInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
@@ -3230,53 +3225,60 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
     return null;
   };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+const handleFileChange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    setUploadError("");
-    setAspectRatioError("");
+  setUploadError("");
+  setAspectRatioError("");
+  setCompressionSuggested(false);
 
-    const isVideo = file.type.startsWith("video/");
-    const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+  const isImage = file.type.startsWith("image/");
 
-    // Validate file type based on upload type
-    if (uploadType === "reel") {
-      if (!isVideo) {
-        setUploadError("Only video files are allowed for reels");
-        return;
-      }
-
-      // Validate aspect ratio for reels
-      const aspectResult = await validateReelAspectRatio(file);
-      if (!aspectResult.valid) {
-        setAspectRatioError(aspectResult.message);
-        return;
-      }
-    } else if (uploadType === "post") {
-      if (!isVideo && !isImage) {
-        setUploadError("Only image or video files are allowed");
-        return;
-      }
-    }
-
-    // Validate file size
-    const sizeError = validateFileSize(file, uploadType, isVideo);
-    if (sizeError) {
-      setUploadError(sizeError);
-      setSelectedFile(null); // ADD THIS - clear any partial selection
-      setSelectedFileRaw(null);
+  // Validate file type
+  if (uploadType === "reel") {
+    if (!isVideo) {
+      setUploadError("Only video files are allowed for reels");
       return;
     }
 
-    setSelectedFileRaw(file);
+    const aspectResult = await validateReelAspectRatio(file);
+    if (!aspectResult.valid) {
+      setAspectRatioError(aspectResult.message);
+      return;
+    }
+  } else if (uploadType === "post") {
+    if (!isVideo && !isImage) {
+      setUploadError("Only image or video files are allowed");
+      return;
+    }
+  }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSelectedFile(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
+  // Validate file size
+  const sizeError = validateFileSize(file, uploadType, isVideo);
+  if (sizeError) {
+    setUploadError(sizeError);
+    setSelectedFile(null);
+    setSelectedFileRaw(null);
+    return;
+  }
+
+  // Suggest compression for large videos on mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isVideo && file.size > 100 * 1024 * 1024 && isMobile) { // > 100MB on mobile
+    setCompressionSuggested(true);
+  }
+
+  setSelectedFileRaw(file);
+
+  // Use URL.createObjectURL for better mobile performance
+  const objectUrl = URL.createObjectURL(file);
+  setSelectedFile(objectUrl);
+  
+  // Cleanup old object URLs
+  return () => URL.revokeObjectURL(objectUrl);
+};
 
   const handleThumbnailChange = (e) => {
     const file = e.target.files?.[0];
@@ -3302,57 +3304,74 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
   };
 
   // Upload with real progress using XMLHttpRequest
-  const uploadWithProgress = (url, formData, onProgress) => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhrRef.current = xhr;
+ const uploadWithProgress = (url, formData, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
 
-      xhr.upload.addEventListener("progress", (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100);
-          onProgress(percentComplete);
-        }
-      });
+    // Set longer timeout for mobile networks
+    xhr.timeout = 300000; // 5 minutes
 
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            resolve(response);
-          } catch {
-            reject(new Error("Invalid response"));
-          }
-        } else {
-          try {
-            const error = JSON.parse(xhr.responseText);
-            reject(new Error(error.error || `Upload failed: ${xhr.status}`));
-          } catch {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        }
-      });
-
-      xhr.addEventListener("error", () => {
-        reject(new Error("Network error"));
-      });
-
-      xhr.addEventListener("abort", () => {
-        reject(new Error("Upload cancelled"));
-      });
-
-      xhr.open("POST", url);
-      xhr.send(formData);
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        onProgress(percentComplete);
+      }
     });
-  };
 
-  const handleUpload = async () => {
-    if (!selectedFileRaw) return;
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } catch {
+          reject(new Error("Invalid server response"));
+        }
+      } else if (xhr.status === 413) {
+        reject(new Error("File too large for server. Please compress the video and try again."));
+      } else if (xhr.status === 0) {
+        reject(new Error("Connection lost. Please check your internet and try again."));
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText);
+          reject(new Error(error.error || `Upload failed (${xhr.status})`));
+        } catch {
+          reject(new Error(`Upload failed (${xhr.status})`));
+        }
+      }
+    });
 
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadError("");
-    setUploadStatus("Preparing upload...");
+    xhr.addEventListener("error", () => {
+      reject(new Error("Network error. Please check your connection and try again."));
+    });
 
+    xhr.addEventListener("abort", () => {
+      reject(new Error("Upload cancelled"));
+    });
+
+    xhr.addEventListener("timeout", () => {
+      reject(new Error("Upload timed out. Please try with a smaller file or better connection."));
+    });
+
+    xhr.open("POST", url);
+    
+    // Don't set Content-Type for FormData - browser sets it with boundary
+    xhr.send(formData);
+  });
+};
+
+ const handleUpload = async () => {
+  if (!selectedFileRaw) return;
+
+  setIsUploading(true);
+  setUploadProgress(0);
+  setUploadError("");
+  setUploadStatus("Preparing upload...");
+
+  const maxRetries = 2;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const formData = new FormData();
       formData.append("file", selectedFileRaw);
@@ -3361,15 +3380,19 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
         formData.append("description", `${caption} ${hashtags}`.trim());
         formData.append("location", location);
 
-        setUploadStatus("Uploading post...");
+        setUploadStatus(attempt > 1 ? `Retrying upload (${attempt}/${maxRetries})...` : "Uploading post...");
 
-        const result = await uploadWithProgress(`/api/vendor/${vendorId}/profile/posts`, formData, (progress) => {
-          setUploadProgress(Math.min(progress, 95));
-          if (progress < 30) setUploadStatus("Uploading...");
-          else if (progress < 60) setUploadStatus("Processing...");
-          else if (progress < 90) setUploadStatus("Almost done...");
-          else setUploadStatus("Finalizing...");
-        });
+        const result = await uploadWithProgress(
+          `/api/vendor/${vendorId}/profile/posts`,
+          formData,
+          (progress) => {
+            setUploadProgress(Math.min(progress, 95));
+            if (progress < 30) setUploadStatus("Uploading...");
+            else if (progress < 60) setUploadStatus("Processing...");
+            else if (progress < 90) setUploadStatus("Almost done...");
+            else setUploadStatus("Finalizing...");
+          }
+        );
 
         if (!result.success) {
           throw new Error(result.error || "Upload failed");
@@ -3379,11 +3402,12 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
 
         setUploadProgress(100);
         setUploadStatus("Complete!");
-
         await new Promise((resolve) => setTimeout(resolve, 300));
         onUploadPost?.(result.data);
+        setUploadSuccess(true);
+        return; // Success, exit retry loop
+
       } else {
-        // Reel upload
         formData.append("title", title || "Untitled Reel");
         formData.append("caption", `${caption} ${hashtags}`.trim());
 
@@ -3391,16 +3415,20 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
           formData.append("thumbnail", thumbnailFile);
         }
 
-        setUploadStatus("Uploading reel...");
+        setUploadStatus(attempt > 1 ? `Retrying upload (${attempt}/${maxRetries})...` : "Uploading reel...");
 
-        const result = await uploadWithProgress(`/api/vendor/${vendorId}/profile/reels`, formData, (progress) => {
-          setUploadProgress(Math.min(progress, 95));
-          if (progress < 20) setUploadStatus("Starting upload...");
-          else if (progress < 40) setUploadStatus("Uploading video...");
-          else if (progress < 60) setUploadStatus("Processing...");
-          else if (progress < 80) setUploadStatus("Optimizing...");
-          else setUploadStatus("Finalizing...");
-        });
+        const result = await uploadWithProgress(
+          `/api/vendor/${vendorId}/profile/reels`,
+          formData,
+          (progress) => {
+            setUploadProgress(Math.min(progress, 95));
+            if (progress < 20) setUploadStatus("Starting upload...");
+            else if (progress < 40) setUploadStatus("Uploading video...");
+            else if (progress < 60) setUploadStatus("Processing...");
+            else if (progress < 80) setUploadStatus("Optimizing...");
+            else setUploadStatus("Finalizing...");
+          }
+        );
 
         if (!result.success) {
           throw new Error(result.error || "Upload failed");
@@ -3408,26 +3436,43 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
 
         setUploadProgress(100);
         setUploadStatus("Complete!");
-
         await new Promise((resolve) => setTimeout(resolve, 300));
         onUploadReel?.(result.data);
+        setUploadSuccess(true);
+        return; // Success, exit retry loop
       }
-
-      setUploadSuccess(true);
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error(`Upload attempt ${attempt} failed:`, error);
+      lastError = error;
 
       if (error.message === "Upload cancelled") {
         setUploadError("Upload cancelled");
-      } else {
-        setUploadError(error.message || "Upload failed. Please try again.");
+        break;
       }
-    } finally {
-      setIsUploading(false);
-      setUploadStatus("");
-      xhrRef.current = null;
+
+      // Don't retry on certain errors
+      if (error.message.includes("too large") || error.message.includes("Invalid")) {
+        setUploadError(error.message);
+        break;
+      }
+
+      if (attempt < maxRetries) {
+        setUploadStatus(`Upload failed. Retrying in 2 seconds...`);
+        await new Promise((r) => setTimeout(r, 2000));
+        setUploadProgress(0);
+      }
     }
-  };
+  }
+
+  // All retries failed
+  if (lastError && !uploadSuccess) {
+    setUploadError(lastError.message || "Upload failed. Please try again.");
+  }
+
+  setIsUploading(false);
+  setUploadStatus("");
+  xhrRef.current = null;
+};
 
   const handleCancelUpload = () => {
     if (xhrRef.current) {
@@ -3888,6 +3933,26 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                     </button>
                   </motion.div>
                 )}
+
+                {/* Compression Suggestion */}
+{compressionSuggested && !aspectRatioError && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+  >
+    <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
+    <p className="text-xs text-amber-600 dark:text-amber-400 flex-1">
+      Large video detected. For better upload success on mobile, consider compressing the video first.
+    </p>
+    <button 
+      onClick={() => setCompressionSuggested(false)} 
+      className="text-amber-400 hover:text-amber-600"
+    >
+      <X size={14} />
+    </button>
+  </motion.div>
+)}
 
                 {/* Thumbnail selection for reels */}
                 {uploadType === "reel" && selectedFile && !aspectRatioError && (
@@ -7305,7 +7370,6 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
   useEffect(() => {
     if (!isSignedIn && !isVerified) {
-      showUIConfirmation("Verify your identity to access all features", "info", InfoIcon);
       return;
     }
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
