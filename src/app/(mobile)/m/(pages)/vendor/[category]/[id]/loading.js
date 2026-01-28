@@ -1,106 +1,150 @@
 import React from "react";
 
-// --- 1. Reusable Shimmer Component ---
-const ShimmerBlock = ({ className = "" }) => (
-  <div className={`relative overflow-hidden bg-gray-200 dark:bg-gray-800 ${className}`}>
-    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent" />
-  </div>
-);
-
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 overflow-x-hidden">
-      <style>{`
-        @keyframes shimmer { 
-          100% { transform: translateX(100%); } 
-        }
-      `}</style>
-
-      {/* 1. Header Skeleton */}
-      <div className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-between items-center">
-        <ShimmerBlock className="w-8 h-8 rounded-full" /> {/* Back Arrow */}
-        <div className="flex gap-3">
-          <ShimmerBlock className="w-10 h-10 rounded-full" /> {/* Like */}
-          <ShimmerBlock className="w-10 h-10 rounded-full" /> {/* Share */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header Skeleton */}
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+              <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 py-4 space-y-6">
-        {/* 2. Breadcrumb Skeleton */}
-        <div className="flex gap-2 items-center">
-          <ShimmerBlock className="h-3 w-12 rounded" />
-          <ShimmerBlock className="h-3 w-3 rounded-full" />
-          <ShimmerBlock className="h-3 w-20 rounded" />
+      {/* Breadcrumbs Skeleton */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        <div className="flex items-center gap-2 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <React.Fragment key={i}>
+              <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              {i < 4 && <span className="text-gray-400">/</span>}
+            </React.Fragment>
+          ))}
         </div>
+      </div>
 
-        {/* 3. Carousel Skeleton */}
-        <div className="space-y-4">
-          <div className="relative rounded-3xl overflow-hidden shadow-lg h-[280px] w-full bg-gray-200 dark:bg-gray-800">
-            <ShimmerBlock className="w-full h-full" />
-            {/* Fake Controls */}
-            <div className="absolute bottom-4 right-4 flex gap-2">
-              <ShimmerBlock className="w-10 h-10 rounded-full" />
-              <ShimmerBlock className="w-10 h-10 rounded-full" />
+      {/* Main Content Skeleton */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
+          {/* Left Column (Images & Info) */}
+          <div className="xl:col-span-2 space-y-6">
+            <div className="relative h-96 md:h-[500px] rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 animate-pulse" />
+
+            <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
+              <div className="flex gap-4 mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  />
+                ))}
+              </div>
+              <div className="space-y-6">
+                <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  {[1, 2].map((col) => (
+                    <div key={col} className="space-y-4">
+                      <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-12 w-full bg-gray-100 dark:bg-gray-700/50 rounded-lg animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column (Sticky Sidebar) */}
+          <div className="space-y-6">
+            <div className="xl:sticky top-24">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
+                <div className="space-y-6">
+                  <div>
+                    <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-3" />
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
+                    <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  </div>
+                  <div className="space-y-4">
+                    <div className="h-16 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    <div className="h-12 w-full bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+                    <div className="h-12 w-full bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 4. Product Details Card Skeleton */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 space-y-4">
-          {/* Title & Rating */}
+        {/* Bottom Section (Similar Items/Reviews) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Left Bottom Block */}
           <div>
-            <ShimmerBlock className="h-8 w-3/4 rounded-lg mb-2" />
-            <div className="flex gap-2">
-              <ShimmerBlock className="h-5 w-16 rounded-md" />
-              <ShimmerBlock className="h-5 w-24 rounded-md" />
-            </div>
-          </div>
-
-          {/* Price & Buttons */}
-          <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-            <ShimmerBlock className="h-8 w-32 rounded-lg mb-4" />
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <ShimmerBlock className="h-12 w-full rounded-xl" />
-              <ShimmerBlock className="h-12 w-full rounded-xl" />
-            </div>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((i) => (
-                <ShimmerBlock key={i} className="h-16 w-full rounded-lg" />
+            <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <div className="h-48 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* 5. Tabs Skeleton */}
-        <div className="flex gap-3 overflow-hidden pb-2">
-          {[1, 2, 3, 4].map((i) => (
-            <ShimmerBlock key={i} className="h-10 w-28 rounded-full shrink-0" />
-          ))}
-        </div>
-
-        {/* 6. Tab Content (Overview) Skeleton */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 space-y-3">
-          <ShimmerBlock className="h-6 w-32 rounded-md mb-2" />
-          <ShimmerBlock className="h-4 w-full rounded" />
-          <ShimmerBlock className="h-4 w-full rounded" />
-          <ShimmerBlock className="h-4 w-2/3 rounded" />
-        </div>
-
-        {/* 7. Similar Venues Title Skeleton */}
-        <div className="pt-4">
-          <ShimmerBlock className="h-6 w-40 rounded-lg mb-4" />
-          <div className="flex gap-4 overflow-hidden">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="min-w-[260px] h-64 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-3"
-              >
-                <ShimmerBlock className="w-full h-36 rounded-xl mb-3" />
-                <ShimmerBlock className="h-5 w-3/4 rounded mb-2" />
-                <ShimmerBlock className="h-4 w-1/2 rounded" />
-              </div>
-            ))}
+          {/* Right Bottom Block */}
+          <div>
+            <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-6" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <div className="flex items-start space-x-4">
+                    <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse flex-shrink-0" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="flex space-x-1 mt-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <div
+                            key={star}
+                            className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

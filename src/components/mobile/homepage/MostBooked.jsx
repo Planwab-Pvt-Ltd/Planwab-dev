@@ -241,7 +241,7 @@ const MostBooked = ({ initialData }) => {
 
   const filterParam = searchParams.get("filter") || "all";
   const [activeFilterId, setActiveFilterId] = useState(filterParam);
-  const [services, setServices] = useState(initialData || []);
+  const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -254,6 +254,9 @@ const MostBooked = ({ initialData }) => {
     const filterParam = searchParams.get("filter");
     if (filterParam && FILTERS.some((f) => f.id === filterParam)) {
       setActiveFilterId(filterParam);
+      fetchServicesData(filterParam);
+    }else {
+      setServices(initialData || []);
     }
   }, [searchParams]);
 
