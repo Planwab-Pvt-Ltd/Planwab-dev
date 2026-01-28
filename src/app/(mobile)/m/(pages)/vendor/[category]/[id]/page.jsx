@@ -1,15 +1,26 @@
+import { headers } from "next/headers";
 import VendorDetailsPageWrapper from "@/components/mobile/PagesWrapper/VendorDetailsPageWrapper";
 
-// --- Helper to get the correct Base URL for Server Side Fetch ---
-const getBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000"; // Fallback for local dev
+const getServerBaseUrl = async () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  const h = await headers();
+  const host = h.get("host");
+  const protocol = h.get("x-forwarded-proto") || "http";
+  
+  return `${protocol}://${host}`;
 };
 
 async function getVendorDetails(id) {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/vendor/${id}`, {
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor/${id}`, {
       cache: "no-store", // Ensure fresh data
     });
     if (!res.ok) return null;
@@ -22,7 +33,8 @@ async function getVendorDetails(id) {
 
 async function getRelatedVendors(id) {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/vendor/lists/${id}`, {
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor/lists/${id}`, {
       next: { revalidate: 3600 }, // Cache these lists for an hour
     });
     if (!res.ok) return { similarVendors: [], recommendedVendors: [] };
@@ -36,9 +48,10 @@ async function getRelatedVendors(id) {
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
+  const baseUrl = await getServerBaseUrl();
 
   try {
-    const response = await fetch(`${getBaseUrl()}/api/vendor/${id}`, {
+    const response = await fetch(`${baseUrl}/api/vendor/${id}`, {
       next: { revalidate: 3600 },
     });
 

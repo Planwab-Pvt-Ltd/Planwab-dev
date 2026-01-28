@@ -1,28 +1,42 @@
+import { headers } from "next/headers";
 import VendorProfilePageWrapper from "@/components/mobile/PagesWrapper/VendorProfilePageWrapper";
 import { notFound } from "next/navigation";
 
-const getBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
+// 1. Fetch Functions (moved outside component for clarity)
+const getServerBaseUrl = async () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  const h = await headers();
+  const host = h.get("host");
+  const protocol = h.get("x-forwarded-proto") || "http";
+  
+  return `${protocol}://${host}`;
 };
 
-// 1. Fetch Functions (moved outside component for clarity)
 async function getVendorDetails(id) {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/vendor/${id}`, { 
-      cache: 'no-store' // Ensure fresh data
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor/${id}`, {
+      cache: "no-store",
     });
     if (!res.ok) return null;
     return res.json();
   } catch (error) {
+    console.error("Fetch vendor error:", error);
     return null;
   }
 }
 
 async function getVendorProfile(id) {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/vendor/${id}/profile?vendorId=${id}`, { 
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor/${id}/profile?vendorId=${id}`, { 
       next: { revalidate: 3600 } 
     });
     if (!res.ok) return { success: false, data: null };
@@ -34,7 +48,8 @@ async function getVendorProfile(id) {
 
 async function getVendorReviews(id) {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/vendor/${id}/reviews`, { 
+    const baseUrl = await getServerBaseUrl();
+    const res = await fetch(`${baseUrl}/api/vendor/${id}/reviews`, { 
       cache: 'no-store' 
     });
     if (!res.ok) return { success: true, data: { reviews: [] } };
@@ -47,9 +62,10 @@ async function getVendorReviews(id) {
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
+  const baseUrl = await getServerBaseUrl();
 
   try {
-    const response = await fetch(`${getBaseUrl()}/api/vendor/${id}/profile?vendorId=${id}`, {
+    const response = await fetch(`${baseUrl}/api/vendor/${id}/profile?vendorId=${id}`, {
       next: { revalidate: 3600 },
     });
 
