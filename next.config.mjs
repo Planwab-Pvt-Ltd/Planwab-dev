@@ -1,5 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '500mb', // Allow large uploads
+    },
+  },
+
+  api: {
+    bodyParser: {
+      sizeLimit: '500mb',
+    },
+    responseLimit: false,
+  },
+
+  serverRuntimeConfig: {
+    maxDuration: 300, // 5 minutes
+  },
+
  output: "standalone",
 
   images: {
