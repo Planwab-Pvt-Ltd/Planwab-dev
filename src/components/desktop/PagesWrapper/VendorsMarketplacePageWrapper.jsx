@@ -751,7 +751,7 @@ export default function MarketplacePageWrapper() {
                 paramsObj.search = debouncedSearchQuery;
             }
             if (selectedCategories.length > 0) {
-                paramsObj.categories = selectedCategories.join(',');
+                paramsObj.category = selectedCategories.join(',');
             }
             if (showFeaturedOnly) {
                 paramsObj.featured = 'true';
