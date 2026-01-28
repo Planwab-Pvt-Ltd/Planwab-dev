@@ -122,18 +122,13 @@ import {
 } from "lucide-react";
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import ReviewSection from "../ReviewSection";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useRedirectWithReturn } from "../../../hooks/useNavigationWithReturn";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import Image from "next/image";
-
-const SmartMedia = dynamic(() => import("@/components/mobile/SmartMediaLoader"), {
-  loading: () => <div className="w-full h-full bg-gray-200 dark:bg-gray-800 animate-pulse" />,
-  ssr: false,
-});
+import SmartMedia from "@/components/mobile/SmartMediaLoader";
 
 const AUTOPLAY_DELAY = 5000;
 
@@ -2745,7 +2740,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
               key={currentImageIndex}
               custom={slideDirection}
               variants={slideVariants}
-              initial="enter"
+              initial={currentImageIndex === 0 && slideDirection === 0 ? false : "enter"}
               animate="center"
               exit="exit"
               transition={{
@@ -2760,13 +2755,12 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                 priority={currentImageIndex === 0}
                 sizes="100vw"
                 quality={100}
-                useSkeleton={false}
+                useSkeleton={currentImageIndex !== 0}
                 unoptimized={true}
                 preload="eager"
                 fetchPriority="high"
                 className="w-full h-full object-cover"
                 style={{ objectPosition: "center center" }}
-                loaderImage="/GlowLoadingGif.gif"
               />
             </motion.div>
           </AnimatePresence>

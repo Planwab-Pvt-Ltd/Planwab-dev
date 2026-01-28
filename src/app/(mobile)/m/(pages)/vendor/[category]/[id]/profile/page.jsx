@@ -1,130 +1,42 @@
-import { headers } from "next/headers";
 import VendorProfilePageWrapper from "@/components/mobile/PagesWrapper/VendorProfilePageWrapper";
-import { notFound } from "next/navigation";
-
-// 1. Fetch Functions (moved outside component for clarity)
-const getServerBaseUrl = async () => {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  const h = await headers();
-  const host = h.get("host");
-  const protocol = h.get("x-forwarded-proto") || "http";
-  
-  return `${protocol}://${host}`;
-};
-
-async function getVendorDetails(id) {
-  try {
-    const baseUrl = await getServerBaseUrl();
-    const res = await fetch(`${baseUrl}/api/vendor/${id}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch (error) {
-    console.error("Fetch vendor error:", error);
-    return null;
-  }
-}
-
-async function getVendorProfile(id) {
-  try {
-    const baseUrl = await getServerBaseUrl();
-    const res = await fetch(`${baseUrl}/api/vendor/${id}/profile?vendorId=${id}`, { 
-      next: { revalidate: 3600 } 
-    });
-    if (!res.ok) return { success: false, data: null };
-    return res.json();
-  } catch (error) {
-    return { success: false, data: null };
-  }
-}
-
-async function getVendorReviews(id) {
-  try {
-    const baseUrl = await getServerBaseUrl();
-    const res = await fetch(`${baseUrl}/api/vendor/${id}/reviews`, { 
-      cache: 'no-store' 
-    });
-    if (!res.ok) return { success: true, data: { reviews: [] } };
-    return res.json();
-  } catch (error) {
-    return { success: true, data: { reviews: [] } };
-  }
-}
+import { getVendorById, getVendorProfile, getVendorReviews } from "../../../../../../../../database/actions/FetchActions";
 
 export async function generateMetadata({ params }) {
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
-  const baseUrl = await getServerBaseUrl();
+  const { id } = await params;
+  const vendor = await getVendorById(id);
+  const profile = await getVendorProfile(id);
 
-  try {
-    const response = await fetch(`${baseUrl}/api/vendor/${id}/profile?vendorId=${id}`, {
-      next: { revalidate: 3600 },
-    });
-
-    if (!response.ok) {
-      return {
-        title: "Vendor Profile | PlanWAB Platform",
-        description: "Access and see and explore vendor profile.",
-      };
-    }
-
-    const result = await response.json();
-    const vendor = result.data;
-
-    if (!vendor) {
-      return {
-        title: "Vendor Not Found | PlanWAB",
-      };
-    }
-
-    return {
-      title: `${vendor.vendorName} - Profile | Vendors Media Hub`,
-      description: vendor.bio
-        ? `${vendor.bio.substring(0, 160)}...`
-        : `Book ${vendor.vendorName} for your event. Rated ${vendor.trust || 5} stars.`,
-      openGraph: {
-        title: `${vendor.vendorName} - PlanWAB`,
-        description: `Check availability and pricing for ${vendor.vendorName}.`,
-        images: vendor.vendorAvatar
-          ? [{ url: vendor.vendorAvatar, width: 800, height: 600, alt: vendor.vendorName }]
-          : [],
-      },
-    };
-  } catch (error) {
-    return {
-      title: "Vendor Marketplace | PlanWAB",
-    };
+  if (!vendor) {
+    return { title: "Vendor Not Found | PlanWAB" };
   }
+
+  return {
+    title: `${vendor.vendorName} - Profile | Vendors Media Hub`,
+    description: profile?.bio 
+      ? `${profile.bio.substring(0, 160)}...` 
+      : `Book ${vendor.vendorName} for your event.`,
+    openGraph: {
+      title: `${vendor.vendorName} - PlanWAB`,
+      images: vendor.vendorAvatar ? [{ url: vendor.vendorAvatar }] : [],
+    },
+  };
 }
 
 export default async function VendorProfilePage({ params }) {
- const { id } = await params;
+  const { id } = await params;
 
- const [vendorData, profileJson, reviewsJson] = await Promise.all([
-    getVendorDetails(id),
+  const [vendorData, profileData, reviewsData] = await Promise.all([
+    getVendorById(id),
     getVendorProfile(id),
     getVendorReviews(id)
   ]);
 
-  if (!vendorData) {
-    return notFound();
-  }
   return (
-    <>
-     <VendorProfilePageWrapper 
+    <VendorProfilePageWrapper 
       initialVendor={vendorData}
-      initialProfile={profileJson?.data || null}
-      initialReviews={reviewsJson?.data?.reviews || []}
+      initialProfile={profileData}
+      initialReviews={reviewsData?.reviews || []}
       vendorId={id}
     />
-    </>
   );
 }

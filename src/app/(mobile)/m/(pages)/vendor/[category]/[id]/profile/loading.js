@@ -1,119 +1,140 @@
-"use client";
+import React from "react";
 
-const VendorProfileLoading = () => {
+// Helper component for the shimmer animation
+const ShimmerEffect = ({ className }) => (
+  <div className={`relative overflow-hidden bg-gray-200 dark:bg-gray-800 ${className}`}>
+    <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent" />
+  </div>
+);
+
+export default function VendorProfileLoading() {
   return (
-    <main className="min-h-screen bg-white dark:bg-black pb-20">
-      {/* HEADER SKELETON */}
-      <div className="sticky top-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+    <main className="min-h-screen bg-gray-50 dark:bg-black pb-24">
+      {/* Header Skeleton */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse" />
-          <div className="flex-1 text-center px-4">
-            <div className="h-5 w-32 bg-gray-200 dark:bg-gray-800 rounded-lg mx-auto animate-pulse" />
+          <div className="flex items-center gap-3">
+            <ShimmerEffect className="w-9 h-9 rounded-full" />
+            <ShimmerEffect className="w-28 h-4 rounded-full" />
           </div>
-          <div className="flex gap-2">
-            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse" />
-            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 animate-pulse" />
+          <div className="flex gap-1.5">
+            <ShimmerEffect className="w-9 h-9 rounded-full" />
+            <ShimmerEffect className="w-9 h-9 rounded-full" />
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* PROFILE SECTION SKELETON */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start gap-4 mb-4">
-          {/* Profile Picture Skeleton */}
-          <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 animate-pulse" />
+      <div className="pt-14" />
+
+      <div className="bg-white dark:bg-gray-900">
+        <div className="px-4 pt-5 pb-5">
+          {/* Profile Info Section Skeleton */}
+          <div className="flex items-start gap-5 mb-6">
+            {/* Profile Picture */}
+            <div className="relative flex-shrink-0">
+              <ShimmerEffect className="w-24 h-24 rounded-full" />
+              <ShimmerEffect className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-white dark:border-gray-900" />
+            </div>
+
+            {/* Profile Details */}
+            <div className="flex-1 min-w-0 pt-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <ShimmerEffect className="w-36 h-6 rounded-lg" />
+                <ShimmerEffect className="w-12 h-5 rounded-full" />
+              </div>
+              <ShimmerEffect className="w-28 h-5 rounded-lg" />
+              <div className="flex items-center gap-1.5">
+                <ShimmerEffect className="w-4 h-4 rounded-full" />
+                <ShimmerEffect className="w-32 h-4 rounded-lg" />
+              </div>
+            </div>
           </div>
 
-          {/* Stats Skeleton */}
-          <div className="flex-1 flex justify-around pt-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex flex-col items-center min-w-0 gap-1">
-                <div className="h-5 w-10 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-                <div className="h-3 w-12 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+          {/* Stats Section Skeleton */}
+          <div className="flex justify-around mb-5 py-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-2 px-4">
+                <ShimmerEffect className="w-12 h-6 rounded-lg" />
+                <ShimmerEffect className="w-14 h-3 rounded-full" />
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Bio Skeleton */}
-        <div className="space-y-2 mb-4">
-          <div className="h-4 w-40 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-          <div className="h-3 w-32 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-          <div className="space-y-1.5 mt-2">
-            <div className="h-3 w-full bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-            <div className="h-3 w-4/5 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-            <div className="h-3 w-3/5 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+          {/* Bio Section Skeleton */}
+          <div className="mb-5 space-y-2">
+            <ShimmerEffect className="w-full h-4 rounded-lg" />
+            <ShimmerEffect className="w-11/12 h-4 rounded-lg" />
+            <ShimmerEffect className="w-4/5 h-4 rounded-lg" />
+            <ShimmerEffect className="w-3/4 h-4 rounded-lg" />
+            <ShimmerEffect className="w-2/3 h-4 rounded-lg" />
           </div>
-          <div className="h-3 w-24 bg-gray-200 dark:bg-gray-800 rounded animate-pulse mt-2" />
-        </div>
 
-        {/* Action Buttons Skeleton */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-9 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse" />
-          ))}
-        </div>
+          {/* Social Links Skeleton */}
+          <div className="flex items-center gap-2 mb-5">
+            <ShimmerEffect className="w-24 h-9 rounded-full" />
+            <ShimmerEffect className="w-28 h-9 rounded-full" />
+          </div>
 
-        {/* Highlights Skeleton */}
-        <div className="overflow-x-auto no-scrollbar -mx-4 px-4">
-          <div className="flex gap-4 py-2">
+          {/* Action Buttons Skeleton */}
+          <div className="flex gap-2 mb-5">
+            <ShimmerEffect className="flex-[2] h-12 rounded-xl" />
+            <ShimmerEffect className="flex-1 h-12 rounded-xl" />
+            <ShimmerEffect className="flex-1 h-12 rounded-xl" />
+          </div>
+
+          {/* Highlights Section Skeleton */}
+          <div className="flex gap-4 py-1 overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-2 min-w-[68px]">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 animate-pulse" />
-                <div className="h-2.5 w-14 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+              <div key={i} className="flex flex-col items-center gap-2 min-w-[72px]">
+                <ShimmerEffect className="w-16 h-16 rounded-2xl" />
+                <ShimmerEffect className="w-12 h-3 rounded-full" />
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* TABS SKELETON */}
-      <div className="sticky top-[57px] z-40 bg-white dark:bg-black border-t border-b border-gray-200 dark:border-gray-800">
+      {/* Tabs Section Skeleton */}
+      <div className="sticky top-14 z-30 bg-white dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80">
         <div className="flex">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-1 py-3 flex items-center justify-center">
-              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex-1 py-3.5 flex items-center justify-center gap-2">
+              <ShimmerEffect className="w-5 h-5 rounded" />
+              <ShimmerEffect className="w-12 h-3 rounded-full" />
             </div>
           ))}
         </div>
       </div>
 
-      {/* CONTENT GRID SKELETON */}
-      <div className="grid grid-cols-3 gap-1 pb-4">
-        {Array.from({ length: 24 }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 rounded-sm relative overflow-hidden"
-          >
-            {/* Shimmer Effect */}
-            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          </div>
-        ))}
+      {/* Content Grid Skeleton */}
+      <div className="bg-white dark:bg-gray-900 min-h-[50vh]">
+        <div className="grid grid-cols-3 gap-0.5">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+            /* Replaced motion.div with div to avoid hydration errors in loading.js */
+            <div key={i} className="aspect-square">
+              <ShimmerEffect className="w-full h-full" />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <style jsx>{`
+      {/* Floating Button Skeleton */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <ShimmerEffect className="w-14 h-14 rounded-full" />
+      </div>
+
+      {/* CSS for Shimmer Animation */}
+      {/* Note: In Next.js App Router, using a global css file is preferred, 
+          but this style tag works for standalone skeletons */}
+      <style>{`
         @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
         }
         .animate-shimmer {
-          animation: shimmer 2s infinite;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+          animation: shimmer 1.5s infinite;
         }
       `}</style>
     </main>
   );
-};
-
-export default VendorProfileLoading;
+}
