@@ -430,15 +430,17 @@ export async function GET(request) {
     const cities = searchParams.get("cities");
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
+    const guestCapacity = searchParams.get("guestCapacity");
     const search = searchParams.get("search");
 
     // Sort parameters
     const sortBy = searchParams.get("sortBy") || "rating";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    // =============================================================================
-    // HANDLE SINGLE VENDOR REQUEST
-    // =============================================================================
+    // Extract landing page parameter to determine if this request is for the landing page
+    const landing = searchParams.get("landing");
+
+    // Handle single vendor request
     if (vendorId) {
       const vendor = await Vendor.findById(vendorId).select("-reviewsList -likedBy -bookmarkedBy").lean().exec();
 
@@ -457,19 +459,38 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 1. CATEGORY FILTERING
     // ---------------------------------------------------------------------------
-    if (categories) {
-      const categoryArray = categories
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean);
-
-      if (categoryArray.length === 1) {
-        query.category = categoryArray[0];
-      } else if (categoryArray.length > 1) {
-        query.category = { $in: categoryArray };
+    // Handle both landing page and marketplace category filtering
+    if (landing === "true") {
+      // Landing page: use 'categories' parameter
+      if (categories && categories !== "all") {
+        const categoryArray = categories.split(",").map((c) => c.trim()).filter(Boolean);
+        if (categoryArray.length === 1) {
+          query.category = categoryArray[0];
+        } else if (categoryArray.length > 1) {
+          query.category = { $in: categoryArray };
+        }
       }
-    } else if (category && category !== "all") {
-      query.category = category;
+      
+      // Apply featured filter if specifically requested for landing page
+      if (featured === "true") {
+        query.isFeatured = true;
+      }
+    } else {
+      // Marketplace: use both 'categories' and 'category' parameters
+      if (categories) {
+        const categoryArray = categories
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean);
+
+        if (categoryArray.length === 1) {
+          query.category = categoryArray[0];
+        } else if (categoryArray.length > 1) {
+          query.category = { $in: categoryArray };
+        }
+      } else if (category && category !== "all") {
+        query.category = category;
+      }
     }
 
     // ---------------------------------------------------------------------------
@@ -490,7 +511,8 @@ export async function GET(request) {
     // ---------------------------------------------------------------------------
     // 4. FEATURED VENDORS
     // ---------------------------------------------------------------------------
-    if (featured === "true") {
+    // Skip featured vendors filtering for landing page requests since it's already handled above
+    if (featured === "true" && landing !== "true") {
       query.isFeatured = true;
     }
 
@@ -546,7 +568,23 @@ export async function GET(request) {
     }
 
     // ---------------------------------------------------------------------------
-    // 8. SEARCH QUERY (Full-text search across multiple fields)
+    // 8. GUEST CAPACITY FILTERING
+    // ---------------------------------------------------------------------------
+    if (guestCapacity && !isNaN(parseInt(guestCapacity))) {
+      const capacityValue = parseInt(guestCapacity);
+      if (capacityValue > 0) {
+        andConditions.push({
+          $or: [
+            { "seating.max": { $gte: capacityValue } },
+            { "capacity": { $gte: capacityValue } },
+            { "maxGuests": { $gte: capacityValue } }
+          ]
+        });
+      }
+    }
+
+    // ---------------------------------------------------------------------------
+    // 9. SEARCH QUERY (Full-text search across multiple fields)
     // ---------------------------------------------------------------------------
     if (search && search.trim() !== "") {
       const searchRegex = new RegExp(search.trim(), "i");
@@ -569,7 +607,7 @@ export async function GET(request) {
     }
 
     // ---------------------------------------------------------------------------
-    // 9. COMBINE ALL CONDITIONS
+    // 10. COMBINE ALL CONDITIONS
     // ---------------------------------------------------------------------------
     if (andConditions.length > 0) {
       query.$and = andConditions;
@@ -640,7 +678,7 @@ export async function GET(request) {
     // =============================================================================
     // OPTIMIZED: DATA PROCESSING (Minimize operations)
     // =============================================================================
-    const processedVendors = vendors.map((vendor) => ({
+    let processedVendors = vendors.map((vendor) => ({
       ...vendor,
       bookings: vendor.bookings ?? vendor.totalBookings ?? 0,
       reviews: vendor.reviews ?? vendor.reviewCount ?? vendor.totalReviews ?? 0,
@@ -670,6 +708,7 @@ export async function GET(request) {
         cities,
         minPrice,
         maxPrice,
+        guestCapacity,
         minRating,
         search,
         sortBy,
@@ -688,6 +727,21 @@ export async function GET(request) {
     // =============================================================================
     // PREPARE OPTIMIZED RESPONSE
     // =============================================================================
+    
+    // Return simplified response structure for landing page requests
+    if (landing === "true") {
+      return NextResponse.json({
+        success: true,
+        data: processedVendors,
+        meta: {
+          count: processedVendors.length,
+          category: categories || "all",
+          featured: featured === "true"
+        }
+      });
+    }
+    
+    // Standard response for marketplace
     return NextResponse.json({
       success: true,
       data: processedVendors,
