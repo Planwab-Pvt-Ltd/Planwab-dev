@@ -174,10 +174,10 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -5, shadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-        className="w-full bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+        className="w-full bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer group"
       >
         {/* Image Section */}
-        <div className="relative h-48 bg-gray-100 overflow-hidden">
+        <div className="relative h-48 bg-gray-100 dark:bg-gradient-to-br dark:from-gray-700 dark:to-gray-800 overflow-hidden">
           <img 
             src={getImageUrl()}
             alt={vendor.name}
@@ -201,7 +201,7 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
           <button
             onClick={handleLike}
             disabled={likingLoading}
-            className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md transition-all duration-300 hover:scale-110 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full p-1.5 shadow-md transition-all duration-300 hover:scale-110 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:shadow-lg dark:hover:shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {likingLoading ? (
               <div className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
@@ -218,9 +218,9 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
           </button>
 
           {/* Rating Badge */}
-          <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-md flex items-center gap-1">
+          <div className="absolute bottom-2 left-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-full px-2 py-1 shadow-md dark:shadow-lg dark:shadow-blue-500/10 flex items-center gap-1">
             <Star size={10} className="fill-yellow-400 text-yellow-400" />
-            <span className="text-[10px] font-bold text-gray-700">
+            <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200">
               {vendor.rating || "5.0"}
             </span>
           </div>
@@ -231,11 +231,11 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
           {/* Name and Category */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-gray-900 truncate leading-tight mb-1" title={vendor.name}>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white truncate leading-tight mb-1" title={vendor.name}>
                 {vendor.name}
               </h3>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded truncate max-w-[100px]" title={getCategoryDisplay()}>
+                <span className="text-xs text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-gradient-to-r dark:from-gray-700 dark:to-gray-600 dark:border dark:border-gray-600 px-2 py-1 rounded truncate max-w-[100px]" title={getCategoryDisplay()}>
                   {getCategoryDisplay()}
                 </span>
                 {vendor.verified && (
@@ -246,13 +246,13 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
           </div>
 
           {/* Location */}
-          <div className="flex items-center gap-1 mb-3 text-gray-400 min-w-0">
+          <div className="flex items-center gap-1 mb-3 text-gray-400 dark:text-gray-300 min-w-0">
             <MapPin size={12} className="flex-shrink-0" />
             <span className="text-xs truncate" title={getLocationDisplay()}>{getLocationDisplay()}</span>
           </div>
 
          {/* Statistics section displaying vendor performance metrics */}
-          <div className="flex items-center gap-2 mb-3 text-xs text-gray-500 overflow-hidden">
+          <div className="flex items-center gap-2 mb-3 text-xs text-gray-500 dark:text-gray-300 overflow-hidden">
             {vendor.bookings && (
               <span className="flex items-center gap-1 whitespace-nowrap flex-shrink-0">
                 <span className="font-semibold">{vendor.bookings}</span>
@@ -274,19 +274,19 @@ const MobileStyleVendorCard = memo(({ vendor }) => {
           </div>
 
           {/* Price and Add to Cart */}
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100 gap-2">
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-600 gap-2">
             <div className="min-w-0 flex-1">
-              <span className="text-sm font-bold text-gray-900 truncate block" title={displayPrice}>
+              <span className="text-sm font-bold text-gray-900 dark:text-white truncate block" title={displayPrice}>
                 {displayPrice}
               </span>
-              <span className="text-xs text-gray-500">/event</span>
+              <span className="text-xs text-gray-500 dark:text-gray-300">/event</span>
             </div>
             <button
               onClick={handleCart}
-              className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-all active:scale-90 whitespace-nowrap flex-shrink-0 ${
+              className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-all active:scale-90 whitespace-nowrap flex-shrink-0 shadow-md hover:shadow-lg ${
                 inCart 
-                  ? "bg-green-500 text-white" 
-                  : "bg-gray-900 text-white hover:bg-gray-800"
+                  ? "bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700" 
+                  : "bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-gray-800 hover:to-gray-700 dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800"
               }`}
             >
               {inCart ? (

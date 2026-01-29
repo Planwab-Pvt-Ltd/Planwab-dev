@@ -59,8 +59,7 @@ const categoryMap = {
   "Anchor": "anchor",
   "Stage Entry": "stage-entry",
   "Fireworks": "fireworks",
-  "Barat": "barat",
-  "Other": "other"
+  "Barat": "barat"
 };
 
 const filters = [
@@ -159,11 +158,6 @@ const filters = [
     icon: <Users2 size={18} />,
     gradient: "from-indigo-400 to-purple-500",
   },
-  {
-    label: "Other",
-    icon: <MoreHorizontal size={18} />,
-    gradient: "from-gray-400 to-gray-500",
-  },
 ];
 
 // Collapsible Filters Component
@@ -177,7 +171,7 @@ const CollapsibleFilters = ({ activeFilter, setActiveFilter }) => {
   return (
     <div className="flex flex-col items-center gap-3 w-full max-w-6xl mx-auto">
       {/* Filter Container */}
-      <div className="bg-white rounded-3xl shadow-lg border border-gray-200 px-6 py-4 w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 px-6 py-4 w-full">
         <div className="flex items-center justify-center gap-2">
           {/* Filter Pills Container */}
           <div className={`flex items-center gap-2 transition-all duration-300 ${
@@ -189,7 +183,7 @@ const CollapsibleFilters = ({ activeFilter, setActiveFilter }) => {
               className={`relative px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-50 flex-shrink-0 ${
                 activeFilter === "All" 
                   ? "text-white" 
-                  : "text-gray-600 hover:text-gray-900 bg-yellow-50 hover:bg-yellow-100"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -218,7 +212,7 @@ const CollapsibleFilters = ({ activeFilter, setActiveFilter }) => {
                 className={`relative px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
                   activeFilter === filter.label
                     ? "text-white"
-                    : "text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100"
+                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -273,7 +267,7 @@ const CollapsibleFilters = ({ activeFilter, setActiveFilter }) => {
       {/* Status Indicator */}
       {hasMore && !isExpanded && (
         <motion.p
-          className="text-xs text-gray-500"
+          className="text-xs text-gray-500 dark:text-gray-400"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -419,16 +413,16 @@ export default function VendorsSection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -40 }}
                   transition={{ duration: 0.5 }}
-                  className="flex-shrink-0 w-full bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm"
+                  className="flex-shrink-0 w-full bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm"
                 >
-                  <div className="h-48 bg-gray-200 animate-pulse" />
+                  <div className="h-48 bg-gray-200 dark:bg-gray-700 animate-pulse" />
                   <div className="p-4">
-                    <div className="h-4 bg-gray-200 rounded mb-3 animate-pulse" />
-                    <div className="h-3 bg-gray-200 rounded mb-2 animate-pulse" />
-                    <div className="h-3 bg-gray-200 rounded mb-3 animate-pulse w-3/4" />
-                    <div className="flex justify-between pt-3 border-t border-gray-100">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2 animate-pulse" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse w-3/4" />
+                    <div className="flex justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                     </div>
                   </div>
                 </motion.div>
@@ -445,8 +439,8 @@ export default function VendorsSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Vendors</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Unable to Load Vendors</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
                 <button
                   onClick={() => window.location.reload()}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -466,8 +460,8 @@ export default function VendorsSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Vendors Found</h3>
-                <p className="text-gray-600">Try adjusting your filters or check back later for new vendors.</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No Vendors Found</h3>
+                <p className="text-gray-600 dark:text-gray-400">Try adjusting your filters or check back later for new vendors.</p>
               </motion.div>
             ) : (
               <>
@@ -491,7 +485,7 @@ export default function VendorsSection() {
                   exit={{ opacity: 0, y: -40 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                   whileHover={{ y: -5, shadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-                  className="flex-shrink-0 w-full bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 border-2 border-dashed border-purple-200 rounded-xl flex flex-col items-center justify-center p-6 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                  className="flex-shrink-0 w-full bg-gradient-to-br from-purple-50 dark:from-purple-900/20 via-indigo-50 dark:via-indigo-900/20 to-blue-50 dark:to-blue-900/20 border-2 border-dashed border-purple-200 dark:border-purple-700 rounded-xl flex flex-col items-center justify-center p-6 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
                 >
                   {/* Icon */}
                   <Link href="/vendors/marketplace">
@@ -503,8 +497,8 @@ export default function VendorsSection() {
                   </Link>
                   
                   {/* Text */}
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">View All</h3>
-                  <p className="text-sm text-gray-600">Explore more vendors</p>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">View All</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Explore more vendors</p>
                 </motion.div>
               </>
             )}
