@@ -145,7 +145,7 @@ const cleanVendorData = (data) => {
     cleaned.socialLinks = cleanedSocial;
   }
 
-  // Vendor Profile
+  // Vendor Profile (NEW)
   if (cleaned.vendorProfile) {
     const vp = cleaned.vendorProfile;
     cleaned.vendorProfile = {
