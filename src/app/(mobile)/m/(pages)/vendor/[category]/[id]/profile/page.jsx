@@ -11,12 +11,12 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: `${vendor.vendorName} - Profile | Vendors Media Hub`,
+    title: `${vendor.name} - Profile | Vendors Media Hub`,
     description: profile?.bio 
       ? `${profile.bio.substring(0, 160)}...` 
-      : `Book ${vendor.vendorName} for your event.`,
+      : `Book ${vendor.name} for your event.`,
     openGraph: {
-      title: `${vendor.vendorName} - PlanWAB`,
+      title: `${vendor.name} - PlanWAB`,
       images: vendor.vendorAvatar ? [{ url: vendor.vendorAvatar }] : [],
     },
   };

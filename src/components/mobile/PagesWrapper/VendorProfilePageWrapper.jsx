@@ -216,9 +216,9 @@ const AMENITY_ICONS = {
 };
 
 const slideVariants = {
-  enter: (direction) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
+  enter: (direction) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (direction) => ({ x: direction < 0 ? "100%" : "-100%", opacity: 0 }),
+  exit: (direction) => ({ x: direction < 0 ? 300 : -300, opacity: 0 }),
 };
 
 const collapseVariants = {
@@ -236,8 +236,11 @@ const staggerContainer = {
   animate: { transition: { staggerChildren: 0.05 } },
 };
 
+const smoothSpring = { type: "spring", stiffness: 300, damping: 30, mass: 0.8 };
+const smoothEase = [0.25, 0.46, 0.45, 0.94];
+
 const modalTransition = { type: "spring", damping: 30, stiffness: 400, mass: 0.8 };
-const backdropTransition = { duration: 0.2, ease: "easeOut" };
+const backdropTransition = { duration: 0.3, ease: smoothEase };
 
 const CATEGORY_GRADIENTS = {
   planners: { from: "#3b82f6", to: "#06b6d4" },
@@ -318,24 +321,6 @@ const MOCK_HIGHLIGHTS = [
       caption: `Venue ${i + 1}`,
     })),
   },
-];
-
-const PORTFOLIO_IMAGES = [
-  "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1502635385003-ee1e6a1a742d?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=600&fit=crop",
 ];
 
 const MOCK_SERVICES = [
@@ -466,34 +451,245 @@ const formatPrice = (price) => {
   return `₹${Number(price).toLocaleString("en-IN")}`;
 };
 
-const getVideoThumbnail = (videoUrl, time = 1) => {
+export const getVideoThumbnail = async (videoSource, options = {}) => {
+  const {
+    seekTime = 1, // Time in seconds to capture
+    quality = 0.8, // JPEG quality (0-1)
+    maxWidth = 1280, // Max thumbnail width
+    maxHeight = 720, // Max thumbnail height
+    timeout = 30000, // 30 second timeout
+    retries = 2, // Number of retry attempts
+  } = options;
+
+  // Retry wrapper
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await generateThumbnail(videoSource, {
+        seekTime,
+        quality,
+        maxWidth,
+        maxHeight,
+        timeout,
+      });
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.warn(`Thumbnail attempt ${attempt + 1} failed:`, error.message);
+
+      // Wait before retry (exponential backoff)
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+const generateThumbnail = (videoSource, options) => {
   return new Promise((resolve, reject) => {
-    const video = document.createElement("video");
-    video.crossOrigin = "anonymous";
-    video.src = videoUrl;
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = "metadata";
+    const { seekTime, quality, maxWidth, maxHeight, timeout } = options;
 
-    video.onloadedmetadata = () => {
-      if (video.duration < time) time = 0;
-      video.currentTime = time;
+    let objectUrl = null;
+    let resolved = false;
+    let video = null;
+
+    const cleanup = () => {
+      if (video) {
+        video.onloadedmetadata = null;
+        video.onloadeddata = null;
+        video.onseeked = null;
+        video.onerror = null;
+        video.oncanplay = null;
+        video.removeAttribute("src");
+        video.load();
+        video = null;
+      }
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
     };
 
-    video.onseeked = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const thumbnail = canvas.toDataURL("image/jpeg", 0.8);
-      resolve(thumbnail);
+    const safeResolve = (value) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+      cleanup();
+      resolve(value);
     };
 
-    video.onerror = () => reject("Failed to load video");
+    const safeReject = (error) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+      cleanup();
+      reject(error);
+    };
+
+    const timeoutId = setTimeout(() => {
+      safeReject(new Error("Thumbnail generation timed out"));
+    }, timeout);
+
+    try {
+      video = document.createElement("video");
+
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = false;
+      video.preload = "auto";
+
+      const isLocalFile = videoSource instanceof File || videoSource instanceof Blob;
+
+      if (isLocalFile) {
+        objectUrl = URL.createObjectURL(videoSource);
+        video.src = objectUrl;
+      } else if (typeof videoSource === "string") {
+        video.crossOrigin = "anonymous";
+
+        const separator = videoSource.includes("?") ? "&" : "?";
+        video.src = `${videoSource}${separator}_t=${Date.now()}`;
+      } else {
+        safeReject(new Error("Invalid video source type"));
+        return;
+      }
+
+      video.onerror = () => {
+        const errorCode = video.error?.code;
+        const errorMessages = {
+          1: "Video loading aborted",
+          2: "Network error while loading video",
+          3: "Video decoding failed",
+          4: "Video format not supported",
+        };
+        safeReject(new Error(errorMessages[errorCode] || "Failed to load video"));
+      };
+
+      video.onloadedmetadata = () => {
+        if (resolved) return;
+
+        if (!video.videoWidth || !video.videoHeight) {
+          setTimeout(() => {
+            if (!resolved && video && (!video.videoWidth || !video.videoHeight)) {
+              safeReject(new Error("Video has no dimensions"));
+            }
+          }, 1000);
+          return;
+        }
+
+        const duration = video.duration || 0;
+        let targetTime = seekTime;
+
+        if (duration > 0) {
+          if (duration < seekTime) {
+            targetTime = duration / 2;
+          }
+          targetTime = Math.min(targetTime, duration - 0.1);
+        }
+
+        video.currentTime = Math.max(0, targetTime);
+      };
+
+      video.onseeked = () => {
+        if (resolved) return;
+
+        requestAnimationFrame(() => {
+          if (resolved) return;
+
+          try {
+            const thumbnail = captureFrame(video, { quality, maxWidth, maxHeight });
+            safeResolve(thumbnail);
+          } catch (error) {
+            safeReject(error);
+          }
+        });
+      };
+
+      video.oncanplay = () => {
+        setTimeout(() => {
+          if (resolved) return;
+
+          try {
+            const thumbnail = captureFrame(video, { quality, maxWidth, maxHeight });
+            safeResolve(thumbnail);
+          } catch (error) {
+            console.warn("canplay capture failed, waiting for seeked");
+          }
+        }, 500);
+      };
+
+      video.load();
+    } catch (error) {
+      safeReject(error);
+    }
   });
+};
+
+const captureFrame = (video, { quality, maxWidth, maxHeight }) => {
+  if (!video || !video.videoWidth || !video.videoHeight) {
+    throw new Error("Video not ready for capture");
+  }
+
+  let width = video.videoWidth;
+  let height = video.videoHeight;
+
+  if (width > maxWidth) {
+    height = (height * maxWidth) / width;
+    width = maxWidth;
+  }
+  if (height > maxHeight) {
+    width = (width * maxHeight) / height;
+    height = maxHeight;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(width);
+  canvas.height = Math.floor(height);
+
+  const ctx = canvas.getContext("2d", {
+    alpha: false,
+    willReadFrequently: false,
+  });
+
+  if (!ctx) {
+    throw new Error("Failed to get canvas context");
+  }
+
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  try {
+    ctx.getImageData(0, 0, 1, 1);
+  } catch (e) {
+    throw new Error("Canvas tainted - CORS not configured on video source");
+  }
+
+  const dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+  if (!dataUrl || dataUrl === "data:," || dataUrl.length < 1000) {
+    throw new Error("Generated thumbnail is empty or invalid");
+  }
+
+  return dataUrl;
+};
+
+export const dataUrlToBlob = (dataUrl) => {
+  const arr = dataUrl.split(",");
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  return new Blob([u8arr], { type: mime });
+};
+
+export const dataUrlToFile = (dataUrl, filename = "thumbnail.jpg") => {
+  const blob = dataUrlToBlob(dataUrl);
+  return new File([blob], filename, { type: "image/jpeg" });
 };
 
 const useBodyScrollLock = (isLocked) => {
@@ -1862,9 +2058,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[100] bg-black flex flex-col"
       >
-        <motion.div
-          className="flex-1 flex flex-col"
-        >
+        <motion.div className="flex-1 flex flex-col">
           {/* Header */}
           <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-xl px-4 py-3 flex items-center justify-between border-b border-white/10">
             <motion.button whileTap={{ scale: 0.9 }} onClick={onClose} className="p-1">
@@ -3133,352 +3327,569 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
   const [locationMode, setLocationMode] = useState(null);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [aspectRatioError, setAspectRatioError] = useState("");
-  const [videoDimensions, setVideoDimensions] = useState(null);
-  const [compressionSuggested, setCompressionSuggested] = useState(false);
+  const [bunnyConfig, setBunnyConfig] = useState(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+  const [configError, setConfigError] = useState(false);
 
   const fileInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
-  const xhrRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const mountedRef = useRef(true);
+  const objectUrlsRef = useRef([]);
+  const uploadInProgressRef = useRef(false);
 
   useBodyScrollLock(isOpen);
 
   const MAX_POSTS = 6;
   const MAX_REELS = 12;
-  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-  const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+  const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+  const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000;
 
   const isPostsFull = postsCount >= MAX_POSTS;
   const isReelsFull = reelsCount >= MAX_REELS;
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  const handleThumbnailSelect = () => {
-    thumbnailInputRef.current?.click();
-  };
-
-  const isMounted = useRef(true);
   useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     return () => {
-      isMounted.current = false;
-      if (xhrRef.current) xhrRef.current.abort();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  // Validate aspect ratio for reels (9:16)
-  const validateReelAspectRatio = (file) => {
-    return new Promise((resolve) => {
-      const video = document.createElement("video");
-      video.preload = "metadata";
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true;
 
-      const timeoutId = setTimeout(() => {
-        URL.revokeObjectURL(video.src);
-        resolve({ valid: true }); // Allow if validation times out
-      }, 10000);
-
-      video.onloadedmetadata = () => {
-        clearTimeout(timeoutId);
-        URL.revokeObjectURL(video.src);
-        const width = video.videoWidth;
-        const height = video.videoHeight;
-        const aspectRatio = width / height;
-        const targetRatio = 9 / 16;
-        const tolerance = 0.15; // Increased tolerance to 15%
-
-        setVideoDimensions({ width, height });
-
-        if (Math.abs(aspectRatio - targetRatio) <= tolerance) {
-          resolve({ valid: true, width, height });
-        } else {
-          resolve({
-            valid: false,
-            width,
-            height,
-            message: `Video should be in 9:16 portrait format. Current: ${width}x${height} (${aspectRatio.toFixed(2)} ratio)`,
-          });
+    return () => {
+      mountedRef.current = false;
+      // Cleanup object URLs
+      objectUrlsRef.current.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          // Ignore errors
         }
-      };
-
-      video.onerror = () => {
-        clearTimeout(timeoutId);
-        URL.revokeObjectURL(video.src);
-        resolve({ valid: true }); // Allow if we can't validate
-      };
-
-      video.src = URL.createObjectURL(file);
-    });
-  };
-
-  const validateFileSize = (file, type, isVideo) => {
-    if (type === "reel") {
-      if (file.size > MAX_VIDEO_SIZE) {
-        return `Video size exceeds ${Math.round(MAX_VIDEO_SIZE / (1024 * 1024))}MB limit`;
+      });
+      objectUrlsRef.current = [];
+      // Abort any ongoing upload
+      if (abortControllerRef.current) {
+        try {
+          abortControllerRef.current.abort();
+        } catch (e) {
+          // Ignore errors
+        }
       }
-    } else {
-      const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-      if (file.size > maxSize) {
-        return `File size exceeds ${Math.round(maxSize / (1024 * 1024))}MB limit`;
-      }
-    }
-    return null;
-  };
-
-const handleFileChange = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  setUploadError("");
-  setAspectRatioError("");
-  setCompressionSuggested(false);
-
-  const isVideo = file.type.startsWith("video/");
-  const isImage = file.type.startsWith("image/");
-
-  // Validate file type
-  if (uploadType === "reel") {
-    if (!isVideo) {
-      setUploadError("Only video files are allowed for reels");
-      return;
-    }
-
-    const aspectResult = await validateReelAspectRatio(file);
-    if (!aspectResult.valid) {
-      setAspectRatioError(aspectResult.message);
-      return;
-    }
-  } else if (uploadType === "post") {
-    if (!isVideo && !isImage) {
-      setUploadError("Only image or video files are allowed");
-      return;
-    }
-  }
-
-  // Validate file size
-  const sizeError = validateFileSize(file, uploadType, isVideo);
-  if (sizeError) {
-    setUploadError(sizeError);
-    setSelectedFile(null);
-    setSelectedFileRaw(null);
-    return;
-  }
-
-  // Suggest compression for large videos on mobile
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isVideo && file.size > 100 * 1024 * 1024 && isMobile) { // > 100MB on mobile
-    setCompressionSuggested(true);
-  }
-
-  setSelectedFileRaw(file);
-
-  // Use URL.createObjectURL for better mobile performance
-  const objectUrl = URL.createObjectURL(file);
-  setSelectedFile(objectUrl);
-  
-  // Cleanup old object URLs
-  return () => URL.revokeObjectURL(objectUrl);
-};
-
-  const handleThumbnailChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Thumbnail must be an image");
-      return;
-    }
-
-    if (file.size > MAX_IMAGE_SIZE) {
-      setUploadError("Thumbnail size exceeds 10MB limit");
-      return;
-    }
-
-    setThumbnailFile(file);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setThumbnailPreview(reader.result);
     };
-    reader.readAsDataURL(file);
-  };
+  }, []);
 
-  // Upload with real progress using XMLHttpRequest
- const uploadWithProgress = (url, formData, onProgress) => {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhrRef.current = xhr;
+  // Fetch Bunny config on mount (with caching)
+  useEffect(() => {
+    if (isOpen && !bunnyConfig && !isLoadingConfig && !configError) {
+      fetchBunnyConfig();
+    }
+  }, [isOpen, bunnyConfig, isLoadingConfig, configError]);
 
-    // Set longer timeout for mobile networks
-    xhr.timeout = 300000; // 5 minutes
+  // Safe state update helper
+  const safeSetState = useCallback((setter, value) => {
+    if (mountedRef.current) {
+      setter(value);
+    }
+  }, []);
 
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        const percentComplete = Math.round((event.loaded / event.total) * 100);
-        onProgress(percentComplete);
-      }
-    });
+  const fetchBunnyConfig = async () => {
+    if (isLoadingConfig) return;
 
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          resolve(response);
-        } catch {
-          reject(new Error("Invalid server response"));
-        }
-      } else if (xhr.status === 413) {
-        reject(new Error("File too large for server. Please compress the video and try again."));
-      } else if (xhr.status === 0) {
-        reject(new Error("Connection lost. Please check your internet and try again."));
-      } else {
-        try {
-          const error = JSON.parse(xhr.responseText);
-          reject(new Error(error.error || `Upload failed (${xhr.status})`));
-        } catch {
-          reject(new Error(`Upload failed (${xhr.status})`));
-        }
-      }
-    });
+    setIsLoadingConfig(true);
+    setConfigError(false);
 
-    xhr.addEventListener("error", () => {
-      reject(new Error("Network error. Please check your connection and try again."));
-    });
-
-    xhr.addEventListener("abort", () => {
-      reject(new Error("Upload cancelled"));
-    });
-
-    xhr.addEventListener("timeout", () => {
-      reject(new Error("Upload timed out. Please try with a smaller file or better connection."));
-    });
-
-    xhr.open("POST", url);
-    
-    // Don't set Content-Type for FormData - browser sets it with boundary
-    xhr.send(formData);
-  });
-};
-
- const handleUpload = async () => {
-  if (!selectedFileRaw) return;
-
-  setIsUploading(true);
-  setUploadProgress(0);
-  setUploadError("");
-  setUploadStatus("Preparing upload...");
-
-  const maxRetries = 2;
-  let lastError = null;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const formData = new FormData();
-      formData.append("file", selectedFileRaw);
+      const response = await fetch(`/api/vendor/${vendorId}/profile/upload-config`);
 
-      if (uploadType === "post") {
-        formData.append("description", `${caption} ${hashtags}`.trim());
-        formData.append("location", location);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-        setUploadStatus(attempt > 1 ? `Retrying upload (${attempt}/${maxRetries})...` : "Uploading post...");
+      const result = await response.json();
 
-        const result = await uploadWithProgress(
-          `/api/vendor/${vendorId}/profile/posts`,
-          formData,
-          (progress) => {
-            setUploadProgress(Math.min(progress, 95));
-            if (progress < 30) setUploadStatus("Uploading...");
-            else if (progress < 60) setUploadStatus("Processing...");
-            else if (progress < 90) setUploadStatus("Almost done...");
-            else setUploadStatus("Finalizing...");
-          }
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || "Upload failed");
-        }
-
-        if (!isMounted.current) return;
-
-        setUploadProgress(100);
-        setUploadStatus("Complete!");
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        onUploadPost?.(result.data);
-        setUploadSuccess(true);
-        return; // Success, exit retry loop
-
+      if (result.success && result.data) {
+        safeSetState(setBunnyConfig, result.data);
       } else {
-        formData.append("title", title || "Untitled Reel");
-        formData.append("caption", `${caption} ${hashtags}`.trim());
-
-        if (thumbnailFile) {
-          formData.append("thumbnail", thumbnailFile);
-        }
-
-        setUploadStatus(attempt > 1 ? `Retrying upload (${attempt}/${maxRetries})...` : "Uploading reel...");
-
-        const result = await uploadWithProgress(
-          `/api/vendor/${vendorId}/profile/reels`,
-          formData,
-          (progress) => {
-            setUploadProgress(Math.min(progress, 95));
-            if (progress < 20) setUploadStatus("Starting upload...");
-            else if (progress < 40) setUploadStatus("Uploading video...");
-            else if (progress < 60) setUploadStatus("Processing...");
-            else if (progress < 80) setUploadStatus("Optimizing...");
-            else setUploadStatus("Finalizing...");
-          }
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || "Upload failed");
-        }
-
-        setUploadProgress(100);
-        setUploadStatus("Complete!");
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        onUploadReel?.(result.data);
-        setUploadSuccess(true);
-        return; // Success, exit retry loop
+        throw new Error(result.error || "Invalid config response");
       }
     } catch (error) {
-      console.error(`Upload attempt ${attempt} failed:`, error);
-      lastError = error;
-
-      if (error.message === "Upload cancelled") {
-        setUploadError("Upload cancelled");
-        break;
-      }
-
-      // Don't retry on certain errors
-      if (error.message.includes("too large") || error.message.includes("Invalid")) {
-        setUploadError(error.message);
-        break;
-      }
-
-      if (attempt < maxRetries) {
-        setUploadStatus(`Upload failed. Retrying in 2 seconds...`);
-        await new Promise((r) => setTimeout(r, 2000));
-        setUploadProgress(0);
-      }
-    }
-  }
-
-  // All retries failed
-  if (lastError && !uploadSuccess) {
-    setUploadError(lastError.message || "Upload failed. Please try again.");
-  }
-
-  setIsUploading(false);
-  setUploadStatus("");
-  xhrRef.current = null;
-};
-
-  const handleCancelUpload = () => {
-    if (xhrRef.current) {
-      xhrRef.current.abort();
+      console.error("Config fetch error:", error);
+      safeSetState(setConfigError, true);
+      safeSetState(setUploadError, "Failed to initialize upload service. Please refresh and try again.");
+    } finally {
+      safeSetState(setIsLoadingConfig, false);
     }
   };
+
+  const handleFileSelect = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleThumbnailSelect = () => {
+    if (!isUploading) {
+      thumbnailInputRef.current?.click();
+    }
+  };
+
+  const generateUniqueFilename = useCallback((originalName) => {
+    const ext = originalName?.split(".")?.pop()?.toLowerCase() || "bin";
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 10);
+    return `${timestamp}_${random}.${ext}`;
+  }, []);
+
+  const formatFileSize = useCallback((bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }, []);
+
+  const validateFile = useCallback(
+    (file, type) => {
+      if (!file) return "No file selected";
+
+      const isVideo = file.type?.startsWith("video/");
+      const isImage = file.type?.startsWith("image/");
+
+      if (type === "reel" && !isVideo) {
+        return "Please select a video file for reels";
+      }
+
+      if (type === "post" && !isVideo && !isImage) {
+        return "Please select an image or video file";
+      }
+
+      const maxSize = isVideo ? MAX_FILE_SIZE : MAX_IMAGE_SIZE;
+      if (file.size > maxSize) {
+        return `File size (${formatFileSize(file.size)}) exceeds limit of ${formatFileSize(maxSize)}`;
+      }
+
+      return null;
+    },
+    [formatFileSize],
+  );
+
+  const handleFileChange = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setUploadError("");
+
+      // Validate file
+      const validationError = validateFile(file, uploadType);
+      if (validationError) {
+        setUploadError(validationError);
+        e.target.value = "";
+        return;
+      }
+
+      setSelectedFileRaw(file);
+
+      // Create object URL and track it for cleanup
+      const objectUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.push(objectUrl);
+      setSelectedFile(objectUrl);
+
+      // Reset input for re-selection
+      e.target.value = "";
+    },
+    [uploadType, validateFile],
+  );
+
+  const handleThumbnailChange = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        setUploadError("Thumbnail must be an image file");
+        e.target.value = "";
+        return;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE) {
+        setUploadError(`Thumbnail size exceeds ${formatFileSize(MAX_IMAGE_SIZE)}`);
+        e.target.value = "";
+        return;
+      }
+
+      setThumbnailFile(file);
+
+      const objectUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.push(objectUrl);
+      setThumbnailPreview(objectUrl);
+
+      e.target.value = "";
+    },
+    [formatFileSize],
+  );
+
+  // Upload file directly to Bunny CDN with retry support
+  const uploadToBunnyDirect = useCallback(
+    async (file, path, onProgress, attempt = 1) => {
+      const url = `${bunnyConfig.storageEndpoint}/${path}`;
+
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        // Store abort function
+        abortControllerRef.current = {
+          abort: () => {
+            try {
+              xhr.abort();
+            } catch (e) {
+              // Ignore
+            }
+          },
+        };
+
+        let lastProgress = 0;
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable && onProgress && mountedRef.current) {
+            // Calculate progress as integer (0-100)
+            const progress = Math.floor((e.loaded / e.total) * 100);
+            // Only update if progress changed (prevents excessive re-renders)
+            if (progress !== lastProgress) {
+              lastProgress = progress;
+              onProgress(progress);
+            }
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (!mountedRef.current) {
+            reject(new Error("Component unmounted"));
+            return;
+          }
+
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(`${bunnyConfig.pullZoneUrl}/${path}`);
+          } else if (xhr.status === 0) {
+            // Network error - might be worth retrying
+            reject(new Error("Network error - please check your connection"));
+          } else if (xhr.status >= 500 && attempt < MAX_RETRIES) {
+            // Server error - retry
+            console.log(`Upload failed with ${xhr.status}, retrying (${attempt}/${MAX_RETRIES})...`);
+            setTimeout(() => {
+              uploadToBunnyDirect(file, path, onProgress, attempt + 1)
+                .then(resolve)
+                .catch(reject);
+            }, RETRY_DELAY * attempt);
+          } else {
+            reject(new Error(`Upload failed (${xhr.status}): ${xhr.statusText || "Unknown error"}`));
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          if (!mountedRef.current) {
+            reject(new Error("Component unmounted"));
+            return;
+          }
+
+          if (attempt < MAX_RETRIES) {
+            console.log(`Upload error, retrying (${attempt}/${MAX_RETRIES})...`);
+            setTimeout(() => {
+              uploadToBunnyDirect(file, path, onProgress, attempt + 1)
+                .then(resolve)
+                .catch(reject);
+            }, RETRY_DELAY * attempt);
+          } else {
+            reject(new Error("Upload failed - please check your connection and try again"));
+          }
+        });
+
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload cancelled"));
+        });
+
+        xhr.addEventListener("timeout", () => {
+          if (!mountedRef.current) {
+            reject(new Error("Component unmounted"));
+            return;
+          }
+
+          if (attempt < MAX_RETRIES) {
+            console.log(`Upload timeout, retrying (${attempt}/${MAX_RETRIES})...`);
+            setTimeout(() => {
+              uploadToBunnyDirect(file, path, onProgress, attempt + 1)
+                .then(resolve)
+                .catch(reject);
+            }, RETRY_DELAY * attempt);
+          } else {
+            reject(new Error("Upload timed out - please try again with a smaller file or better connection"));
+          }
+        });
+
+        // 10 minute timeout for large files
+        xhr.timeout = 600000;
+
+        try {
+          xhr.open("PUT", url);
+          xhr.setRequestHeader("AccessKey", bunnyConfig.storageZonePassword);
+          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+          xhr.send(file);
+        } catch (error) {
+          reject(new Error(`Failed to start upload: ${error.message}`));
+        }
+      });
+    },
+    [bunnyConfig],
+  );
+
+  const handleUpload = async () => {
+    // Prevent double uploads
+    if (!selectedFileRaw || !bunnyConfig || uploadInProgressRef.current) return;
+
+    uploadInProgressRef.current = true;
+    safeSetState(setIsUploading, true);
+    safeSetState(setUploadProgress, 0);
+    safeSetState(setUploadError, "");
+    safeSetState(setUploadStatus, "Preparing...");
+
+    const isVideo = selectedFileRaw.type?.startsWith("video/");
+
+    try {
+      let mediaUrl, storagePath, thumbnailUrl, thumbnailPath;
+
+      const filename = generateUniqueFilename(selectedFileRaw.name);
+
+      if (uploadType === "post") {
+        storagePath = `posts/${vendorId}/${filename}`;
+        safeSetState(setUploadStatus, "Uploading...");
+
+        mediaUrl = await uploadToBunnyDirect(selectedFileRaw, storagePath, (progress) => {
+          if (!mountedRef.current) return;
+
+          // Ensure progress is an integer
+          const safeProgress = Math.min(Math.floor(progress), 95);
+          setUploadProgress(safeProgress);
+
+          if (progress < 30) setUploadStatus("Uploading...");
+          else if (progress < 60) setUploadStatus("Processing...");
+          else if (progress < 90) setUploadStatus("Almost done...");
+          else setUploadStatus("Finalizing...");
+        });
+
+        if (!mountedRef.current) return;
+
+        safeSetState(setUploadProgress, 98);
+        safeSetState(setUploadStatus, "Saving...");
+
+        // Save metadata to backend
+        const response = await fetch(`/api/vendor/${vendorId}/profile/posts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mediaUrl,
+            mediaType: isVideo ? "video" : "image",
+            storagePath,
+            description: `${caption} ${hashtags}`.trim(),
+            location,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error (${response.status})`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to save post");
+        }
+
+        if (!mountedRef.current) return;
+
+        safeSetState(setUploadProgress, 100);
+        safeSetState(setUploadStatus, "Complete!");
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        if (mountedRef.current) {
+          onUploadPost?.(result.data);
+          safeSetState(setUploadSuccess, true);
+        }
+      } else {
+        // Reel upload
+        storagePath = `reels/${vendorId}/${filename}`;
+        safeSetState(setUploadStatus, "Uploading video...");
+
+        const hasThumbnail = !!thumbnailFile;
+
+        mediaUrl = await uploadToBunnyDirect(selectedFileRaw, storagePath, (progress) => {
+          if (!mountedRef.current) return;
+
+          // Reserve 10% for thumbnail if exists
+          const adjustedProgress = hasThumbnail
+            ? Math.min(Math.floor(progress * 0.9), 85)
+            : Math.min(Math.floor(progress), 95);
+
+          setUploadProgress(adjustedProgress);
+
+          if (progress < 20) setUploadStatus("Starting upload...");
+          else if (progress < 40) setUploadStatus("Uploading video...");
+          else if (progress < 60) setUploadStatus("Processing...");
+          else if (progress < 80) setUploadStatus("Optimizing...");
+          else setUploadStatus("Finalizing video...");
+        });
+
+        if (!mountedRef.current) return;
+
+        // Upload thumbnail if provided
+        if (thumbnailFile) {
+          safeSetState(setUploadStatus, "Uploading thumbnail...");
+          const thumbFilename = `thumb_${generateUniqueFilename(thumbnailFile.name)}`;
+          thumbnailPath = `reels/${vendorId}/thumbnails/${thumbFilename}`;
+
+          try {
+            thumbnailUrl = await uploadToBunnyDirect(thumbnailFile, thumbnailPath, (progress) => {
+              if (mountedRef.current) {
+                setUploadProgress(85 + Math.floor(progress * 0.1));
+              }
+            });
+          } catch (thumbError) {
+            console.warn("Thumbnail upload failed:", thumbError.message);
+            // Continue without thumbnail - not critical
+          }
+        }
+
+        if (!mountedRef.current) return;
+
+        safeSetState(setUploadProgress, 98);
+        safeSetState(setUploadStatus, "Saving...");
+
+        // Save metadata to backend
+        const response = await fetch(`/api/vendor/${vendorId}/profile/reels`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            videoUrl: mediaUrl,
+            thumbnail: thumbnailUrl || null,
+            storagePath,
+            thumbnailPath: thumbnailPath || null,
+            title: title.trim() || "Untitled Reel",
+            caption: `${caption} ${hashtags}`.trim(),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error (${response.status})`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to save reel");
+        }
+
+        if (!mountedRef.current) return;
+
+        safeSetState(setUploadProgress, 100);
+        safeSetState(setUploadStatus, "Complete!");
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        if (mountedRef.current) {
+          onUploadReel?.(result.data);
+          safeSetState(setUploadSuccess, true);
+        }
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+
+      if (mountedRef.current && error.message !== "Upload cancelled" && error.message !== "Component unmounted") {
+        safeSetState(setUploadError, error.message || "Upload failed. Please try again.");
+      }
+    } finally {
+      uploadInProgressRef.current = false;
+      if (mountedRef.current) {
+        safeSetState(setIsUploading, false);
+        if (!uploadSuccess) {
+          safeSetState(setUploadStatus, "");
+        }
+      }
+    }
+  };
+
+  const handleCancelUpload = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    uploadInProgressRef.current = false;
+    safeSetState(setIsUploading, false);
+    safeSetState(setUploadStatus, "");
+    safeSetState(setUploadProgress, 0);
+    safeSetState(setUploadError, "Upload cancelled");
+  }, [safeSetState]);
+
+  const resetForm = useCallback(() => {
+    setUploadType(null);
+    setCaption("");
+    setTitle("");
+    setHashtags("");
+    setLocation("");
+    setSelectedFile(null);
+    setSelectedFileRaw(null);
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setUploadSuccess(false);
+    setUploadProgress(0);
+    setUploadStatus("");
+    setUploadError("");
+    setLocationMode(null);
+    setLocationError("");
+    setIsDetectingLocation(false);
+  }, []);
+
+  const resetAndClose = useCallback(() => {
+    if (isUploading) {
+      handleCancelUpload();
+    }
+
+    onClose();
+
+    // Delay reset to allow animation to complete
+    setTimeout(resetForm, 300);
+  }, [isUploading, handleCancelUpload, onClose, resetForm]);
+
+  const handleBack = useCallback(() => {
+    setUploadType(null);
+    setSelectedFile(null);
+    setSelectedFileRaw(null);
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setUploadError("");
+    setCaption("");
+    setTitle("");
+    setHashtags("");
+    setLocation("");
+    setLocationMode(null);
+    setLocationError("");
+  }, []);
+
+  const retryConfig = useCallback(() => {
+    setConfigError(false);
+    setUploadError("");
+    fetchBunnyConfig();
+  }, []);
 
   const detectLocation = async () => {
     setIsDetectingLocation(true);
@@ -3606,45 +4017,10 @@ const handleFileChange = async (e) => {
     }
   };
 
-  const resetAndClose = () => {
-    if (isUploading) {
-      handleCancelUpload();
-    }
-
-    onClose();
-
-    setTimeout(() => {
-      setUploadType(null);
-      setCaption("");
-      setTitle("");
-      setHashtags("");
-      setLocation("");
-      setSelectedFile(null);
-      setSelectedFileRaw(null);
-      setThumbnailFile(null);
-      setThumbnailPreview(null);
-      setUploadSuccess(false);
-      setUploadProgress(0);
-      setUploadStatus("");
-      setUploadError("");
-      setAspectRatioError("");
-      setVideoDimensions(null);
-      setLocationMode(null);
-      setLocationError("");
-    }, 300);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (xhrRef.current) {
-        xhrRef.current.abort();
-      }
-    };
-  }, []);
-
   if (!isOpen) return null;
 
   const isVideo = selectedFileRaw?.type?.startsWith("video/");
+  const canUpload = selectedFile && bunnyConfig && !isUploading && !isLoadingConfig;
 
   return (
     <motion.div
@@ -3660,7 +4036,7 @@ const handleFileChange = async (e) => {
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        drag="y"
+        drag={isUploading ? false : "y"}
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.5 }}
         onDragEnd={(_, info) => {
@@ -3683,7 +4059,7 @@ const handleFileChange = async (e) => {
               whileTap={{ scale: 0.9 }}
               onClick={resetAndClose}
               disabled={isUploading}
-              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full disabled:opacity-50"
+              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full disabled:opacity-50 transition-opacity"
             >
               <X size={20} className="text-gray-500" />
             </motion.button>
@@ -3693,8 +4069,46 @@ const handleFileChange = async (e) => {
         {/* Content */}
         <div className="overflow-y-auto max-h-[calc(92vh-80px)] p-5">
           <AnimatePresence mode="wait">
+            {/* Loading Config State */}
+            {isLoadingConfig && !bunnyConfig && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-12"
+              >
+                <div className="w-12 h-12 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-500">Initializing upload service...</p>
+              </motion.div>
+            )}
+
+            {/* Config Error State */}
+            {configError && !bunnyConfig && (
+              <motion.div
+                key="config-error"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center py-12"
+              >
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle size={32} className="text-red-500" />
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Connection Error</h4>
+                <p className="text-gray-500 mb-6 text-sm">Unable to connect to upload service</p>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={retryConfig}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold"
+                >
+                  Retry Connection
+                </motion.button>
+              </motion.div>
+            )}
+
             {/* Success State */}
-            {uploadSuccess ? (
+            {uploadSuccess && (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -3719,8 +4133,10 @@ const handleFileChange = async (e) => {
                   Done
                 </motion.button>
               </motion.div>
-            ) : !uploadType ? (
-              /* Type Selection */
+            )}
+
+            {/* Type Selection */}
+            {!uploadType && !uploadSuccess && bunnyConfig && !isLoadingConfig && (
               <motion.div
                 key="select-type"
                 initial={{ opacity: 0, y: 20 }}
@@ -3735,10 +4151,10 @@ const handleFileChange = async (e) => {
                   whileTap={{ scale: isPostsFull ? 1 : 0.98 }}
                   onClick={() => !isPostsFull && setUploadType("post")}
                   disabled={isPostsFull}
-                  className={`w-full p-6 rounded-2xl border flex items-center gap-4 ${
+                  className={`w-full p-6 rounded-2xl border flex items-center gap-4 transition-all ${
                     isPostsFull
-                      ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60"
-                      : "bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-100 dark:border-blue-800"
+                      ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
+                      : "bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-100 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-600"
                   }`}
                 >
                   <div
@@ -3754,7 +4170,7 @@ const handleFileChange = async (e) => {
                       {isPostsFull ? `Maximum ${MAX_POSTS} posts reached` : "Share a photo or video"}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {postsCount}/{MAX_POSTS} posts • Images (10MB) or Videos (500MB)
+                      {postsCount}/{MAX_POSTS} posts
                     </p>
                   </div>
                   <ChevronRight size={20} className="text-gray-400" />
@@ -3765,10 +4181,10 @@ const handleFileChange = async (e) => {
                   whileTap={{ scale: isReelsFull ? 1 : 0.98 }}
                   onClick={() => !isReelsFull && setUploadType("reel")}
                   disabled={isReelsFull}
-                  className={`w-full p-6 rounded-2xl border flex items-center gap-4 ${
+                  className={`w-full p-6 rounded-2xl border flex items-center gap-4 transition-all ${
                     isReelsFull
-                      ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60"
-                      : "bg-gradient-to-br from-pink-50 to-orange-50 dark:from-pink-900/20 dark:to-orange-900/20 border-pink-100 dark:border-pink-800"
+                      ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
+                      : "bg-gradient-to-br from-pink-50 to-orange-50 dark:from-pink-900/20 dark:to-orange-900/20 border-pink-100 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-600"
                   }`}
                 >
                   <div
@@ -3781,17 +4197,19 @@ const handleFileChange = async (e) => {
                   <div className="text-left flex-1">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-1">New Reel</h4>
                     <p className="text-sm text-gray-500">
-                      {isReelsFull ? `Maximum ${MAX_REELS} reels reached` : "Upload a 9:16 vertical video"}
+                      {isReelsFull ? `Maximum ${MAX_REELS} reels reached` : "Upload a video"}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {reelsCount}/{MAX_REELS} reels • Portrait format only (500MB)
+                      {reelsCount}/{MAX_REELS} reels
                     </p>
                   </div>
                   <ChevronRight size={20} className="text-gray-400" />
                 </motion.button>
               </motion.div>
-            ) : (
-              /* Upload Form */
+            )}
+
+            {/* Upload Form */}
+            {uploadType && !uploadSuccess && bunnyConfig && (
               <motion.div
                 key="upload-form"
                 initial={{ opacity: 0, x: 20 }}
@@ -3805,8 +4223,8 @@ const handleFileChange = async (e) => {
                   onChange={handleFileChange}
                   accept={
                     uploadType === "reel"
-                      ? "video/mp4,video/quicktime,video/webm"
-                      : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
+                      ? "video/mp4,video/quicktime,video/webm,video/x-m4v"
+                      : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,video/x-m4v"
                   }
                   className="hidden"
                 />
@@ -3828,67 +4246,65 @@ const handleFileChange = async (e) => {
                   disabled={isUploading}
                   className={`w-full ${uploadType === "reel" ? "aspect-[9/16]" : "aspect-square"} rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-4 overflow-hidden ${
                     selectedFile
-                      ? aspectRatioError
-                        ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                        : "border-green-500 bg-green-50 dark:bg-green-900/20"
-                      : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                  } ${isUploading ? "pointer-events-none" : ""}`}
+                      ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                      : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                  } ${isUploading ? "pointer-events-none cursor-not-allowed" : "cursor-pointer"}`}
                 >
                   {selectedFile ? (
                     <div className="relative w-full h-full">
                       {isVideo ? (
-                        <video src={selectedFile} className="w-full h-full object-cover" />
+                        <video src={selectedFile} className="w-full h-full object-cover" muted playsInline />
                       ) : (
                         <img src={selectedFile} alt="Preview" className="w-full h-full object-cover" />
                       )}
 
-                      {/* Video dimensions badge */}
-                      {videoDimensions && (
-                        <div className="absolute top-3 left-3 bg-black/70 text-white text-xs font-mono px-2 py-1 rounded">
-                          {videoDimensions.width}x{videoDimensions.height}
+                      {/* File info badge */}
+                      {selectedFileRaw && !isUploading && (
+                        <div className="absolute top-3 left-3 bg-black/70 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg backdrop-blur-sm">
+                          {formatFileSize(selectedFileRaw.size)}
                         </div>
                       )}
 
                       {/* Overlay during upload */}
                       {isUploading && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
                           <div className="text-center px-6">
-                            {/* Circular Progress */}
-                            <div className="relative w-24 h-24 mx-auto mb-4">
+                            <div className="relative w-28 h-28 mx-auto mb-4">
                               <svg className="w-full h-full transform -rotate-90">
                                 <circle
-                                  cx="48"
-                                  cy="48"
-                                  r="42"
+                                  cx="56"
+                                  cy="56"
+                                  r="50"
                                   stroke="rgba(255,255,255,0.2)"
-                                  strokeWidth="6"
+                                  strokeWidth="8"
                                   fill="none"
                                 />
                                 <circle
-                                  cx="48"
-                                  cy="48"
-                                  r="42"
-                                  stroke="white"
-                                  strokeWidth="6"
+                                  cx="56"
+                                  cy="56"
+                                  r="50"
+                                  stroke="url(#progressGradient)"
+                                  strokeWidth="8"
                                   fill="none"
                                   strokeLinecap="round"
-                                  strokeDasharray={`${2 * Math.PI * 42}`}
-                                  strokeDashoffset={`${2 * Math.PI * 42 * (1 - uploadProgress / 100)}`}
-                                  className="transition-all duration-300"
+                                  strokeDasharray={`${2 * Math.PI * 50}`}
+                                  strokeDashoffset={`${2 * Math.PI * 50 * (1 - uploadProgress / 100)}`}
+                                  className="transition-all duration-300 ease-out"
                                 />
+                                <defs>
+                                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#3B82F6" />
+                                    <stop offset="50%" stopColor="#8B5CF6" />
+                                    <stop offset="100%" stopColor="#EC4899" />
+                                  </linearGradient>
+                                </defs>
                               </svg>
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-white font-bold text-lg">{uploadProgress}%</span>
+                                <span className="text-white font-bold text-2xl">{uploadProgress}%</span>
                               </div>
                             </div>
-                            <p className="text-white font-semibold">{uploadStatus}</p>
-                            <p className="text-white/60 text-sm mt-1">
-                              {uploadType === "reel"
-                                ? "Uploading to Bunny.net"
-                                : isVideo
-                                  ? "Uploading video"
-                                  : "Uploading to Cloudinary"}
-                            </p>
+                            <p className="text-white font-semibold text-lg">{uploadStatus}</p>
+                            <p className="text-white/60 text-sm mt-1">Please don't close this window</p>
                           </div>
                         </div>
                       )}
@@ -3904,58 +4320,72 @@ const handleFileChange = async (e) => {
                       </div>
                       <div className="text-center px-4">
                         <p className="font-semibold text-gray-900 dark:text-white">
-                          Tap to upload {uploadType === "reel" ? "video" : "photo or video"}
+                          Tap to select {uploadType === "reel" ? "video" : "photo or video"}
                         </p>
                         <p className="text-sm text-gray-500 mt-1">
-                          {uploadType === "reel"
-                            ? "9:16 portrait video only (MP4, MOV, WebM)"
-                            : "JPG, PNG, WebP, GIF, MP4, MOV, WebM"}
+                          {uploadType === "reel" ? "MP4, MOV, WebM" : "JPG, PNG, WebP, GIF, MP4, MOV"}
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
-                          {uploadType === "reel" ? "Max 500MB" : "Images: 10MB • Videos: 500MB"}
+                          Max {uploadType === "reel" || isVideo ? "500MB" : "50MB"}
                         </p>
                       </div>
                     </>
                   )}
                 </motion.button>
 
-                {/* Aspect Ratio Error */}
-                {aspectRatioError && (
+                {/* Progress Bar (outside preview) */}
+                {isUploading && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400 font-medium">{uploadStatus}</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${uploadProgress}%` }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full"
+                      />
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleCancelUpload}
+                      className="text-sm text-red-500 font-medium hover:text-red-600 transition-colors"
+                    >
+                      Cancel Upload
+                    </motion.button>
+                  </motion.div>
+                )}
+
+                {/* Error Message */}
+                {uploadError && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
+                    className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
                   >
-                    <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
-                    <p className="text-xs text-red-600 dark:text-red-400 flex-1">{aspectRatioError}</p>
-                    <button onClick={() => setAspectRatioError("")} className="text-red-400 hover:text-red-600">
-                      <X size={14} />
+                    <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium">{uploadError}</p>
+                    </div>
+                    <button
+                      onClick={() => setUploadError("")}
+                      className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+                    >
+                      <X size={16} />
                     </button>
                   </motion.div>
                 )}
 
-                {/* Compression Suggestion */}
-{compressionSuggested && !aspectRatioError && (
-  <motion.div
-    initial={{ opacity: 0, y: -10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
-  >
-    <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
-    <p className="text-xs text-amber-600 dark:text-amber-400 flex-1">
-      Large video detected. For better upload success on mobile, consider compressing the video first.
-    </p>
-    <button 
-      onClick={() => setCompressionSuggested(false)} 
-      className="text-amber-400 hover:text-amber-600"
-    >
-      <X size={14} />
-    </button>
-  </motion.div>
-)}
+                {!isOnline && (
+                  <div className="p-3 bg-yellow-100 text-yellow-800 rounded-xl text-sm">
+                    You're offline. Upload will resume when connected.
+                  </div>
+                )}
 
-                {/* Thumbnail selection for reels */}
-                {uploadType === "reel" && selectedFile && !aspectRatioError && (
+                {/* Thumbnail for reels */}
+                {uploadType === "reel" && selectedFile && !isUploading && (
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Thumbnail (Optional)
@@ -3963,8 +4393,7 @@ const handleFileChange = async (e) => {
                     <motion.button
                       whileTap={{ scale: 0.98 }}
                       onClick={handleThumbnailSelect}
-                      disabled={isUploading}
-                      className="w-full p-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center gap-4 disabled:opacity-50"
+                      className="w-full p-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center gap-4 hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
                     >
                       {thumbnailPreview ? (
                         <img src={thumbnailPreview} alt="Thumbnail" className="w-16 h-16 rounded-lg object-cover" />
@@ -3977,56 +4406,26 @@ const handleFileChange = async (e) => {
                         <p className="font-medium text-gray-900 dark:text-white text-sm">
                           {thumbnailPreview ? "Change thumbnail" : "Add custom thumbnail"}
                         </p>
-                        <p className="text-xs text-gray-500">JPG, PNG, WebP (max 10MB)</p>
+                        <p className="text-xs text-gray-500">JPG, PNG, WebP • Max 50MB</p>
                       </div>
+                      {thumbnailPreview && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setThumbnailFile(null);
+                            setThumbnailPreview(null);
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
                     </motion.button>
                   </div>
                 )}
 
-                {/* Progress Bar */}
-                {isUploading && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400 font-medium">{uploadStatus}</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-bold">{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${uploadProgress}%` }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full relative"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                      </motion.div>
-                    </div>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleCancelUpload}
-                      className="text-sm text-red-500 font-medium"
-                    >
-                      Cancel Upload
-                    </motion.button>
-                  </motion.div>
-                )}
-
-                {/* Error Message */}
-                {uploadError && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
-                  >
-                    <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
-                    <p className="text-xs text-red-600 dark:text-red-400 flex-1">{uploadError}</p>
-                    <button onClick={() => setUploadError("")} className="text-red-400 hover:text-red-600">
-                      <X size={14} />
-                    </button>
-                  </motion.div>
-                )}
-
                 {/* Form Fields */}
-                {!aspectRatioError && (
+                {!isUploading && (
                   <div className="space-y-4">
                     {/* Title (for reels) */}
                     {uploadType === "reel" && (
@@ -4037,10 +4436,10 @@ const handleFileChange = async (e) => {
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
                           placeholder="Reel title..."
-                          disabled={isUploading}
                           maxLength={100}
-                          className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none disabled:opacity-50"
+                          className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-shadow"
                         />
+                        <span className="absolute right-4 top-4 text-xs text-gray-400">{title.length}/100</span>
                       </div>
                     )}
 
@@ -4051,11 +4450,10 @@ const handleFileChange = async (e) => {
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
                         placeholder="Write a caption..."
-                        disabled={isUploading}
                         maxLength={2200}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none resize-none min-h-[100px] disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none resize-none min-h-[100px] focus:ring-2 focus:ring-blue-500/20 transition-shadow"
                       />
-                      <span className="absolute bottom-2 right-3 text-[10px] text-gray-400">{caption.length}/2200</span>
+                      <span className="absolute bottom-3 right-4 text-xs text-gray-400">{caption.length}/2200</span>
                     </div>
 
                     {/* Hashtags */}
@@ -4066,8 +4464,7 @@ const handleFileChange = async (e) => {
                         value={hashtags}
                         onChange={(e) => setHashtags(e.target.value)}
                         placeholder="Add hashtags (e.g., #wedding #photography)"
-                        disabled={isUploading}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-shadow"
                       />
                     </div>
 
@@ -4177,68 +4574,31 @@ const handleFileChange = async (e) => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setUploadType(null);
-                      setSelectedFile(null);
-                      setSelectedFileRaw(null);
-                      setThumbnailFile(null);
-                      setThumbnailPreview(null);
-                      setUploadError("");
-                      setAspectRatioError("");
-                      setVideoDimensions(null);
-                      setCaption("");
-                      setTitle("");
-                      setHashtags("");
-                      setLocation("");
-                      setLocationMode(null);
-                      setLocationError("");
-                    }}
-                    disabled={isUploading}
-                    className="px-6 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-bold text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                  >
-                    Back
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleUpload}
-                    disabled={!selectedFile || isUploading || !!aspectRatioError}
-                    className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-bold text-white disabled:opacity-50 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
-                  >
-                    {isUploading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={18} />
-                        Upload {uploadType === "post" ? "Post" : "Reel"}
-                      </>
-                    )}
-                  </motion.button>
-                </div>
+                {!isUploading && (
+                  <div className="flex gap-3 pt-4">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleBack}
+                      className="px-6 py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Back
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: canUpload ? 0.95 : 1 }}
+                      onClick={handleUpload}
+                      disabled={!canUpload}
+                      className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-opacity"
+                    >
+                      <Upload size={18} />
+                      Upload {uploadType === "post" ? "Post" : "Reel"}
+                    </motion.button>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </motion.div>
-
-      <style jsx>{`
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        .animate-shimmer {
-          animation: shimmer 1.5s infinite;
-        }
-      `}</style>
     </motion.div>
   );
 };
@@ -7160,70 +7520,121 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
-const [showCoverGradient, setShowCoverGradient] = useState(true);
-const [coverImageLoaded, setCoverImageLoaded] = useState(false);
-const [cardBounce, setCardBounce] = useState(false);
+  const [showCoverGradient, setShowCoverGradient] = useState(true);
+  const [coverImageLoaded, setCoverImageLoaded] = useState(false);
+  const [cardBounce, setCardBounce] = useState(false);
+  const [isScrolledHeader, setIsScrolledHeader] = useState(false);
+  const [videoThumbnails, setVideoThumbnails] = useState({});
+  const [isCoverExpanded, setIsCoverExpanded] = useState(false);
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setShowCoverGradient(false);
-  }, 2800);
-  return () => clearTimeout(timer);
-}, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCoverGradient(false);
+    }, 2800);
+    return () => clearTimeout(timer);
+  }, []);
 
-const getCategoryColor = useCallback((category) => {
-  const colorMap = {
-    Photography: { primary: '#a855f7', secondary: '#ec4899', gradient: 'from-purple-500 to-violet-600', rgb: '168, 85, 247' },
-    Videography: { primary: '#ec4899', secondary: '#f43f5e', gradient: 'from-pink-500 to-rose-600', rgb: '236, 72, 153' },
-    Catering: { primary: '#f97316', secondary: '#eab308', gradient: 'from-orange-500 to-amber-600', rgb: '249, 115, 22' },
-    Venue: { primary: '#0ea5e9', secondary: '#3b82f6', gradient: 'from-sky-500 to-blue-600', rgb: '14, 165, 233' },
-    Decoration: { primary: '#a855f7', secondary: '#d946ef', gradient: 'from-purple-500 to-fuchsia-600', rgb: '168, 85, 247' },
-    Entertainment: { primary: '#ef4444', secondary: '#f43f5e', gradient: 'from-red-500 to-rose-600', rgb: '239, 68, 68' },
-    'Makeup Artist': { primary: '#ec4899', secondary: '#a855f7', gradient: 'from-pink-500 to-purple-600', rgb: '236, 72, 153' },
-    'Wedding Planner': { primary: '#22c55e', secondary: '#10b981', gradient: 'from-green-500 to-emerald-600', rgb: '34, 197, 94' },
-    DJ: { primary: '#8b5cf6', secondary: '#a855f7', gradient: 'from-violet-500 to-purple-600', rgb: '139, 92, 246' },
-    Florist: { primary: '#f43f5e', secondary: '#ec4899', gradient: 'from-rose-500 to-pink-600', rgb: '244, 63, 94' },
-    default: { primary: '#6366f1', secondary: '#3b82f6', gradient: 'from-indigo-500 to-blue-600', rgb: '99, 102, 241' }
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolledHeader(window.scrollY > 150);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const getCategoryColor = useCallback((category) => {
+    const colorMap = {
+      Photography: {
+        primary: "#a855f7",
+        secondary: "#ec4899",
+        gradient: "from-purple-500 to-violet-600",
+        rgb: "168, 85, 247",
+      },
+      Videography: {
+        primary: "#ec4899",
+        secondary: "#f43f5e",
+        gradient: "from-pink-500 to-rose-600",
+        rgb: "236, 72, 153",
+      },
+      Catering: {
+        primary: "#f97316",
+        secondary: "#eab308",
+        gradient: "from-orange-500 to-amber-600",
+        rgb: "249, 115, 22",
+      },
+      Venue: { primary: "#0ea5e9", secondary: "#3b82f6", gradient: "from-sky-500 to-blue-600", rgb: "14, 165, 233" },
+      Decoration: {
+        primary: "#a855f7",
+        secondary: "#d946ef",
+        gradient: "from-purple-500 to-fuchsia-600",
+        rgb: "168, 85, 247",
+      },
+      Entertainment: {
+        primary: "#ef4444",
+        secondary: "#f43f5e",
+        gradient: "from-red-500 to-rose-600",
+        rgb: "239, 68, 68",
+      },
+      "Makeup Artist": {
+        primary: "#ec4899",
+        secondary: "#a855f7",
+        gradient: "from-pink-500 to-purple-600",
+        rgb: "236, 72, 153",
+      },
+      "Wedding Planner": {
+        primary: "#22c55e",
+        secondary: "#10b981",
+        gradient: "from-green-500 to-emerald-600",
+        rgb: "34, 197, 94",
+      },
+      DJ: { primary: "#8b5cf6", secondary: "#a855f7", gradient: "from-violet-500 to-purple-600", rgb: "139, 92, 246" },
+      Florist: { primary: "#f43f5e", secondary: "#ec4899", gradient: "from-rose-500 to-pink-600", rgb: "244, 63, 94" },
+      default: {
+        primary: "#6366f1",
+        secondary: "#3b82f6",
+        gradient: "from-indigo-500 to-blue-600",
+        rgb: "99, 102, 241",
+      },
+    };
+    return colorMap[category] || colorMap.default;
+  }, []);
+
+  const categoryColor = useMemo(() => getCategoryColor(vendor?.category), [vendor?.category, getCategoryColor]);
+
+  const cardBounceVariants = {
+    initial: { y: 0 },
+    bounce: {
+      y: [0, -12, -8, -10, -6, -8, 0],
+      transition: {
+        duration: 0.6,
+        ease: [0.22, 1, 0.36, 1],
+        times: [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1],
+      },
+    },
   };
-  return colorMap[category] || colorMap.default;
-}, []);
 
-const categoryColor = useMemo(() => getCategoryColor(vendor?.category), [vendor?.category, getCategoryColor]);
+  const coverImageVariants = {
+    hidden: { opacity: 0, scale: 1.1 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 1.2,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    },
+  };
 
-const cardBounceVariants = {
-  initial: { y: 0 },
-  bounce: {
-    y: [0, -12, -8, -10, -6, -8, 0],
-    transition: {
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1],
-      times: [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1]
-    }
-  }
-};
-
-const coverImageVariants = {
-  hidden: { opacity: 0, scale: 1.1 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      duration: 1.2,
-      ease: [0.22, 1, 0.36, 1]
-    }
-  }
-};
-
-const gradientAnimation = {
-  animate: {
-    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-    transition: {
-      duration: 3,
-      ease: 'linear',
-      repeat: Infinity
-    }
-  }
-};
+  const gradientAnimation = {
+    animate: {
+      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+      transition: {
+        duration: 3,
+        ease: "linear",
+        repeat: Infinity,
+      },
+    },
+  };
 
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
@@ -7294,10 +7705,6 @@ const gradientAnimation = {
   const dragStartX = useRef(0);
   const isDragging = useRef(false);
 
-  const lastFetchedVendorId = useRef(null);
-  const lastFetchedProfileId = useRef(null);
-  const lastFetchedReviewsId = useRef(null);
-
   const [posts, setPosts] = useState(initialProfile?.posts || []);
   const [reels, setReels] = useState(initialProfile?.reels || []);
 
@@ -7342,6 +7749,8 @@ const gradientAnimation = {
     const params = new URLSearchParams(window.location.search);
     const postId = params.get("post");
     const reelIndex = params.get("reel");
+
+    if (posts.length === 0 && reels.length === 0) return;
 
     if (postId && posts.length > 0) {
       const post = posts.find((p) => p._id === postId);
@@ -7478,6 +7887,93 @@ const gradientAnimation = {
     }
   }, [showSignInPrompt]);
 
+  useEffect(() => {
+    if (!posts.length) return;
+
+    const generateThumbnails = async () => {
+      const videoPosts = posts.filter(
+        (post) => post.mediaType === "video" && !post.thumbnailUrl && !videoThumbnails[post._id],
+      );
+
+      if (videoPosts.length === 0) return;
+
+      const newThumbnails = {};
+
+      await Promise.allSettled(
+        videoPosts.map(async (post) => {
+          try {
+            // Skip if already have thumbnail stored in post data
+            if (post.thumbnailUrl) {
+              newThumbnails[post._id] = post.thumbnailUrl;
+              return;
+            }
+
+            const thumbnail = await getVideoThumbnail(post.mediaUrl, {
+              seekTime: 1,
+              quality: 0.7,
+              maxWidth: 480,
+              maxHeight: 480,
+              timeout: 10000,
+              retries: 1,
+            });
+
+            newThumbnails[post._id] = thumbnail;
+          } catch (error) {
+            console.warn(`Failed to generate thumbnail for post ${post._id}:`, error.message);
+            // Use null to indicate failed - won't retry
+            newThumbnails[post._id] = null;
+          }
+        }),
+      );
+
+      if (Object.keys(newThumbnails).length > 0) {
+        setVideoThumbnails((prev) => ({ ...prev, ...newThumbnails }));
+      }
+    };
+
+    generateThumbnails();
+  }, [posts]);
+
+  // Add cleanup for video refs when component unmounts or posts change
+  useEffect(() => {
+    return () => {
+      // Cleanup video refs on unmount
+      Object.values(videoRefs.current).forEach((video) => {
+        if (video) {
+          video.pause();
+          video.src = "";
+          video.load();
+        }
+      });
+      videoRefs.current = {};
+    };
+  }, []);
+
+  // Also cleanup when posts change significantly
+  useEffect(() => {
+    const currentPostIds = new Set(posts.map((p) => p._id));
+
+    // Remove refs for posts that no longer exist
+    Object.keys(videoRefs.current).forEach((id) => {
+      if (!currentPostIds.has(id)) {
+        const video = videoRefs.current[id];
+        if (video) {
+          video.pause();
+          video.src = "";
+        }
+        delete videoRefs.current[id];
+      }
+    });
+  }, [posts]);
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
@@ -7608,17 +8104,17 @@ const gradientAnimation = {
     }
   }, [hasLiked, likesCount, id, interactionsLoading, showUIConfirmation, isSignedIn, user?.id, requireSignIn]);
 
- const handleTrustWithBounce = useCallback(async () => {
-  setCardBounce(true);
-  await handleTrust();
-  setTimeout(() => setCardBounce(false), 800);
-}, [handleTrust]);
+  const handleTrustWithBounce = useCallback(async () => {
+    setCardBounce(true);
+    await handleTrust();
+    setTimeout(() => setCardBounce(false), 800);
+  }, [handleTrust]);
 
-const handleLikeWithBounce = useCallback(async () => {
-  setCardBounce(true);
-  await handleLike();
-  setTimeout(() => setCardBounce(false), 800);
-}, [handleLike]);
+  const handleLikeWithBounce = useCallback(async () => {
+    setCardBounce(true);
+    await handleLike();
+    setTimeout(() => setCardBounce(false), 800);
+  }, [handleLike]);
 
   const handleSaveProfile = useCallback(() => {
     setIsSaved((prev) => !prev);
@@ -8138,10 +8634,7 @@ const handleLikeWithBounce = useCallback(async () => {
               <>
                 <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
                   {posts.map((post, index) => {
-                    let poster;
-                    if (post.mediaType === "video") {
-                      poster = getVideoThumbnail(post?.mediaUrl, 3);
-                    }
+                    const posterUrl = post.thumbnailUrl || videoThumbnails[post._id] || null;
                     return (
                       <motion.div
                         key={post?._id || `post-${index}`}
@@ -8242,13 +8735,18 @@ const handleLikeWithBounce = useCallback(async () => {
                                 if (el) videoRefs.current[post._id] = el;
                               }}
                               src={post.mediaUrl}
-                              {...(typeof poster === "string" && poster.trim() ? { poster } : {})}
+                              poster={posterUrl || undefined}
                               className="w-full h-full object-cover"
                               muted
                               playsInline
                               loop
                               preload="metadata"
                             />
+                            {!posterUrl && !videoThumbnails.hasOwnProperty(post._id) && (
+                              <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center">
+                                <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                              </div>
+                            )}
                             <AnimatePresence>
                               {playingVideoId !== post._id && (
                                 <motion.div
@@ -8287,6 +8785,7 @@ const handleLikeWithBounce = useCallback(async () => {
                           </div>
                         ) : (
                           <SmartMedia
+                            key={`media-${post._id}`}
                             src={post?.mediaUrl}
                             type="image"
                             className="w-full h-full object-cover"
@@ -9421,7 +9920,7 @@ const handleLikeWithBounce = useCallback(async () => {
                                   </div>
                                   <p className="text-[12px] font-bold text-slate-800 dark:text-slate-100">{dir.type}</p>
                                 </div>
-                                <p className="text-[12.5px] text-slate-600 dark:text-slate-400 leading-relaxed ml-13">
+                                <p className="text-[12.5px] text-slate-600 dark:text-slate-400 leading-relaxed ml-12">
                                   {dir.description}
                                 </p>
                               </div>
@@ -9493,1143 +9992,1276 @@ const handleLikeWithBounce = useCallback(async () => {
 📍 Available for bookings worldwide
 💼 5+ years of experience`;
 
-return (
-  <div className="min-h-screen bg-gray-50 dark:bg-gray-950 relative overflow-x-hidden">
-    {/* Onboarding Drawer */}
-    <VendorProfileOnboarding
-      vendor={vendor}
-      id={id}
-      onProfileCreated={handleProfileCreated}
-      isOpen={openOnboardingDrawer}
-      onClose={() => {
-        setOpenOnboardingDrawer(false);
-        updateURLParams({ onboarding: null });
-      }}
-    />
+  // Default UI (First UI - Enhanced and Fixed)
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 relative overflow-x-hidden">
+      {/* Onboarding Drawer */}
+      <VendorProfileOnboarding
+        vendor={vendor}
+        id={id}
+        onProfileCreated={handleProfileCreated}
+        isOpen={openOnboardingDrawer}
+        onClose={() => {
+          setOpenOnboardingDrawer(false);
+          updateURLParams({ onboarding: null });
+        }}
+      />
 
-    <ThumbsUpAnimation show={showThumbsUpAnimation} />
-    <FloatingConfirmation
-      show={showConfirmation.show}
-      icon={showConfirmation.icon}
-      message={showConfirmation.message}
-      type={showConfirmation.type}
-    />
+      <ThumbsUpAnimation show={showThumbsUpAnimation} />
+      <FloatingConfirmation
+        show={showConfirmation.show}
+        icon={showConfirmation.icon}
+        message={showConfirmation.message}
+        type={showConfirmation.type}
+      />
 
-    {/* Sticky Header */}
-    {!openOnboardingDrawer && (
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        style={{ opacity: headerOpacity }}
-        className="fixed top-0 left-0 right-0 z-[60] bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl border-b border-gray-200/30 dark:border-gray-800/30"
+      {/* ============ FIXED HEADER WITH INTEGRATED TABS ============ */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-[50] transition-all duration-500 ease-out ${
+          isScrolledHeader
+            ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-lg border-b border-gray-200/50 dark:border-gray-800/50"
+            : "bg-gradient-to-b from-black/50 to-transparent"
+        }`}
+        style={{
+          willChange: isScrolledHeader ? "auto" : "transform, opacity",
+        }}
       >
-        <div className="flex items-center justify-between px-4 py-3 max-w-screen-xl mx-auto">
+        {/* Row 1: Navigation Controls */}
+        <div className="flex items-center justify-between px-4 py-3 pb-0">
           <motion.button
-            whileTap={{ scale: 0.92 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            onClick={handleBack}
-            className="w-10 h-10 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center backdrop-blur-sm"
-          >
-            <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
-          </motion.button>
-          
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex-1 px-4"
-          >
-            <h1 className="text-[14px] font-bold text-gray-900 dark:text-white truncate text-center">
-              {vendorLoading ? (
-                <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto" />
-              ) : (
-                vendor?.name
-              )}
-            </h1>
-          </motion.div>
-          
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            onClick={handleShare}
-            className="w-10 h-10 rounded-full bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center backdrop-blur-sm"
-          >
-            <Share2 size={18} className="text-gray-700 dark:text-gray-300" />
-          </motion.button>
-        </div>
-      </motion.header>
-    )}
-
-    {/* Main Content */}
-    <main className="pb-36">
-      {/* Hero Section */}
-      <section className="relative">
-        {/* Cover Image Container - Fixed height, lower z-index */}
-        <div className="relative h-56 overflow-hidden" style={{ zIndex: 1 }}>
-
-          {/* Actual Cover Image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{
-              opacity: showCoverGradient ? 0 : 1,
-              scale: showCoverGradient ? 1.05 : 1
-            }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{
-              duration: 1.4,
-              ease: [0.25, 0.46, 0.45, 0.94]
+              delay: 0.1,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1],
             }}
-            className="absolute inset-0"
-            style={{ zIndex: 2 }}
+            whileTap={{ scale: 0.92 }}
+            whileHover={{ scale: 1.05 }}
+            onClick={handleBack}
+            className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
+              isScrolledHeader
+                ? "b border-gray-200 dark:border-gray-700 shadow-sm"
+                : " border-white/10 shadow-black/20"
+            }`}
+            style={{
+              willChange: "transform",
+            }}
           >
-            {vendorLoading ? (
-              <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800">
+            <ArrowLeft
+              size={20}
+              className={`transition-colors duration-500 ease-out ${
+                isScrolledHeader ? "text-gray-700 dark:text-gray-200" : "text-white"
+              }`}
+            />
+          </motion.button>
+
+          {profile.username && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                delay: 0.15,
+                duration: 0.6,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="flex items-center gap-2 flex-1 min-w-0 ml-2"
+            >
+              <span
+                className={`text-sm font-bold truncate transition-colors duration-500 ease-out ${
+                  isScrolledHeader ? "text-gray-900 dark:text-white" : "text-white"
+                }`}
+              >
+                {"@" + vendor?.username}
+              </span>
+              {vendor?.isVerified && (
                 <motion.div
-                  animate={{ x: ['-100%', '100%'] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                />
-              </div>
-            ) : profile?.vendorCoverImage ? (
-              <SmartMedia
-                src={profile.vendorCoverImage}
-                type="image"
-                className="w-full h-full object-cover"
-                loaderImage="/GlowLoadingGif.gif"
-                onLoad={() => setCoverImageLoaded(true)}
-              />
-            ) : vendor?.images?.[0] ? (
-              <SmartMedia
-                src={vendor.images[4]}
-                type="image"
-                className="w-full h-full object-cover"
-                loaderImage="/GlowLoadingGif.gif"
-                onLoad={() => setCoverImageLoaded(true)}
-              />
-            ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${categoryColor.gradient}`} />
-            )}
-          </motion.div>
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{
+                    scale: 1,
+                    rotate: 0,
+                    transition: {
+                      delay: 0.35,
+                      duration: 0.5,
+                      ease: [0.34, 1.56, 0.64, 1],
+                    },
+                  }}
+                  className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0"
+                >
+                  <Check size={10} className="text-white" strokeWidth={3} />
+                </motion.div>
+              )}
+            </motion.div>
+          )}
 
-          {/* Gradient overlay for text readability */}
-          <div 
-            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10"
-            style={{ zIndex: 4 }}
-          />
-
-          {/* Top Navigation */}
-          <div 
-            className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 pb-4"
-            style={{ zIndex: 5 }}
+          {/* Right: Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              delay: 0.2,
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="flex items-center gap-2 flex-shrink-0"
           >
             <motion.button
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
               whileTap={{ scale: 0.92 }}
-              whileHover={{ scale: 1.05, backgroundColor: 'rgba(0,0,0,0.5)' }}
-              onClick={handleBack}
-              className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center border border-white/10 shadow-lg shadow-black/20 transition-colors duration-300"
+              whileHover={{ scale: 1.05 }}
+              onClick={handleShare}
+              className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
+                isScrolledHeader
+                  ? " border-gray-200 dark:border-gray-700 shadow-sm"
+                  : " border-white/10 shadow-black/20"
+              }`}
+              style={{
+                willChange: "transform",
+              }}
             >
-              <ArrowLeft size={20} className="text-white" />
+              <Share2
+                size={18}
+                className={`transition-colors duration-500 ease-out ${
+                  isScrolledHeader ? "text-gray-700 dark:text-gray-200" : "text-white"
+                }`}
+              />
             </motion.button>
-            
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex items-center gap-2.5"
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setShowMoreOptions(true)}
+              className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
+                isScrolledHeader
+                  ? " border-gray-200 dark:border-gray-700 shadow-sm"
+                  : " border-white/10 shadow-black/20"
+              }`}
+              style={{
+                willChange: "transform",
+              }}
             >
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ scale: 1.05, backgroundColor: 'rgba(0,0,0,0.5)' }}
-                onClick={handleShare}
-                className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center border border-white/10 shadow-lg shadow-black/20 transition-colors duration-300"
-              >
-                <Share2 size={18} className="text-white" />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ scale: 1.05, backgroundColor: 'rgba(0,0,0,0.5)' }}
-                onClick={() => setShowMoreOptions(true)}
-                className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-xl flex items-center justify-center border border-white/10 shadow-lg shadow-black/20 transition-colors duration-300"
-              >
-                <MoreVertical size={18} className="text-white" />
-              </motion.button>
-            </motion.div>
-          </div>
+              <MoreVertical
+                size={18}
+                className={`transition-colors duration-500 ease-out ${
+                  isScrolledHeader ? "text-gray-700 dark:text-gray-200" : "text-white"
+                }`}
+              />
+            </motion.button>
+          </motion.div>
         </div>
 
-        {/* Profile Card - Higher z-index, pulled up */}
-        <div 
-          className="relative px-4"
-          style={{ 
-            marginTop: '-4.5rem',
-            zIndex: 10 
-          }}
-        >
+        {/* Row 2: Tab Navigation (appears on scroll) */}
+        <AnimatePresence mode="wait">
+          {isScrolledHeader && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{
+                height: "auto",
+                opacity: 1,
+                transition: {
+                  height: {
+                    duration: 0.4,
+                    ease: [0.22, 1, 0.36, 1],
+                  },
+                  opacity: {
+                    duration: 0.3,
+                    delay: 0.1,
+                  },
+                },
+              }}
+              exit={{
+                height: 0,
+                opacity: 0,
+                transition: {
+                  height: {
+                    duration: 0.3,
+                    ease: [0.22, 1, 0.36, 1],
+                  },
+                  opacity: {
+                    duration: 0.2,
+                  },
+                },
+              }}
+              className="overflow-hidden border-t border-gray-200/50 dark:border-gray-800/50"
+              style={{
+                willChange: "height, opacity",
+              }}
+            >
+              <div className="relative">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: {
+                      delay: 0.15,
+                      duration: 0.4,
+                      ease: [0.22, 1, 0.36, 1],
+                    },
+                  }}
+                  className={`bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border-b border-gray-200/50 dark:border-gray-800/50 mt-2 transition-all duration-500 ease-out`}
+                >
+                  <div className="flex overflow-x-auto no-scrollbar">
+                    {TABS.map((tab, index) => (
+                      <motion.button
+                        key={tab.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            delay: 0.2 + index * 0.04,
+                            duration: 0.4,
+                            ease: [0.22, 1, 0.36, 1],
+                          },
+                        }}
+                        whileTap={{ scale: 0.96 }}
+                        whileHover={{
+                          scale: 1.02,
+                          transition: { duration: 0.2 },
+                        }}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          const url = new URL(window.location.href);
+                          url.searchParams.set("tab", tab.id);
+                          if (tab.id !== "services") url.searchParams.delete("details");
+                          window.history.pushState({}, "", url.toString());
+                        }}
+                        className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize relative cursor-pointer"
+                        style={{
+                          color: activeTab === tab.id ? categoryColor.primary : "rgb(107, 114, 128)",
+                          transition: "color 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+                          willChange: activeTab === tab.id ? "auto" : "transform",
+                        }}
+                      >
+                        <motion.div
+                          animate={{
+                            scale: activeTab === tab.id ? 1 : 1,
+                            transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                          }}
+                        >
+                          <tab.icon size={19} />
+                        </motion.div>
+
+                        <AnimatePresence mode="wait">
+                          {activeTab === tab.id && (
+                            <motion.div
+                              layoutId="activeTabGlider"
+                              initial={{ opacity: 0, scaleX: 0.3 }}
+                              animate={{
+                                opacity: 1,
+                                scaleX: 1,
+                                transition: {
+                                  opacity: { duration: 0.2 },
+                                  scaleX: {
+                                    type: "spring",
+                                    stiffness: 400,
+                                    damping: 35,
+                                    mass: 0.6,
+                                  },
+                                },
+                              }}
+                              exit={{
+                                opacity: 0,
+                                scaleX: 0.3,
+                                transition: {
+                                  duration: 0.2,
+                                  ease: [0.22, 1, 0.36, 1],
+                                },
+                              }}
+                              className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full"
+                              style={{
+                                background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                                originX: 0.5,
+                                willChange: "transform, opacity",
+                              }}
+                            />
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Main Content */}
+      <main className="pb-36">
+        {/* Hero Section */}
+        <section className="relative">
+          {/* Cover Image Container */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ 
-              opacity: 1, 
-              y: cardBounce ? -16 : 0
-            }}
-            transition={{
-              opacity: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
-              y: { 
-                type: "spring", 
-                stiffness: cardBounce ? 300 : 400, 
-                damping: cardBounce ? 15 : 30,
-                mass: 0.8
-              }
-            }}
-            className="bg-white dark:bg-gray-900 rounded-[28px] p-5 border border-gray-100 dark:border-gray-800 relative overflow-hidden"
-            style={{
-              boxShadow: `
+            layout
+            initial={false}
+            animate={{ height: isCoverExpanded ? "28rem" : "14rem" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            onClick={() => setIsCoverExpanded(!isCoverExpanded)}
+            className="relative overflow-hidden rounded-b-2xl cursor-pointer"
+          >
+            {/* Actual Cover Image */}
+            <motion.div
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{
+                opacity: showCoverGradient ? 0 : 1,
+                scale: showCoverGradient ? 1.05 : 1,
+              }}
+              transition={{
+                duration: 1.4,
+                ease: smoothEase,
+              }}
+              className="absolute inset-0 z-[1] cover-clickable"
+            >
+              {vendorLoading ? (
+                <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800">
+                  <motion.div
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  />
+                </div>
+              ) : profile?.vendorCoverImage ? (
+                <SmartMedia
+                  src={profile.vendorCoverImage}
+                  type="image"
+                  className="w-full h-full object-cover"
+                  loaderImage="/GlowLoadingGif.gif"
+                  onLoad={() => setCoverImageLoaded(true)}
+                />
+              ) : vendor?.images?.[0] ? (
+                <SmartMedia
+                  src={vendor.images[4] || vendor.images[0]}
+                  type="image"
+                  className="w-full h-full object-cover"
+                  loaderImage="/GlowLoadingGif.gif"
+                  onLoad={() => setCoverImageLoaded(true)}
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${categoryColor.gradient}`} />
+              )}
+            </motion.div>
+
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10 z-[2]" />
+            <motion.div
+              animate={{ opacity: isCoverExpanded ? 0 : 1 }}
+              className="absolute bottom-4 right-4 z-[3] text-white/50 text-[10px] bg-black/20 px-2 py-1 rounded-full backdrop-blur-sm pointer-events-none"
+            >
+              Tap to expand
+            </motion.div>
+          </motion.div>
+
+          {/* Profile Card */}
+          <div className="relative px-4 pl-[13px] z-[5]" style={{ marginTop: "-8.5rem" }}>
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{
+                opacity: 1,
+                y: cardBounce ? -16 : 0,
+              }}
+              transition={{
+                opacity: { duration: 0.6, ease: smoothEase },
+                y: {
+                  type: "spring",
+                  stiffness: cardBounce ? 300 : 400,
+                  damping: cardBounce ? 15 : 30,
+                  mass: 0.8,
+                },
+              }}
+              className="bg-white dark:bg-gray-900 rounded-[28px] p-5 border border-gray-100 dark:border-gray-800 relative overflow-hidden"
+              style={{
+                boxShadow: `
                 0 4px 6px -1px rgba(0, 0, 0, 0.05),
                 0 10px 15px -3px rgba(0, 0, 0, 0.08),
                 0 20px 25px -5px rgba(0, 0, 0, 0.06),
                 0 25px 50px -12px rgba(${categoryColor.rgb}, 0.15)
-              `
-            }}
-          >
-            {/* Subtle gradient accent */}
-            <div 
-              className="absolute top-0 left-0 right-0 h-1 opacity-80"
-              style={{
-                background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`
+              `,
               }}
-            />
-
-            {/* Profile Header */}
-            <div className="flex items-start gap-4 mb-5">
-              {/* Profile Picture */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => setShowProfilePicture(true)}
-                className="relative cursor-pointer group"
-              >
-                {vendorLoading ? (
-                  <div className="w-[76px] h-[76px] rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                ) : (
-                  <div 
-                    className="w-[76px] h-[76px] rounded-2xl overflow-hidden ring-[3px] ring-white dark:ring-gray-900 transition-transform duration-300 group-hover:scale-[1.02]"
-                    style={{
-                      boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.35)`
-                    }}
-                  >
-                    <SmartMedia
-                      src={
-                        profile?.vendorAvatar ||
-                        (Array.isArray(vendor?.vendorProfile)
-                          ? vendor.vendorProfile[0]?.profilePicture
-                          : vendor?.vendorProfile?.profilePicture) ||
-                        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
-                      }
-                      type="image"
-                      className="w-full h-full object-cover"
-                      loaderImage="/GlowLoadingGif.gif"
-                    />
-                  </div>
-                )}
-                {vendor?.isVerified && (
-                  <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ 
-                      delay: 0.5, 
-                      type: "spring", 
-                      stiffness: 500, 
-                      damping: 20 
-                    }}
-                    className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center ring-[2.5px] ring-white dark:ring-gray-900 shadow-lg"
-                  >
-                    <BadgeCheck size={15} className="text-white" />
-                  </motion.div>
-                )}
-              </motion.div>
-
-              {/* Profile Info */}
-              <div className="flex-1 min-w-0 pt-0.5">
-                {vendorLoading ? (
-                  <div className="space-y-2.5">
-                    <div className="h-5 w-44 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-                    <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-                    <div className="h-3.5 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-                  </div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.35, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  >
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <h1 className="text-[17px] font-bold text-gray-900 dark:text-white truncate leading-tight">
-                        {vendor?.name}
-                      </h1>
-                      {vendor?.isPremium && (
-                        <motion.span
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.5, type: "spring", stiffness: 400 }}
-                          className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-bold rounded-full flex items-center gap-0.5 flex-shrink-0 shadow-md shadow-amber-500/30"
-                        >
-                          <Crown size={9} />
-                          PRO
-                        </motion.span>
-                      )}
-                    </div>
-                    
-                    <p 
-                      className="text-[13px] font-semibold mb-1"
-                      style={{ color: categoryColor.primary }}
-                    >
-                      {vendor?.category || "Photography"}
-                    </p>
-                    
-                    <p className="text-[12px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-                      <MapPin size={11} className="flex-shrink-0" />
-                      <span className="truncate">{vendor?.address?.city || "Mumbai, India"}</span>
-                    </p>
-                    
-                    {reviews?.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                        className="flex items-center gap-1.5 mt-1.5"
-                      >
-                        <Star size={13} className="text-amber-500 fill-amber-500" />
-                        <span className="text-[13px] font-bold text-gray-900 dark:text-white">
-                          {(reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length).toFixed(1)}
-                        </span>
-                        <span className="text-[11px] text-gray-500">({reviews.length})</span>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            {/* Stats Row */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex items-center justify-around py-3.5 border-y border-gray-100 dark:border-gray-800/80 mx--1"
             >
-              {stats.map((stat, idx) => (
-                <React.Fragment key={idx}>
-                  {stat.showSkeleton ? (
-                    <StatSkeleton />
+              {/* Subtle gradient accent */}
+              <div
+                className="absolute top-0 left-0 right-0 h-1 opacity-80"
+                style={{
+                  background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                }}
+              />
+
+              {/* Profile Header */}
+              <div className="flex items-start gap-4 mb-2">
+                {/* Profile Picture */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5, ease: smoothEase }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setShowProfilePicture(true)}
+                  className="relative cursor-pointer group"
+                >
+                  {vendorLoading ? (
+                    <div className="w-[96px] h-[96px] rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
                   ) : (
-                    <motion.button
-                      whileTap={{ scale: stat.loading ? 1 : 0.94 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      onClick={
-                        stat.label === 'Trust' ? handleTrustWithBounce : 
-                        stat.label === 'Likes' ? handleLikeWithBounce : 
-                        stat.action
-                      }
-                      disabled={stat.loading}
-                      className="flex flex-col items-center gap-1 px-5 py-2 rounded-2xl transition-all duration-300"
-                      style={{
-                        backgroundColor: stat.active ? `rgba(${categoryColor.rgb}, 0.1)` : 'transparent'
-                      }}
-                    >
-                      <motion.span
-                        animate={stat.loading ? { opacity: [1, 0.4, 1] } : {}}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                        className="text-[18px] font-black transition-colors duration-300"
-                        style={{ color: stat.active ? categoryColor.primary : undefined }}
-                      >
-                        {stat.value}
-                      </motion.span>
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold tracking-wide">
-                        {stat.label}
-                      </span>
-                    </motion.button>
-                  )}
-                  {idx < stats.length - 1 && (
-                    <div className="w-px h-9 bg-gray-200 dark:bg-gray-700/80" />
-                  )}
-                </React.Fragment>
-              ))}
-            </motion.div>
-
-            {/* Bio Section */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="mt-4"
-            >
-              {profileLoading ? (
-                <BioSkeleton />
-              ) : (
-                <>
-                  <motion.div
-                    initial={false}
-                    animate={{ height: isBioExpanded ? "auto" : "4.5rem" }}
-                    transition={{ 
-                      duration: 0.5, 
-                      ease: [0.25, 0.46, 0.45, 0.94]
-                    }}
-                    className="relative overflow-hidden"
-                  >
                     <div
-                      className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.65] bio-content"
-                      dangerouslySetInnerHTML={{
-                        __html: sanitizeHtml(
-                          profile?.bio || defaultBio
-                        ),
+                      className="w-[96px] h-[96px] rounded-2xl overflow-hidden ring-[3px] ring-white dark:ring-gray-900 transition-transform duration-300 group-hover:scale-[1.02]"
+                      style={{
+                        boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.35)`,
                       }}
-                    />
-                    {!isBioExpanded && (
-                      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-900 to-transparent pointer-events-none" />
-                    )}
-                  </motion.div>
-                  
-                  {getPlainTextLength(profile?.bio || defaultBio) > 120 && (
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setIsBioExpanded(!isBioExpanded)}
-                      className="text-[12px] font-semibold mt-2 transition-colors duration-300 flex items-center gap-1"
-                      style={{ color: categoryColor.primary }}
                     >
-                      {isBioExpanded ? "Show less" : "Show more"}
-                      <motion.div
-                        animate={{ rotate: isBioExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      >
-                        <ChevronDown size={14} />
-                      </motion.div>
-                    </motion.button>
+                      <SmartMedia
+                        src={
+                          profile?.vendorAvatar ||
+                          (Array.isArray(vendor?.vendorProfile)
+                            ? vendor.vendorProfile[0]?.profilePicture
+                            : vendor?.vendorProfile?.profilePicture) ||
+                          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
+                        }
+                        type="image"
+                        className="w-full h-full object-cover"
+                        loaderImage="/GlowLoadingGif.gif"
+                      />
+                    </div>
                   )}
-                </>
-              )}
+                  {vendor?.isVerified && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{
+                        delay: 0.5,
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 20,
+                      }}
+                      className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center ring-[2.5px] ring-white dark:ring-gray-900 shadow-lg"
+                    >
+                      <BadgeCheck size={15} className="text-white" />
+                    </motion.div>
+                  )}
+                </motion.div>
 
-              {/* Website & Social Links */}
-              <AnimatePresence>
-                {(profile?.website || profile?.socialLinks?.instagram) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.55, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    className="flex items-center gap-2 mt-4 overflow-x-auto no-scrollbar pb-1"
-                  >
-                    {profile.website && (
-                      <motion.a
-                        whileTap={{ scale: 0.96 }}
-                        href={profile.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 text-[11px] font-semibold flex-shrink-0 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                      >
-                        <Globe size={12} />
-                        Website
-                        <ExternalLink size={9} />
-                      </motion.a>
-                    )}
-                    {profile.socialLinks?.instagram && (
-                      <motion.a
-                        whileTap={{ scale: 0.96 }}
-                        href={profile.socialLinks.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold flex-shrink-0 transition-all duration-300"
-                        style={{
-                          backgroundColor: `rgba(${categoryColor.rgb}, 0.12)`,
-                          color: categoryColor.primary
-                        }}
-                      >
-                        <Instagram size={12} />
-                        Instagram
-                      </motion.a>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                {/* Profile Info */}
+                <div className="flex-1 min-w-0 pt-0.5">
+                  {vendorLoading ? (
+                    <div className="space-y-2.5">
+                      <div className="h-5 w-44 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+                      <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+                      <div className="h-3.5 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+                    </div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.35, duration: 0.5, ease: smoothEase }}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <h1 className="text-[17px] font-bold text-gray-900 dark:text-white truncate leading-tight">
+                          {vendor?.name}
+                        </h1>
+                        {vendor?.isPremium && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.5, type: "spring", stiffness: 400 }}
+                            className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] font-bold rounded-full flex items-center gap-0.5 flex-shrink-0 shadow-md shadow-amber-500/30"
+                          >
+                            <Crown size={9} />
+                            PRO
+                          </motion.span>
+                        )}
+                      </div>
 
-              {/* Highlights */}
-              <div 
-                ref={highlightsContainerRef} 
-                className="mt-4 overflow-x-auto no-scrollbar -mx-1 px-1"
-              >
-                {profileLoading ? (
-                  <HighlightsSkeleton />
-                ) : (
-                  <div className="flex gap-3.5 py-1" style={{ minWidth: "max-content" }}>
-                    {MOCK_HIGHLIGHTS.map((highlight, index) => (
-                      <motion.button
-                        key={highlight.id}
-                        initial={{ opacity: 0, y: 15, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ 
-                          delay: 0.6 + index * 0.06, 
-                          duration: 0.4, 
-                          ease: [0.25, 0.46, 0.45, 0.94] 
-                        }}
-                        whileTap={{ scale: 0.94 }}
-                        onClick={() => setSelectedHighlight(highlight)}
-                        className="flex flex-col items-center gap-2 shrink-0 group"
-                        style={{ width: "calc((100vw - 72px) / 4.5)" }}
-                      >
-                        <div
-                          className="w-[62px] h-[62px] rounded-[18px] overflow-hidden p-[2.5px] transition-transform duration-300 group-hover:scale-105"
-                          style={{
-                            background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`
-                          }}
+                      <p className="text-[13px] font-semibold mb-1" style={{ color: categoryColor.primary }}>
+                        {vendor?.category || "Photography"}
+                      </p>
+
+                      <p className="text-[12px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                        <MapPin size={11} className="flex-shrink-0" />
+                        <span className="truncate">{vendor?.address?.city || "Mumbai, India"}</span>
+                      </p>
+
+                      {reviews?.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.6 }}
+                          className="flex items-center gap-1.5 mt-1.5"
                         >
-                          <div className="w-full h-full rounded-[15px] overflow-hidden bg-white dark:bg-gray-900">
-                            <SmartMedia
-                              src={highlight.image}
-                              type="image"
-                              className="w-full h-full object-cover"
-                              loaderImage="/GlowLoadingGif.gif"
-                            />
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 truncate max-w-full px-0.5">
-                          {highlight.title}
+                          <Star size={13} className="text-amber-500 fill-amber-500" />
+                          <span className="text-[13px] font-bold text-gray-900 dark:text-white">
+                            {(reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length).toFixed(1)}
+                          </span>
+                          <span className="text-[11px] text-gray-500">({reviews.length})</span>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats Row */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5, ease: smoothEase }}
+                className="flex items-center justify-around py-1.5 border-y border-gray-100 dark:border-gray-800/80 mx-1"
+              >
+                {stats.map((stat, idx) => (
+                  <React.Fragment key={idx}>
+                    {stat.showSkeleton ? (
+                      <StatSkeleton />
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: stat.loading ? 1 : 0.94 }}
+                        transition={smoothSpring}
+                        onClick={
+                          stat.label === "Trust"
+                            ? handleTrustWithBounce
+                            : stat.label === "Likes"
+                              ? handleLikeWithBounce
+                              : stat.action
+                        }
+                        disabled={stat.loading}
+                        className="flex flex-col items-center px-5 py-2 rounded-2xl transition-all duration-300 cursor-pointer"
+                        style={{
+                          backgroundColor: stat.active ? `rgba(${categoryColor.rgb}, 0.1)` : "transparent",
+                        }}
+                      >
+                        <motion.span
+                          animate={stat.loading ? { opacity: [1, 0.4, 1] } : {}}
+                          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                          className="text-[18px] font-black transition-colors duration-300"
+                          style={{ color: stat.active ? categoryColor.primary : undefined }}
+                        >
+                          {stat.value}
+                        </motion.span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold tracking-wide">
+                          {stat.label}
                         </span>
                       </motion.button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                    )}
+                    {idx < stats.length - 1 && <div className="w-px h-9 bg-gray-200 dark:bg-gray-700/80" />}
+                  </React.Fragment>
+                ))}
+              </motion.div>
 
-            {/* Action Buttons */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.65, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex gap-2.5 mt-5"
-            >
-              {/* Trust Button - Wider and highlighted */}
+              {/* Bio Section */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="mt-3"
+              >
+                {profileLoading ? (
+                  <BioSkeleton />
+                ) : (
+                  <>
+                    <motion.div
+                      initial={false}
+                      animate={{ height: isBioExpanded ? "auto" : "4.5rem" }}
+                      transition={{
+                        duration: 0.5,
+                        ease: smoothEase,
+                      }}
+                      className="relative overflow-hidden"
+                    >
+                      <div
+                        className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.65] bio-content"
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeHtml(profile?.bio || defaultBio),
+                        }}
+                      />
+                      {!isBioExpanded && (
+                        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-900 to-transparent pointer-events-none" />
+                      )}
+                    </motion.div>
+
+                    {getPlainTextLength(profile?.bio || defaultBio) > 120 && (
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setIsBioExpanded(!isBioExpanded)}
+                        className="text-[12px] font-semibold mt-2 transition-colors duration-300 flex items-center gap-1 cursor-pointer"
+                        style={{ color: categoryColor.primary }}
+                      >
+                        {isBioExpanded ? "Show less" : "Show more"}
+                        <motion.div
+                          animate={{ rotate: isBioExpanded ? 180 : 0 }}
+                          transition={{ duration: 0.3, ease: smoothEase }}
+                        >
+                          <ChevronDown size={14} />
+                        </motion.div>
+                      </motion.button>
+                    )}
+                  </>
+                )}
+
+                {/* Website & Social Links */}
+                <AnimatePresence>
+                  {(profile?.website || profile?.socialLinks?.instagram) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.55, duration: 0.4, ease: smoothEase }}
+                      className="flex items-center gap-2 mt-4 overflow-x-auto no-scrollbar pb-1"
+                    >
+                      {profile.website && (
+                        <motion.a
+                          whileTap={{ scale: 0.96 }}
+                          href={profile.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-700 dark:text-gray-300 text-[11px] font-semibold flex-shrink-0 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                        >
+                          <Globe size={12} />
+                          Website
+                          <ExternalLink size={9} />
+                        </motion.a>
+                      )}
+                      {profile.socialLinks?.instagram && (
+                        <motion.a
+                          whileTap={{ scale: 0.96 }}
+                          href={profile.socialLinks.instagram}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-semibold flex-shrink-0 transition-all duration-300"
+                          style={{
+                            backgroundColor: `rgba(${categoryColor.rgb}, 0.12)`,
+                            color: categoryColor.primary,
+                          }}
+                        >
+                          <Instagram size={12} />
+                          Instagram
+                        </motion.a>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Highlights */}
+                <div ref={highlightsContainerRef} className="mt-4 overflow-x-auto no-scrollbar -mx-1 px-1">
+                  {profileLoading ? (
+                    <HighlightsSkeleton />
+                  ) : (
+                    <div className="flex gap-3.5 py-1" style={{ minWidth: "max-content" }}>
+                      {MOCK_HIGHLIGHTS.map((highlight, index) => (
+                        <motion.button
+                          key={highlight.id}
+                          initial={{ opacity: 0, y: 15, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{
+                            delay: 0.6 + index * 0.06,
+                            duration: 0.4,
+                            ease: smoothEase,
+                          }}
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => setSelectedHighlight(highlight)}
+                          className="flex flex-col items-center gap-2 shrink-0 group cursor-pointer"
+                          style={{ width: "calc((100vw - 72px) / 4.5)" }}
+                        >
+                          <div
+                            className="w-[62px] h-[62px] rounded-[18px] overflow-hidden p-[2.5px] transition-transform duration-300 group-hover:scale-105"
+                            style={{
+                              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                            }}
+                          >
+                            <div className="w-full h-full rounded-[15px] overflow-hidden bg-white dark:bg-gray-900">
+                              <SmartMedia
+                                src={highlight.image}
+                                type="image"
+                                className="w-full h-full object-cover"
+                                loaderImage="/GlowLoadingGif.gif"
+                              />
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 truncate max-w-full px-0.5">
+                            {highlight.title}
+                          </span>
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65, duration: 0.4, ease: smoothEase }}
+                className="flex gap-2.5 mt-5"
+              >
+                {/* Trust Button */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  transition={smoothSpring}
+                  onClick={handleTrustWithBounce}
+                  className="flex-[1.4] py-3.5 rounded-2xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all duration-300 text-white cursor-pointer"
+                  style={{
+                    background: hasTrusted
+                      ? "linear-gradient(135deg, #22c55e 0%, #10b981 100%)"
+                      : `linear-gradient(135deg, ${categoryColor.primary} 0%, ${categoryColor.secondary} 100%)`,
+                    boxShadow: hasTrusted
+                      ? "0 8px 24px -4px rgba(34, 197, 94, 0.4)"
+                      : `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.4)`,
+                  }}
+                >
+                  <motion.div
+                    animate={
+                      hasTrusted
+                        ? {
+                            rotate: [0, -15, 15, -10, 10, 0],
+                            scale: [1, 1.15, 1.1, 1.05, 1],
+                          }
+                        : {}
+                    }
+                    transition={{ duration: 0.5, ease: smoothEase }}
+                  >
+                    <ThumbsUp size={17} className={hasTrusted ? "fill-white" : ""} />
+                  </motion.div>
+                  <span>{hasTrusted ? "Trusted" : "Trust"}</span>
+                </motion.button>
+
+                {/* Book Button */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  transition={smoothSpring}
+                  onClick={() => setShowBookingDrawer(true)}
+                  className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-2xl font-semibold text-[13px] text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  <span>Book</span>
+                </motion.button>
+
+                {/* Contact Button */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  transition={smoothSpring}
+                  onClick={() => setShowContactDrawer(true)}
+                  className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-2xl font-semibold text-[13px] text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  <span>Contact</span>
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Tab Navigation - Sticky */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.4, ease: smoothEase }}
+          className={`bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border-b border-gray-200/50 dark:border-gray-800/50 mt-5 transition-all duration-300`}
+        >
+          <div className="flex overflow-x-auto no-scrollbar">
+            {TABS.map((tab, index) => (
               <motion.button
+                key={tab.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.75 + index * 0.05, duration: 0.3 }}
                 whileTap={{ scale: 0.96 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                onClick={handleTrustWithBounce}
-                className="flex-[1.4] py-3.5 rounded-2xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all duration-300 text-white"
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("tab", tab.id);
+                  if (tab.id !== "services") url.searchParams.delete("details");
+                  window.history.pushState({}, "", url.toString());
+                }}
+                className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize transition-all duration-300 relative cursor-pointer"
                 style={{
-                  background: hasTrusted
-                    ? 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)'
-                    : `linear-gradient(135deg, ${categoryColor.primary} 0%, ${categoryColor.secondary} 100%)`,
-                  boxShadow: hasTrusted
-                    ? '0 8px 24px -4px rgba(34, 197, 94, 0.4)'
-                    : `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.4)`
+                  color: activeTab === tab.id ? categoryColor.primary : "rgb(107, 114, 128)",
                 }}
               >
-                <motion.div
-                  animate={hasTrusted ? { 
-                    rotate: [0, -15, 15, -10, 10, 0], 
-                    scale: [1, 1.15, 1.1, 1.05, 1] 
-                  } : {}}
-                  transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                >
-                  <ThumbsUp size={17} className={hasTrusted ? "fill-white" : ""} />
-                </motion.div>
-                <span>{hasTrusted ? "Trusted" : "Trust"}</span>
-              </motion.button>
-              
-              {/* Book Button */}
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                onClick={() => setShowBookingDrawer(true)}
-                className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-2xl font-semibold text-[13px] text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <Calendar size={17} />
-                <span>Book</span>
-              </motion.button>
-              
-              {/* Contact Button */}
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                onClick={() => setShowContactDrawer(true)}
-                className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-2xl font-semibold text-[13px] text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <MessageCircle size={17} />
-                <span>Contact</span>
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Tab Navigation - Sticky */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="sticky top-0 z-[45] bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border-b border-gray-200/50 dark:border-gray-800/50 mt-5"
-      >
-        <div className="flex overflow-x-auto no-scrollbar">
-          {TABS.map((tab, index) => (
-            <motion.button
-              key={tab.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.75 + index * 0.05, duration: 0.3 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => {
-                setActiveTab(tab.id);
-                const url = new URL(window.location.href);
-                url.searchParams.set("tab", tab.id);
-                if (tab.id !== "services") url.searchParams.delete("details");
-                window.history.pushState({}, "", url.toString());
-              }}
-              className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize transition-all duration-300 relative"
-              style={{
-                color: activeTab === tab.id ? categoryColor.primary : 'rgb(107, 114, 128)'
-              }}
-            >
-              <tab.icon size={17} />
-              <AnimatePresence mode="wait">
+                <tab.icon size={19} />
                 {activeTab === tab.id && (
                   <motion.div
-                    layoutId="activeTabIndicator"
+                    layoutId="activeTabGlider"
                     initial={{ opacity: 0, scaleX: 0 }}
                     animate={{ opacity: 1, scaleX: 1 }}
                     exit={{ opacity: 0, scaleX: 0 }}
                     className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full"
                     style={{
                       background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                      originX: 0.5
+                      originX: 0.5,
                     }}
                     transition={{
                       type: "spring",
-                      stiffness: 380,
+                      stiffness: 500,
                       damping: 30,
-                      mass: 0.8
+                      mass: 0.8,
                     }}
                   />
                 )}
-              </AnimatePresence>
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Tab Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -15 }}
-          transition={{
-            duration: 0.4,
-            ease: [0.25, 0.46, 0.45, 0.94]
-          }}
-          className="bg-white dark:bg-gray-900 min-h-[50vh]"
-        >
-          {renderContent()}
-        </motion.div>
-      </AnimatePresence>
-    </main>
-
-    {/* Floating Action Buttons */}
-    <motion.div 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.8, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="fixed bottom-7 right-4 flex flex-col gap-3 z-[45]"
-    >
-      {/* Save Profile Button */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        whileHover={{ scale: 1.08 }}
-        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        onClick={handleSaveProfile}
-        className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
-        style={{
-          backgroundColor: isSaved ? categoryColor.primary : 'rgba(255,255,255,0.95)',
-          boxShadow: isSaved 
-            ? `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)` 
-            : '0 8px 24px -4px rgba(0,0,0,0.15)'
-        }}
-      >
-        <Bookmark 
-          size={20} 
-          className={isSaved ? "fill-white text-white" : "text-gray-700 dark:text-gray-300"} 
-        />
-      </motion.button>
-
-      {/* Create Profile Button */}
-      {!profileLoading && showOnboarding && !profile?.vendorBusinessName && !openOnboardingDrawer && (
-        <motion.button
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          exit={{ scale: 0, rotate: 180 }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20 }}
-          onClick={() => {
-            if (!isSignedIn) {
-              requireSignIn("Please sign in to proceed");
-              return;
-            }
-            setOpenOnboardingDrawer(true);
-            updateURLParams({ onboarding: "true" });
-          }}
-          className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-xl flex items-center justify-center"
-          style={{ boxShadow: '0 8px 24px -4px rgba(34, 197, 94, 0.5)' }}
-        >
-          <Store size={22} className="text-white" />
-        </motion.button>
-      )}
-
-      {/* Edit Profile Button */}
-      {isVerified && (
-        <motion.button
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
-          onClick={() => {
-            if (!isSignedIn) {
-              requireSignIn("Please sign in to edit profile");
-              return;
-            }
-            setShowUpdateProfileDrawer(true);
-            updateURLParams({ update: "true" });
-          }}
-          className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center"
-          style={{
-            background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-            boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`
-          }}
-        >
-          <Edit2Icon size={21} className="text-white" />
-        </motion.button>
-      )}
-
-      {/* Upload Content Button */}
-      {isVerified && (
-        <motion.button
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.1 }}
-          onClick={() => {
-            if (!isSignedIn) {
-              requireSignIn("Please sign in to upload content");
-              return;
-            }
-            setShowUploadModal(true);
-            updateURLParams({ upload: "true" });
-          }}
-          className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center"
-          style={{
-            background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-            boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`
-          }}
-        >
-          <Plus size={24} strokeWidth={2.5} />
-        </motion.button>
-      )}
-    </motion.div>
-
-    {/* ============ ALL MODALS & DRAWERS ============ */}
-    <AnimatePresence>
-      {showProfilePicture && (
-        <ProfilePictureModal
-          isOpen={showProfilePicture}
-          onClose={() => setShowProfilePicture(false)}
-          image={
-            profile?.vendorAvatar ||
-            (Array.isArray(vendor?.vendorProfile)
-              ? vendor.vendorProfile[0]?.profilePicture
-              : vendor?.vendorProfile?.profilePicture) ||
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
-          }
-          name={vendor?.name}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {selectedHighlight && (
-        <StoryViewer 
-          highlight={selectedHighlight} 
-          onClose={() => setSelectedHighlight(null)} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {selectedPost && (
-        <PostDetailModal
-          post={selectedPost}
-          onClose={() => setSelectedPost(null)}
-          vendorName={vendor?.name}
-          vendorImage={
-            profile?.vendorAvatar ||
-            (Array.isArray(vendor?.vendorProfile)
-              ? vendor.vendorProfile[0]?.profilePicture
-              : vendor?.vendorProfile?.profilePicture) ||
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
-          }
-          onDelete={() => handleDeletePost(selectedPost._id)}
-          onEdit={(newCaption) => handleEditPost(selectedPost._id, newCaption)}
-          onArchive={() => handleArchivePost(selectedPost._id)}
-          vendorId={id}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {selectedReelIndex !== null && (
-        <ReelsViewer
-          reels={reels}
-          initialIndex={selectedReelIndex}
-          onClose={() => setSelectedReelIndex(null)}
-          vendorName={vendor?.name}
-          vendorImage={
-            profile?.vendorAvatar ||
-            (Array.isArray(vendor?.vendorProfile)
-              ? vendor.vendorProfile[0]?.profilePicture
-              : vendor?.vendorProfile?.profilePicture) ||
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
-          }
-          onDeleteReel={() => handleDeleteReel(reels[selectedReelIndex]._id)}
-          onEditReel={(newCaption) => handleEditReel(reels[selectedReelIndex]._id, newCaption)}
-          vendorId={id}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {selectedPortfolio && (
-        <PortfolioViewer
-          portfolio={selectedPortfolio}
-          onClose={() => setSelectedPortfolio(null)}
-          onBookService={() => setShowBookingDrawer(true)}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showUploadModal && (
-        <UploadModal
-          isOpen={showUploadModal}
-          onClose={() => {
-            setShowUploadModal(false);
-            updateURLParams({ upload: null });
-          }}
-          onUploadPost={handleUploadPost}
-          onUploadReel={handleUploadReel}
-          postsCount={posts.length}
-          reelsCount={reels.length}
-          vendorId={id}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showBookingDrawer && (
-        <BookingDrawer
-          isOpen={showBookingDrawer}
-          onClose={() => setShowBookingDrawer(false)}
-          services={MOCK_SERVICES}
-          vendorName={vendor?.name}
-          onBookingConfirmed={handleBookingConfirmed}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showReviewsDrawer && (
-        <ReviewsDrawer
-          isOpen={showReviewsDrawer}
-          onClose={() => setShowReviewsDrawer(false)}
-          reviewsData={reviews}
-          vendorId={id}
-          vendorName={vendor?.name}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showContactDrawer && (
-        <ContactDrawer 
-          isOpen={showContactDrawer} 
-          onClose={() => setShowContactDrawer(false)} 
-          vendor={vendor} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showMoreOptions && (
-        <MoreOptionsDrawer
-          isOpen={showMoreOptions}
-          onClose={() => setShowMoreOptions(false)}
-          onReport={handleReport}
-          onBlock={handleBlock}
-          isSaved={isSaved}
-          onSave={handleSaveProfile}
-          isNotifying={isNotifying}
-          onNotify={handleNotify}
-          onShare={handleShare}
-          onShowQR={() => setShowQRModal(true)}
-          onShowAbout={() => setShowAboutModal(true)}
-          onCopyLink={handleCopyLink}
-          setShowUpdateProfileDrawer={setShowUpdateProfileDrawer}
-          onVerifyIdentity={handleVerifyIdentity}
-          isVerified={isVerified}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showShareModal && (
-        <ShareModal 
-          isOpen={showShareModal} 
-          onClose={() => setShowShareModal(false)} 
-          vendorName={vendor?.name} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showQRModal && (
-        <QRCodeModal 
-          isOpen={showQRModal} 
-          onClose={() => setShowQRModal(false)} 
-          vendorName={vendor?.name} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showAboutModal && (
-        <AboutAccountModal 
-          isOpen={showAboutModal} 
-          onClose={() => setShowAboutModal(false)} 
-          vendor={vendor} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {previewPost && (
-        <PostPreviewModal 
-          post={previewPost} 
-          onClose={() => setPreviewPost(null)} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showSignInPrompt && (
-        <SignInPrompt 
-          message={signInPromptMessage} 
-          onClose={() => setShowSignInPrompt(false)} 
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showVerifyModal && (
-        <PasswordVerificationModal
-          isOpen={showVerifyModal}
-          onClose={() => {
-            setShowVerifyModal(false);
-            updateURLParams({ upload: null });
-          }}
-          onSuccess={() => setIsVerified(true)}
-          vendorId={id}
-          vendorName={vendor?.name}
-        />
-      )}
-    </AnimatePresence>
-
-    <AnimatePresence>
-      {showUpdateProfileDrawer && (
-        <UpdateProfileDrawer
-          vendor={vendor}
-          profile={profile}
-          id={id}
-          onProfileUpdated={handleProfileUpdated}
-          isOpen={showUpdateProfileDrawer}
-          onClose={() => {
-            setShowUpdateProfileDrawer(false);
-            updateURLParams({ update: null });
-          }}
-        />
-      )}
-    </AnimatePresence>
-
-    {/* Image Gallery Modal */}
-    <AnimatePresence>
-      {showImageModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col"
-        >
-          {/* Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-            className="flex justify-between items-center p-4 relative z-20"
-          >
-            <span className="text-white/90 font-mono text-[11px] bg-white/10 px-3.5 py-2 rounded-full backdrop-blur-xl border border-white/10">
-              {modalImageIndex + 1} / {images.length}
-            </span>
-            <div className="flex gap-2.5">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setImageZoom((z) => Math.min(z + 0.5, 3))}
-                className="p-2.5 text-white/80 bg-white/10 rounded-full backdrop-blur-xl border border-white/10 transition-all duration-300 hover:bg-white/20"
-              >
-                <ZoomIn size={18} />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setImageZoom(1)}
-                className="p-2.5 text-white/80 bg-white/10 rounded-full backdrop-blur-xl border border-white/10 transition-all duration-300 hover:bg-white/20"
-              >
-                <RotateCcw size={18} />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowImageModal(false)}
-                className="p-2.5 text-white/80 bg-white/10 rounded-full backdrop-blur-xl border border-white/10 transition-all duration-300 hover:bg-white/20"
-              >
-                <X size={18} />
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Main Image */}
-          <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-            <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
-              <motion.div
-                key={modalImageIndex}
-                custom={slideDirection}
-                initial={{ 
-                  opacity: 0, 
-                  x: slideDirection * 100,
-                  scale: 0.95
-                }}
-                animate={{ 
-                  opacity: 1, 
-                  x: 0,
-                  scale: 1
-                }}
-                exit={{ 
-                  opacity: 0, 
-                  x: slideDirection * -100,
-                  scale: 0.95
-                }}
-                transition={{ 
-                  duration: 0.4,
-                  ease: [0.25, 0.46, 0.45, 0.94]
-                }}
-                className="absolute w-full h-full flex items-center justify-center p-4"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={(e) => {
-                  if (!isDragging.current) return;
-                  const diff = dragStartX.current - e.changedTouches[0].clientX;
-                  if (Math.abs(diff) > 50) {
-                    if (diff > 0) {
-                      setSlideDirection(1);
-                      setModalImageIndex((i) => (i + 1) % images.length);
-                    } else {
-                      setSlideDirection(-1);
-                      setModalImageIndex((i) => (i - 1 + images.length) % images.length);
-                    }
-                  }
-                  isDragging.current = false;
-                }}
-              >
-                <motion.img
-                  src={images[modalImageIndex]}
-                  alt="Gallery image"
-                  className="max-w-full max-h-full object-contain rounded-lg"
-                  animate={{ scale: imageZoom }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 300, 
-                    damping: 25 
-                  }}
-                  loading="eager"
-                  draggable={false}
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Thumbnails */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
-            className="h-24 flex items-center justify-center gap-2.5 overflow-x-auto px-4 pb-6 pt-2 no-scrollbar"
-          >
-            {images.map((img, i) => (
-              <motion.button
-                key={i}
-                whileTap={{ scale: 0.92 }}
-                onClick={() => {
-                  setSlideDirection(i > modalImageIndex ? 1 : -1);
-                  setModalImageIndex(i);
-                }}
-                className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all duration-300"
-                style={{
-                  border: i === modalImageIndex 
-                    ? `2px solid ${categoryColor.primary}` 
-                    : '2px solid transparent',
-                  opacity: i === modalImageIndex ? 1 : 0.5,
-                  transform: i === modalImageIndex ? 'scale(1.1)' : 'scale(1)'
-                }}
-              >
-                <img 
-                  src={img} 
-                  className="w-full h-full object-cover" 
-                  alt={`Thumbnail ${i + 1}`}
-                  loading="lazy" 
-                />
               </motion.button>
             ))}
-          </motion.div>
+          </div>
         </motion.div>
-      )}
-    </AnimatePresence>
 
-    {/* Global Styles */}
-    <style jsx global>{`
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      .bio-content p {
-        margin-bottom: 0.5rem;
-      }
-      .bio-content p:last-child {
-        margin-bottom: 0;
-      }
-      * {
-        -webkit-tap-highlight-color: transparent;
-      }
-    `}</style>
-  </div>
-)
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{
+              duration: 0.4,
+              ease: smoothEase,
+            }}
+            className="bg-white dark:bg-gray-900 min-h-[50vh] z-[30] relative z-[1]"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Floating Action Buttons */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.8, duration: 0.5, ease: smoothEase }}
+        className="fixed bottom-7 right-4 flex flex-col gap-3 z-[45]"
+      >
+        {/* Save Profile Button */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.08 }}
+          transition={smoothSpring}
+          onClick={handleSaveProfile}
+          className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 backdrop-blur-sm cursor-pointer"
+          style={{
+            backgroundColor: isSaved ? categoryColor.primary : "rgba(255,255,255,0.95)",
+            boxShadow: isSaved ? `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)` : "0 8px 24px -4px rgba(0,0,0,0.15)",
+          }}
+        >
+          <Bookmark size={20} className={isSaved ? "fill-white text-white" : "text-gray-700 dark:text-gray-300"} />
+        </motion.button>
+
+        {/* Create Profile Button */}
+        {!profileLoading && showOnboarding && !profile?.vendorBusinessName && !openOnboardingDrawer && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            exit={{ scale: 0, rotate: 180 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to proceed");
+                return;
+              }
+              setOpenOnboardingDrawer(true);
+              updateURLParams({ onboarding: "true" });
+            }}
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-xl flex items-center justify-center cursor-pointer"
+            style={{ boxShadow: "0 8px 24px -4px rgba(34, 197, 94, 0.5)" }}
+          >
+            <Store size={22} className="text-white" />
+          </motion.button>
+        )}
+
+        {/* Edit Profile Button */}
+        {isVerified && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to edit profile");
+                return;
+              }
+              setShowUpdateProfileDrawer(true);
+              updateURLParams({ update: "true" });
+            }}
+            className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center cursor-pointer"
+            style={{
+              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+              boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`,
+            }}
+          >
+            <Edit2Icon size={21} className="text-white" />
+          </motion.button>
+        )}
+
+        {/* Upload Content Button */}
+        {isVerified && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.1 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to upload content");
+                return;
+              }
+              setShowUploadModal(true);
+              updateURLParams({ upload: "true" });
+            }}
+            className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center cursor-pointer"
+            style={{
+              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+              boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`,
+            }}
+          >
+            <Plus size={24} strokeWidth={2.5} />
+          </motion.button>
+        )}
+      </motion.div>
+
+      {/* ============ ALL MODALS & DRAWERS ============ */}
+      <AnimatePresence>
+        {showProfilePicture && (
+          <ProfilePictureModal
+            isOpen={showProfilePicture}
+            onClose={() => setShowProfilePicture(false)}
+            image={
+              profile?.vendorAvatar ||
+              (Array.isArray(vendor?.vendorProfile)
+                ? vendor.vendorProfile[0]?.profilePicture
+                : vendor?.vendorProfile?.profilePicture) ||
+              "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
+            }
+            name={vendor?.name}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedHighlight && <StoryViewer highlight={selectedHighlight} onClose={() => setSelectedHighlight(null)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedPost && (
+          <PostDetailModal
+            post={selectedPost}
+            onClose={() => setSelectedPost(null)}
+            vendorName={vendor?.name}
+            vendorImage={
+              profile?.vendorAvatar ||
+              (Array.isArray(vendor?.vendorProfile)
+                ? vendor.vendorProfile[0]?.profilePicture
+                : vendor?.vendorProfile?.profilePicture) ||
+              "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
+            }
+            onDelete={() => handleDeletePost(selectedPost._id)}
+            onEdit={(newCaption) => handleEditPost(selectedPost._id, newCaption)}
+            onArchive={() => handleArchivePost(selectedPost._id)}
+            vendorId={id}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedReelIndex !== null && (
+          <ReelsViewer
+            reels={reels}
+            initialIndex={selectedReelIndex}
+            onClose={() => setSelectedReelIndex(null)}
+            vendorName={vendor?.name}
+            vendorImage={
+              profile?.vendorAvatar ||
+              (Array.isArray(vendor?.vendorProfile)
+                ? vendor.vendorProfile[0]?.profilePicture
+                : vendor?.vendorProfile?.profilePicture) ||
+              "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop"
+            }
+            onDeleteReel={() => handleDeleteReel(reels[selectedReelIndex]._id)}
+            onEditReel={(newCaption) => handleEditReel(reels[selectedReelIndex]._id, newCaption)}
+            vendorId={id}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedPortfolio && (
+          <PortfolioViewer
+            portfolio={selectedPortfolio}
+            onClose={() => setSelectedPortfolio(null)}
+            onBookService={() => setShowBookingDrawer(true)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUploadModal && (
+          <UploadModal
+            isOpen={showUploadModal}
+            onClose={() => {
+              setShowUploadModal(false);
+              updateURLParams({ upload: null });
+            }}
+            onUploadPost={handleUploadPost}
+            onUploadReel={handleUploadReel}
+            postsCount={posts.length}
+            reelsCount={reels.length}
+            vendorId={id}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showBookingDrawer && (
+          <BookingDrawer
+            isOpen={showBookingDrawer}
+            onClose={() => setShowBookingDrawer(false)}
+            services={MOCK_SERVICES}
+            vendorName={vendor?.name}
+            onBookingConfirmed={handleBookingConfirmed}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReviewsDrawer && (
+          <ReviewsDrawer
+            isOpen={showReviewsDrawer}
+            onClose={() => setShowReviewsDrawer(false)}
+            reviewsData={reviews}
+            vendorId={id}
+            vendorName={vendor?.name}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showContactDrawer && (
+          <ContactDrawer isOpen={showContactDrawer} onClose={() => setShowContactDrawer(false)} vendor={vendor} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showMoreOptions && (
+          <MoreOptionsDrawer
+            isOpen={showMoreOptions}
+            onClose={() => setShowMoreOptions(false)}
+            onReport={handleReport}
+            onBlock={handleBlock}
+            isSaved={isSaved}
+            onSave={handleSaveProfile}
+            isNotifying={isNotifying}
+            onNotify={handleNotify}
+            onShare={handleShare}
+            onShowQR={() => setShowQRModal(true)}
+            onShowAbout={() => setShowAboutModal(true)}
+            onCopyLink={handleCopyLink}
+            setShowUpdateProfileDrawer={setShowUpdateProfileDrawer}
+            onVerifyIdentity={handleVerifyIdentity}
+            isVerified={isVerified}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showShareModal && (
+          <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendor?.name} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showQRModal && (
+          <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} vendorName={vendor?.name} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAboutModal && (
+          <AboutAccountModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} vendor={vendor} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {previewPost && <PostPreviewModal post={previewPost} onClose={() => setPreviewPost(null)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSignInPrompt && <SignInPrompt message={signInPromptMessage} onClose={() => setShowSignInPrompt(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showVerifyModal && (
+          <PasswordVerificationModal
+            isOpen={showVerifyModal}
+            onClose={() => {
+              setShowVerifyModal(false);
+              updateURLParams({ upload: null });
+            }}
+            onSuccess={() => setIsVerified(true)}
+            vendorId={id}
+            vendorName={vendor?.name}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUpdateProfileDrawer && (
+          <UpdateProfileDrawer
+            vendor={vendor}
+            profile={profile}
+            id={id}
+            onProfileUpdated={handleProfileUpdated}
+            isOpen={showUpdateProfileDrawer}
+            onClose={() => {
+              setShowUpdateProfileDrawer(false);
+              updateURLParams({ update: null });
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Image Gallery Modal */}
+      <AnimatePresence>
+        {showImageModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: smoothEase }}
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col"
+          >
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+              className="flex justify-between items-center p-4 relative z-20"
+            >
+              <span className="text-white/90 font-mono text-[11px] bg-white/10 px-3.5 py-2 rounded-full backdrop-blur-xl border border-white/10">
+                {modalImageIndex + 1} / {images.length}
+              </span>
+              <div className="flex gap-2.5">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setImageZoom((z) => Math.min(z + 0.5, 3))}
+                  className="p-2.5 text-white/80 bg-white/10 rounded-full backdrop-blur-xl border border-white/10 transition-all duration-300 hover:bg-white/20 cursor-pointer"
+                >
+                  <ZoomIn size={18} />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setImageZoom(1)}
+                  className="p-2.5 text-white/80 bg-white/10 rounded-full backdrop-blur-xl border border-white/10 transition-all duration-300 hover:bg-white/20 cursor-pointer"
+                >
+                  <RotateCcw size={18} />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowImageModal(false)}
+                  className="p-2.5 text-white/80 bg-white/10 rounded-full backdrop-blur-xl border border-white/10 transition-all duration-300 hover:bg-white/20 cursor-pointer"
+                >
+                  <X size={18} />
+                </motion.button>
+              </div>
+            </motion.div>
+
+            {/* Main Image */}
+            <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+              <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
+                <motion.div
+                  key={modalImageIndex}
+                  custom={slideDirection}
+                  initial={{
+                    opacity: 0,
+                    x: slideDirection * 100,
+                    scale: 0.95,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    scale: 1,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    x: slideDirection * -100,
+                    scale: 0.95,
+                  }}
+                  transition={{
+                    duration: 0.4,
+                    ease: smoothEase,
+                  }}
+                  className="absolute w-full h-full flex items-center justify-center p-4"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => {
+                    if (!isDragging.current) return;
+                    const diff = dragStartX.current - e.changedTouches[0].clientX;
+                    if (Math.abs(diff) > 50) {
+                      if (diff > 0) {
+                        setSlideDirection(1);
+                        setModalImageIndex((i) => (i + 1) % images.length);
+                      } else {
+                        setSlideDirection(-1);
+                        setModalImageIndex((i) => (i - 1 + images.length) % images.length);
+                      }
+                    }
+                    isDragging.current = false;
+                  }}
+                >
+                  <motion.img
+                    src={images[modalImageIndex]}
+                    alt="Gallery image"
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    animate={{ scale: imageZoom }}
+                    transition={smoothSpring}
+                    loading="eager"
+                    draggable={false}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Thumbnails */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="h-24 flex items-center justify-center gap-2.5 overflow-x-auto px-4 pb-6 pt-2 no-scrollbar"
+            >
+              {images.map((img, i) => (
+                <motion.button
+                  key={i}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => {
+                    setSlideDirection(i > modalImageIndex ? 1 : -1);
+                    setModalImageIndex(i);
+                  }}
+                  className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer"
+                  style={{
+                    border: i === modalImageIndex ? `2px solid ${categoryColor.primary}` : "2px solid transparent",
+                    opacity: i === modalImageIndex ? 1 : 0.5,
+                    transform: i === modalImageIndex ? "scale(1.1)" : "scale(1)",
+                  }}
+                >
+                  <img src={img} className="w-full h-full object-cover" alt={`Thumbnail ${i + 1}`} loading="lazy" />
+                </motion.button>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Styles */}
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .bio-content p {
+          margin-bottom: 0.5rem;
+        }
+        .bio-content p:last-child {
+          margin-bottom: 0;
+        }
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
+      `}</style>
+    </div>
+  );
 };
 
 export default VendorProfilePageWrapper;
