@@ -52,6 +52,9 @@ const CardSkeleton = () => (
     </div>
 );
 
+// =============================================================================
+// PAGINATION CONTROLS COMPONENT
+// =============================================================================
 const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null;
 
@@ -136,6 +139,9 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     );
 };
 
+// =============================================================================
+// UNIFIED VENDOR CARD COMPONENT - Vendor display with UnifiedCard components
+// =============================================================================
 const UnifiedCard = ({ vendor, color, onFavorite, isFavorite }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -370,6 +376,9 @@ const UnifiedCard = ({ vendor, color, onFavorite, isFavorite }) => {
   );
 };
 
+// =============================================================================
+// FILTER PANEL COMPONENT - Filter panel sidebar
+// =============================================================================
 const FilterPanel = ({
   color,
   showFeaturedOnly,
@@ -698,10 +707,12 @@ export default function MarketplacePageWrapper() {
     
     const [viewMode, setViewMode] = useState("grid-cols-1 md:grid-cols-2");
     const [sortBy, setSortBy] = useState("rating");
+    // Price range filtering state
     const [priceRange, setPriceRange] = useState([0, 1000000]);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    // Search functionality state
     const [searchQuery, setSearchQuery] = useState("");
     const [favorites, setFavorites] = useState([]);
     const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
@@ -709,10 +720,15 @@ export default function MarketplacePageWrapper() {
     const [compareList, setCompareList] = useState([]);
     const [showComparison, setShowComparison] = useState(false);
     const [guestCapacity, setGuestCapacity] = useState(0);
+    // Location filtering state
     const [selectedLocations, setSelectedLocations] = useState([]);
     const [availableCities, setAvailableCities] = useState([]);
   
     const color = themeColors[activeCategory] || themeColors.Default;
+    // =============================================================================
+    // CATEGORY FILTERING - Define categories for filtering
+    // =============================================================================
+    // Category filtering checkboxes
     const vendorCategories = useMemo(
       () => ["venues", "photographers", "makeup", "planners", "catering", "clothes", "mehendi", "cakes", "jewellery", "invitations", "djs", "hairstyling", "other"],
       []
@@ -729,6 +745,7 @@ export default function MarketplacePageWrapper() {
         }
     }, [pageCategory]);
 
+    // Debounced values for search and filters
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const debouncedPriceRange = useDebounce(priceRange, 500);
     const debouncedGuestCapacity = useDebounce(guestCapacity, 500);
@@ -738,6 +755,9 @@ export default function MarketplacePageWrapper() {
         setAvailableCities(cities);
     }, [vendors]);
 
+    // =============================================================================
+    // API FETCH LOGIC - Combines all filters (Search, Category, Price, Location)
+    // =============================================================================
     const fetchVendors = useMemo(() => {
         return async () => {
             setIsLoading(true);
@@ -747,22 +767,28 @@ export default function MarketplacePageWrapper() {
                 sortBy,
             };
             
+            // Add search filter parameter
             if (debouncedSearchQuery) {
                 paramsObj.search = debouncedSearchQuery;
             }
+            // Add category filtering parameter
             if (selectedCategories.length > 0) {
                 paramsObj.category = selectedCategories.join(',');
             }
+            // Add featured filter
             if (showFeaturedOnly) {
                 paramsObj.featured = 'true';
             }
+            // Add location filtering parameter
             if (selectedLocations.length > 0) {
                 paramsObj.cities = selectedLocations.join(',');
             }
+            // Add price range filtering parameter
             if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < 1000000) {
                 paramsObj.minPrice = debouncedPriceRange[0].toString();
                 paramsObj.maxPrice = debouncedPriceRange[1].toString();
             }
+            // Add guest capacity filter
             if (debouncedGuestCapacity > 0) {
                 paramsObj.guestCapacity = debouncedGuestCapacity.toString();
             }
@@ -793,6 +819,9 @@ export default function MarketplacePageWrapper() {
         setCurrentPage(1);
     }, [sortBy, debouncedPriceRange, debouncedSearchQuery, selectedCategories, showFeaturedOnly, selectedLocations, debouncedGuestCapacity]);
   
+    // =============================================================================
+    // FILTER HANDLERS - Category filtering and Location filtering
+    // =============================================================================
     const handleCategoryChange = useCallback((category) => {
       setSelectedCategories((prev) =>
         prev.includes(category)
@@ -801,6 +830,7 @@ export default function MarketplacePageWrapper() {
       );
     }, []);
   
+    // Location filtering handler
     const handleLocationChange = useCallback((city) => {
       setSelectedLocations((prev) =>
         prev.includes(city)
@@ -961,6 +991,9 @@ export default function MarketplacePageWrapper() {
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
                 Discover top-rated professionals for your special event
               </p>
+              {/* =============================================================================
+                  SEARCH FUNCTIONALITY UI
+                  ============================================================================= */}
               <div className="max-w-2xl mx-auto">
                 <div className="relative">
                   <input
@@ -1122,6 +1155,9 @@ export default function MarketplacePageWrapper() {
                         </button>
                       ))}
                     </div>
+                    {/* =============================================================================
+                        SORTING OPTIONS
+                        ============================================================================= */}
                     <div className="relative">
                       <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -1173,6 +1209,9 @@ export default function MarketplacePageWrapper() {
                   </div>
                 </div>
               </div>
+              {/* =============================================================================
+                  VENDOR DISPLAY WITH UNIFIEDCARD COMPONENTS
+                  ============================================================================= */}
               <motion.div
                 layout
                 className={`grid gap-6 ${viewMode} ${compareList.length > 0 ? "pb-24 sm:pb-20" : ""}`}
@@ -1207,6 +1246,9 @@ export default function MarketplacePageWrapper() {
                   </p>
                 </div>
               )}
+              {/* =============================================================================
+                  PAGINATION CONTROLS
+                  ============================================================================= */}
               {!isLoading && paginationInfo.totalPages > 1 && (
                   <PaginationControls 
                       currentPage={currentPage}
