@@ -8009,7 +8009,7 @@ const handleBack = useCallback(() => {
   if (window.history.length > 1) {
     router.back();
   } else {
-    router.push('/m');
+    router.push(`/m/vendor/${category || "all"}/${id}`);
   }
  }, [router]);
 
