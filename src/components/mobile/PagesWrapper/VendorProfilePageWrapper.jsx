@@ -8005,9 +8005,13 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     };
   }, []);
 
-  const handleBack = useCallback(() => {
+const handleBack = useCallback(() => {
+  if (window.history.length > 1) {
     router.back();
-  }, [router]);
+  } else {
+    router.push('/m');
+  }
+ }, [router]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {
