@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense, startTransition } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense, startTransition, useReducer } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -417,6 +417,26 @@ function usePullToRefresh(onRefresh, threshold = 80) {
 
   return { pullDistance, isRefreshing };
 }
+
+const vendorDataReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_VENDORS':
+      return {
+        ...state,
+        vendors: action.payload.vendors,
+        pagination: action.payload.pagination,
+        cities: action.payload.cities,
+        isLoading: false,
+        error: null,
+      };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload,vendors: [], isLoading: false };
+    default:
+      return state;
+  }
+};
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -2289,7 +2309,6 @@ const FilterContent = memo(
                   onClick={() => {
                     haptic("light");
                     handleCategoryChange(cat.id);
-                    setCurrentPage(1);
                   }}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                     isSelected ? "border-transparent shadow-md" : "bg-white border-gray-200"
@@ -3182,19 +3201,19 @@ export default function MarketplacePageWrapper() {
   const pageCategory = params?.category || "";
   const searchInputRef = useRef(null);
 
-  const isInitialMount = useRef(true);
-  const hasInitializedFromUrl = useRef(false);
-  const prevVendorCountRef = useRef(0);
-
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [vendors, setVendors] = useState([]);
-  const [paginationInfo, setPaginationInfo] = useState({ totalPages: 1, totalVendors: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
+  const [vendorData, dispatchVendorData] = useReducer(vendorDataReducer, {
+    vendors: [],
+    pagination: { totalPages: 1, totalVendors: 0 },
+    cities: [],
+    isLoading: true,
+    error: null,
+  });
+
+  const [isInitialized, setIsInitialized] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useLocalStorage("mp_viewMode", "list");
   const [isMapView, setIsMapView] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -3209,7 +3228,6 @@ export default function MarketplacePageWrapper() {
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState(0);
-  const [availableCities, setAvailableCities] = useState([]);
   const [sortOrder, setSortOrder] = useState("desc");
 
   const [recentSearches, setRecentSearches] = useLocalStorage("mp_recentSearches", []);
@@ -3228,7 +3246,6 @@ export default function MarketplacePageWrapper() {
 
   const debouncedSearchQuery = useDebounce(searchQuery, DEBOUNCE_DELAY);
   const debouncedPriceRange = useDebounce(priceRange, DEBOUNCE_DELAY);
-  const debouncedSortOrder = useDebounce(sortOrder, 150);
 
   const { setActiveCategory } = useCartStore();
 
@@ -3279,54 +3296,48 @@ export default function MarketplacePageWrapper() {
     return url.toString();
   }, []);
 
-  useEffect(() => {
-    if (hasInitializedFromUrl.current) return;
+ useEffect(() => {
+    // 🔥 CHANGED: Run synchronously without Promise wrapper
+    const params = new URLSearchParams(window.location.search);
 
-    // Use a function to batch all state updates
-    const initializeFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-
-      // Determine final categories
-      let finalCategories = [];
-      if (pageCategory) {
-        finalCategories = [pageCategory];
-      } else {
-        const urlCats = params.get("categories");
-        if (urlCats) {
-          finalCategories = urlCats.split(",").filter(Boolean);
-          finalCategories = finalCategories.filter((cat) => VENDOR_CATEGORIES.some((c) => c.id === cat));
-        }
+    // Determine final categories
+    let finalCategories = [];
+    if (pageCategory) {
+      finalCategories = [pageCategory];
+    } else {
+      const urlCats = params.get("categories");
+      if (urlCats) {
+        finalCategories = urlCats.split(",").filter(Boolean);
+        finalCategories = finalCategories.filter((cat) => 
+          VENDOR_CATEGORIES.some((c) => c.id === cat)
+        );
       }
+    }
 
-      const minP = params.get("minPrice");
-      const maxP = params.get("maxPrice");
-      const minPrice = minP ? Math.max(0, parseInt(minP)) : 0;
-      const maxPrice = maxP ? Math.min(1000000, Math.max(minPrice, parseInt(maxP))) : 1000000;
-      const cities = params.get("cities");
+    const minP = params.get("minPrice");
+    const maxP = params.get("maxPrice");
+    const minPrice = minP ? Math.max(0, parseInt(minP)) : 0;
+    const maxPrice = maxP ? Math.min(1000000, Math.max(minPrice, parseInt(maxP))) : 1000000;
+    const cities = params.get("cities");
 
-      // Batch all state updates in a single microtask
-      Promise.resolve().then(() => {
-        setSelectedCategories(finalCategories);
-        setSearchQuery(decodeURIComponent(params.get("search") || ""));
-        setSortBy(params.get("sortBy") || "rating");
-        setSortOrder(params.get("sortOrder") || "desc");
-        setSelectedSubcategory(params.get("subcategory") || "");
-        setRatingFilter(parseFloat(params.get("minRating")) || 0);
-        setShowFeaturedOnly(params.get("featured") === "true");
-        setCurrentPage(parseInt(params.get("page")) || 1);
-        setPriceRange([minPrice, maxPrice]);
-        if (cities) setSelectedLocations(cities.split(",").filter(Boolean));
+    // 🔥 CHANGED: Batch all state updates in React 18 automatic batching
+    setSelectedCategories(finalCategories);
+    setSearchQuery(decodeURIComponent(params.get("search") || ""));
+    setSortBy(params.get("sortBy") || "rating");
+    setSortOrder(params.get("sortOrder") || "desc");
+    setSelectedSubcategory(params.get("subcategory") || "");
+    setRatingFilter(parseFloat(params.get("minRating")) || 0);
+    setShowFeaturedOnly(params.get("featured") === "true");
+    setCurrentPage(parseInt(params.get("page")) || 1);
+    setPriceRange([minPrice, maxPrice]);
+    if (cities) setSelectedLocations(cities.split(",").filter(Boolean));
 
-        // Sync global store
-        if (pageCategory) setActiveCategory(pageCategory);
+    if (pageCategory) setActiveCategory(pageCategory);
 
-        // Mark as initialized AFTER all states are set
-        hasInitializedFromUrl.current = true;
-      });
-    };
+    // 🔥 CHANGED: Set initialization flag synchronously
+    setIsInitialized(true);
 
-    initializeFromUrl();
-  }, [pageCategory, setActiveCategory]); // Reduced dependencies to prevent re-runs
+  }, []);
 
   useEffect(() => {
     if (debouncedSearchQuery && debouncedSearchQuery.trim().length > 2) {
@@ -3339,29 +3350,24 @@ export default function MarketplacePageWrapper() {
   }, [debouncedSearchQuery, setRecentSearches]);
 
   useEffect(() => {
-    if (!hasInitializedFromUrl.current) return;
+    // 🔥 CHANGED: Gate all fetches until initialization completes
+    if (!isInitialized) return;
 
     const controller = new AbortController();
 
     const fetchVendors = async () => {
-      // Only set loading if we're past initial load
-      if (isInitialLoadDone) {
-        setIsLoading(true);
-      }
-
-      setError(null);
+      dispatchVendorData({ type: 'SET_LOADING', payload: true });
 
       const queryParams = new URLSearchParams({
         page: currentPage.toString(),
         limit: ITEMS_PER_PAGE.toString(),
         sortBy,
-        sortOrder: debouncedSortOrder || sortOrder || "desc",
+        sortOrder,
       });
 
       // Add filters
       if (debouncedSearchQuery) {
-        const cleanQuery = decodeURIComponent(debouncedSearchQuery);
-        queryParams.set("search", cleanQuery);
+        queryParams.set("search", decodeURIComponent(debouncedSearchQuery));
       }
       if (selectedCategories.length > 0) {
         queryParams.set("categories", selectedCategories.join(","));
@@ -3383,79 +3389,61 @@ export default function MarketplacePageWrapper() {
           const mappedVendors = result.data.map((v) => {
             let position;
 
-            // Priority 1: Actual coordinates from database
             if (v.location?.coordinates && Array.isArray(v.location.coordinates)) {
               position = {
                 lat: v.location.coordinates[1],
                 lng: v.location.coordinates[0],
               };
-            }
-            // Priority 2: City coordinates lookup
-            else if (v.address?.city && CITY_COORDS[v.address.city]) {
+            } else if (v.address?.city && CITY_COORDS[v.address.city]) {
               position = CITY_COORDS[v.address.city];
-            }
-            // Priority 3: Default center
-            else {
+            } else {
               position = DEFAULT_CENTER;
             }
 
             return { ...v, position };
           });
 
-          const paginationData = {
-            totalPages: result.pagination?.totalPages || 1,
-            totalVendors: result.pagination?.total || 0,
-          };
-
-          // CRITICAL: Batch state updates together
-          setVendors(mappedVendors);
-          setPaginationInfo(paginationData);
-
-          // Extract unique cities
           const cities = [...new Set(result.data.map((v) => v.address?.city).filter(Boolean))];
-          setAvailableCities(cities);
 
-          // Only reset page if we got zero results and we're not on page 1
-          if (mappedVendors.length === 0 && currentPage > 1) {
-            // Don't update ref here, let it reset naturally
-            setCurrentPage(1);
-          } else {
-            prevVendorCountRef.current = mappedVendors.length;
-          }
+          // 🔥 CHANGED: Single batched dispatch
+          dispatchVendorData({
+            type: 'SET_VENDORS',
+            payload: {
+              vendors: mappedVendors,
+              pagination: {
+                totalPages: result.pagination?.totalPages || 1,
+                totalVendors: result.pagination?.total || 0,
+              },
+              cities,
+            },
+          });
 
-          // Mark as done AFTER all data is set
-          if (!isInitialLoadDone) {
-            setIsInitialLoadDone(true);
-          }
         } else {
-          // Handle API error response
-          setVendors([]);
-          setPaginationInfo({ totalPages: 1, totalVendors: 0 });
-          if (!isInitialLoadDone) {
-            setIsInitialLoadDone(true);
-          }
+          dispatchVendorData({
+            type: 'SET_VENDORS',
+            payload: {
+              vendors: [],
+              pagination: { totalPages: 1, totalVendors: 0 },
+              cities: [],
+            },
+          });
         }
       } catch (err) {
         if (err.name !== "AbortError") {
-          setError("Failed to load vendors.");
-          setVendors([]);
-          setPaginationInfo({ totalPages: 1, totalVendors: 0 });
-          if (!isInitialLoadDone) {
-            setIsInitialLoadDone(true);
-          }
+          dispatchVendorData({ type: 'SET_ERROR', payload: "Failed to load vendors." });
         }
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchVendors();
     return () => controller.abort();
+
   }, [
+    // 🔥 CHANGED: Only essential dependencies
+    isInitialized,
     currentPage,
     sortBy,
     sortOrder,
-    debouncedSortOrder,
     debouncedSearchQuery,
     debouncedPriceRange,
     selectedCategories,
@@ -3463,11 +3451,11 @@ export default function MarketplacePageWrapper() {
     showFeaturedOnly,
     selectedLocations,
     ratingFilter,
-    isInitialLoadDone,
   ]);
 
   useEffect(() => {
-    if (!hasInitializedFromUrl.current || !isInitialLoadDone) return;
+    // 🔥 CHANGED: Gate URL updates until initialized
+    if (!isInitialized) return;
 
     const timeoutId = setTimeout(() => {
       const params = {};
@@ -3481,7 +3469,7 @@ export default function MarketplacePageWrapper() {
         params.search = debouncedSearchQuery.trim();
       }
       if (sortBy !== "rating") params.sortBy = sortBy;
-      if (debouncedSortOrder !== "desc") params.sortOrder = debouncedSortOrder;
+      if (sortOrder !== "desc") params.sortOrder = sortOrder;
       if (selectedSubcategory) params.subcategory = selectedSubcategory;
       if (currentPage > 1) params.page = currentPage;
       if (priceRange[0] > 0) params.minPrice = priceRange[0];
@@ -3503,11 +3491,12 @@ export default function MarketplacePageWrapper() {
 
     return () => clearTimeout(timeoutId);
   }, [
+    // 🔥 CHANGED: Removed isInitialLoadDone
+    isInitialized,
     selectedCategories,
     debouncedSearchQuery,
     sortBy,
     sortOrder,
-    debouncedSortOrder,
     currentPage,
     priceRange,
     selectedLocations,
@@ -3517,8 +3506,9 @@ export default function MarketplacePageWrapper() {
     pageCategory,
     router,
     buildUrlWithParams,
-    isInitialLoadDone,
   ]);
+
+  const { vendors, pagination: paginationInfo, cities: availableCities, isLoading, error } = vendorData;
 
   const showToast = useCallback((message, type = "success") => {
     // Add to queue
@@ -3600,6 +3590,7 @@ export default function MarketplacePageWrapper() {
         }
         return newCategories;
       });
+      setCurrentPage(1);
     },
     [selectedSubcategory, haptic]
   );
@@ -3928,20 +3919,24 @@ export default function MarketplacePageWrapper() {
         </AnimatePresence>
 
         {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3"
-          >
-            <AlertCircle className="text-red-500 shrink-0" size={20} />
-            <div className="flex-1">
-              <p className="text-red-700 font-medium text-sm">{error}</p>
-            </div>
-            <button onClick={() => setError(null)} className="p-1 text-red-400 hover:text-red-600">
-              <X size={16} />
-            </button>
-          </motion.div>
-        )}
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3"
+  >
+    <AlertCircle className="text-red-500 shrink-0" size={20} />
+    <div className="flex-1">
+      <p className="text-red-700 font-medium text-sm">{error}</p>
+    </div>
+    {/* 🔥 CHANGED: Use reducer dispatch instead of setError */}
+    <button 
+      onClick={() => dispatchVendorData({ type: 'SET_ERROR', payload: null })} 
+      className="p-1 text-red-400 hover:text-red-600"
+    >
+      <X size={16} />
+    </button>
+  </motion.div>
+)}
 
         <AnimatePresence mode="wait">
           {isMapView ? (
@@ -3956,7 +3951,7 @@ export default function MarketplacePageWrapper() {
                 <MapView vendors={vendors} onVendorSelect={() => setIsMapView(false)} center={DEFAULT_CENTER} />
               </Suspense>
             </motion.div>
-          ) : !isInitialLoadDone ? (
+          ) : !isInitialized ? (
             /* PHASE 1: Initial Loading - Show skeletons until first fetch completes */
             <motion.div
               key="initial-loading"
@@ -3973,7 +3968,7 @@ export default function MarketplacePageWrapper() {
           ) : (
             /* PHASE 2: Data Loaded State - Now show data or empty state */
             <div key="data-content">
-              {isLoading ? (
+              {isLoading && vendors.length === 0 ? (
                 /* Subsequent loading (pagination, filters) - show skeletons */
                 <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -3983,6 +3978,10 @@ export default function MarketplacePageWrapper() {
               ) : vendors.length > 0 ? (
                 /* Sub-Phase A: Results found */
                 <>
+                <div className="relative">
+                  {isLoading && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 animate-pulse z-10" />
+                  )}
                   <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
                     {vendors.map((vendor, index) => (
                       <motion.div
@@ -4007,6 +4006,7 @@ export default function MarketplacePageWrapper() {
                         />
                       </motion.div>
                     ))}
+                  </div>
                   </div>
 
                   <PaginationControls

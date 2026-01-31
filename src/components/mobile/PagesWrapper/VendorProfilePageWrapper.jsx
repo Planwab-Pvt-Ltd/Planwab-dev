@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence, useScroll, useTransform, PanInfo } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, LayoutGroup } from "framer-motion";
 import {
   ArrowLeft,
   Share2,
@@ -40,13 +40,14 @@ import {
   Camera,
   Crown,
   X,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Flag,
   UserMinus,
   Bookmark,
   BookmarkCheck,
   Clock,
-  ChevronRight,
   Send,
   Linkedin,
   Twitter,
@@ -7520,19 +7521,96 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [showCoverGradient, setShowCoverGradient] = useState(true);
   const [coverImageLoaded, setCoverImageLoaded] = useState(false);
   const [cardBounce, setCardBounce] = useState(false);
   const [isScrolledHeader, setIsScrolledHeader] = useState(false);
   const [videoThumbnails, setVideoThumbnails] = useState({});
   const [isCoverExpanded, setIsCoverExpanded] = useState(false);
+  const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(true);
+  const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowCoverGradient(false);
-    }, 2800);
-    return () => clearTimeout(timer);
-  }, []);
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["posts", "reels", "portfolio", "services"].includes(tab)) {
+        return tab;
+      }
+    }
+    return "posts";
+  });
+
+  const [playingVideoId, setPlayingVideoId] = useState(null);
+  const videoRefs = useRef({});
+
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showBookingDrawer, setShowBookingDrawer] = useState(false);
+  const [showReviewsDrawer, setShowReviewsDrawer] = useState(false);
+  const [showContactDrawer, setShowContactDrawer] = useState(false);
+  const [showProfilePicture, setShowProfilePicture] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [expandedFaq, setExpandedFaq] = useState(null);
+
+  const [selectedHighlight, setSelectedHighlight] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [selectedReelIndex, setSelectedReelIndex] = useState(null);
+  const [selectedPortfolio, setSelectedPortfolio] = useState(null);
+
+  const [trustCount, setTrustCount] = useState(initialProfile?.trust || 0);
+  const [hasTrusted, setHasTrusted] = useState(false);
+  const [likesCount, setLikesCount] = useState(initialProfile?.likes?.length || 0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [userStateReady, setUserStateReady] = useState(false);
+  const [interactionsLoading, setInteractionsLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
+
+  const [showThumbsUpAnimation, setShowThumbsUpAnimation] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState({ show: false, message: "", type: "success", icon: Check });
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [signInPromptMessage, setSignInPromptMessage] = useState("Please sign in to continue");
+
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [previewPost, setPreviewPost] = useState(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
+  const [activeDetailsTab, setActiveDetailsTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const detailsTab = params.get("details");
+      if (detailsTab) {
+        return detailsTab;
+      }
+    }
+    return "overview";
+  });
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
+  const [archivedPosts, setArchivedPosts] = useState([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(0);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [showHeaderTabs, setShowHeaderTabs] = useState(false);
+
+  const longPressTimerRef = useRef(null);
+  const dragStartX = useRef(0);
+  const isDragging = useRef(false);
+
+  const [posts, setPosts] = useState(initialProfile?.posts || []);
+  const [reels, setReels] = useState(initialProfile?.reels || []);
+
+  const { scrollY } = useScroll();
+  const headerOpacity = useTransform(scrollY, [0, 60], [0, 1]);
+
+  const highlightsContainerRef = useRef(null);
+  const urlParamsProcessedRef = useRef(false);
+  const initialFetchDoneRef = useRef(true);
+  const onboardingHandledRef = useRef(false);
+  const stickyTabsRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -7540,6 +7618,29 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowHeaderTabs(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0,
+        rootMargin: "-80px 0px 0px 0px",
+      },
+    );
+
+    if (stickyTabsRef.current) {
+      observer.observe(stickyTabsRef.current);
+    }
+
+    return () => {
+      if (stickyTabsRef.current) {
+        observer.unobserve(stickyTabsRef.current);
+      }
+    };
   }, []);
 
   const getCategoryColor = useCallback((category) => {
@@ -7636,104 +7737,30 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     },
   };
 
-  const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab");
-      if (tab && ["posts", "reels", "portfolio", "services"].includes(tab)) {
-        return tab;
-      }
-    }
-    return "posts";
-  });
-
-  const [playingVideoId, setPlayingVideoId] = useState(null);
-  const videoRefs = useRef({});
-
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [showBookingDrawer, setShowBookingDrawer] = useState(false);
-  const [showReviewsDrawer, setShowReviewsDrawer] = useState(false);
-  const [showContactDrawer, setShowContactDrawer] = useState(false);
-  const [showProfilePicture, setShowProfilePicture] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [expandedFaq, setExpandedFaq] = useState(null);
-
-  const [selectedHighlight, setSelectedHighlight] = useState(null);
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [selectedReelIndex, setSelectedReelIndex] = useState(null);
-  const [selectedPortfolio, setSelectedPortfolio] = useState(null);
-
-  const [trustCount, setTrustCount] = useState(initialProfile?.trust || 0);
-  const [hasTrusted, setHasTrusted] = useState(false);
-  const [likesCount, setLikesCount] = useState(initialProfile?.likes?.length || 0);
-  const [hasLiked, setHasLiked] = useState(false);
-  const [userStateReady, setUserStateReady] = useState(false);
-  const [interactionsLoading, setInteractionsLoading] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isNotifying, setIsNotifying] = useState(false);
-
-  const [showThumbsUpAnimation, setShowThumbsUpAnimation] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState({ show: false, message: "", type: "success", icon: Check });
-  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
-  const [signInPromptMessage, setSignInPromptMessage] = useState("Please sign in to continue");
-
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [showAboutModal, setShowAboutModal] = useState(false);
-  const [previewPost, setPreviewPost] = useState(null);
-  const [isLongPressing, setIsLongPressing] = useState(false);
-  const [isGalleryExpanded, setIsGalleryExpanded] = useState(true);
-  const [activeDetailsTab, setActiveDetailsTab] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const detailsTab = params.get("details");
-      if (detailsTab) {
-        return detailsTab;
-      }
-    }
-    return "overview";
-  });
-  const [showFullDescription, setShowFullDescription] = useState(false);
-  const [isBioExpanded, setIsBioExpanded] = useState(false);
-  const [archivedPosts, setArchivedPosts] = useState([]);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [modalImageIndex, setModalImageIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState(0);
-  const [imageZoom, setImageZoom] = useState(1);
-  const longPressTimerRef = useRef(null);
-  const dragStartX = useRef(0);
-  const isDragging = useRef(false);
-
-  const [posts, setPosts] = useState(initialProfile?.posts || []);
-  const [reels, setReels] = useState(initialProfile?.reels || []);
-
-  const { scrollY } = useScroll();
-  const headerOpacity = useTransform(scrollY, [0, 60], [0, 1]);
-
-  const highlightsContainerRef = useRef(null);
-  const urlParamsProcessedRef = useRef(false);
-  const initialFetchDoneRef = useRef(true);
-  const onboardingHandledRef = useRef(false);
-
   const handleVerifyIdentity = () => {
     setShowVerifyModal(true);
   };
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
 
   // Only update "My Interaction" status (Liked/Trusted) when user loads
   useEffect(() => {
     if (!isUserLoaded) return;
 
-    if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
-      setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
-      setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
-    }
-    setUserStateReady(true);
-  }, [isUserLoaded, isSignedIn, user?.id, profile]); // Removed profileLoading dependency
+    // Batch state updates to prevent multiple re-renders
+    const updates = () => {
+      if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
+        setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
+        setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
+      }
+      setUserStateReady(true);
+    };
+
+    // Use requestAnimationFrame to batch updates
+    requestAnimationFrame(updates);
+  }, [isUserLoaded, isSignedIn, user?.id, profile]);
 
   useEffect(() => {
     // Reset URL-related refs when vendor ID changes
@@ -7745,6 +7772,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   // ============ URL PARAMS - READ ON MOUNT ============
   useEffect(() => {
     if (urlParamsProcessedRef.current) return;
+    if (profileLoading) return;
 
     const params = new URLSearchParams(window.location.search);
     const postId = params.get("post");
@@ -7765,7 +7793,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     }
 
     urlParamsProcessedRef.current = true;
-  }, [profileLoading, posts, reels]);
+  }, [profileLoading]);
 
   // ============ URL PARAMS - WRITE UPDATES (DEBOUNCED) ============
   const updateURLParamsDebounced = useCallback(() => {
@@ -7902,7 +7930,6 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       await Promise.allSettled(
         videoPosts.map(async (post) => {
           try {
-            // Skip if already have thumbnail stored in post data
             if (post.thumbnailUrl) {
               newThumbnails[post._id] = post.thumbnailUrl;
               return;
@@ -7920,18 +7947,22 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             newThumbnails[post._id] = thumbnail;
           } catch (error) {
             console.warn(`Failed to generate thumbnail for post ${post._id}:`, error.message);
-            // Use null to indicate failed - won't retry
             newThumbnails[post._id] = null;
           }
         }),
       );
 
       if (Object.keys(newThumbnails).length > 0) {
-        setVideoThumbnails((prev) => ({ ...prev, ...newThumbnails }));
+        // Defer state update to next frame to prevent blocking
+        requestAnimationFrame(() => {
+          setVideoThumbnails((prev) => ({ ...prev, ...newThumbnails }));
+        });
       }
     };
 
-    generateThumbnails();
+    // Delay thumbnail generation slightly to not block initial render
+    const timer = setTimeout(generateThumbnails, 300);
+    return () => clearTimeout(timer);
   }, [posts]);
 
   // Add cleanup for video refs when component unmounts or posts change
@@ -7994,7 +8025,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       setShowOnboarding(false);
       setVendor((prev) => ({ ...prev, vendorProfile: newProfile }));
       showUIConfirmation("Profile created successfully!", "success", CheckCircle);
-      window.location.reload();
+      // window.location.reload();
     },
     [showUIConfirmation],
   );
@@ -8115,6 +8146,63 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     await handleLike();
     setTimeout(() => setCardBounce(false), 800);
   }, [handleLike]);
+
+  const handleHighlightPrev = useCallback(() => {
+    if (currentHighlightIndex > 0) {
+      setCurrentHighlightIndex((prev) => prev - 1);
+      if (highlightsContainerRef.current) {
+        const cardWidth = (window.innerWidth - 72) / 4.5; // Calculate card width
+        const gap = 14; // 3.5 * 4 = 14px gap
+        const scrollAmount = cardWidth + gap;
+        highlightsContainerRef.current.scrollBy({
+          left: -scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [currentHighlightIndex]);
+
+  const handleHighlightNext = useCallback(() => {
+    if (currentHighlightIndex < MOCK_HIGHLIGHTS.length - 1) {
+      setCurrentHighlightIndex((prev) => prev + 1);
+      if (highlightsContainerRef.current) {
+        const cardWidth = (window.innerWidth - 72) / 4.5;
+        const gap = 14;
+        const scrollAmount = cardWidth + gap;
+        highlightsContainerRef.current.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [currentHighlightIndex]);
+
+  const handleHighlightsClose = useCallback(() => {
+    setIsHighlightsExpanded(false);
+    setCurrentHighlightIndex(0);
+    if (highlightsContainerRef.current) {
+      highlightsContainerRef.current.scrollTo({ left: 0, behavior: "smooth" });
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = highlightsContainerRef.current;
+    if (!container || !isHighlightsExpanded) return;
+
+    const handleScroll = () => {
+      const cardWidth = (window.innerWidth - 72) / 4.5;
+      const gap = 14;
+      const scrollLeft = container.scrollLeft;
+      const newIndex = Math.round(scrollLeft / (cardWidth + gap));
+
+      if (newIndex !== currentHighlightIndex && newIndex >= 0 && newIndex < MOCK_HIGHLIGHTS.length) {
+        setCurrentHighlightIndex(newIndex);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [isHighlightsExpanded, currentHighlightIndex]);
 
   const handleSaveProfile = useCallback(() => {
     setIsSaved((prev) => !prev);
@@ -10027,7 +10115,10 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
         }}
       >
         {/* Row 1: Navigation Controls */}
-        <div className="flex items-center justify-between px-4 py-3 pb-0">
+        <div
+          className="flex items-center justify-between px-4 py-3 pb-0"
+          style={{ paddingBottom: showHeaderTabs ? 0 : "8px" }}
+        >
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -10040,9 +10131,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             whileHover={{ scale: 1.05 }}
             onClick={handleBack}
             className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
-              isScrolledHeader
-                ? "b border-gray-200 dark:border-gray-700 shadow-sm"
-                : " border-white/10 shadow-black/20"
+              isScrolledHeader ? "b border-gray-200 dark:border-gray-700 shadow-sm" : " border-white/10 shadow-black/20"
             }`}
             style={{
               willChange: "transform",
@@ -10150,7 +10239,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
         {/* Row 2: Tab Navigation (appears on scroll) */}
         <AnimatePresence mode="wait">
-          {isScrolledHeader && (
+          {showHeaderTabs && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{
@@ -10199,86 +10288,68 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                   }}
                   className={`bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border-b border-gray-200/50 dark:border-gray-800/50 mt-2 transition-all duration-500 ease-out`}
                 >
-                  <div className="flex overflow-x-auto no-scrollbar">
-                    {TABS.map((tab, index) => (
-                      <motion.button
-                        key={tab.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{
-                          opacity: 1,
-                          y: 0,
-                          transition: {
-                            delay: 0.2 + index * 0.04,
-                            duration: 0.4,
-                            ease: [0.22, 1, 0.36, 1],
-                          },
-                        }}
-                        whileTap={{ scale: 0.96 }}
-                        whileHover={{
-                          scale: 1.02,
-                          transition: { duration: 0.2 },
-                        }}
-                        onClick={() => {
-                          setActiveTab(tab.id);
-                          const url = new URL(window.location.href);
-                          url.searchParams.set("tab", tab.id);
-                          if (tab.id !== "services") url.searchParams.delete("details");
-                          window.history.pushState({}, "", url.toString());
-                        }}
-                        className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize relative cursor-pointer"
-                        style={{
-                          color: activeTab === tab.id ? categoryColor.primary : "rgb(107, 114, 128)",
-                          transition: "color 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
-                          willChange: activeTab === tab.id ? "auto" : "transform",
-                        }}
-                      >
-                        <motion.div
+                  <LayoutGroup id="header-tabs">
+                    <div className="flex overflow-x-auto no-scrollbar">
+                      {TABS.map((tab, index) => (
+                        <motion.button
+                          key={tab.id}
+                          initial={{ opacity: 0, y: 12 }}
                           animate={{
-                            scale: activeTab === tab.id ? 1 : 1,
-                            transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                            opacity: 1,
+                            y: 0,
+                            transition: {
+                              delay: 0.2 + index * 0.04,
+                              duration: 0.4,
+                              ease: [0.22, 1, 0.36, 1],
+                            },
+                          }}
+                          whileTap={{ scale: 0.96 }}
+                          whileHover={{
+                            scale: 1.02,
+                            transition: { duration: 0.2 },
+                          }}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            const url = new URL(window.location.href);
+                            url.searchParams.set("tab", tab.id);
+                            if (tab.id !== "services") url.searchParams.delete("details");
+                            window.history.pushState({}, "", url.toString());
+                          }}
+                          className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize relative cursor-pointer"
+                          style={{
+                            color: activeTab === tab.id ? categoryColor.primary : "rgb(107, 114, 128)",
+                            transition: "color 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+                            willChange: activeTab === tab.id ? "auto" : "transform",
                           }}
                         >
-                          <tab.icon size={19} />
-                        </motion.div>
+                          <motion.div
+                            animate={{
+                              scale: activeTab === tab.id ? 1 : 1,
+                              transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                            }}
+                          >
+                            <tab.icon size={19} />
+                          </motion.div>
 
-                        <AnimatePresence mode="wait">
                           {activeTab === tab.id && (
                             <motion.div
-                              layoutId="activeTabGlider"
-                              initial={{ opacity: 0, scaleX: 0.3 }}
-                              animate={{
-                                opacity: 1,
-                                scaleX: 1,
-                                transition: {
-                                  opacity: { duration: 0.2 },
-                                  scaleX: {
-                                    type: "spring",
-                                    stiffness: 400,
-                                    damping: 35,
-                                    mass: 0.6,
-                                  },
-                                },
-                              }}
-                              exit={{
-                                opacity: 0,
-                                scaleX: 0.3,
-                                transition: {
-                                  duration: 0.2,
-                                  ease: [0.22, 1, 0.36, 1],
-                                },
-                              }}
+                              layoutId="header-tab-indicator"
                               className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full"
                               style={{
                                 background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                                originX: 0.5,
-                                willChange: "transform, opacity",
+                              }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 40,
+                                mass: 0.8,
                               }}
                             />
                           )}
-                        </AnimatePresence>
-                      </motion.button>
-                    ))}
-                  </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </LayoutGroup>
                 </motion.div>
               </div>
             </motion.div>
@@ -10287,7 +10358,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       </div>
 
       {/* Main Content */}
-      <main className="pb-36">
+      <main className="pb-10">
         {/* Hero Section */}
         <section className="relative">
           {/* Cover Image Container */}
@@ -10301,13 +10372,12 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
           >
             {/* Actual Cover Image */}
             <motion.div
-              initial={{ opacity: 0, scale: 1.05 }}
               animate={{
-                opacity: showCoverGradient ? 0 : 1,
-                scale: showCoverGradient ? 1.05 : 1,
+                opacity: 1,
+                scale: 1,
               }}
               transition={{
-                duration: 1.4,
+                duration: 0.8,
                 ease: smoothEase,
               }}
               className="absolute inset-0 z-[1] cover-clickable"
@@ -10555,7 +10625,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                   <>
                     <motion.div
                       initial={false}
-                      animate={{ height: isBioExpanded ? "auto" : "4.5rem" }}
+                      animate={{ height: isBioExpanded ? "auto" : "3.4rem" }}
                       transition={{
                         duration: 0.5,
                         ease: smoothEase,
@@ -10634,49 +10704,181 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                   )}
                 </AnimatePresence>
 
-                {/* Highlights */}
-                <div ref={highlightsContainerRef} className="mt-4 overflow-x-auto no-scrollbar -mx-1 px-1">
-                  {profileLoading ? (
-                    <HighlightsSkeleton />
-                  ) : (
-                    <div className="flex gap-3.5 py-1" style={{ minWidth: "max-content" }}>
-                      {MOCK_HIGHLIGHTS.map((highlight, index) => (
-                        <motion.button
-                          key={highlight.id}
-                          initial={{ opacity: 0, y: 15, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{
-                            delay: 0.6 + index * 0.06,
-                            duration: 0.4,
-                            ease: smoothEase,
-                          }}
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => setSelectedHighlight(highlight)}
-                          className="flex flex-col items-center gap-2 shrink-0 group cursor-pointer"
-                          style={{ width: "calc((100vw - 72px) / 4.5)" }}
-                        >
-                          <div
-                            className="w-[62px] h-[62px] rounded-[18px] overflow-hidden p-[2.5px] transition-transform duration-300 group-hover:scale-105"
-                            style={{
-                              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                            }}
-                          >
-                            <div className="w-full h-full rounded-[15px] overflow-hidden bg-white dark:bg-gray-900">
-                              <SmartMedia
-                                src={highlight.image}
-                                type="image"
-                                className="w-full h-full object-cover"
-                                loaderImage="/GlowLoadingGif.gif"
-                              />
-                            </div>
+                {/* Highlights Section */}
+                <div className="mt-2 -mx-1 px-1">
+                  <AnimatePresence mode="wait">
+                    {!isHighlightsExpanded ? (
+                      // Collapsed State - Show Toggle Button
+                      <motion.button
+                        key="highlights-collapsed"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setIsHighlightsExpanded(true)}
+                        className="w-full flex items-center justify-between py-3.5 px-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 flex items-center justify-center shadow-sm">
+                            <Sparkles size={16} className="text-purple-600 dark:text-purple-400" />
                           </div>
-                          <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 truncate max-w-full px-0.5">
-                            {highlight.title}
-                          </span>
-                        </motion.button>
-                      ))}
-                    </div>
-                  )}
+                          <div className="text-left">
+                            <p className="text-[13px] font-bold text-slate-800 dark:text-slate-100">Highlights</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                              {MOCK_HIGHLIGHTS.length} stories available
+                            </p>
+                          </div>
+                        </div>
+                        <motion.div
+                          animate={{ rotate: 0 }}
+                          className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700/50 flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-600 group-hover:border-purple-300 dark:group-hover:border-purple-700 transition-colors"
+                        >
+                          <ChevronDown size={18} className="text-slate-600 dark:text-slate-400" />
+                        </motion.div>
+                      </motion.button>
+                    ) : (
+                      // Expanded State - Show Carousel with Controls
+                      <motion.div
+                        key="highlights-expanded"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        className="relative"
+                      >
+                        {/* Control Buttons - Top Right */}
+                        <motion.div
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.2, duration: 0.3 }}
+                          className="absolute -top-8 right-2 flex items-center gap-2 z-10"
+                        >
+                          {/* Previous Button */}
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleHighlightPrev}
+                            disabled={currentHighlightIndex === 0}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-xl border shadow-lg transition-all duration-300 ${
+                              currentHighlightIndex === 0
+                                ? "bg-gray-100/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 opacity-40 cursor-not-allowed"
+                                : "bg-white/90 dark:bg-gray-800/90 border-white/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-700 cursor-pointer"
+                            }`}
+                          >
+                            <ChevronLeft
+                              size={16}
+                              className={
+                                currentHighlightIndex === 0 ? "text-gray-400" : "text-gray-700 dark:text-gray-200"
+                              }
+                            />
+                          </motion.button>
+
+                          {/* Next Button */}
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleHighlightNext}
+                            disabled={currentHighlightIndex >= MOCK_HIGHLIGHTS.length - 1}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-xl border shadow-lg transition-all duration-300 ${
+                              currentHighlightIndex >= MOCK_HIGHLIGHTS.length - 1
+                                ? "bg-gray-100/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 opacity-40 cursor-not-allowed"
+                                : "bg-white/90 dark:bg-gray-800/90 border-white/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-700 cursor-pointer"
+                            }`}
+                          >
+                            <ChevronRight
+                              size={16}
+                              className={
+                                currentHighlightIndex >= MOCK_HIGHLIGHTS.length - 1
+                                  ? "text-gray-400"
+                                  : "text-gray-700 dark:text-gray-200"
+                              }
+                            />
+                          </motion.button>
+
+                          {/* Close Button */}
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleHighlightsClose}
+                            className="w-8 h-8 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center backdrop-blur-xl border border-white/50 dark:border-gray-700/50 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-300 cursor-pointer"
+                          >
+                            <X size={16} className="text-gray-700 dark:text-gray-200" />
+                          </motion.button>
+                        </motion.div>
+
+                        {/* Highlights Carousel */}
+                        <div ref={highlightsContainerRef} className="overflow-x-auto no-scrollbar pt-3">
+                          {profileLoading ? (
+                            <HighlightsSkeleton />
+                          ) : (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.1, duration: 0.3 }}
+                              className="flex gap-3.5 py-1 pb-3"
+                              style={{ minWidth: "max-content" }}
+                            >
+                              {MOCK_HIGHLIGHTS.map((highlight, index) => (
+                                <motion.button
+                                  key={highlight.id}
+                                  initial={{ opacity: 0, y: 15, scale: 0.9 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  transition={{
+                                    delay: 0.2 + index * 0.06,
+                                    duration: 0.4,
+                                    ease: [0.22, 1, 0.36, 1],
+                                  }}
+                                  whileTap={{ scale: 0.94 }}
+                                  onClick={() => setSelectedHighlight(highlight)}
+                                  className="flex flex-col items-center gap-2 shrink-0 group cursor-pointer"
+                                  style={{ width: "calc((100vw - 72px) / 4.5)" }}
+                                >
+                                  <div
+                                    className="w-[62px] h-[62px] rounded-[18px] overflow-hidden p-[2.5px] transition-transform duration-300 group-hover:scale-105"
+                                    style={{
+                                      background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                                    }}
+                                  >
+                                    <div className="w-full h-full rounded-[15px] overflow-hidden bg-white dark:bg-gray-900">
+                                      <SmartMedia
+                                        src={highlight.image}
+                                        type="image"
+                                        className="w-full h-full object-cover"
+                                        loaderImage="/GlowLoadingGif.gif"
+                                      />
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 truncate max-w-full px-0.5">
+                                    {highlight.title}
+                                  </span>
+                                </motion.button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </div>
+
+                        {/* Progress Indicator */}
+                        {/* {MOCK_HIGHLIGHTS.length > 1 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="flex justify-center gap-1.5 mt-2 pb-1"
+                          >
+                            {MOCK_HIGHLIGHTS.map((_, index) => (
+                              <motion.div
+                                key={index}
+                                className="h-1 rounded-full transition-all duration-300"
+                                animate={{
+                                  width: index === currentHighlightIndex ? "24px" : "6px",
+                                  backgroundColor:
+                                    index === currentHighlightIndex ? categoryColor.primary : "rgba(0,0,0,0.15)",
+                                }}
+                              />
+                            ))}
+                          </motion.div>
+                        )} */}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
 
@@ -10744,54 +10946,53 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
         {/* Tab Navigation - Sticky */}
         <motion.div
+          ref={stickyTabsRef}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.4, ease: smoothEase }}
           className={`bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border-b border-gray-200/50 dark:border-gray-800/50 mt-5 transition-all duration-300`}
         >
-          <div className="flex overflow-x-auto no-scrollbar">
-            {TABS.map((tab, index) => (
-              <motion.button
-                key={tab.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.75 + index * 0.05, duration: 0.3 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  const url = new URL(window.location.href);
-                  url.searchParams.set("tab", tab.id);
-                  if (tab.id !== "services") url.searchParams.delete("details");
-                  window.history.pushState({}, "", url.toString());
-                }}
-                className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize transition-all duration-300 relative cursor-pointer"
-                style={{
-                  color: activeTab === tab.id ? categoryColor.primary : "rgb(107, 114, 128)",
-                }}
-              >
-                <tab.icon size={19} />
-                {activeTab === tab.id && (
-                  <motion.div
-                    layoutId="activeTabGlider"
-                    initial={{ opacity: 0, scaleX: 0 }}
-                    animate={{ opacity: 1, scaleX: 1 }}
-                    exit={{ opacity: 0, scaleX: 0 }}
-                    className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full"
-                    style={{
-                      background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                      originX: 0.5,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30,
-                      mass: 0.8,
-                    }}
-                  />
-                )}
-              </motion.button>
-            ))}
-          </div>
+          <LayoutGroup id="sticky-tabs">
+            <div className="flex overflow-x-auto no-scrollbar">
+              {TABS.map((tab, index) => (
+                <motion.button
+                  key={tab.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.75 + index * 0.05, duration: 0.3 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("tab", tab.id);
+                    if (tab.id !== "services") url.searchParams.delete("details");
+                    window.history.pushState({}, "", url.toString());
+                  }}
+                  className="flex-1 min-w-[82px] py-4 flex items-center justify-center gap-2 text-[12px] font-bold capitalize transition-all duration-300 relative cursor-pointer"
+                  style={{
+                    color: activeTab === tab.id ? categoryColor.primary : "rgb(107, 114, 128)",
+                  }}
+                >
+                  <tab.icon size={19} />
+                  {activeTab === tab.id && (
+                    <motion.div
+                      layoutId="sticky-tab-indicator"
+                      className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full"
+                      style={{
+                        background: `linear-gradient(90deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 40,
+                        mass: 0.8,
+                      }}
+                    />
+                  )}
+                </motion.button>
+              ))}
+            </div>
+          </LayoutGroup>
         </motion.div>
 
         {/* Tab Content */}
@@ -10805,7 +11006,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
               duration: 0.4,
               ease: smoothEase,
             }}
-            className="bg-white dark:bg-gray-900 min-h-[50vh] z-[30] relative z-[1]"
+            className="bg-white dark:bg-gray-900 min-h-[50vh] relative z-[1]"
           >
             {renderContent()}
           </motion.div>

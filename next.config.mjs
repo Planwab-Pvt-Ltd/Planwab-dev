@@ -4,6 +4,7 @@ const nextConfig = {
 
   images: {
     unoptimized: true,
+    qualities: [75, 90],
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "cdn.bunnycdn.com" },
