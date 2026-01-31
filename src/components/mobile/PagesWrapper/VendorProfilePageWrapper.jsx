@@ -10239,7 +10239,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
         {/* Row 2: Tab Navigation (appears on scroll) */}
         <AnimatePresence mode="wait">
-          {showHeaderTabs && (
+          {showHeaderTabs && !isCoverExpanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{
