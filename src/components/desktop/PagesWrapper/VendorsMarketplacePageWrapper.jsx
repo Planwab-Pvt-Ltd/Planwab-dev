@@ -708,7 +708,7 @@ export default function MarketplacePageWrapper() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [compareList, setCompareList] = useState([]);
     const [showComparison, setShowComparison] = useState(false);
-    const [guestCapacity, setGuestCapacity] = useState(0);   
+    const [guestCapacity, setGuestCapacity] = useState(0); 
     const [selectedLocations, setSelectedLocations] = useState([]);
     const [availableCities, setAvailableCities] = useState([]);
     const color = themeColors[activeCategory] || themeColors.Default;
@@ -736,7 +736,6 @@ export default function MarketplacePageWrapper() {
         const cities = [...new Set(vendors.map(v => v.address?.city).filter(Boolean))].sort();
         setAvailableCities(cities);
     }, [vendors]);
-    
     const fetchVendors = useMemo(() => {
         return async () => {
             setIsLoading(true);
@@ -799,7 +798,6 @@ export default function MarketplacePageWrapper() {
           : [...prev, category]
       );
     }, []);
-   
     const handleLocationChange = useCallback((city) => {
       setSelectedLocations((prev) =>
         prev.includes(city)
