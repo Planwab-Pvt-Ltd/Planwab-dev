@@ -8005,9 +8005,13 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     };
   }, []);
 
-  const handleBack = useCallback(() => {
+const handleBack = useCallback(() => {
+  if (window.history.length > 1) {
     router.back();
-  }, [router]);
+  } else {
+    router.push(`/m/vendor/${category || "all"}/${id}`);
+  }
+ }, [router]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {
@@ -10239,7 +10243,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
         {/* Row 2: Tab Navigation (appears on scroll) */}
         <AnimatePresence mode="wait">
-          {showHeaderTabs && (
+          {showHeaderTabs && !isCoverExpanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{
