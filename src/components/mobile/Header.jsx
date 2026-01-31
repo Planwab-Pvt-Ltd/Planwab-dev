@@ -212,7 +212,7 @@ const HeaderLogic = () => {
       const queryString = params.toString();
       return queryString ? `/m/vendors/marketplace?${queryString}` : "/m/vendors/marketplace";
     },
-    [searchQuery, selectedSort]
+    [searchQuery, selectedSort],
   );
 
   // REPLACE the existing handleSearchSubmit with this:
@@ -230,16 +230,24 @@ const HeaderLogic = () => {
       haptic("medium");
 
       // Build URL with both search query AND current filter
-      toast.loading("Searching...", { id: "search-loading" });
       const redirectUrl = buildMarketplaceUrl(true, true);
-      router.push(redirectUrl);
 
-      setTimeout(() => {
-        toast.dismiss("search-loading");
-      }, 500);
+      // Show loading toast
+      toast.loading("Searching...", { id: "search-loading" });
+
+      // Use startTransition to track loading state
+      startTransition(() => {
+        router.push(redirectUrl);
+      });
     },
-    [searchQuery, router, haptic, buildMarketplaceUrl]
+    [searchQuery, router, haptic, buildMarketplaceUrl, startTransition],
   );
+
+  useEffect(() => {
+    if (!isPending) {
+      toast.dismiss("search-loading");
+    }
+  }, [isPending]);
 
   // REPLACE the handleApplyFilters with this:
   const handleApplyFilters = useCallback(() => {
@@ -279,7 +287,7 @@ const HeaderLogic = () => {
         router.push(`?category=${targetCategory}`, { scroll: false });
       });
     },
-    [activeTabId, router]
+    [activeTabId, router],
   );
 
   return (
@@ -292,7 +300,7 @@ const HeaderLogic = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="fixed inset-0 bg-gradient-to-br from-amber-50 via-white to-white flex items-center justify-center z-[9999]"
+            className="fixed inset-0 bg-gradient-to-br from-amber-50 via-white to-white flex flex-col items-center justify-center z-[9999]"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0.7 }}
@@ -302,6 +310,17 @@ const HeaderLogic = () => {
             >
               <video src="/Loading/loading1.mp4" alt="PlanWAB Loader" width={200} height={200} autoPlay muted loop />
             </motion.div>
+            {searchQuery && (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="absolute bottom-32 text-sm font-bold text-gray-600"
+              >
+                Searching for "{searchQuery.slice(0, 30)}
+                {searchQuery.length > 30 ? "..." : ""}"
+              </motion.p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
