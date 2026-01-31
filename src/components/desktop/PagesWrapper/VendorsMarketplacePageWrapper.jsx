@@ -136,7 +136,6 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     );
 };
 
-
 const UnifiedCard = ({ vendor, color, onFavorite, isFavorite }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -370,7 +369,6 @@ const UnifiedCard = ({ vendor, color, onFavorite, isFavorite }) => {
     </motion.div>
   );
 };
-
 
 const FilterPanel = ({
   color,
@@ -700,26 +698,20 @@ export default function MarketplacePageWrapper() {
     
     const [viewMode, setViewMode] = useState("grid-cols-1 md:grid-cols-2");
     const [sortBy, setSortBy] = useState("rating");
-  
     const [priceRange, setPriceRange] = useState([0, 1000000]);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-   
     const [searchQuery, setSearchQuery] = useState("");
     const [favorites, setFavorites] = useState([]);
     const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [compareList, setCompareList] = useState([]);
     const [showComparison, setShowComparison] = useState(false);
-    const [guestCapacity, setGuestCapacity] = useState(0);
-    
+    const [guestCapacity, setGuestCapacity] = useState(0);   
     const [selectedLocations, setSelectedLocations] = useState([]);
     const [availableCities, setAvailableCities] = useState([]);
-  
     const color = themeColors[activeCategory] || themeColors.Default;
-   
-   
     const vendorCategories = useMemo(
       () => ["venues", "photographers", "makeup", "planners", "catering", "clothes", "mehendi", "cakes", "jewellery", "invitations", "djs", "hairstyling", "other"],
       []
@@ -736,7 +728,6 @@ export default function MarketplacePageWrapper() {
         }
     }, [pageCategory]);
 
-    
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const debouncedPriceRange = useDebounce(priceRange, 500);
     const debouncedGuestCapacity = useDebounce(guestCapacity, 500);
@@ -745,7 +736,6 @@ export default function MarketplacePageWrapper() {
         const cities = [...new Set(vendors.map(v => v.address?.city).filter(Boolean))].sort();
         setAvailableCities(cities);
     }, [vendors]);
-
     
     const fetchVendors = useMemo(() => {
         return async () => {
@@ -756,28 +746,22 @@ export default function MarketplacePageWrapper() {
                 sortBy,
             };
             
-           
             if (debouncedSearchQuery) {
                 paramsObj.search = debouncedSearchQuery;
             }
-           
             if (selectedCategories.length > 0) {
                 paramsObj.category = selectedCategories.join(',');
             }
-           
             if (showFeaturedOnly) {
                 paramsObj.featured = 'true';
             }
-           
             if (selectedLocations.length > 0) {
                 paramsObj.cities = selectedLocations.join(',');
             }
-          
             if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < 1000000) {
                 paramsObj.minPrice = debouncedPriceRange[0].toString();
                 paramsObj.maxPrice = debouncedPriceRange[1].toString();
             }
-           
             if (debouncedGuestCapacity > 0) {
                 paramsObj.guestCapacity = debouncedGuestCapacity.toString();
             }
@@ -808,7 +792,6 @@ export default function MarketplacePageWrapper() {
         setCurrentPage(1);
     }, [sortBy, debouncedPriceRange, debouncedSearchQuery, selectedCategories, showFeaturedOnly, selectedLocations, debouncedGuestCapacity]);
   
-    
     const handleCategoryChange = useCallback((category) => {
       setSelectedCategories((prev) =>
         prev.includes(category)
@@ -816,8 +799,7 @@ export default function MarketplacePageWrapper() {
           : [...prev, category]
       );
     }, []);
-  
-    
+   
     const handleLocationChange = useCallback((city) => {
       setSelectedLocations((prev) =>
         prev.includes(city)
@@ -978,7 +960,6 @@ export default function MarketplacePageWrapper() {
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
                 Discover top-rated professionals for your special event
               </p>
-              
               <div className="max-w-2xl mx-auto">
                 <div className="relative">
                   <input
@@ -1140,7 +1121,6 @@ export default function MarketplacePageWrapper() {
                         </button>
                       ))}
                     </div>
-                  
                     <div className="relative">
                       <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -1192,7 +1172,6 @@ export default function MarketplacePageWrapper() {
                   </div>
                 </div>
               </div>
-            
               <motion.div
                 layout
                 className={`grid gap-6 ${viewMode} ${compareList.length > 0 ? "pb-24 sm:pb-20" : ""}`}
@@ -1227,7 +1206,6 @@ export default function MarketplacePageWrapper() {
                   </p>
                 </div>
               )}
-            
               {!isLoading && paginationInfo.totalPages > 1 && (
                   <PaginationControls 
                       currentPage={currentPage}
