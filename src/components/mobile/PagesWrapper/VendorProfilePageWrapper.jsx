@@ -7895,11 +7895,8 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
     if (onboardingParam === "true" && showOnboarding && !openOnboardingDrawer) {
       onboardingHandledRef.current = true;
-      if (!isSignedIn || !user?.id) {
         requireSignIn("Please sign in to proceed");
-      } else {
         setOpenOnboardingDrawer(true);
-      }
     }
   }, [profileLoading, isUserLoaded, isSignedIn, user?.id, showOnboarding, openOnboardingDrawer, requireSignIn]);
 
@@ -11040,7 +11037,7 @@ const handleBack = useCallback(() => {
         </motion.button>
 
         {/* Create Profile Button */}
-        {!profileLoading && showOnboarding && !profile?.vendorBusinessName && !openOnboardingDrawer && (
+       {!profileLoading && (!profile || Object.keys(profile).length === 0) && !openOnboardingDrawer && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
