@@ -146,6 +146,18 @@ import { QRCodeSVG } from "qrcode.react";
 import UpdateProfileDrawer from "../UpdateProfileDrawer";
 import SmartMedia from "@/components/mobile/SmartMediaLoader";
 
+const SWIPE_THRESHOLD = 60;
+const VELOCITY_THRESHOLD = 400;
+const TRANSITION_DURATION = 0.4;
+const instantSpring = {
+  type: "spring",
+  stiffness: 400,
+  damping: 35,
+  mass: 0.5,
+  restDelta: 0.001,
+  restSpeed: 0.001,
+};
+
 const TABS = [
   { id: "posts", label: "Posts", icon: Image },
   { id: "reels", label: "Reels", icon: Play },
@@ -217,9 +229,43 @@ const AMENITY_ICONS = {
 };
 
 const slideVariants = {
-  enter: (direction) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (direction) => ({ x: direction < 0 ? 300 : -300, opacity: 0 }),
+  enter: (direction) => ({
+    y: direction > 0 ? "100%" : "-100%",
+    opacity: 0,
+    scale: 0.95,
+  }),
+  center: {
+    y: 0,
+    opacity: 1,
+    scale: 1,
+    transition: {
+      y: { type: "spring", stiffness: 300, damping: 30, mass: 0.8 },
+      opacity: { duration: 0.2, ease: "easeOut" },
+      scale: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  },
+  exit: (direction) => ({
+    y: direction < 0 ? "100%" : "-100%",
+    opacity: 0,
+    scale: 0.95,
+    transition: {
+      y: { type: "spring", stiffness: 300, damping: 30, mass: 0.8 },
+      opacity: { duration: 0.15, ease: "easeIn" },
+      scale: { duration: 0.2, ease: "easeIn" },
+    },
+  }),
+};
+
+const overlayVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.3 },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.2 },
+  },
 };
 
 const collapseVariants = {
@@ -1484,74 +1530,107 @@ const CommentsDrawer = ({ isOpen, onClose, reviews, onAddComment, onDeleteCommen
   );
 };
 
-const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onEdit, onArchive, vendorId }) => {
+const PostDetailModal = ({
+  post,
+  posts = [],
+  initialIndex = 0,
+  onClose,
+  vendorName,
+  vendorImage,
+  onDelete,
+  onEdit,
+  onArchive,
+  vendorId,
+}) => {
   const { user, isSignedIn } = useUser();
 
+  // Navigation state
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (posts.length > 0) {
+      const idx = posts.findIndex((p) => p._id === post?._id);
+      return idx >= 0 ? idx : initialIndex;
+    }
+    return 0;
+  });
+  const [direction, setDirection] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+
+  // Current post
+  const currentPost = posts.length > 0 ? posts[currentIndex] : post;
+
+  // Interaction states
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likes, setLikes] = useState(0);
-  const [comment, setComment] = useState("");
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
-  const [comments, setComments] = useState([]);
   const [showOptionsDrawer, setShowOptionsDrawer] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [showCommentsDrawer, setShowCommentsDrawer] = useState(false);
 
   // Review states
   const [reviews, setReviews] = useState([]);
-  const [showCommentsDrawer, setShowCommentsDrawer] = useState(false); // NEW STATE
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [isLoadingInteractions, setIsLoadingInteractions] = useState(true);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
-  const [userReview, setUserReview] = useState(null);
-  const [editingReview, setEditingReview] = useState(false);
 
-  // Video specific states
+  // Media states
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showControls, setShowControls] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isMuted, setIsMuted] = useState(false); // Sound ON by default
   const [isBuffering, setIsBuffering] = useState(true);
   const [hasError, setHasError] = useState(false);
-
-  const [poster, setPoster] = useState(null);
+  const [showPlayPauseIndicator, setShowPlayPauseIndicator] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [seekPreview, setSeekPreview] = useState(null);
 
   const videoRef = useRef(null);
-  const controlsTimeoutRef = useRef(null);
+  const containerRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const playPauseTimeoutRef = useRef(null);
+  const isSeekingRef = useRef(false);
+  const pointerStartRef = useRef({ x: 0, y: 0, time: 0 });
+const tapTimeoutRef = useRef(null);
 
   useBodyScrollLock(true);
 
-  const isVideo = post?.mediaType === "video";
+  useEffect(() => {
+    isSeekingRef.current = isSeeking;
+  }, [isSeeking]);
 
   useEffect(() => {
-    if (!post?.mediaUrl && !isVideo) return;
+    return () => {
+      if (playPauseTimeoutRef.current) {
+        clearTimeout(playPauseTimeoutRef.current);
+      }
+    };
+  }, []);
 
-    getVideoThumbnail(post?.mediaUrl, 3)
-      .then(setPoster)
-      .catch(() => {});
-  }, [post?.mediaUrl]);
-
-  // Add this useEffect
+  const isVideo = currentPost?.mediaType === "video";
   useEffect(() => {
-    // Reset video states when post changes
-    if (isVideo) {
-      setIsBuffering(true);
-      setHasError(false);
-      setProgress(0);
-      setIsPlaying(true);
-    }
-  }, [post?._id, isVideo]);
+  if (videoRef.current) {
+    videoRef.current.muted = isMuted;
+  }
+  }, [isMuted]);
 
-  // Fetch initial interaction status
+  // Reset states when post changes - instant reset
+  useEffect(() => {
+    setIsBuffering(true);
+    setHasError(false);
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(true);
+    setIsLoadingInteractions(true);
+    setShowPlayPauseIndicator(false);
+  }, [currentIndex]);
+
+  // Fetch interaction status
   useEffect(() => {
     const fetchInteractionStatus = async () => {
-      if (!post?._id) return;
-
-      const postId = post._id;
-      setIsLoadingInteractions(true);
+      if (!currentPost?._id) return;
 
       try {
         if (!vendorId) {
@@ -1560,7 +1639,7 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
         }
 
         const params = new URLSearchParams({
-          postId,
+          postId: currentPost._id,
           ...(user?.id && { userId: user.id }),
         });
 
@@ -1572,7 +1651,6 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
           setIsLiked(data.data.isLiked || false);
           setIsSaved(data.data.isSaved || false);
           setReviews(data.data.reviews || []);
-          setUserReview(data.data.userReview || null);
         }
       } catch (error) {
         console.error("Failed to fetch interaction status:", error);
@@ -1582,22 +1660,49 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
     };
 
     fetchInteractionStatus();
-  }, [post?._id, user?.id, vendorId]);
+  }, [currentPost?._id, user?.id, vendorId]);
 
-  // Video progress tracking - REPLACE the entire useEffect
+  // Video event handlers with optimized updates
   useEffect(() => {
     if (!isVideo || !videoRef.current) return;
 
     const video = videoRef.current;
+    let animationFrameId;
 
-    const handleTimeUpdate = () => {
-      if (video.duration) {
-        setProgress((video.currentTime / video.duration) * 100);
+    const updateProgress = () => {
+      if (video.duration && !isSeekingRef.current) {
+        const newProgress = (video.currentTime / video.duration) * 100;
+        setProgress(newProgress);
+        setCurrentTime(video.currentTime);
       }
+      animationFrameId = requestAnimationFrame(updateProgress);
     };
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
+      setIsBuffering(false);
+    };
+
+    const handleCanPlay = () => {
+      setIsBuffering(false);
+      if (isPlaying) {
+        video.play().catch(() => setIsPlaying(false));
+      }
+    };
+
+    const handleWaiting = () => setIsBuffering(true);
+
+    const handlePlaying = () => {
+      setIsBuffering(false);
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
+    const handlePlay = () => {
+      setIsPlaying(true);
     };
 
     const handleEnded = () => {
@@ -1605,69 +1710,197 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
       video.play().catch(() => {});
     };
 
-    const handleLoadStart = () => {
-      setIsBuffering(true);
-      setHasError(false);
-    };
-
-    const handleCanPlay = () => {
-      setIsBuffering(false);
-      video.play().catch(() => setIsPlaying(false));
-    };
-
-    const handleWaiting = () => {
-      setIsBuffering(true);
-    };
-
-    const handlePlaying = () => {
-      setIsBuffering(false);
-      setIsPlaying(true);
-    };
-
     const handleError = () => {
       setHasError(true);
       setIsBuffering(false);
     };
 
-    video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    video.addEventListener("ended", handleEnded);
-    video.addEventListener("loadstart", handleLoadStart);
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("waiting", handleWaiting);
     video.addEventListener("playing", handlePlaying);
+    video.addEventListener("pause", handlePause);
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("ended", handleEnded);
     video.addEventListener("error", handleError);
 
+    animationFrameId = requestAnimationFrame(updateProgress);
+
+    // Auto-play on mount
+    video.play().catch(() => setIsPlaying(false));
+
     return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      video.removeEventListener("ended", handleEnded);
-      video.removeEventListener("loadstart", handleLoadStart);
       video.removeEventListener("canplay", handleCanPlay);
       video.removeEventListener("waiting", handleWaiting);
       video.removeEventListener("playing", handlePlaying);
+      video.removeEventListener("pause", handlePause);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("ended", handleEnded);
       video.removeEventListener("error", handleError);
+      cancelAnimationFrame(animationFrameId);
     };
-  }, [isVideo]);
+  }, [currentIndex]);
 
-  // Auto-hide controls
-  useEffect(() => {
-    if (showControls && isVideo) {
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
-    }
-    return () => {
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
+  // Navigation handlers - instant response
+  const goToPost = useCallback(
+    (newDirection) => {
+      if (posts.length === 0) return;
+
+      const canGoNext = newDirection > 0 && currentIndex < posts.length - 1;
+      const canGoPrev = newDirection < 0 && currentIndex > 0;
+
+      if (canGoNext || canGoPrev) {
+        setDirection(newDirection);
+        setCurrentIndex((prev) => prev + newDirection);
       }
-    };
-  }, [showControls, isVideo]);
+    },
+    [currentIndex, posts.length],
+  );
 
-  const getVendorId = () => {
-    return vendorId;
+  const handleDragStart = () => {
+    setIsDragging(true);
+    if (videoRef.current && isVideo) {
+      videoRef.current.pause();
+    }
   };
 
+  const handleDrag = (_, info) => {
+    setDragOffset(info.offset.y);
+  };
+
+  const handleDragEnd = (_, info) => {
+    setIsDragging(false);
+    setDragOffset(0);
+
+    const shouldGoNext = info.offset.y < -SWIPE_THRESHOLD || info.velocity.y < -VELOCITY_THRESHOLD;
+    const shouldGoPrev = info.offset.y > SWIPE_THRESHOLD || info.velocity.y > VELOCITY_THRESHOLD;
+
+    if (shouldGoNext && currentIndex < posts.length - 1) {
+      goToPost(1);
+    } else if (shouldGoPrev && currentIndex > 0) {
+      goToPost(-1);
+    } else {
+      // Resume video if not navigating
+      if (videoRef.current && isVideo && isPlaying) {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+
+    // Horizontal swipe to close
+    if (info.velocity.x > 400 || info.offset.x > 120) {
+      onClose();
+    }
+  };
+
+  // Progress bar seeking - works on touch and click
+  const handleProgressSeekStart = useCallback(
+    (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setIsSeeking(true);
+
+      const rect = progressBarRef.current?.getBoundingClientRect();
+      if (!rect || !duration) return;
+
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const newTime = percentage * duration;
+
+      setProgress(percentage * 100);
+      setCurrentTime(newTime);
+      setSeekPreview(formatTime(newTime));
+
+      if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+      }
+    },
+    [duration],
+  );
+
+  const handleProgressSeek = useCallback(
+    (e) => {
+      if (!isSeekingRef.current) return;
+
+      const rect = progressBarRef.current?.getBoundingClientRect();
+      if (!rect || !duration) return;
+
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const newTime = percentage * duration;
+
+      setProgress(percentage * 100);
+      setCurrentTime(newTime);
+      setSeekPreview(formatTime(newTime));
+
+      if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+      }
+    },
+    [duration],
+  );
+
+  const handleProgressSeekEnd = useCallback(() => {
+    setIsSeeking(false);
+    setSeekPreview(null);
+
+    // Resume playing if was playing before
+    if (videoRef.current && !videoRef.current.paused === false && isPlaying) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isPlaying]);
+
+  // Play/Pause with visual indicator
+  const togglePlayPause = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Clear any existing timeout
+    if (playPauseTimeoutRef.current) {
+      clearTimeout(playPauseTimeoutRef.current);
+    }
+
+    // Show indicator immediately
+    setShowPlayPauseIndicator(true);
+
+    // Toggle play state - match ReelsViewer logic
+    if (video.paused) {
+      video
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.log("Play failed:", err);
+          setIsPlaying(false);
+        });
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+
+    // Hide indicator after delay
+    playPauseTimeoutRef.current = setTimeout(() => {
+      setShowPlayPauseIndicator(false);
+    }, 800);
+  }, []);
+
+  // Double tap to like
+  const handlePointerDown = useCallback((e) => {
+  // Don't track if on a button
+  if (e.target.closest("button")) return;
+  
+  pointerStartRef.current = {
+    x: e.clientX,
+    y: e.clientY,
+    time: Date.now(),
+  };
+}, []);
+
+  const toggleMute = (e) => {
+  e.stopPropagation();
+  setIsMuted((prev) => !prev);
+};
+
+  // Interaction handlers
   const handleLike = async () => {
     if (!isSignedIn || !user?.id) {
       alert("Please sign in to like posts");
@@ -1680,26 +1913,22 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
     const previousLikes = likes;
     const previousLiked = isLiked;
 
-    // Optimistic update
     setIsLiked(newLikedState);
     setLikes((prev) => (newLikedState ? prev + 1 : Math.max(0, prev - 1)));
 
-    if (newLikedState) {
+    if (newLikedState && !showLikeAnimation) {
       setShowLikeAnimation(true);
-      setTimeout(() => setShowLikeAnimation(false), 600);
+      setTimeout(() => setShowLikeAnimation(false), 800);
     }
 
     setIsInteracting(true);
 
     try {
-      const vendorId = getVendorId();
-      const postId = post._id;
-
       const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId,
+          postId: currentPost._id,
           action: "like",
           userId: user.id,
           value: newLikedState,
@@ -1709,22 +1938,66 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
       const data = await res.json();
 
       if (!data.success) {
-        // Revert on failure
         setIsLiked(previousLiked);
         setLikes(previousLikes);
-        console.error("Like failed:", data.error);
       } else {
         setLikes(data.data.likesCount);
       }
     } catch (error) {
-      // Revert on error
       setIsLiked(previousLiked);
       setLikes(previousLikes);
-      console.error("Like error:", error);
     } finally {
       setIsInteracting(false);
     }
   };
+
+  // Handle double tap - like (like ReelsViewer)
+const handlePointerUp = useCallback(
+  (e) => {
+    // Don't handle if on a button
+    if (e.target.closest("button")) return;
+
+    const start = pointerStartRef.current;
+    const dx = Math.abs(e.clientX - start.x);
+    const dy = Math.abs(e.clientY - start.y);
+    const dt = Date.now() - start.time;
+
+    // Only register as tap if minimal movement and quick
+    if (dx > 15 || dy > 15 || dt > 500) return;
+
+    // Clear any pending single tap
+    if (tapTimeoutRef.current) {
+      // Double tap detected
+      clearTimeout(tapTimeoutRef.current);
+      tapTimeoutRef.current = null;
+
+      // Like animation
+      if (!isLiked) {
+        handleLike();
+      }
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 800);
+    } else {
+      // Wait to see if it's a double tap
+      tapTimeoutRef.current = setTimeout(() => {
+        tapTimeoutRef.current = null;
+        // Single tap - toggle play/pause for videos
+        if (isVideo) {
+          togglePlayPause();
+        }
+      }, 250);
+    }
+  },
+  [isVideo, isLiked, handleLike, togglePlayPause],
+);
+
+useEffect(() => {
+  return () => {
+    if (tapTimeoutRef.current) {
+      clearTimeout(tapTimeoutRef.current);
+    }
+  };
+}, []);
 
   const handleSave = async () => {
     if (!isSignedIn || !user?.id) {
@@ -1737,20 +2010,15 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
     const newSavedState = !isSaved;
     const previousSaved = isSaved;
 
-    // Optimistic update
     setIsSaved(newSavedState);
-
     setIsInteracting(true);
 
     try {
-      const vendorId = getVendorId();
-      const postId = post._id;
-
       const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId,
+          postId: currentPost._id,
           action: "save",
           userId: user.id,
           value: newSavedState,
@@ -1761,295 +2029,99 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
 
       if (!data.success) {
         setIsSaved(previousSaved);
-        console.error("Save failed:", data.error);
       }
     } catch (error) {
       setIsSaved(previousSaved);
-      console.error("Save error:", error);
     } finally {
       setIsInteracting(false);
     }
   };
 
-  // Wrapper to handle comment submission from Drawer
   const handleAddComment = async (text, clearInputFn) => {
     if (!isSignedIn || !user?.id) {
       alert("Please sign in to comment");
       return;
     }
 
-    // Optimistic Update
     const tempId = Date.now();
     const tempComment = {
       _id: tempId,
       userId: user.id,
       comment: text,
       createdAt: new Date().toISOString(),
-      rating: 5, // Default for comments
+      rating: 5,
     };
 
     setReviews((prev) => [...prev, tempComment]);
-    clearInputFn(""); // Clear drawer input
+    clearInputFn("");
     setReviewSubmitting(true);
 
     try {
-      const vendorId = getVendorId();
-      const postId = post._id;
-
       const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId,
+          postId: currentPost._id,
           action: "addReview",
           userId: user.id,
-          reviewData: { rating: 5, comment: text }, // Treating simple comments as 5-star reviews or adjust backend
+          reviewData: { rating: 5, comment: text },
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        // Replace temp comment with real one
         setReviews((prev) => prev.map((r) => (r._id === tempId ? data.data.review : r)));
       } else {
-        // Revert
         setReviews((prev) => prev.filter((r) => r._id !== tempId));
-        alert("Failed to post comment");
       }
     } catch (error) {
       setReviews((prev) => prev.filter((r) => r._id !== tempId));
-      console.error(error);
     } finally {
       setReviewSubmitting(false);
     }
   };
 
-  const handleDeleteCommentId = async (reviewId) => {
+  const handleDeleteComment = async (reviewId) => {
     if (!confirm("Delete this comment?")) return;
 
     setReviews((prev) => prev.filter((r) => (r._id || r.id) !== reviewId));
 
     try {
-      const vendorId = getVendorId();
-      const postId = post._id;
       await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, action: "deleteReview", userId: user.id, reviewId }),
+        body: JSON.stringify({
+          postId: currentPost._id,
+          action: "deleteReview",
+          userId: user.id,
+          reviewId,
+        }),
       });
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleSubmitReview = async () => {
-    if (!isSignedIn || !user?.id) {
-      alert("Please sign in to review");
-      return;
-    }
-
-    if (reviewSubmitting) return;
-
-    setReviewSubmitting(true);
-
-    try {
-      const vendorId = getVendorId();
-      const postId = post._id;
-
-      const action = editingReview ? "editReview" : "addReview";
-
-      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId,
-          action,
-          userId: user.id,
-          reviewData: {
-            rating: reviewRating,
-            comment: reviewComment,
-          },
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        if (editingReview) {
-          setUserReview(data.data.review);
-          setReviews((prev) => prev.map((r) => (r.userId?.toString() === user.id ? data.data.review : r)));
-        } else {
-          setUserReview(data.data.review);
-          setReviews((prev) => [...prev, data.data.review]);
-        }
-        setShowReviewModal(false);
-        setReviewComment("");
-        setReviewRating(5);
-        setEditingReview(false);
-      } else {
-        alert(data.error || "Failed to submit review");
-      }
-    } catch (error) {
-      console.error("Review submit error:", error);
-      alert("Failed to submit review");
-    } finally {
-      setReviewSubmitting(false);
-    }
-  };
-
-  const handleDeleteReview = async () => {
-    if (!isSignedIn || !user?.id || !userReview) return;
-
-    if (!confirm("Are you sure you want to delete your review?")) return;
-
-    try {
-      const vendorId = getVendorId();
-      const postId = post._id;
-
-      const res = await fetch(`/api/vendor/${vendorId}/profile/posts/interactions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId,
-          action: "deleteReview",
-          userId: user.id,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setUserReview(null);
-        setReviews((prev) => prev.filter((r) => r.userId?.toString() !== user.id));
-      } else {
-        alert(data.error || "Failed to delete review");
-      }
-    } catch (error) {
-      console.error("Delete review error:", error);
-      alert("Failed to delete review");
-    }
-  };
-
-  const openEditReview = () => {
-    if (userReview) {
-      setReviewRating(userReview.rating);
-      setReviewComment(userReview.comment || "");
-      setEditingReview(true);
-      setShowReviewModal(true);
-    }
-  };
-
-  const handleComment = () => {
-    if (comment.trim()) {
-      setComments([...comments, { id: Date.now(), text: comment, name: "You" }]);
-      setComment("");
-    }
-  };
-
-  const handleDoubleTap = () => {
-    if (!isLiked) {
-      handleLike();
-    }
-  };
-
-  const handleVideoTap = () => {
-    if (!videoRef.current || isBuffering || hasError) return;
-
-    setShowControls(true);
-
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      videoRef.current.play().catch(() => setIsPlaying(false));
-      setIsPlaying(true);
-    }
-  };
-
-  const handleRetryVideo = () => {
-    if (videoRef.current) {
-      setHasError(false);
-      setIsBuffering(true);
-      videoRef.current.load();
-      videoRef.current.play().catch(() => setIsPlaying(false));
-    }
-  };
-
-  const handleProgressClick = (e) => {
-    if (!videoRef.current || !duration) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percentage = clickX / rect.width;
-    const newTime = percentage * duration;
-
-    videoRef.current.currentTime = newTime;
-    setProgress(percentage * 100);
-  };
-
-  const toggleMute = (e) => {
-    e.stopPropagation();
-    if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(!isMuted);
-    }
-  };
-
   const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleDelete = () => {
-    onDelete?.();
-    onClose();
-  };
-
-  const handleEditCaption = (newCaption) => {
-    onEdit?.(post._id, newCaption);
-  };
-
-  const handleArchivePost = () => {
-    onArchive?.(post._id);
-  };
-
-  const InteractionsSkeleton = () => (
-    <div className="p-4 space-y-4 animate-pulse">
-      {/* Action Buttons Skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <div className="w-7 h-7 bg-white/20 rounded-full" />
-          <div className="w-7 h-7 bg-white/20 rounded-full" />
-          <div className="w-7 h-7 bg-white/20 rounded-full" />
+  // Loading skeleton
+  const ActionsSkeleton = () => (
+    <div className="flex flex-col items-center gap-5 animate-pulse">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex flex-col items-center gap-1">
+          <div className="w-11 h-11 rounded-full bg-white/20" />
+          <div className="w-6 h-2.5 bg-white/20 rounded" />
         </div>
-        <div className="w-7 h-7 bg-white/20 rounded-full" />
-      </div>
-
-      {/* Likes Skeleton */}
-      <div className="h-4 w-20 bg-white/20 rounded" />
-
-      {/* Caption Skeleton */}
-      <div className="space-y-2">
-        <div className="h-4 w-3/4 bg-white/20 rounded" />
-        <div className="h-4 w-1/2 bg-white/20 rounded" />
-      </div>
-
-      {/* Reviews Section Skeleton */}
-      <div className="border-t border-white/10 pt-4 mt-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="h-4 w-28 bg-white/20 rounded" />
-          <div className="h-8 w-24 bg-white/20 rounded-full" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-16 bg-white/10 rounded-xl" />
-          <div className="h-10 bg-white/10 rounded-xl" />
-        </div>
-      </div>
+      ))}
     </div>
   );
 
-  if (!post) return null;
+  if (!currentPost) return null;
 
   return (
     <>
@@ -2057,364 +2129,465 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-black flex flex-col"
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-[100] bg-black overflow-hidden"
       >
-        <motion.div className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-xl px-4 py-3 flex items-center justify-between border-b border-white/10">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={onClose} className="p-1">
-              <ArrowLeft size={24} className="text-white" />
-            </motion.button>
-            <span className="text-white font-bold">Post</span>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowOptionsDrawer(true)}>
-              <MoreVertical size={24} className="text-white" />
-            </motion.button>
+        {/* Seekable Progress Bar at Top */}
+        <div
+          ref={progressBarRef}
+          className="absolute top-0 left-0 right-0 z-40 h-1 bg-white/20 cursor-pointer group"
+          onMouseDown={handleProgressSeekStart}
+          onMouseMove={isSeeking ? handleProgressSeek : undefined}
+          onMouseUp={handleProgressSeekEnd}
+          onMouseLeave={handleProgressSeekEnd}
+          onTouchStart={handleProgressSeekStart}
+          onTouchMove={handleProgressSeek}
+          onTouchEnd={handleProgressSeekEnd}
+        >
+          {/* Progress fill */}
+          <motion.div
+            className="h-full bg-white"
+            style={{ width: `${progress}%` }}
+            transition={{ duration: isSeeking ? 0 : 0.1 }}
+          />
+
+          {/* Seek handle */}
+          <motion.div
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ left: `calc(${progress}% - 6px)` }}
+            animate={{ scale: isSeeking ? 1.5 : 1 }}
+          />
+
+          {/* Expanded touch area */}
+          <div className="absolute -top-2 -bottom-2 left-0 right-0" />
+
+          {/* Seek preview tooltip */}
+          <AnimatePresence>
+            {seekPreview && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-4 bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-white text-xs font-mono"
+                style={{ left: `${progress}%`, transform: "translateX(-50%)" }}
+              >
+                {seekPreview}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Time Display */}
+        {isVideo && duration > 0 && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
+            <div className="bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+              <span className="text-white text-xs font-mono">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="absolute top-6 left-0 right-0 z-30 px-4 py-3 flex items-center justify-between">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className="w-10 h-10 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10"
+          >
+            <ArrowLeft size={22} className="text-white" />
+          </motion.button>
+
+          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10">
+            <span className="text-white font-semibold text-sm">{vendorName}</span>
+            <span className="text-white/50 text-xs">•</span>
+            <span className="text-white/70 text-xs">Works</span>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-contain">
-            {/* Vendor Info */}
-            <div className="px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/20">
-                <SmartMedia
-                  src={vendorImage}
-                  type="image"
-                  className="w-full h-full object-cover"
-                  loaderImage="/GlowLoadingGif.gif"
-                />
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-bold text-sm">{vendorName}</p>
-                <p className="text-white/50 text-xs">{post.date}</p>
-              </div>
-            </div>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowOptionsDrawer(true)}
+            className="w-10 h-10 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10"
+          >
+            <MoreVertical size={22} className="text-white" />
+          </motion.button>
+        </div>
 
-            {/* Media Container */}
-            <div
-              className={`relative bg-black w-full ${isVideo ? "min-h-[300px] max-h-[70vh]" : "aspect-square"}`}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        {/* Main Content Area with Swipe */}
+<motion.div
+  ref={containerRef}
+  drag={posts.length > 1 ? "y" : false}
+  dragConstraints={{ top: 0, bottom: 0 }}
+  dragElastic={0.15}
+  onDragStart={handleDragStart}
+  onDrag={handleDrag}
+  onDragEnd={handleDragEnd}
+  className="absolute inset-0 touch-pan-y"
+  style={{ cursor: isDragging ? "grabbing" : posts.length > 1 ? "grab" : "default" }}
+>
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
+            <motion.div
+              key={currentPost._id}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="absolute inset-0"
             >
-              {isVideo ? (
-                <div
-                  className="relative w-full h-full flex items-center justify-center"
-                  onClick={handleVideoTap}
-                  onDoubleClick={handleDoubleTap}
-                >
+              {/* Blurred Background */}
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                <motion.img
+                  src={currentPost.thumbnailUrl || currentPost.mediaUrl}
+                  alt=""
+                  className="w-full h-full object-cover blur-3xl scale-150"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.4 }}
+                  transition={{ duration: 0.3 }}
+                />
+                <div className="absolute inset-0 bg-black/30" />
+              </div>
+
+              {/* Media Content */}
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                {isVideo ? (
                   <video
                     ref={videoRef}
-                    src={post.mediaUrl}
-                    {...(typeof poster === "string" && poster.trim() ? { poster } : {})}
-                    className="w-full h-full object-contain"
-                    playsInline
+                    key={currentPost._id}
+                    src={currentPost.mediaUrl}
+                    poster={currentPost.thumbnailUrl}
+                    className="w-full h-full object-contain pointer-events-none"
                     loop
                     muted={isMuted}
+                    playsInline
                     autoPlay
                     preload="auto"
                   />
-
-                  {/* Buffering Indicator - ADD THIS */}
-                  {isBuffering && !hasError && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                    </div>
-                  )}
-
-                  {/* Error State */}
-                  {hasError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
-                      <div className="text-white text-center">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
-                          <X size={32} className="text-red-400" />
-                        </div>
-                        <p className="text-lg font-semibold">Video unavailable</p>
-                        <p className="text-sm text-white/60 mt-2">Unable to load this video</p>
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={handleRetryVideo}
-                          className="mt-4 px-6 py-2 bg-white/20 rounded-full text-white text-sm font-semibold"
-                        >
-                          Retry
-                        </motion.button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Play/Pause Indicator */}
-                  <AnimatePresence>
-                    {showControls && !isBuffering && !hasError && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.5 }}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                      >
-                        <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20">
-                          {isPlaying ? (
-                            <Pause size={40} className="text-white" />
-                          ) : (
-                            <Play size={40} className="text-white fill-white ml-1" />
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Progress Bar */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                    <div className="flex items-center justify-between text-white/70 text-xs mb-2 px-1">
-                      <span>{formatTime((progress / 100) * duration)}</span>
-                      <span>{formatTime(duration)}</span>
-                    </div>
-                    <div
-                      className="relative h-1 bg-white/30 rounded-full cursor-pointer group"
-                      onClick={handleProgressClick}
-                    >
-                      <motion.div
-                        className="absolute top-0 left-0 h-full bg-white rounded-full"
-                        style={{ width: `${progress}%` }}
-                      />
-                      <motion.div
-                        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ left: `calc(${progress}% - 6px)` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Mute Button */}
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={toggleMute}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20"
-                  >
-                    {isMuted ? (
-                      <VolumeX size={18} className="text-white" />
-                    ) : (
-                      <Volume2 size={18} className="text-white" />
-                    )}
-                  </motion.button>
-
-                  {/* Like Animation */}
-                  <AnimatePresence>
-                    {showLikeAnimation && (
-                      <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                      >
-                        <Heart size={100} className="text-white fill-white drop-shadow-2xl" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="relative w-full h-full" onDoubleClick={handleDoubleTap}>
+                ) : (
                   <SmartMedia
-                    src={post.mediaUrl}
+                    src={currentPost.mediaUrl}
                     type="image"
                     className="w-full h-full object-contain"
                     loaderImage="/GlowLoadingGif.gif"
                   />
-                  <AnimatePresence>
-                    {showLikeAnimation && (
-                      <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                      >
-                        <Heart size={100} className="text-white fill-white drop-shadow-2xl" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Actions & Comments */}
+              {/* Gradient Overlays */}
+              <div className="absolute inset-0 pointer-events-none z-20">
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
-            {isLoadingInteractions ? (
-              <InteractionsSkeleton />
-            ) : (
-              <div className="p-4 space-y-4">
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <motion.button whileTap={{ scale: 0.8 }} onClick={handleLike} disabled={isInteracting}>
-                      <Heart
-                        size={28}
-                        className={`transition-colors ${isLiked ? "text-red-500 fill-red-500" : "text-white"}`}
-                      />
-                    </motion.button>
-                    <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowCommentsDrawer(true)}>
-                      <MessageCircle size={28} className="text-white" />
-                    </motion.button>
-                    <motion.button whileTap={{ scale: 0.8 }} onClick={() => setShowShareModal(true)}>
-                      <Send size={28} className="text-white" />
-                    </motion.button>
+          {/* ADD THIS - Tap Detection Layer */}
+          <div
+            className="absolute inset-0 z-[21]"
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+          />
+
+          {/* Buffering Indicator */}
+          <AnimatePresence>
+            {isBuffering && !hasError && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+              >
+                <div className="w-14 h-14 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Error State */}
+          <AnimatePresence>
+            {hasError && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30"
+              >
+                <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <X size={32} className="text-red-400" />
                   </div>
-                  <motion.button whileTap={{ scale: 0.8 }} onClick={handleSave} disabled={isInteracting}>
-                    {isSaved ? (
-                      <BookmarkCheck size={28} className="text-white fill-white" />
-                    ) : (
-                      <Bookmark size={28} className="text-white" />
-                    )}
-                  </motion.button>
+                  <p className="text-white text-lg font-semibold">Content unavailable</p>
+                  <p className="text-white/60 text-sm mt-1">Swipe for more</p>
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* Likes Count */}
-                <motion.p animate={{ scale: isLiked ? [1, 1.1, 1] : 1 }} className="text-white font-bold text-sm">
-                  {likes.toLocaleString()} likes
-                </motion.p>
-
-                {/* Caption */}
-                <div className="space-y-2">
-                  <p className="text-white text-sm leading-relaxed">
-                    <span className="font-bold">{vendorName}</span> {post.caption || post.description}
-                  </p>
-                  {post.location && (
-                    <p className="text-blue-400 text-xs flex items-center gap-1">
-                      <MapPin size={12} />
-                      {post.location}
-                    </p>
+          {/* Play/Pause Indicator */}
+          <AnimatePresence>
+            {showPlayPauseIndicator && isVideo && !isBuffering && !hasError && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+              >
+                <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/20">
+                  {isPlaying ? (
+                    <Pause size={36} className="text-white" />
+                  ) : (
+                    <Play size={36} className="text-white fill-white ml-1" />
                   )}
                 </div>
-
-                {/* Reviews Section */}
-                <div className="border-t border-white/10 pt-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-white font-bold text-sm">Comments ({reviews.length})</h4>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowCommentsDrawer(true)}
-                      className="px-3 py-1.5 bg-white/10 rounded-full text-white text-xs font-semibold"
-                    >
-                      Add Comment
-                    </motion.button>
-                  </div>
-
-                  {/* Comments Preview Section */}
-                  <div className="pt-2 mb-1">
-                    {reviews.length > 0 && (
-                      <motion.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowCommentsDrawer(true)}
-                        className="text-gray-400 text-sm mb-2 font-medium"
-                      >
-                        View all {reviews.length} comments
-                      </motion.button>
-                    )}
-
-                    {/* Top 3 Comments Preview */}
-                    <div className="mt-2">
-                      {reviews.length === 0 ? (
-                        <div className="py-8 flex flex-col items-center justify-center text-center border-t border-white/5 mt-2">
-                          <p className="text-white/30 text-sm italic mb-2">No comments yet</p>
-                          <button
-                            onClick={() => setShowCommentsDrawer(true)}
-                            className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-                          >
-                            Be the first to comment
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {reviews.slice(0, 3).map((review, idx) => (
-                            <CommentItem
-                              key={review._id || idx}
-                              review={review}
-                              currentUserId={user?.id}
-                              isPreview={true} // Minimal style for preview
-                              onDelete={() => {}} // Disable delete in preview
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Add Comment Prompt (Fake Input) */}
-                    <div className="fixed bottom-0 left-0 right-0 flex items-center gap-3 p-4 border-t border-white/10 bg-gray-900">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex-shrink-0" />
-                      <button
-                        onClick={() => setShowCommentsDrawer(true)}
-                        className="text-gray-400 text-xs text-left flex-1"
-                      >
-                        Add a comment...
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </motion.div>
             )}
-          </div>
-        </motion.div>
-      </motion.div>
+          </AnimatePresence>
 
-      {/* Review Modal */}
-      <AnimatePresence>
-        {showReviewModal && (
+          {/* Paused State Indicator (persistent) */}
+          <AnimatePresence>
+            {!isPlaying && isVideo && !isBuffering && !hasError && !showPlayPauseIndicator && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+              >
+                <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                  <Play size={36} className="text-white fill-white ml-1" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Like Animation */}
+          <AnimatePresence>
+            {showLikeAnimation && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.5, opacity: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 20,
+                  exit: { duration: 0.3 },
+                }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
+              >
+                <Heart size={100} className="text-white fill-white drop-shadow-2xl" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Drag Indicator Overlays */}
+          {isDragging && posts.length > 1 && (
+            <>
+              {dragOffset < -20 && currentIndex < posts.length - 1 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: Math.min(1, Math.abs(dragOffset) / 100) }}
+                  className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30"
+                >
+                  <ChevronDown size={32} className="text-white animate-bounce" />
+                </motion.div>
+              )}
+              {dragOffset > 20 && currentIndex > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: Math.min(1, Math.abs(dragOffset) / 100) }}
+                  className="absolute top-24 left-1/2 -translate-x-1/2 z-30"
+                >
+                  <ChevronUp size={32} className="text-white animate-bounce" />
+                </motion.div>
+              )}
+            </>
+          )}
+        </motion.div>
+
+        {/* Right Side Actions */}
+        <div className="absolute right-3 bottom-36 flex flex-col items-center gap-4 z-30">
+          {isLoadingInteractions ? (
+            <ActionsSkeleton />
+          ) : (
+            <>
+              {/* Like */}
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLike();
+                }}
+                className="flex flex-col items-center gap-0.5"
+                disabled={isInteracting}
+              >
+                <motion.div
+                  animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                  className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/10"
+                >
+                  <Heart size={24} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />
+                </motion.div>
+                <span className="text-white text-[10px] font-semibold">{likes.toLocaleString()}</span>
+              </motion.button>
+
+              {/* Comments */}
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCommentsDrawer(true);
+                }}
+                className="flex flex-col items-center gap-0.5"
+              >
+                <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/10">
+                  <MessageCircle size={24} className="text-white" />
+                </div>
+                <span className="text-white text-[10px] font-semibold">{reviews.length}</span>
+              </motion.button>
+
+              {/* Share */}
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowShareModal(true);
+                }}
+                className="flex flex-col items-center gap-0.5"
+              >
+                <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/10">
+                  <Send size={22} className="text-white" />
+                </div>
+                <span className="text-white text-[10px] font-semibold">Share</span>
+              </motion.button>
+
+              {/* Save */}
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSave();
+                }}
+                className="flex flex-col items-center gap-0.5"
+                disabled={isInteracting}
+              >
+                <motion.div
+                  animate={isSaved ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                  className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/10"
+                >
+                  {isSaved ? (
+                    <BookmarkCheck size={22} className="text-white fill-white" />
+                  ) : (
+                    <Bookmark size={22} className="text-white" />
+                  )}
+                </motion.div>
+                <span className="text-white text-[10px] font-semibold">Save</span>
+              </motion.button>
+
+              {/* Mute/Unmute */}
+              {isVideo && (
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={toggleMute}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/10">
+                    {isMuted ? (
+                      <VolumeX size={22} className="text-white" />
+                    ) : (
+                      <Volume2 size={22} className="text-white" />
+                    )}
+                  </div>
+                </motion.button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Bottom Content Info */}
+        <div className="absolute left-4 right-16 bottom-8 z-30 space-y-2.5">
+          {/* Vendor Info */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/30">
+              <SmartMedia
+                src={vendorImage}
+                type="image"
+                className="w-full h-full object-cover"
+                loaderImage="/GlowLoadingGif.gif"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-white font-bold text-sm">{vendorName}</span>
+              {currentPost.date && <p className="text-white/50 text-xs">{currentPost.date}</p>}
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="px-3 py-1.5 bg-white/20 backdrop-blur-xl rounded-lg border border-white/20"
+            >
+              <span className="text-white text-xs font-semibold">Follow</span>
+            </motion.button>
+          </div>
+
+          {/* Caption */}
+          {(currentPost.caption || currentPost.description) && (
+            <p className="text-white text-sm line-clamp-2 leading-relaxed">
+              {currentPost.caption || currentPost.description}
+            </p>
+          )}
+
+          {/* Location & Tags */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {currentPost.location && (
+              <span className="text-blue-400 text-xs flex items-center gap-1 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                <MapPin size={10} />
+                {currentPost.location}
+              </span>
+            )}
+            {currentPost.tags?.slice(0, 2).map((tag, idx) => (
+              <span key={idx} className="px-2 py-0.5 bg-white/10 rounded-full text-white/80 text-xs">
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Audio info for videos */}
+          {isVideo && (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-white/20 flex items-center justify-center">
+                <span className="text-[8px]">🎵</span>
+              </div>
+              <p className="text-white/70 text-xs">Original Audio</p>
+            </div>
+          )}
+        </div>
+
+        {/* Post Counter */}
+        {posts.length > 1 && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-30">
+            <div className="bg-black/40 backdrop-blur-sm px-2 py-3 rounded-full">
+              <p
+                className="text-white/70 text-[10px] font-mono"
+                style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+              >
+                {currentIndex + 1} / {posts.length}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Hint */}
+        {posts.length > 1 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4"
-            onClick={() => setShowReviewModal(false)}
+            transition={{ delay: 1 }}
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-gray-900 rounded-2xl p-6 w-full max-w-sm"
-            >
-              <h3 className="text-white font-bold text-lg mb-4">{editingReview ? "Edit Review" : "Add Review"}</h3>
-
-              {/* Rating Stars */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <motion.button key={star} whileTap={{ scale: 0.8 }} onClick={() => setReviewRating(star)}>
-                    <Star
-                      size={32}
-                      className={star <= reviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}
-                    />
-                  </motion.button>
-                ))}
-              </div>
-
-              {/* Comment */}
-              <textarea
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                placeholder="Write your Comment (optional)"
-                className="w-full bg-gray-800 text-white rounded-xl p-3 text-sm outline-none resize-none h-24 mb-4"
-              />
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setShowReviewModal(false);
-                    setEditingReview(false);
-                    setReviewComment("");
-                    setReviewRating(5);
-                  }}
-                  className="flex-1 py-3 bg-gray-700 rounded-xl text-white font-semibold"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSubmitReview}
-                  disabled={reviewSubmitting}
-                  className="flex-1 py-3 bg-blue-600 rounded-xl text-white font-semibold disabled:opacity-50"
-                >
-                  {reviewSubmitting ? "Submitting..." : editingReview ? "Update" : "Submit"}
-                </motion.button>
-              </div>
-            </motion.div>
+            <p className="text-white/30 text-[10px]">Swipe up/down • Double tap to like</p>
           </motion.div>
         )}
-      </AnimatePresence>
+      </motion.div>
 
       {/* Options Drawer */}
       <AnimatePresence>
@@ -2422,9 +2595,9 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
           <PostOptionsDrawer
             isOpen={showOptionsDrawer}
             onClose={() => setShowOptionsDrawer(false)}
-            post={post}
+            post={currentPost}
             onDelete={() => {
-              onDelete();
+              onDelete?.();
               setShowOptionsDrawer(false);
             }}
             onShare={() => {
@@ -2432,10 +2605,10 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
               setShowOptionsDrawer(false);
             }}
             onEdit={async (newCaption) => {
-              await onEdit(newCaption);
+              await onEdit?.(newCaption);
             }}
             onArchive={() => {
-              onArchive();
+              onArchive?.();
               setShowOptionsDrawer(false);
             }}
           />
@@ -2448,12 +2621,14 @@ const PostDetailModal = ({ post, onClose, vendorName, vendorImage, onDelete, onE
           <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendorName} />
         )}
       </AnimatePresence>
+
+      {/* Comments Drawer */}
       <CommentsDrawer
         isOpen={showCommentsDrawer}
         onClose={() => setShowCommentsDrawer(false)}
         reviews={reviews}
         onAddComment={handleAddComment}
-        onDeleteComment={handleDeleteCommentId}
+        onDeleteComment={handleDeleteComment}
         submitting={reviewSubmitting}
         currentUserId={user?.id}
       />
@@ -2465,7 +2640,7 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
   const { user, isSignedIn } = useUser();
 
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [likedReels, setLikedReels] = useState(new Set());
   const [savedReels, setSavedReels] = useState(new Set());
@@ -7596,6 +7771,10 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [imageZoom, setImageZoom] = useState(1);
   const [showHeaderTabs, setShowHeaderTabs] = useState(false);
 
+    const [postsInteractionsData, setPostsInteractionsData] = useState({});
+  const [reelsInteractionsData, setReelsInteractionsData] = useState({});
+  const [isLoadingAllInteractions, setIsLoadingAllInteractions] = useState(false);
+
   const longPressTimerRef = useRef(null);
   const dragStartX = useRef(0);
   const isDragging = useRef(false);
@@ -7608,7 +7787,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
   const highlightsContainerRef = useRef(null);
   const urlParamsProcessedRef = useRef(false);
-  const initialFetchDoneRef = useRef(true);
+  const initialFetchDoneRef = useRef(false);
   const onboardingHandledRef = useRef(false);
   const stickyTabsRef = useRef(null);
 
@@ -7642,6 +7821,93 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       }
     };
   }, []);
+
+  // NEW: Preload all posts and reels interactions
+const preloadAllInteractions = useCallback(async () => {
+  if (!id || profileLoading) return;
+  
+  setIsLoadingAllInteractions(true);
+  
+  try {
+    // Fetch all posts interactions in parallel
+    if (posts.length > 0) {
+      const postsData = {};
+      const postsPromises = posts.map(async (post) => {
+        try {
+          const params = new URLSearchParams({
+            postId: post._id,
+            ...(user?.id && { userId: user.id }),
+          });
+          
+          const res = await fetch(`/api/vendor/${id}/profile/posts/interactions?${params}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            postsData[post._id] = {
+              likesCount: data.data.likesCount || 0,
+              isLiked: data.data.isLiked || false,
+              isSaved: data.data.isSaved || false,
+              reviews: data.data.reviews || [],
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to fetch interactions for post ${post._id}:`, error);
+          // Set default values on error
+          postsData[post._id] = {
+            likesCount: 0,
+            isLiked: false,
+            isSaved: false,
+            reviews: [],
+          };
+        }
+      });
+      
+      await Promise.all(postsPromises);
+      setPostsInteractionsData(postsData);
+    }
+    
+    // Fetch all reels interactions in parallel
+    if (reels.length > 0) {
+      const reelsData = {};
+      const reelsPromises = reels.map(async (reel) => {
+        try {
+          const params = new URLSearchParams({
+            reelId: reel._id,
+            ...(user?.id && { userId: user.id }),
+          });
+          
+          const res = await fetch(`/api/vendor/${id}/profile/reels/interactions?${params}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            reelsData[reel._id] = {
+              likesCount: data.data.likesCount || 0,
+              views: data.data.views || 0,
+              isLiked: data.data.isLiked || false,
+              isSaved: data.data.isSaved || false,
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to fetch interactions for reel ${reel._id}:`, error);
+          // Set default values on error
+          reelsData[reel._id] = {
+            likesCount: 0,
+            views: 0,
+            isLiked: false,
+            isSaved: false,
+          };
+        }
+      });
+      
+      await Promise.all(reelsPromises);
+      setReelsInteractionsData(reelsData);
+    }
+  } catch (error) {
+    console.error("Failed to preload interactions:", error);
+  } finally {
+    setIsLoadingAllInteractions(false);
+  }
+}, [posts, reels, user?.id, id, profileLoading]);
 
   const getCategoryColor = useCallback((category) => {
     const colorMap = {
@@ -7741,25 +8007,25 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     setShowVerifyModal(true);
   };
 
+  const hasScrolledRef = useRef(false);
+
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (!hasScrolledRef.current) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      hasScrolledRef.current = true;
+    }
   }, []);
 
   // Only update "My Interaction" status (Liked/Trusted) when user loads
   useEffect(() => {
     if (!isUserLoaded) return;
 
-    // Batch state updates to prevent multiple re-renders
-    const updates = () => {
-      if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
-        setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
-        setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
-      }
-      setUserStateReady(true);
-    };
-
-    // Use requestAnimationFrame to batch updates
-    requestAnimationFrame(updates);
+    // Direct state updates - no deferral needed
+    if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
+      setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
+      setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
+    }
+    setUserStateReady(true);
   }, [isUserLoaded, isSignedIn, user?.id, profile]);
 
   useEffect(() => {
@@ -7828,9 +8094,15 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     window.history.replaceState({}, "", url.toString());
   }, [activeTab, activeDetailsTab, selectedPost, selectedReelIndex]);
 
-  // Single useEffect for URL updates with debounce
+  const initialUrlReadRef = useRef(false);
+
   useEffect(() => {
-    // ✅ FIX: Removed the ref check. Updates happen whenever dependencies change.
+    // Skip the first run to avoid updating URL on mount
+    if (!initialUrlReadRef.current) {
+      initialUrlReadRef.current = true;
+      return;
+    }
+
     const timer = setTimeout(updateURLParamsDebounced, 100);
     return () => clearTimeout(timer);
   }, [updateURLParamsDebounced]);
@@ -7888,17 +8160,24 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   }, []);
 
   useEffect(() => {
-    if (onboardingHandledRef.current || profileLoading || !isUserLoaded) return;
+    // Guard conditions
+    if (onboardingHandledRef.current) return;
+    if (profileLoading) return;
+    if (!isUserLoaded) return;
+    if (openOnboardingDrawer) return; // Already open
+    if (!showOnboarding) return; // Onboarding not needed
 
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     const onboardingParam = params?.get("onboarding");
 
-    if (onboardingParam === "true" && showOnboarding && !openOnboardingDrawer) {
+    if (onboardingParam === "true") {
       onboardingHandledRef.current = true;
+      if (!isSignedIn) {
         requireSignIn("Please sign in to proceed");
-        setOpenOnboardingDrawer(true);
+      }
+      setOpenOnboardingDrawer(true);
     }
-  }, [profileLoading, isUserLoaded, isSignedIn, user?.id, showOnboarding, openOnboardingDrawer, requireSignIn]);
+  }, [profileLoading, isUserLoaded, isSignedIn, showOnboarding, openOnboardingDrawer, requireSignIn]);
 
   const showUIConfirmation = useCallback((message, type = "success", icon = Check) => {
     setShowConfirmation({ show: true, message, type, icon });
@@ -7914,6 +8193,9 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
   useEffect(() => {
     if (!posts.length) return;
+
+    // Use ref to track if we've already generated thumbnails for these posts
+    const postIds = posts.map((p) => p._id).join(",");
 
     const generateThumbnails = async () => {
       const videoPosts = posts.filter(
@@ -7950,17 +8232,15 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       );
 
       if (Object.keys(newThumbnails).length > 0) {
-        // Defer state update to next frame to prevent blocking
-        requestAnimationFrame(() => {
-          setVideoThumbnails((prev) => ({ ...prev, ...newThumbnails }));
-        });
+        // Direct update - no requestAnimationFrame needed
+        setVideoThumbnails((prev) => ({ ...prev, ...newThumbnails }));
       }
     };
 
-    // Delay thumbnail generation slightly to not block initial render
-    const timer = setTimeout(generateThumbnails, 300);
+    // Longer delay to ensure initial render is complete
+    const timer = setTimeout(generateThumbnails, 500);
     return () => clearTimeout(timer);
-  }, [posts]);
+  }, [posts, videoThumbnails]);
 
   // Add cleanup for video refs when component unmounts or posts change
   useEffect(() => {
@@ -8002,13 +8282,13 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     };
   }, []);
 
-const handleBack = useCallback(() => {
-  if (window.history.length > 1) {
-    router.back();
-  } else {
-    router.push(`/m/vendor/${category || "all"}/${id}`);
-  }
- }, [router]);
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(`/m/vendor/${category || "all"}/${id}`);
+    }
+  }, [router]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {
@@ -8438,45 +8718,46 @@ const handleBack = useCallback(() => {
     [showUIConfirmation],
   );
 
+  const handleTrustRef = useRef(handleTrust);
+  const handleLikeRef = useRef(handleLike);
+
+  // Keep refs updated
+  useEffect(() => {
+    handleTrustRef.current = handleTrust;
+  }, [handleTrust]);
+
+  useEffect(() => {
+    handleLikeRef.current = handleLike;
+  }, [handleLike]);
+
   const stats = useMemo(
     () => [
       {
         label: "Reviews",
-        value: reviews?.length?.toString(),
+        value: reviews?.length?.toString() || "0",
         action: () => setShowReviewsDrawer(true),
         active: false,
         loading: false,
-        showSkeleton: false, // Reviews have their own loading, no skeleton needed here
+        showSkeleton: false,
       },
       {
         label: "Trust",
         value: trustCount >= 1000 ? `${(trustCount / 1000).toFixed(1)}K` : trustCount?.toString(),
-        action: handleTrust,
+        action: () => handleTrustRef.current?.(),
         active: hasTrusted && isSignedIn,
         loading: interactionsLoading,
-        showSkeleton: profileLoading, // Shows skeleton while profile is loading
+        showSkeleton: profileLoading,
       },
       {
         label: "Likes",
         value: likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount?.toString(),
-        action: handleLike,
+        action: () => handleLikeRef.current?.(),
         active: hasLiked && isSignedIn,
         loading: interactionsLoading,
-        showSkeleton: profileLoading, // Shows skeleton while profile is loading
+        showSkeleton: profileLoading,
       },
     ],
-    [
-      trustCount,
-      hasTrusted,
-      likesCount,
-      hasLiked,
-      handleTrust,
-      handleLike,
-      reviews?.length,
-      interactionsLoading,
-      isSignedIn,
-      profileLoading,
-    ],
+    [trustCount, hasTrusted, likesCount, hasLiked, reviews?.length, interactionsLoading, isSignedIn, profileLoading],
   );
 
   const TAB_CONFIG = useMemo(() => {
@@ -10146,7 +10427,7 @@ const handleBack = useCallback(() => {
             />
           </motion.button>
 
-          {profile.username && (
+          {profile.username && isScrolledHeader && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -11037,7 +11318,7 @@ const handleBack = useCallback(() => {
         </motion.button>
 
         {/* Create Profile Button */}
-       {!profileLoading && (!profile || Object.keys(profile).length === 0) && !openOnboardingDrawer && (
+        {!profileLoading && (!profile || Object.keys(profile).length === 0) && !openOnboardingDrawer && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -11139,6 +11420,8 @@ const handleBack = useCallback(() => {
         {selectedPost && (
           <PostDetailModal
             post={selectedPost}
+            posts={posts}
+            initialIndex={posts.findIndex((p) => p._id === selectedPost._id)}
             onClose={() => setSelectedPost(null)}
             vendorName={vendor?.name}
             vendorImage={
