@@ -10,13 +10,13 @@ const SECTIONS = [
     title: "Quick Links",
     content: (
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <Link href="/m" className="hover:text-[#C33765] transition-colors">
+        <Link href="/" className="hover:text-[#C33765] transition-colors">
           Home
         </Link>
         <Link href="/about" className="hover:text-[#C33765] transition-colors">
           About Us
         </Link>
-        <Link href="/m/vendors/marketplace" className="hover:text-[#C33765] transition-colors">
+        <Link href="/vendors/marketplace" className="hover:text-[#C33765] transition-colors">
           Explore Vendors
         </Link>
         <Link href="/vendor/register" className="hover:text-[#C33765] transition-colors">

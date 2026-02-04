@@ -7,8 +7,10 @@ export default function robots() {
       allow: "/",
       disallow: [
         "/api/",            // Block backend API routes
-        "/m/user/",         // Block user dashboard/private pages
+        "/user/",           // Block user dashboard (removed /m/ prefix to cover rewrite)
+        "/m/user/",         // Explicitly block underlying path just in case
         "/admin/",          // Block admin panels
+        "/m/admin/",        // Block underlying admin path
         "/_next/",          // Block internal Next.js files
       ],
     },

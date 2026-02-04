@@ -404,16 +404,16 @@ const CategoryDrawer = ({ isOpen, onClose, config, categoryName, haptic, current
     haptic("medium");
     // Handle the action based on card type
     if (card.action === "marketplace") {
-      const baseUrl = `/m/vendors/marketplace/${config?.key || "planners"}`;
+      const baseUrl = `/vendors/marketplace/${config?.key || "planners"}`;
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     } else if (card.action === "match") {
       const category = currentCategory?.toLowerCase() === "default" ? "wedding" : currentCategory?.toLowerCase();
-      const url = `/m/events/${category}?filter=${categoryName?.toLowerCase()}`;
+      const url = `/events/${category}?filter=${categoryName?.toLowerCase()}`;
       window.location.href = url;
       console.log("Opening matching flow for:", categoryName);
     } else if (card.action === "random") {
-      const baseUrl = `/m/vendors/marketplace`;
+      const baseUrl = `/vendors/marketplace`;
       const url = card.filter ? `${baseUrl}?filter=${card.filter}` : baseUrl;
       window.location.href = url;
     }
@@ -759,7 +759,7 @@ const CategoryGrid = ({ currentCategory }) => {
       >
         {activeCategories.map((item, index) => (
           <Link
-            href={`/m/vendors/marketplace/${item?.key.toLowerCase()}`}
+            href={`/vendors/marketplace/${item?.key.toLowerCase()}`}
             key={index} // Keys are stable since list doesn't re-sort
             className={`flex flex-col items-center shrink-0 ${
               item.span === 2 ? "row-span-1 col-span-2" : "col-span-1"
@@ -791,7 +791,7 @@ const CategoryGrid = ({ currentCategory }) => {
 
         {/* View All Item */}
         <Link
-          href={`/m/vendors/explore/${currentCategory?.toLowerCase() || "all"}`}
+          href={`/vendors/explore/${currentCategory?.toLowerCase() || "all"}`}
           className="flex flex-col items-center shrink-0 col-span-1"
           onClick={() => haptic("light")}
         >

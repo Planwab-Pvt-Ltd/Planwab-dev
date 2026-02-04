@@ -1733,7 +1733,7 @@ const VendorCard = memo(
         const shareData = {
           title: vendor.name,
           text: `Check out ${vendor.name} - Starting at ₹${fullPrice}`,
-          url: `${window.location.origin}/m/vendor/${vendor.category}/${vendor._id}`,
+          url: `${window.location.origin}/vendor/${vendor.category}/${vendor._id}`,
         };
         if (navigator.share && navigator.canShare?.(shareData)) {
           try {
@@ -1836,7 +1836,7 @@ const VendorCard = memo(
           rating={vendor.rating}
         />
 
-        <Link href={`/m/vendor/${vendor?.category}/${vendor?._id}`} className={`block ${isGrid ? "p-3" : "p-4"}`}>
+        <Link href={`/vendor/${vendor?.category}/${vendor?._id}`} className={`block ${isGrid ? "p-3" : "p-4"}`}>
           <div className="flex justify-between items-center mb-1.5">
             {/* Profile Photo Section - Only in List View and when profile picture exists */}
             {!isGrid &&
@@ -3175,7 +3175,7 @@ const CompareModal = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
                   onClick={() => {
                     haptic("medium");
                     if (vendors[winnerIdx])
-                      window.location.href = `/m/vendor/${vendors[winnerIdx].category}/${vendors[winnerIdx]._id}`;
+                      window.location.href = `/vendor/${vendors[winnerIdx].category}/${vendors[winnerIdx]._id}`;
                   }}
                   className="flex-1 py-3 rounded-xl text-white font-bold text-sm shadow-md flex items-center justify-center gap-1.5"
                   style={{ backgroundColor: colorPrimary }}
@@ -3479,7 +3479,7 @@ export default function MarketplacePageWrapper() {
       if (showFeaturedOnly) params.featured = "true";
 
       const queryString = buildUrlWithParams(params);
-      const base = selectedCategories.length === 0 ? "/m/vendors/marketplace" : window.location.pathname;
+      const base = selectedCategories.length === 0 ? "/vendors/marketplace" : window.location.pathname;
       const newUrl = queryString ? `${base}?${queryString}` : base;
       const currentSearch = window.location.search;
       const newSearch = queryString ? `?${queryString}` : "";
@@ -3549,7 +3549,7 @@ export default function MarketplacePageWrapper() {
         setSelectedSubcategory("");
         setCurrentPage(1);
         if (pageCategory) {
-          router.push("/m/vendors/marketplace");
+          router.push("/vendors/marketplace");
         }
       } else {
         const isCurrentlySelected = selectedCategories.includes(cat);

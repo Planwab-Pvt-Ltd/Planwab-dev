@@ -1346,7 +1346,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, showToast
               )}
             </div>
             <Link
-              href="/m/user/checkout"
+              href="/user/checkout"
               onClick={() => {
                 haptic("medium");
                 onClose();
@@ -2229,7 +2229,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
 
   const handleInviteTeam = useCallback(() => {
     if (navigator.vibrate) navigator.vibrate(10);
-    redirectWithReturn("/m/plan-my-event/event");
+    redirectWithReturn("/plan-my-event/event");
   }, [redirectWithReturn]);
 
   useEffect(() => {

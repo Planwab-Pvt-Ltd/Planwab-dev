@@ -155,7 +155,7 @@ const HeroCarousel = memo(() => {
   const handleCategoryClick = (item) => {
     if (isDragging) return;
     haptic("medium");
-    router.push(`/m/vendors/marketplace/${item?.key}`);
+    router.push(`/vendors/marketplace/${item?.key}`);
   };
 
   // Track scroll position and update current page
@@ -356,7 +356,7 @@ const VendorCard = memo(({ vendor }) => {
   const handleCardClick = () => {
     haptic("light");
     const categorySlug = vendor.category?.toLowerCase().replace(/\s+/g, "-") || "vendor";
-    router.push(`/m/vendor/${categorySlug}/${vendorId}`);
+    router.push(`/vendor/${categorySlug}/${vendorId}`);
   };
 
   const displayPrice = useMemo(() => {
@@ -600,7 +600,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
   };
 
   const viewMoreUrl = useMemo(() => {
-    const baseUrl = "/m/vendors/marketplace";
+    const baseUrl = "/vendors/marketplace";
     const params = new URLSearchParams();
 
     // Determine section type and add appropriate filters
@@ -1195,7 +1195,7 @@ export default function FindAVendorPageWrapper() {
           </div>
 
           <Link
-            href={`/m/vendors/marketplace`}
+            href={`/vendors/marketplace`}
             onClick={() => {
               haptic("light");
             }}

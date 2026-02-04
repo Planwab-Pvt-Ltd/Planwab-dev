@@ -427,7 +427,7 @@ export const VendorOnboardingDrawer = ({ isOpen, onClose, haptic }) => {
                 )}
               </motion.button>
               <Link
-                href={"/m/vendor/register"}
+                href={"/vendor/register"}
                 onClick={() => {
                   haptic?.("success");
                   onClose();
@@ -577,7 +577,7 @@ const AreYouAVendorSection = ({ haptic, setIsDrawerOpen }) => {
 
         {/* Static Banner 2 - High Priority */}
         <div className="mx-1 mt-3 px-2 mb-6">
-          <Link href={`/m/vendors/explore/wedding`}>
+          <Link href={`/vendors/explore/wedding`}>
             <motion.div
               whileTap={{ scale: 0.98 }}
               onClick={() => haptic("medium")}

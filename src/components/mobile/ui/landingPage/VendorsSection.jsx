@@ -470,7 +470,7 @@ export default function VendorsSection() {
         </motion.div>
         <motion.div variants={itemVariants} className="text-center mt-16">
           <MotionLink
-            href="/m/vendors/marketplace"
+            href="/vendors/marketplace"
             className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white px-8 sm:px-10 py-4 rounded-3xl font-bold text-base sm:text-lg flex items-center gap-3 mx-auto hover:shadow-2xl transition-all duration-400 border-2 border-amber-300/50"
             whileHover={{ scale: 1.05, y: -3 }}
             whileTap={{ scale: 0.95 }}

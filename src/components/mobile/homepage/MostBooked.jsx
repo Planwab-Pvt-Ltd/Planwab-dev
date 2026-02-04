@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
+import { useQuery } from "@tanstack/react-query";
 
 const FILTERS = [
   { id: "all", label: "All Vendors", apiQuery: { featured: "true", sortBy: "rating", limit: "8" } },
@@ -58,6 +59,20 @@ function useHapticFeedback() {
   }, []);
 }
 
+const fetchServices = async (filterId) => {
+  const filterConfig = FILTERS.find((f) => f.id === filterId);
+  if (!filterConfig) return [];
+
+  const params = new URLSearchParams(filterConfig.apiQuery);
+  const response = await fetch(`/api/vendor?${params.toString()}`);
+  const data = await response.json();
+
+  if (data.success && data.data) {
+    return data.data;
+  }
+  return [];
+};
+
 const ServiceCardSkeleton = memo(() => (
   <div className="flex-shrink-0 flex items-center gap-4 w-[320px] bg-white border border-gray-100 rounded-xl p-3 h-full relative min-h-[150px] max-h-[150px] shadow-sm snap-center">
     <div className="w-[90px] h-[90px] flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden relative animate-shimmer" />
@@ -86,7 +101,7 @@ const ServiceCard = memo(({ service, themeTextClass, theme }) => {
 
   const inCart = useMemo(
     () => cartItems?.some((item) => (item._id || item.id) === vendorId) || false,
-    [cartItems, vendorId]
+    [cartItems, vendorId],
   );
 
   const handleCart = (e) => {
@@ -137,7 +152,7 @@ const ServiceCard = memo(({ service, themeTextClass, theme }) => {
   const vendorUrl = useMemo(() => {
     if (!service?._id) return "#";
     const category = service?.category?.toLowerCase().replace(/\s+/g, "-") || "vendors";
-    return `/m/vendor/${category}/${service._id}`;
+    return `/vendor/${category}/${service._id}`;
   }, [service?._id, service?.category]);
 
   return (
@@ -167,13 +182,13 @@ const ServiceCard = memo(({ service, themeTextClass, theme }) => {
           <div className="h-4" />
         )}
         <div className="flex items-center space-x-2 mt-1.5">
-          <p className="text-sm font-bold text-gray-900">
+          <span className="text-sm font-bold text-gray-900" suppressHydrationWarning>
             {service?.perDayPrice?.min
               ? `₹${service?.perDayPrice.min}`
               : typeof service?.basePrice === "string" || typeof service?.basePrice === "number"
-              ? service?.basePrice
-              : "Contact"}
-          </p>
+                ? service?.basePrice
+                : "Contact"}
+          </span>
           <span className="w-1 h-1 bg-gray-300 rounded-full" />
           <p className="text-[10px] text-gray-500">Per Event</p>
         </div>
@@ -241,8 +256,6 @@ const MostBooked = ({ initialData }) => {
 
   const filterParam = searchParams.get("filter") || "all";
   const [activeFilterId, setActiveFilterId] = useState(filterParam);
-  const [services, setServices] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -254,48 +267,30 @@ const MostBooked = ({ initialData }) => {
     const filterParam = searchParams.get("filter");
     if (filterParam && FILTERS.some((f) => f.id === filterParam)) {
       setActiveFilterId(filterParam);
-      fetchServicesData(filterParam);
-    }else {
-      setServices(initialData || []);
     }
   }, [searchParams]);
+
+  // ADD REACT QUERY IMPLEMENTATION
+  const { data: services = [], isLoading } = useQuery({
+    queryKey: ["vendors", "most-booked", activeFilterId],
+    queryFn: () => fetchServices(activeFilterId),
+    initialData: activeFilterId === "all" && initialData ? initialData : undefined,
+    staleTime: 1000 * 60 * 5,
+  });
 
   useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const filterParam = params.get("filter") || "all";
-      if (FILTERS.some((f) => f.id === filterParam)) {
-        setActiveFilterId(filterParam);
+      const newFilter = params.get("filter") || "all";
+
+      if (newFilter !== activeFilterId && FILTERS.some((f) => f.id === newFilter)) {
+        setActiveFilterId(newFilter);
       }
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-   const fetchServicesData = async (filterId) => {
-    setIsLoading(true);
-
-    try {
-      const filterConfig = FILTERS.find(f => f.id === filterId);
-      if (!filterConfig) return;
-
-      const params = new URLSearchParams(filterConfig.apiQuery);
-      const response = await fetch(`/api/vendor?${params.toString()}`);
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        setServices(data.data);
-      } else {
-        setServices([]);
-      }
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      setServices([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [activeFilterId]);
 
   const handleFilterClick = useCallback((id) => {
     setActiveFilterId(id);
@@ -307,24 +302,7 @@ const MostBooked = ({ initialData }) => {
     window.history.pushState({ filter: id }, "", newUrl);
 
     if (scrollRef.current) scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
-
-    fetchServicesData(id);
   }, []);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      const newFilter = params.get("filter") || "all";
-      
-      if (newFilter !== activeFilterId && FILTERS.some((f) => f.id === newFilter)) {
-        setActiveFilterId(newFilter);
-        fetchServicesData(newFilter); // Fetch data to match the URL we just went back to
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeFilterId]);
 
   const checkScroll = useCallback(() => {
     if (!scrollRef.current) return;

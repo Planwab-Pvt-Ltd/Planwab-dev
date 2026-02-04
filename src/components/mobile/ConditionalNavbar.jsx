@@ -8,7 +8,7 @@ const MobileNavbar = dynamic(() => import("@/components/mobile/Navbar"), { ssr: 
 export default function ConditionalNavbar() {
   const pathname = usePathname();
 
-  const hiddenPaths = ["/m/user/checkout", "/m/vendor/"];
+  const hiddenPaths = ["/m/user/checkout", "/m/vendor/", "/m/admin/", "/vendor/", '/user/checkout'];
   const shouldHide = hiddenPaths.some((path) => pathname.includes(path));
 
   if (shouldHide) return null;

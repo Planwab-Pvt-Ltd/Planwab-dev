@@ -2442,7 +2442,7 @@ const StepSuccess = ({ category, formData, onPrev, onReset }) => {
         className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
       >
         <Link
-          href={`/m/user/proposals/tracking/${genratedPurposalId}`}
+          href={`/user/proposals/tracking/${genratedPurposalId}`}
           className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
         >
           <BarChart3 size={20} />

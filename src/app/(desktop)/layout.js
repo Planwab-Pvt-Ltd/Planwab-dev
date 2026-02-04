@@ -7,10 +7,8 @@ export const metadata = {
 
 export default function DesktopLayout({ children }) {
   return (
-    <>
-      <main>
-        <ClientWrapper>{children}</ClientWrapper>
-      </main>
-    </>
+    <ClientWrapper>
+      {children}
+    </ClientWrapper>
   );
 }

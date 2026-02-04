@@ -316,7 +316,7 @@ const MainContent = ({ initialPlanners, initialTrending, initialMostBooked }) =>
 
       {/* Static Banner 1 - High Priority */}
       <div className="mx-1 mt-2 px-2">
-        <Link href={`/m/events/${currentCategory}`}>
+        <Link href={`/events/${currentCategory}`}>
           <motion.div
             whileTap={{ scale: 0.98 }}
             onClick={() => haptic("medium")}
@@ -350,7 +350,7 @@ const MainContent = ({ initialPlanners, initialTrending, initialMostBooked }) =>
       <div style={mounted ? { contain: "layout paint" } : {}}>
         {/* Static Banner 2 - High Priority */}
         <div className="mx-1 mt-2 px-2 mb-6 pb-4">
-          <Link href={`/m/events/${currentCategory}`}>
+          <Link href={`/events/${currentCategory}`}>
             <motion.div
               whileTap={{ scale: 0.98 }}
               onClick={() => haptic("medium")}
@@ -370,7 +370,7 @@ const MainContent = ({ initialPlanners, initialTrending, initialMostBooked }) =>
 
         {/* Static Banner 3 - High Priority */}
         <div className="mx-1 mt-2 px-2 mb-6 pb-4">
-          <Link href={`/m/events/${currentCategory}`}>
+          <Link href={`/events/${currentCategory}`}>
             <motion.div
               whileTap={{ scale: 0.98 }}
               onClick={() => haptic("medium")}

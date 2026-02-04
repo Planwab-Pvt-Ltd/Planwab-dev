@@ -115,7 +115,7 @@ const MapComponent = ({ vendors, center }) => {
                   <span className="line-clamp-2">{vendor.address?.street}</span>
                 </p>
                 <Link
-                  href={`/m/vendor/${vendor.category}/${vendor._id}`}
+                  href={`/vendor/${vendor.category}/${vendor._id}`}
                   className="block w-full py-2 bg-blue-600 text-white rounded-lg text-center text-[11px] font-bold hover:bg-blue-700 transition-colors"
                 >
                   View Details

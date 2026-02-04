@@ -160,7 +160,7 @@ const QuickServices = ({ category }) => {
       >
         {QUICK_LINKS.map((item, idx) => (
           <Link
-            href={`/m/vendors/marketplace/${item.key.toLowerCase()}`}
+            href={`/vendors/marketplace/${item.key.toLowerCase()}`}
             key={idx}
             onClick={() => haptic("light")}
             className="flex flex-col items-center gap-[16px] min-w-[90px] cursor-pointer group active:scale-95 transition-transform duration-200"
@@ -184,7 +184,7 @@ const QuickServices = ({ category }) => {
 
         {/* View All Item */}
         <Link
-          href={`/m/vendors/explore/${category?.toLowerCase() || "all"}`}
+          href={`/vendors/explore/${category?.toLowerCase() || "all"}`}
           onClick={() => haptic("light")}
           className="flex flex-col items-center gap-[16px] min-w-[90px] cursor-pointer group active:scale-95 transition-transform duration-200"
         >

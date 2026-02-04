@@ -1541,6 +1541,7 @@ const PostDetailModal = ({
   onEdit,
   onArchive,
   vendorId,
+  allInteractions = {},
 }) => {
   const { user, isSignedIn } = useUser();
 
@@ -1592,7 +1593,8 @@ const PostDetailModal = ({
   const playPauseTimeoutRef = useRef(null);
   const isSeekingRef = useRef(false);
   const pointerStartRef = useRef({ x: 0, y: 0, time: 0 });
-const tapTimeoutRef = useRef(null);
+  const tapTimeoutRef = useRef(null);
+  const wasPlayingRef = useRef(true);
 
   useBodyScrollLock(true);
 
@@ -1610,9 +1612,9 @@ const tapTimeoutRef = useRef(null);
 
   const isVideo = currentPost?.mediaType === "video";
   useEffect(() => {
-  if (videoRef.current) {
-    videoRef.current.muted = isMuted;
-  }
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
   }, [isMuted]);
 
   // Reset states when post changes - instant reset
@@ -1632,6 +1634,20 @@ const tapTimeoutRef = useRef(null);
     const fetchInteractionStatus = async () => {
       if (!currentPost?._id) return;
 
+      // CHECK PRELOADED DATA FIRST
+      const preloadedData = allInteractions[currentPost._id];
+
+      if (preloadedData) {
+        // Use preloaded data
+        setLikes(preloadedData.likesCount || 0);
+        setIsLiked(preloadedData.isLiked || false);
+        setIsSaved(preloadedData.isSaved || false);
+        setReviews(preloadedData.reviews || []);
+        setIsLoadingInteractions(false);
+        return; // EXIT: Do not make API call
+      }
+
+      // Fallback: If no preloaded data, fetch from API
       try {
         if (!vendorId) {
           setIsLoadingInteractions(false);
@@ -1660,7 +1676,7 @@ const tapTimeoutRef = useRef(null);
     };
 
     fetchInteractionStatus();
-  }, [currentPost?._id, user?.id, vendorId]);
+  }, [currentPost?._id, user?.id, vendorId, allInteractions]);
 
   // Video event handlers with optimized updates
   useEffect(() => {
@@ -1796,13 +1812,22 @@ const tapTimeoutRef = useRef(null);
   // Progress bar seeking - works on touch and click
   const handleProgressSeekStart = useCallback(
     (e) => {
-      e.stopPropagation();
-      e.preventDefault();
+      e.stopPropagation(); // Stop event bubbling
       setIsSeeking(true);
+      isSeekingRef.current = true;
 
+      // Track if video was playing so we can resume later
+      wasPlayingRef.current = isPlaying;
+
+      if (videoRef.current) {
+        videoRef.current.pause(); // Pause immediately for smooth scrubbing
+      }
+
+      // Calculate immediate position
       const rect = progressBarRef.current?.getBoundingClientRect();
       if (!rect || !duration) return;
 
+      // Support both mouse and touch
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       const newTime = percentage * duration;
@@ -1815,13 +1840,17 @@ const tapTimeoutRef = useRef(null);
         videoRef.current.currentTime = newTime;
       }
     },
-    [duration],
+    [duration, isPlaying],
   );
 
   const handleProgressSeek = useCallback(
     (e) => {
       if (!isSeekingRef.current) return;
 
+      // Prevent default interactions (like scroll) while scrubbing
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+
       const rect = progressBarRef.current?.getBoundingClientRect();
       if (!rect || !duration) return;
 
@@ -1840,36 +1869,39 @@ const tapTimeoutRef = useRef(null);
     [duration],
   );
 
-  const handleProgressSeekEnd = useCallback(() => {
+  const handleProgressSeekEnd = useCallback((e) => {
+    if (e) e.stopPropagation();
     setIsSeeking(false);
+    isSeekingRef.current = false;
     setSeekPreview(null);
 
-    // Resume playing if was playing before
-    if (videoRef.current && !videoRef.current.paused === false && isPlaying) {
-      videoRef.current.play().catch(() => {});
+    // Resume only if it was playing before drag started
+    if (wasPlayingRef.current && videoRef.current) {
+      videoRef.current.play().catch(() => setIsPlaying(false));
+      setIsPlaying(true);
     }
-  }, [isPlaying]);
+  }, []);
 
   // Play/Pause with visual indicator
   const togglePlayPause = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Clear any existing timeout
+    // 1. Clear any existing indicator timeout so it doesn't hide prematurely
     if (playPauseTimeoutRef.current) {
       clearTimeout(playPauseTimeoutRef.current);
     }
 
-    // Show indicator immediately
+    // 2. Show indicator immediately
     setShowPlayPauseIndicator(true);
 
-    // Toggle play state - match ReelsViewer logic
+    // 3. Perform Toggle
     if (video.paused) {
       video
         .play()
         .then(() => setIsPlaying(true))
         .catch((err) => {
-          console.log("Play failed:", err);
+          console.error("Play failed:", err);
           setIsPlaying(false);
         });
     } else {
@@ -1877,7 +1909,7 @@ const tapTimeoutRef = useRef(null);
       setIsPlaying(false);
     }
 
-    // Hide indicator after delay
+    // 4. Hide indicator after 800ms (standard UX)
     playPauseTimeoutRef.current = setTimeout(() => {
       setShowPlayPauseIndicator(false);
     }, 800);
@@ -1885,20 +1917,20 @@ const tapTimeoutRef = useRef(null);
 
   // Double tap to like
   const handlePointerDown = useCallback((e) => {
-  // Don't track if on a button
-  if (e.target.closest("button")) return;
-  
-  pointerStartRef.current = {
-    x: e.clientX,
-    y: e.clientY,
-    time: Date.now(),
-  };
-}, []);
+    // Don't track if on a button
+    if (e.target.closest("button")) return;
+
+    pointerStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    };
+  }, []);
 
   const toggleMute = (e) => {
-  e.stopPropagation();
-  setIsMuted((prev) => !prev);
-};
+    e.stopPropagation();
+    setIsMuted((prev) => !prev);
+  };
 
   // Interaction handlers
   const handleLike = async () => {
@@ -1952,52 +1984,48 @@ const tapTimeoutRef = useRef(null);
   };
 
   // Handle double tap - like (like ReelsViewer)
-const handlePointerUp = useCallback(
-  (e) => {
-    // Don't handle if on a button
-    if (e.target.closest("button")) return;
+  const handlePointerUp = useCallback(
+    (e) => {
+      // 1. Ignore clicks on buttons/controls
+      if (e.target.closest("button") || e.target.closest(".control-layer")) return;
 
-    const start = pointerStartRef.current;
-    const dx = Math.abs(e.clientX - start.x);
-    const dy = Math.abs(e.clientY - start.y);
-    const dt = Date.now() - start.time;
+      const start = pointerStartRef.current;
+      const dx = Math.abs(e.clientX - start.x);
+      const dy = Math.abs(e.clientY - start.y);
+      const dt = Date.now() - start.time;
 
-    // Only register as tap if minimal movement and quick
-    if (dx > 15 || dy > 15 || dt > 500) return;
+      // 2. Ignore swipes (movements > 10px) or long presses (> 500ms)
+      if (dx > 10 || dy > 10 || dt > 500) return;
 
-    // Clear any pending single tap
-    if (tapTimeoutRef.current) {
-      // Double tap detected
-      clearTimeout(tapTimeoutRef.current);
-      tapTimeoutRef.current = null;
-
-      // Like animation
-      if (!isLiked) {
-        handleLike();
-      }
-      setShowLikeAnimation(true);
-      setTimeout(() => setShowLikeAnimation(false), 800);
-    } else {
-      // Wait to see if it's a double tap
-      tapTimeoutRef.current = setTimeout(() => {
+      // 3. Double Tap Logic
+      if (tapTimeoutRef.current) {
+        // Double tap detected!
+        clearTimeout(tapTimeoutRef.current);
         tapTimeoutRef.current = null;
-        // Single tap - toggle play/pause for videos
-        if (isVideo) {
-          togglePlayPause();
-        }
-      }, 250);
-    }
-  },
-  [isVideo, isLiked, handleLike, togglePlayPause],
-);
 
-useEffect(() => {
-  return () => {
-    if (tapTimeoutRef.current) {
-      clearTimeout(tapTimeoutRef.current);
-    }
-  };
-}, []);
+        if (!isLiked) handleLike();
+        setShowLikeAnimation(true);
+        setTimeout(() => setShowLikeAnimation(false), 800);
+      } else {
+        // 4. Single Tap Logic (Wait 250ms to see if a second tap comes)
+        tapTimeoutRef.current = setTimeout(() => {
+          tapTimeoutRef.current = null;
+          if (isVideo) {
+            togglePlayPause();
+          }
+        }, 250);
+      }
+    },
+    [isVideo, isLiked, handleLike, togglePlayPause],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!isSignedIn || !user?.id) {
@@ -2214,17 +2242,17 @@ useEffect(() => {
         </div>
 
         {/* Main Content Area with Swipe */}
-<motion.div
-  ref={containerRef}
-  drag={posts.length > 1 ? "y" : false}
-  dragConstraints={{ top: 0, bottom: 0 }}
-  dragElastic={0.15}
-  onDragStart={handleDragStart}
-  onDrag={handleDrag}
-  onDragEnd={handleDragEnd}
-  className="absolute inset-0 touch-pan-y"
-  style={{ cursor: isDragging ? "grabbing" : posts.length > 1 ? "grab" : "default" }}
->
+        <motion.div
+          ref={containerRef}
+          drag={posts.length > 1 ? "y" : false}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.15}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          className="absolute inset-0 touch-pan-y"
+          style={{ cursor: isDragging ? "grabbing" : posts.length > 1 ? "grab" : "default" }}
+        >
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
             <motion.div
               key={currentPost._id}
@@ -2282,11 +2310,7 @@ useEffect(() => {
           </AnimatePresence>
 
           {/* ADD THIS - Tap Detection Layer */}
-          <div
-            className="absolute inset-0 z-[21]"
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-          />
+          <div className="absolute inset-0 z-[21]" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} />
 
           {/* Buffering Indicator */}
           <AnimatePresence>
@@ -2333,18 +2357,18 @@ useEffect(() => {
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
               >
-                <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20">
                   {isPlaying ? (
-                    <Pause size={36} className="text-white" />
+                    <Pause size={32} className="text-white fill-white" />
                   ) : (
-                    <Play size={36} className="text-white fill-white ml-1" />
+                    <Play size={32} className="text-white fill-white ml-1" />
                   )}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Paused State Indicator (persistent) */}
+          {/* Persistent Paused State Indicator (Shows when paused) */}
           <AnimatePresence>
             {!isPlaying && isVideo && !isBuffering && !hasError && !showPlayPauseIndicator && (
               <motion.div
@@ -2353,8 +2377,8 @@ useEffect(() => {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
               >
-                <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
-                  <Play size={36} className="text-white fill-white ml-1" />
+                <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                  <Play size={32} className="text-white fill-white ml-1" />
                 </div>
               </motion.div>
             )}
@@ -2636,7 +2660,17 @@ useEffect(() => {
   );
 };
 
-const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, onDeleteReel, onEditReel, vendorId }) => {
+const ReelsViewer = ({
+  reels,
+  initialIndex,
+  onClose,
+  vendorName,
+  vendorImage,
+  onDeleteReel,
+  onEditReel,
+  vendorId,
+  allInteractions = {},
+}) => {
   const { user, isSignedIn } = useUser();
 
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -2674,18 +2708,47 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
     setIsLoadingInteractions(true);
   }, [currentIndex]);
 
+  useEffect(() => {
+    if (Object.keys(allInteractions).length > 0) {
+      const newLikeCounts = {};
+      const newViewCounts = {};
+      const newLikedSet = new Set(likedReels);
+      const newSavedSet = new Set(savedReels);
+
+      Object.entries(allInteractions).forEach(([id, data]) => {
+        newLikeCounts[id] = data.likesCount || 0;
+        newViewCounts[id] = data.views || 0;
+        if (data.isLiked) newLikedSet.add(id);
+        if (data.isSaved) newSavedSet.add(id);
+      });
+
+      setReelLikeCounts((prev) => ({ ...prev, ...newLikeCounts }));
+      setReelViewCounts((prev) => ({ ...prev, ...newViewCounts }));
+      setLikedReels(newLikedSet);
+      setSavedReels(newSavedSet);
+    }
+  }, [allInteractions]);
+
   // Fetch interaction status for current reel
   useEffect(() => {
     const fetchReelStatus = async () => {
       if (!currentReel?._id) return;
 
       const reelId = currentReel._id;
+
+      // Check if we already have data for this specific reel from the hydration above
+      // or if it exists in allInteractions
+      if (allInteractions[reelId] || reelLikeCounts[reelId] !== undefined) {
+        setIsLoadingInteractions(false);
+        return; // SKIP API CALL
+      }
+
       setIsLoadingInteractions(true);
 
       try {
         const vendorId = getVendorId();
         if (!vendorId) {
-          setIsLoadingInteractions(false); // Add this
+          setIsLoadingInteractions(false);
           return;
         }
 
@@ -2711,12 +2774,12 @@ const ReelsViewer = ({ reels, initialIndex, onClose, vendorName, vendorImage, on
       } catch (error) {
         console.error("Failed to fetch reel status:", error);
       } finally {
-        setIsLoadingInteractions(false); // Add this
+        setIsLoadingInteractions(false);
       }
     };
 
     fetchReelStatus();
-  }, [currentReel?._id, user?.id]);
+  }, [currentReel?._id, user?.id, allInteractions]);
 
   // Track view count
   useEffect(() => {
@@ -7771,7 +7834,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [imageZoom, setImageZoom] = useState(1);
   const [showHeaderTabs, setShowHeaderTabs] = useState(false);
 
-    const [postsInteractionsData, setPostsInteractionsData] = useState({});
+  const [postsInteractionsData, setPostsInteractionsData] = useState({});
   const [reelsInteractionsData, setReelsInteractionsData] = useState({});
   const [isLoadingAllInteractions, setIsLoadingAllInteractions] = useState(false);
 
@@ -7823,91 +7886,100 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   }, []);
 
   // NEW: Preload all posts and reels interactions
-const preloadAllInteractions = useCallback(async () => {
-  if (!id || profileLoading) return;
-  
-  setIsLoadingAllInteractions(true);
-  
-  try {
-    // Fetch all posts interactions in parallel
-    if (posts.length > 0) {
-      const postsData = {};
-      const postsPromises = posts.map(async (post) => {
-        try {
-          const params = new URLSearchParams({
-            postId: post._id,
-            ...(user?.id && { userId: user.id }),
-          });
-          
-          const res = await fetch(`/api/vendor/${id}/profile/posts/interactions?${params}`);
-          const data = await res.json();
-          
-          if (data.success) {
+  const preloadAllInteractions = useCallback(async () => {
+    if (!id || profileLoading) return;
+
+    setIsLoadingAllInteractions(true);
+
+    try {
+      // Fetch all posts interactions in parallel
+      if (posts.length > 0) {
+        const postsData = {};
+        const postsPromises = posts.map(async (post) => {
+          try {
+            const params = new URLSearchParams({
+              postId: post._id,
+              ...(user?.id && { userId: user.id }),
+            });
+
+            const res = await fetch(`/api/vendor/${id}/profile/posts/interactions?${params}`);
+            const data = await res.json();
+
+            if (data.success) {
+              postsData[post._id] = {
+                likesCount: data.data.likesCount || 0,
+                isLiked: data.data.isLiked || false,
+                isSaved: data.data.isSaved || false,
+                reviews: data.data.reviews || [],
+              };
+            }
+          } catch (error) {
+            console.error(`Failed to fetch interactions for post ${post._id}:`, error);
+            // Set default values on error
             postsData[post._id] = {
-              likesCount: data.data.likesCount || 0,
-              isLiked: data.data.isLiked || false,
-              isSaved: data.data.isSaved || false,
-              reviews: data.data.reviews || [],
+              likesCount: 0,
+              isLiked: false,
+              isSaved: false,
+              reviews: [],
             };
           }
-        } catch (error) {
-          console.error(`Failed to fetch interactions for post ${post._id}:`, error);
-          // Set default values on error
-          postsData[post._id] = {
-            likesCount: 0,
-            isLiked: false,
-            isSaved: false,
-            reviews: [],
-          };
-        }
-      });
-      
-      await Promise.all(postsPromises);
-      setPostsInteractionsData(postsData);
-    }
-    
-    // Fetch all reels interactions in parallel
-    if (reels.length > 0) {
-      const reelsData = {};
-      const reelsPromises = reels.map(async (reel) => {
-        try {
-          const params = new URLSearchParams({
-            reelId: reel._id,
-            ...(user?.id && { userId: user.id }),
-          });
-          
-          const res = await fetch(`/api/vendor/${id}/profile/reels/interactions?${params}`);
-          const data = await res.json();
-          
-          if (data.success) {
+        });
+
+        await Promise.all(postsPromises);
+        setPostsInteractionsData(postsData);
+      }
+
+      // Fetch all reels interactions in parallel
+      if (reels.length > 0) {
+        const reelsData = {};
+        const reelsPromises = reels.map(async (reel) => {
+          try {
+            const params = new URLSearchParams({
+              reelId: reel._id,
+              ...(user?.id && { userId: user.id }),
+            });
+
+            const res = await fetch(`/api/vendor/${id}/profile/reels/interactions?${params}`);
+            const data = await res.json();
+
+            if (data.success) {
+              reelsData[reel._id] = {
+                likesCount: data.data.likesCount || 0,
+                views: data.data.views || 0,
+                isLiked: data.data.isLiked || false,
+                isSaved: data.data.isSaved || false,
+              };
+            }
+          } catch (error) {
+            console.error(`Failed to fetch interactions for reel ${reel._id}:`, error);
+            // Set default values on error
             reelsData[reel._id] = {
-              likesCount: data.data.likesCount || 0,
-              views: data.data.views || 0,
-              isLiked: data.data.isLiked || false,
-              isSaved: data.data.isSaved || false,
+              likesCount: 0,
+              views: 0,
+              isLiked: false,
+              isSaved: false,
             };
           }
-        } catch (error) {
-          console.error(`Failed to fetch interactions for reel ${reel._id}:`, error);
-          // Set default values on error
-          reelsData[reel._id] = {
-            likesCount: 0,
-            views: 0,
-            isLiked: false,
-            isSaved: false,
-          };
-        }
-      });
-      
-      await Promise.all(reelsPromises);
-      setReelsInteractionsData(reelsData);
+        });
+
+        await Promise.all(reelsPromises);
+        setReelsInteractionsData(reelsData);
+      }
+    } catch (error) {
+      console.error("Failed to preload interactions:", error);
+    } finally {
+      setIsLoadingAllInteractions(false);
     }
-  } catch (error) {
-    console.error("Failed to preload interactions:", error);
-  } finally {
-    setIsLoadingAllInteractions(false);
-  }
-}, [posts, reels, user?.id, id, profileLoading]);
+  }, [posts, reels, user?.id, id, profileLoading]);
+
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!isUserLoaded) return;
+
+    if (posts.length > 0 || reels.length > 0) {
+      preloadAllInteractions();
+    }
+  }, [profileLoading, isUserLoaded, posts.length, reels.length, preloadAllInteractions]);
 
   const getCategoryColor = useCallback((category) => {
     const colorMap = {
@@ -8282,13 +8354,15 @@ const preloadAllInteractions = useCallback(async () => {
     };
   }, []);
 
-  const handleBack = useCallback(() => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(`/m/vendor/${category || "all"}/${id}`);
+ const handleBack = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    if(category || id){
+      router.push(`/vendors/${category || "all"}/${id}`);
+    }else{
+      router.push('/');
     }
-  }, [router]);
+  }, [router, category, id]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {
@@ -9002,7 +9076,7 @@ const preloadAllInteractions = useCallback(async () => {
               <EmptyPostsState />
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-[3px] mx-[15px]">
+                <div className="grid grid-cols-2 gap-[8px] mx-[15px]">
                   {posts.map((post, index) => {
                     const posterUrl = post.thumbnailUrl || videoThumbnails[post._id] || null;
                     return (
@@ -9096,7 +9170,7 @@ const preloadAllInteractions = useCallback(async () => {
                             setIsLongPressing(false);
                           }
                         }}
-                        className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer select-none rounded-[10px] group"
+                        className="aspect-[1/1.3] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer select-none rounded-[10px] group"
                       >
                         {post.mediaType === "video" ? (
                           <div className="relative w-full h-full">
@@ -11435,6 +11509,7 @@ const preloadAllInteractions = useCallback(async () => {
             onEdit={(newCaption) => handleEditPost(selectedPost._id, newCaption)}
             onArchive={() => handleArchivePost(selectedPost._id)}
             vendorId={id}
+            allInteractions={postsInteractionsData}
           />
         )}
       </AnimatePresence>
@@ -11456,6 +11531,7 @@ const preloadAllInteractions = useCallback(async () => {
             onDeleteReel={() => handleDeleteReel(reels[selectedReelIndex]._id)}
             onEditReel={(newCaption) => handleEditReel(reels[selectedReelIndex]._id, newCaption)}
             vendorId={id}
+            allInteractions={reelsInteractionsData}
           />
         )}
       </AnimatePresence>

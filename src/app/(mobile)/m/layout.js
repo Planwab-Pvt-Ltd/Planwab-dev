@@ -1,33 +1,32 @@
 import ClientWrapper from "@/components/mobile/ClientWrapper";
-import AppEntryGate from "@/components/mobile/AppEntryGate";
 import ConditionalNavbar from "@/components/mobile/ConditionalNavbar";
-import ForceLightMode from "@/components/mobile/ForceLightMode"; // Import the helper
+import ForceLightMode from "@/components/mobile/ForceLightMode";
 
 // 1. SCOPED METADATA (SEO)
 export const metadata = {
   title: {
     default: "PlanWAB Marketplace",
-    template: "%s | PlanWAB", // Shows "Wedding | PlanWAB" in browser tab
+    template: "%s | PlanWAB",
   },
   description: "Book verified event vendors, plan weddings, and manage bookings on the PlanWAB App.",
-  // Mobile specific view settings
   appleWebApp: {
     title: "PlanWAB",
     statusBarStyle: "default",
+  },
+  // CRITICAL: Point Canonical to the ROOT domain, because we are REWRITING, not redirecting.
+  // This tells Google "I am the mobile view of the main page."
+  alternates: {
+    canonical: "https://www.planwab.com", 
   },
 };
 
 export default function MobileLayout({ children }) {
   return (
-    <>
-      <ForceLightMode>
-        <main>
-          <ClientWrapper>
-            <AppEntryGate>{children}</AppEntryGate>
-          </ClientWrapper>
-        </main>
-        <ConditionalNavbar />
-      </ForceLightMode>
-    </>
+    <ForceLightMode>
+        <ClientWrapper>
+          {children}
+        </ClientWrapper>
+      <ConditionalNavbar />
+    </ForceLightMode>
   );
 }
