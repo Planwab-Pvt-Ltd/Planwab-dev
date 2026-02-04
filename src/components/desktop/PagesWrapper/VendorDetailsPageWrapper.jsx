@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
+import { useCartStore } from "@/GlobalState/CartDataStore";
 import ReviewSection from "../ReviewSection";
 import {
   MapPin,
@@ -102,6 +103,7 @@ import {
   CreditCard,
   Smartphone,
   Wallet,
+  ShoppingCart,
 } from "lucide-react";
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
@@ -244,6 +246,7 @@ const VendorDetailsPageWrapper = () => {
   const [recommendedVendors, setRecommendedVendors] = useState([]); // Recommended vendors list
   const [listsLoading, setListsLoading] = useState(true);       // Lists loading state
   const [listsError, setListsError] = useState(null);           // Lists error state
+  const { addToCart, removeFromCart, isInCart } = useCartStore();
 
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // Current carousel image
@@ -3106,10 +3109,46 @@ const VendorDetailsPageWrapper = () => {
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">per day</div>
                     </div>
+
+                    {/* addto cart global state updation  */}
                     <div className="space-y-3">
-                      <button className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                        <Calendar size={20} />
-                        <span className="font-semibold">Book Now</span>
+                      <button 
+                        onClick={() => {
+                          if (isInCart(vendor?._id)) {
+                            removeFromCart(vendor?._id);
+                          } else {
+                            const cartItem = {
+                              _id: vendor?._id,
+                              name: vendor?.name || "Unknown Vendor",
+                              category: vendor?.category || "Vendor",
+                              price: vendor?.perDayPrice?.min || (typeof vendor?.basePrice === "number" ? vendor?.basePrice : 0),
+                              image: vendor?.defaultImage || vendor?.images?.[0] || "",
+                              quantity: 1,
+                              address: vendor?.address || "",
+                              rating: vendor?.rating || 0,
+                              reviews: vendor?.reviews || 0,
+                              isVerified: vendor?.isVerified || false,
+                            };
+                            addToCart(cartItem);
+                          }
+                        }}
+                        className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 ${
+                          isInCart(vendor?._id)
+                            ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                        }`}
+                      >
+                        {isInCart(vendor?._id) ? (
+                          <>
+                            <Check size={20} />
+                            <span className="font-semibold">Added</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart size={20} />
+                            <span className="font-semibold">Add to Cart</span>
+                          </>
+                        )}
                       </button>
                       <button 
                         onClick={() => {
@@ -3143,39 +3182,231 @@ const VendorDetailsPageWrapper = () => {
                     </div>
                   </div>
                   
-                  {vendor?.seating?.min || vendor?.seating?.max || vendor?.parking || vendor?.rooms?.max ? (
-                    <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Quick Info</h3>
-                      <div className="space-y-3 text-sm">
-                        {vendor?.seating?.min && vendor?.seating?.max && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Capacity</span>
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {vendor.seating.min}-{vendor.seating.max} guests
-                            </span>
+                
+
+              {/* show the attributes accordint to category*/}
+              <div className="mt-6">
+                {vendor?.category && (
+                  <div className="bg-white dark:bg-gray-800">
+      
+                    {/* Venues */}
+                    {vendor?.category === "venues" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {(vendor.seating?.min || vendor.seating?.max) && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Capacity</span>
+                            <span>{vendor.seating?.min || 0} - {vendor.seating?.max || 0} guests</span>
                           </div>
                         )}
-                        {vendor?.parking && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Parking</span>
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {typeof vendor.parking === 'object' ? vendor.parking?.capacity || 'N/A' : vendor.parking || 'N/A'} slots
-                            </span>
+                        {(vendor.floating?.min || vendor.floating?.max) && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Floating</span>
+                            <span>{vendor.floating?.min || 0} - {vendor.floating?.max || 0} guests</span>
                           </div>
                         )}
-                        {vendor?.rooms?.max && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Rooms</span>
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {vendor.rooms.max} available
+                        {vendor.parking?.capacity && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Parking</span>
+                            <span>{vendor.parking.capacity} slots</span>
+                          </div>
+                        )}
+                        {vendor.rooms?.count && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Rooms</span>
+                            <span>{vendor.rooms.count} available</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Photographers */}
+                    {vendor?.category === "photographers" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {vendor.teamSize && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Team</span>
+                            <span>{vendor.teamSize} members</span>
+                          </div>
+                        )}
+                        {vendor.deliveryTime && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Delivery</span>
+                            <span>{vendor.deliveryTime} weeks</span>
+                          </div>
+                        )}
+                        {vendor.travelCost && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Travel</span>
+                            <span>{vendor.travelCost}</span>
+                          </div>
+                        )}
+                        {vendor.services?.length > 0 && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Services</span>
+                            <span>{vendor.services.join(", ")}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Makeup */}
+                    {vendor?.category === "makeup" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {vendor.services?.length > 0 && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Services</span>
+                            <span>{vendor.services.join(", ")}</span>
+                          </div>
+                        )}
+                        {vendor.brandsUsed?.length > 0 && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Premium Brands</span>
+                            <span>{vendor.brandsUsed.join(", ")}</span>
+                          </div>
+                        )}
+                        {vendor.trialPolicy && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Trial Policy</span>
+                            <span>
+                              {vendor.trialPolicy.available ? 
+                                (vendor.trialPolicy.paid ? `Available - ₹${vendor.trialPolicy.price}` : "Available - Free") : 
+                                "Not Available"
+                              }
                             </span>
                           </div>
                         )}
                       </div>
-                    </div>
-                  ) : null}
-                </div>
+                    )}
+
+                    {/* Planners */}
+                    {vendor?.category === "planners" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {vendor.teamSize && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Team</span>
+                            <span>{vendor.teamSize} members</span>
+                          </div>
+                        )}
+                        {vendor.vendorNetwork && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Network</span>
+                            <span>{vendor.vendorNetwork}+ vendors</span>
+                          </div>
+                        )}
+                        {vendor.eventsManaged?.length > 0 && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Events Managed</span>
+                            <span>{vendor.eventsManaged.length}+ events</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Catering */}
+                    {vendor?.category === "catering" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {(vendor.minCapacity || vendor.maxCapacity) && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Capacity</span>
+                            <span>{vendor.minCapacity || 50} - {vendor.maxCapacity || 1000} guests</span>
+                          </div>
+                        )}
+                        {vendor.cuisines?.length > 0 && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Meal Type</span>
+                            <span>{vendor.cuisines.join(", ")}</span>
+                          </div>
+                        )}
+                        {vendor.pricePerPlate?.veg && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Veg Price</span>
+                            <span>₹{vendor.pricePerPlate.veg} per plate</span>
+                          </div>
+                        )}
+                        {vendor.pricePerPlate?.nonVeg && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Non-Veg Price</span>
+                            <span>₹{vendor.pricePerPlate.nonVeg} per plate</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mehendi */}
+                    {vendor?.category === "mehendi" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {vendor.teamSize && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Team Size</span>
+                            <span>{vendor.teamSize}+ artists</span>
+                          </div>
+                        )}
+                        {vendor.pricePerHand && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Per Hand</span>
+                            <span>₹{vendor.pricePerHand}</span>
+                          </div>
+                        )}
+                        {vendor.bridalPackagePrice && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Bridal Package</span>
+                            <span>₹{vendor.bridalPackagePrice}</span>
+                          </div>
+                        )}
+                        {vendor.dryingTime && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Drying Time</span>
+                            <span>{vendor.dryingTime}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* DJ */}
+                    {vendor?.category === "djs" && (
+                      <div className="space-y-2">
+                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
+                        {vendor.performanceDuration && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Duration</span>
+                            <span>{vendor.performanceDuration}</span>
+                          </div>
+                        )}
+                        {vendor.soundSystemPower && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Sound</span>
+                            <span>{vendor.soundSystemPower}</span>
+                          </div>
+                        )}
+                        {vendor.genres?.length > 0 && (
+                          <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                            <span>Music Genres</span>
+                            <span>{vendor.genres.join(", ")}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+              </div>
+
+              </div>
+
+              {/* vendor verification section */}
               {(vendor?.isVerified || vendor?.tags?.includes('Premium')) ? (
                 <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-gray-700 mt-6">
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Safety & Trust</h3>
