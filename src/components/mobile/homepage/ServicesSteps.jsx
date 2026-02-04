@@ -124,7 +124,7 @@ const ServicesSteps = () => {
 
           {/* CTA Button */}
           <Link
-            href={`/m/plan-my-event/${categoryKey === "default" ? "wedding" : categoryKey?.toLowerCase()}`}
+            href={`/plan-my-event/${categoryKey === "default" ? "wedding" : categoryKey?.toLowerCase()}`}
             className={`group flex w-full lg:w-fit items-center justify-center gap-3 rounded-2xl px-8 py-4 text-base font-bold shadow-lg active:scale-95 transition-all ${theme?.button}`}
             aria-label="Talk to Planner"
           >

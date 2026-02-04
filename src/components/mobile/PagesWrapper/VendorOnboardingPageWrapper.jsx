@@ -1185,7 +1185,7 @@ const VendorProfileOnboardingPageWrapper = () => {
                   {/* Quick Actions */}
                   <div className="grid sm:grid-cols-2 gap-4">
                     <Link
-                      href={`/m/vendor/${formData?.category}/${formData.vendorId}/profile`}
+                      href={`/vendor/${formData?.category}/${formData.vendorId}/profile`}
                       className="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                     >
                       <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
@@ -1198,7 +1198,7 @@ const VendorProfileOnboardingPageWrapper = () => {
                     </Link>
 
                     <Link
-                      href={`/m/vendor/${formData?.category}/${formData.vendorId}/profile?upload=true`}
+                      href={`/vendor/${formData?.category}/${formData.vendorId}/profile?upload=true`}
                       className="flex items-center gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                     >
                       <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg">

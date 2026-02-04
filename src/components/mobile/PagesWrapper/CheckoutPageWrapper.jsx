@@ -442,7 +442,7 @@ const CartStep = ({
         <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="font-bold text-gray-900">Cart is empty</h3>
 
-        <Link href="/m/vendors/marketplace" className="text-blue-600 text-sm font-bold mt-2 inline-block">
+        <Link href="/vendors/marketplace" className="text-blue-600 text-sm font-bold mt-2 inline-block">
           Browse Vendors
         </Link>
       </div>
@@ -928,13 +928,13 @@ export default function CheckoutPageWrapper() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
-          <Link href="/m/user/bookings">
+          <Link href="/user/bookings">
             <button className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200">
               View My Bookings
             </button>
           </Link>
 
-          <Link href="/m/vendors/marketplace">
+          <Link href="/vendors/marketplace">
             <button className="w-full py-4 rounded-xl text-gray-500 font-bold">Continue Shopping</button>
           </Link>
         </div>

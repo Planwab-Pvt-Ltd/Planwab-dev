@@ -194,7 +194,7 @@ const SectionHeader = ({ title, subtitle, icon: Icon, color, onViewAll }) => (
 );
 
 const ProfileVendorCard = ({ vendor }) => (
-  <Link href={`/m/vendor/${vendor.category}/${vendor._id}`} className="min-w-[200px] w-[200px] snap-start">
+  <Link href={`/vendor/${vendor.category}/${vendor._id}`} className="min-w-[200px] w-[200px] snap-start">
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm h-full active:scale-95 transition-transform">
       <div className="h-28 w-full bg-gray-200 relative">
         <img src={vendor.images?.[0] || "/placeholder.jpg"} alt={vendor.name} className="w-full h-full object-cover" />

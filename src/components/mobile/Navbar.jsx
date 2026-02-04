@@ -1214,7 +1214,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
               )}
             </div>
             <Link
-              href="/m/user/checkout"
+              href="/user/checkout"
               onClick={() => {
                 haptic("medium");
                 onClose();
@@ -1287,11 +1287,11 @@ const MobileNavbar = () => {
 
   const navItems = useMemo(
     () => [
-      { id: "home", label: "Home", icon: Home, route: "/m" },
-      { id: "marketplace", label: "Marketplace", icon: ChartBarStacked, route: "/m/vendors/marketplace" },
+      { id: "home", label: "Home", icon: Home, route: "/" },
+      { id: "marketplace", label: "Marketplace", icon: ChartBarStacked, route: "/vendors/marketplace" },
       { id: "center_fab", type: "center" },
-      { id: "bookings", label: "Bookings", icon: Calendar, route: "/m/user/bookings" },
-      { id: "profile", label: "Profile", icon: User, route: "/m/user/profile" },
+      { id: "bookings", label: "Bookings", icon: Calendar, route: "/user/bookings" },
+      { id: "profile", label: "Profile", icon: User, route: "/user/profile" },
     ],
     []
   );

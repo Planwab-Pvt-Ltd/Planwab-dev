@@ -502,7 +502,7 @@ export default function HowItWorksSection({ theme, category }) {
         transition={{ delay: 0.5 }}
       >
         <Link
-          href="/m/vendors/marketplace"
+          href="/vendors/marketplace"
           onClick={() => haptic("medium")}
           className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform"
           style={{ backgroundColor: theme.primary }}

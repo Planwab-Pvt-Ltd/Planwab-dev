@@ -210,7 +210,7 @@ const HeaderLogic = () => {
       }
 
       const queryString = params.toString();
-      return queryString ? `/m/vendors/marketplace?${queryString}` : "/m/vendors/marketplace";
+      return queryString ? `/vendors/marketplace?${queryString}` : "/vendors/marketplace";
     },
     [searchQuery, selectedSort],
   );

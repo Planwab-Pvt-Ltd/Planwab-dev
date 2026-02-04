@@ -92,7 +92,7 @@ const HeroSection = () => {
 
           {/* Specific Gradient Button */}
           <Link
-            href={`/m/plan-my-event/${categoryKey}`}
+            href={`/plan-my-event/${categoryKey}`}
             className="w-full bg-[linear-gradient(to_right,#9A2157,#A1285E,#BC2D6D,#A1285E,#9A2157)] font-plus-jakarata-sans text-lg font-semibold text-white transition-all duration-200 hover:bg-[#7D2049] rounded-2xl py-4 flex items-center justify-center gap-2 active:scale-95"
           >
             <span>Start {displayCategory} Planning</span>
