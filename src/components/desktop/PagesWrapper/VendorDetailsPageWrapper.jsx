@@ -3192,7 +3192,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* Venues */}
                     {vendor?.category === "venues" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {(vendor.seating?.min || vendor.seating?.max) && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
@@ -3224,7 +3223,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* Photographers */}
                     {vendor?.category === "photographers" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {vendor.teamSize && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
@@ -3256,7 +3254,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* Makeup */}
                     {vendor?.category === "makeup" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {vendor.services?.length > 0 && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
@@ -3287,7 +3284,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* Planners */}
                     {vendor?.category === "planners" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {vendor.teamSize && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
@@ -3313,7 +3309,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* Catering */}
                     {vendor?.category === "catering" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {(vendor.minCapacity || vendor.maxCapacity) && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
@@ -3345,7 +3340,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* Mehendi */}
                     {vendor?.category === "mehendi" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {vendor.teamSize && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
@@ -3377,7 +3371,6 @@ const VendorDetailsPageWrapper = () => {
                     {/* DJ */}
                     {vendor?.category === "djs" && (
                       <div className="space-y-2">
-                        <hr className="my-4 border-gray-200 dark:border-gray-700" />
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Info</h4>
                         {vendor.performanceDuration && (
                           <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
