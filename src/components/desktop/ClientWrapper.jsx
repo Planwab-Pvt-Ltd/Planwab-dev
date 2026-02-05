@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import DesktopHeader from "@/components/desktop/Header";
+import Footer from "./Footer";
 
 export default function ClientWrapper({ children }) {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export default function ClientWrapper({ children }) {
     <>
       {!isAdminRoute && <DesktopHeader />}
       <main>{children}</main>
+      <Footer />
     </>
   );
 }

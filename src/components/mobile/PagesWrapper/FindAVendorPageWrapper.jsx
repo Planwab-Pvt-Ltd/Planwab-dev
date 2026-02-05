@@ -28,6 +28,7 @@ import {
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import Link from "next/link";
 import SmartMedia from "../SmartMediaLoader";
+import { formatPrice } from "../../../lib/utils";
 
 // =============================================================================
 // DATA
@@ -361,10 +362,10 @@ const VendorCard = memo(({ vendor }) => {
 
   const displayPrice = useMemo(() => {
     if (vendor.perDayPrice?.min) {
-      return `₹${vendor.perDayPrice.min.toLocaleString()}`;
+      return `₹${formatPrice(vendor.perDayPrice.min)}`;
     }
     if (typeof vendor.price === "number") {
-      return `₹${vendor.price.toLocaleString()}`;
+      return `₹${formatPrice(vendor.price)}`;
     }
     if (typeof vendor.price === "string" && vendor.price.trim()) {
       return vendor.price;
@@ -521,7 +522,7 @@ const SectionHeader = memo(({ title, subtitle, icon: Icon, color, onViewAll }) =
     <div className="flex items-center justify-between px-4 mb-3">
       <div className="flex items-center gap-2.5">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
-          <Icon size={18} style={{ color }} />
+          {Icon && <Icon className="w-5 h-5" style={{ color: color }} />}
         </div>
         <div>
           <h2 className="text-sm font-bold text-gray-900">{title}</h2>
@@ -559,6 +560,20 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const ResolvedIcon = useMemo(() => {
+    const IconMap = {
+      calendar: Calendar,
+      zap: Zap,
+      heart: Heart,
+    };
+
+    if (typeof Icon === "string") {
+      return IconMap[Icon.toLowerCase()] || Calendar;
+    }
+    
+    return Icon || Calendar;
+  }, [Icon]);
 
   const checkScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -648,7 +663,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
       <SectionHeader
         title={title}
         subtitle={subtitle}
-        icon={Icon}
+        icon={ResolvedIcon}
         color={color}
         onViewAll={() => router.push(viewMoreUrl)}
       />
@@ -724,7 +739,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
           ) : vendors.length === 0 ? (
             // ✅ ADD: Empty state when no vendors
             <div className="flex-shrink-0 w-44 h-[260px] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center px-4">
-              <Icon size={32} className="text-gray-300 mb-2" style={{ color }} />
+               <ResolvedIcon size={32} className="text-gray-300 mb-2" style={{ color }} />
               <p className="text-xs font-medium text-gray-400">No vendors found</p>
             </div>
           ) : (
@@ -745,7 +760,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
                 <ViewMoreCard
                   title={title.split(" ").pop()}
                   count={vendors.length * 10}
-                  icon={Icon}
+                  icon={ResolvedIcon}
                   color={color}
                   viewMoreurl={viewMoreUrl}
                 />
@@ -812,7 +827,7 @@ const FloatingCart = memo(({ setOpenCartNavbar }) => {
             <p className="text-xs font-bold text-white">
               {count} vendor{count > 1 ? "s" : ""} selected
             </p>
-            <p className="text-[10px] text-white/70">Total: ₹{total.toLocaleString()}</p>
+            <p className="text-[10px] text-white/70">Total: ₹{formatPrice(total)}</p>
           </div>
         </div>
 

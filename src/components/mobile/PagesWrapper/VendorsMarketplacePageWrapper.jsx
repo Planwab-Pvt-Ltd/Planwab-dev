@@ -1,6 +1,16 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef, memo, Suspense, startTransition, useReducer } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  memo,
+  Suspense,
+  startTransition,
+  useReducer,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -262,14 +272,23 @@ function useDebounce(value, delay) {
 function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(initialValue);
   const [isHydrated, setIsHydrated] = useState(false);
+  const isHydratingRef = useRef(false); // 🔥 ADD: Prevent double hydration
 
   useEffect(() => {
-    setIsHydrated(true);
+    if (isHydratingRef.current) return;
+    isHydratingRef.current = true;
+
     try {
       const item = window.localStorage.getItem(key);
-      if (item) setStoredValue(JSON.parse(item));
+      if (item) {
+        const parsed = JSON.parse(item);
+        setStoredValue(parsed);
+      }
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
+    } finally {
+      setIsHydrated(true);
+      isHydratingRef.current = false;
     }
   }, [key]);
 
@@ -277,15 +296,19 @@ function useLocalStorage(key, initialValue) {
     (value) => {
       setStoredValue((prevValue) => {
         const valueToStore = value instanceof Function ? value(prevValue) : value;
-        try {
-          window.localStorage.setItem(key, JSON.stringify(valueToStore));
-        } catch (error) {
-          console.warn(`Error setting localStorage key "${key}":`, error);
+
+        // 🔥 CRITICAL: Only write if hydrated
+        if (isHydrated) {
+          try {
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+          } catch (error) {
+            console.warn(`Error setting localStorage key "${key}":`, error);
+          }
         }
         return valueToStore;
       });
     },
-    [key]
+    [key, isHydrated], // 🔥 ADD: isHydrated dependency
   );
 
   return [storedValue, setValue, isHydrated];
@@ -300,7 +323,7 @@ function useInView(options = {}) {
       ([entry]) => {
         if (entry.isIntersecting && !hasBeenInView) setHasBeenInView(true);
       },
-      { threshold: 0.1, ...options }
+      { threshold: 0.1, ...options },
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
@@ -328,16 +351,28 @@ function useScrollPosition() {
   const [scrollY, setScrollY] = useState(0);
   const [scrollDirection, setScrollDirection] = useState("up");
   const lastScrollY = useRef(0);
+  const rafId = useRef(null); // 🔥 ADD: RAF for performance
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setScrollDirection(currentScrollY > lastScrollY.current ? "down" : "up");
-      lastScrollY.current = currentScrollY;
-      setScrollY(currentScrollY);
+      // 🔥 CRITICAL: Use RAF to batch updates
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+
+      rafId.current = requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        setScrollDirection(currentScrollY > lastScrollY.current ? "down" : "up");
+        lastScrollY.current = currentScrollY;
+        setScrollY(currentScrollY);
+      });
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId.current) cancelAnimationFrame(rafId.current); // 🔥 Cleanup RAF
+      lastScrollY.current = 0; // 🔥 Reset ref
+    };
   }, []);
 
   return { scrollY, scrollDirection };
@@ -367,15 +402,15 @@ function useDoubleTap(callback, delay = 300) {
       if (now - lastTap.current < delay) callback(event);
       lastTap.current = now;
     },
-    [callback, delay]
+    [callback, delay],
   );
 }
-
 function usePullToRefresh(onRefresh, threshold = 80) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const startY = useRef(0);
   const isPulling = useRef(false);
+  const isMountedRef = useRef(true); // 🔥 ADD: Mount tracking
 
   const handleTouchStart = useCallback((e) => {
     if (window.scrollY === 0) {
@@ -391,27 +426,38 @@ function usePullToRefresh(onRefresh, threshold = 80) {
       const diff = currentY - startY.current;
       if (diff > 0) setPullDistance(Math.min(diff * 0.5, threshold * 1.5));
     },
-    [isRefreshing, threshold]
+    [isRefreshing, threshold],
   );
 
   const handleTouchEnd = useCallback(async () => {
-    if (pullDistance >= threshold && !isRefreshing) {
+    if (pullDistance >= threshold && !isRefreshing && isMountedRef.current) {
       setIsRefreshing(true);
-      await onRefresh();
-      setIsRefreshing(false);
+      try {
+        await onRefresh();
+      } finally {
+        if (isMountedRef.current) setIsRefreshing(false);
+      }
     }
     setPullDistance(0);
     isPulling.current = false;
   }, [pullDistance, threshold, isRefreshing, onRefresh]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     document.addEventListener("touchstart", handleTouchStart, { passive: true });
     document.addEventListener("touchmove", handleTouchMove, { passive: true });
     document.addEventListener("touchend", handleTouchEnd);
+
     return () => {
+      isMountedRef.current = false; // 🔥 CRITICAL: Prevent state updates
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
+
+      // 🔥 CRITICAL: Reset all refs
+      startY.current = 0;
+      isPulling.current = false;
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
@@ -420,7 +466,7 @@ function usePullToRefresh(onRefresh, threshold = 80) {
 
 const vendorDataReducer = (state, action) => {
   switch (action.type) {
-    case 'SET_VENDORS':
+    case "SET_VENDORS":
       return {
         ...state,
         vendors: action.payload.vendors,
@@ -429,10 +475,10 @@ const vendorDataReducer = (state, action) => {
         isLoading: false,
         error: null,
       };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return { ...state, isLoading: action.payload };
-    case 'SET_ERROR':
-      return { ...state, error: action.payload,vendors: [], isLoading: false };
+    case "SET_ERROR":
+      return { ...state, error: action.payload, vendors: [], isLoading: false };
     default:
       return state;
   }
@@ -773,7 +819,7 @@ const ActiveFiltersDisplay = memo(
         </div>
       </motion.div>
     );
-  }
+  },
 );
 ActiveFiltersDisplay.displayName = "ActiveFiltersDisplay";
 
@@ -966,7 +1012,7 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
         validUntil: "Ongoing",
       },
     ],
-    [colorPrimary, colorSecondary]
+    [colorPrimary, colorSecondary],
   );
 
   const handleCopyCode = useCallback(
@@ -979,7 +1025,7 @@ const PromoCarousel = memo(({ colorPrimary, colorSecondary }) => {
         setTimeout(() => setCopiedCode(null), 2000);
       }
     },
-    [haptic]
+    [haptic],
   );
 
   const scrollToIndex = useCallback((index) => {
@@ -1347,10 +1393,12 @@ const ImageCarousel = memo(
 
     useEffect(() => {
       const preloadLinks = [];
+      const imageObjects = []; // 🔥 ADD: Track image objects
 
       images.forEach((src, index) => {
         const img = new window.Image();
         img.decoding = "async";
+        imageObjects.push(img); // 🔥 Track for cleanup
 
         img.onload = () => {
           img
@@ -1362,6 +1410,11 @@ const ImageCarousel = memo(
             .catch(() => {
               setLoadedImages((prev) => new Set(prev).add(src));
             });
+        };
+
+        // 🔥 ADD: Error handler
+        img.onerror = () => {
+          setLoadedImages((prev) => new Set(prev).add(src));
         };
 
         img.src = src;
@@ -1377,7 +1430,14 @@ const ImageCarousel = memo(
       });
 
       return () => {
+        // 🔥 CRITICAL: Clean up everything
         preloadLinks.forEach((link) => link.remove());
+        imageObjects.forEach((img) => {
+          img.onload = null;
+          img.onerror = null;
+          img.src = ""; // Release memory
+        });
+        imageRefs.current.clear();
       };
     }, [images]);
 
@@ -1388,7 +1448,7 @@ const ImageCarousel = memo(
         setHasInteracted(true);
         setPage([page + newDirection, newDirection]);
       },
-      [hasMultipleImages, page, haptic]
+      [hasMultipleImages, page, haptic],
     );
 
     const handleDragEnd = useCallback(
@@ -1402,7 +1462,7 @@ const ImageCarousel = memo(
           paginate(-1);
         }
       },
-      [paginate]
+      [paginate],
     );
 
     const handleDoubleTap = useDoubleTap(() => {
@@ -1594,7 +1654,7 @@ const ImageCarousel = memo(
         )}
       </div>
     );
-  }
+  },
 );
 ImageCarousel.displayName = "ImageCarousel";
 
@@ -1714,7 +1774,7 @@ const VendorCard = memo(
 
     const categoryInfo = useMemo(
       () => VENDOR_CATEGORIES.find((c) => c.id === vendor.category) || VENDOR_CATEGORIES[0],
-      [vendor.category]
+      [vendor.category],
     );
 
     const handleCompare = useCallback(
@@ -1724,7 +1784,7 @@ const VendorCard = memo(
         setCompareMode(!isComparing);
         if (isComparing) setCompareList([]);
       },
-      [vendor, haptic, onCompare, isComparing, setCompareMode, setCompareList]
+      [vendor, haptic, onCompare, isComparing, setCompareMode, setCompareList],
     );
 
     const handleShare = useCallback(
@@ -1747,7 +1807,7 @@ const VendorCard = memo(
           onShowToast?.("Link copied to clipboard!", "success");
         }
       },
-      [vendor, fullPrice, haptic, onShowToast]
+      [vendor, fullPrice, haptic, onShowToast],
     );
 
     const handleCall = useCallback(
@@ -1756,7 +1816,7 @@ const VendorCard = memo(
         if (vendor.phoneNo) window.location.href = `tel:${vendor.phoneNo}`;
         else onShowToast?.("Phone number not available", "info");
       },
-      [vendor.phoneNo, haptic, onShowToast]
+      [vendor.phoneNo, haptic, onShowToast],
     );
 
     const handleAddToCart = useCallback(
@@ -1778,7 +1838,7 @@ const VendorCard = memo(
           onShowToast?.("Added to cart!", "success");
         }
       },
-      [haptic, inCart, vendor, price, displayImages, addToCart, removeFromCart, onShowToast]
+      [haptic, inCart, vendor, price, displayImages, addToCart, removeFromCart, onShowToast],
     );
 
     if (!hasBeenInView) return <div ref={ref} className={isGrid ? "h-64" : "h-80"} />;
@@ -1839,40 +1899,39 @@ const VendorCard = memo(
         <Link href={`/vendor/${vendor?.category}/${vendor?._id}`} className={`block ${isGrid ? "p-3" : "p-4"}`}>
           <div className="flex justify-between items-center mb-1.5">
             {/* Profile Photo Section - Only in List View and when profile picture exists */}
-            {!isGrid &&
-              (vendor?.defaultImage || vendor?.images?.[0]) && (
-                <div
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.location.href = `/vendor/${vendor.category}/${vendor._id}/profile`;
-                  }}
-                  className="mr-3 shrink-0"
-                >
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-green-500 to-green-800 shadow-sm">
-                      <Image
-                        src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
-                        alt={`${vendor.name} Profile Picture`}
-                        width={500}
-                        height={500}
-                        quality={90}
-                        priority={false}
-                        loading="lazy"
-                        placeholder="blur"
-                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=="
-                        className="w-full h-full object-cover rounded-full overflow-hidden"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder-profile.jpg";
-                        }}
-                      />
-                    </div>
-                    <div className="absolute bottom-0 right-0 bg-white p-[2px] rounded-full shadow-sm border border-gray-100 text-violet-600">
-                      <Eye size={8} />
-                    </div>
+            {!isGrid && (vendor?.defaultImage || vendor?.images?.[0]) && (
+              <div
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `/vendor/${vendor.category}/${vendor._id}/profile`;
+                }}
+                className="mr-3 shrink-0"
+              >
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-green-500 to-green-800 shadow-sm">
+                    <Image
+                      src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
+                      alt={`${vendor.name} Profile Picture`}
+                      width={500}
+                      height={500}
+                      quality={90}
+                      priority={false}
+                      loading="lazy"
+                      placeholder="blur"
+                      blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2YzZjRmNiIvPjwvc3ZnPg=="
+                      className="w-full h-full object-cover rounded-full overflow-hidden"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder-profile.jpg";
+                      }}
+                    />
+                  </div>
+                  <div className="absolute bottom-0 right-0 bg-white p-[2px] rounded-full shadow-sm border border-gray-100 text-violet-600">
+                    <Eye size={8} />
                   </div>
                 </div>
-              )}
+              </div>
+            )}
             <div className="flex-1 min-w-0 pr-2">
               <h3 className={`font-bold text-gray-900 leading-tight truncate ${isGrid ? "text-sm" : "text-base"}`}>
                 {vendor.name}
@@ -2010,7 +2069,7 @@ const VendorCard = memo(
         </AnimatePresence>
       </motion.div>
     );
-  }
+  },
 );
 VendorCard.displayName = "VendorCard";
 
@@ -2235,7 +2294,7 @@ const SortSheet = memo(
         )}
       </AnimatePresence>
     );
-  }
+  },
 );
 SortSheet.displayName = "SortSheet";
 
@@ -2544,103 +2603,112 @@ const FilterContent = memo(
         )}
       </div>
     );
-  }
+  },
 );
 FilterContent.displayName = "FilterContent";
 
-const FilterDrawer = memo(({ isOpen, onClose, children, onClear, colorPrimary, activeFilterCount, totalResults }) => {
-  const haptic = useHapticFeedback();
+const FilterDrawer = memo(
+  ({ isOpen, onClose, children, onClear, colorPrimary, activeFilterCount, totalResults, isNavbarVisible, setIsNavbarVisible, showCompare }) => {
+    const haptic = useHapticFeedback();
 
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
+    useEffect(() => {
+      const originalOverflow = document.body.style.overflow;
+      const originalNavbarState = isNavbarVisible; // 🔥 CAPTURE: Original state
 
-    // Restore navbar when drawer closes
-    if (!isOpen) {
-      const timer = setTimeout(() => {
-        // Only restore if no other overlays are open
-        document.body.style.overflow = "";
-      }, 300); // Match animation duration
+      if (isOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        // 🔥 CRITICAL: Use RAF to ensure smooth transition
+        requestAnimationFrame(() => {
+          document.body.style.overflow = originalOverflow || "";
 
-      return () => clearTimeout(timer);
-    }
+          // 🔥 Restore navbar after animation completes
+          setTimeout(() => {
+            if (!isOpen && !showCompare) {
+              setIsNavbarVisible(true);
+            }
+          }, 350); // Match animation duration + buffer
+        });
+      }
 
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
+      return () => {
+        document.body.style.overflow = originalOverflow || "";
+      };
+    }, [isOpen]);
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
-          />
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={SPRING_CONFIG.gentle}
-            className="fixed bottom-0 left-0 right-0 h-[80vh] bg-gray-50 rounded-t-3xl z-[101] flex flex-col shadow-2xl"
-          >
-            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-transparent">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-                <p className="text-xs text-gray-500">
-                  {activeFilterCount > 0
-                    ? `${activeFilterCount} active • ${totalResults} results`
-                    : "Refine your search"}
-                </p>
-              </div>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => {
-                  haptic("light");
-                  onClose();
-                }}
-                className="p-2 bg-gray-100 rounded-full"
-              >
-                <X size={20} className="text-gray-500" />
-              </motion.button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5 pb-32">{children}</div>
-            <div
-              className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3 z-50"
-              style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={SPRING_CONFIG.gentle}
+              className="fixed bottom-0 left-0 right-0 h-[80vh] bg-gray-50 rounded-t-3xl z-[101] flex flex-col shadow-2xl"
             >
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  haptic("medium");
-                  onClear();
-                }}
-                className="flex-1 py-3.5 rounded-xl border-2 border-gray-200 font-bold text-gray-600 text-sm"
+              <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-transparent">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+                  <p className="text-xs text-gray-500">
+                    {activeFilterCount > 0
+                      ? `${activeFilterCount} active • ${totalResults} results`
+                      : "Refine your search"}
+                  </p>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    haptic("light");
+                    onClose();
+                  }}
+                  className="p-2 bg-gray-100 rounded-full"
+                >
+                  <X size={20} className="text-gray-500" />
+                </motion.button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 pb-32">{children}</div>
+              <div
+                className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 flex gap-3 z-50"
+                style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
               >
-                Reset All
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  haptic("medium");
-                  onClose();
-                }}
-                className="flex-1 py-3.5 rounded-xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2"
-                style={{ backgroundColor: colorPrimary }}
-              >
-                Show {totalResults} Results
-              </motion.button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-});
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("medium");
+                    onClear();
+                  }}
+                  className="flex-1 py-3.5 rounded-xl border-2 border-gray-200 font-bold text-gray-600 text-sm"
+                >
+                  Reset All
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic("medium");
+                    onClose();
+                  }}
+                  className="flex-1 py-3.5 rounded-xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2"
+                  style={{ backgroundColor: colorPrimary }}
+                >
+                  Show {totalResults} Results
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    );
+  },
+);
 FilterDrawer.displayName = "FilterDrawer";
 
 const CompareBar = memo(({ count, vendors, onClear, onView, colorPrimary }) => {
@@ -2749,7 +2817,7 @@ const CompareModal = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
         if (v.tags?.includes("Popular")) s += 10;
         return Math.round(s);
       }),
-    [vendors]
+    [vendors],
   );
 
   const winnerIdx = useMemo(() => {
@@ -3296,47 +3364,69 @@ export default function MarketplacePageWrapper() {
     return url.toString();
   }, []);
 
- useEffect(() => {
-    // 🔥 CHANGED: Run synchronously without Promise wrapper
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    // Determine final categories
-    let finalCategories = [];
+    // 🔥 Build complete state object FIRST
+    const initialState = {
+      categories: [],
+      search: "",
+      sortBy: "rating",
+      sortOrder: "desc",
+      subcategory: "",
+      rating: 0,
+      featured: false,
+      page: 1,
+      priceRange: [0, 1000000],
+      locations: [],
+    };
+
+    // Process categories
     if (pageCategory) {
-      finalCategories = [pageCategory];
+      initialState.categories = [pageCategory];
     } else {
       const urlCats = params.get("categories");
       if (urlCats) {
-        finalCategories = urlCats.split(",").filter(Boolean);
-        finalCategories = finalCategories.filter((cat) => 
-          VENDOR_CATEGORIES.some((c) => c.id === cat)
-        );
+        initialState.categories = urlCats.split(",").filter((cat) => VENDOR_CATEGORIES.some((c) => c.id === cat));
       }
     }
+
+    // Process other params
+    initialState.search = decodeURIComponent(params.get("search") || "");
+    initialState.sortBy = params.get("sortBy") || "rating";
+    initialState.sortOrder = params.get("sortOrder") || "desc";
+    initialState.subcategory = params.get("subcategory") || "";
+    initialState.rating = parseFloat(params.get("minRating")) || 0;
+    initialState.featured = params.get("featured") === "true";
+    initialState.page = parseInt(params.get("page")) || 1;
 
     const minP = params.get("minPrice");
     const maxP = params.get("maxPrice");
     const minPrice = minP ? Math.max(0, parseInt(minP)) : 0;
     const maxPrice = maxP ? Math.min(1000000, Math.max(minPrice, parseInt(maxP))) : 1000000;
+    initialState.priceRange = [minPrice, maxPrice];
+
     const cities = params.get("cities");
+    if (cities) initialState.locations = cities.split(",").filter(Boolean);
 
-    // 🔥 CHANGED: Batch all state updates in React 18 automatic batching
-    setSelectedCategories(finalCategories);
-    setSearchQuery(decodeURIComponent(params.get("search") || ""));
-    setSortBy(params.get("sortBy") || "rating");
-    setSortOrder(params.get("sortOrder") || "desc");
-    setSelectedSubcategory(params.get("subcategory") || "");
-    setRatingFilter(parseFloat(params.get("minRating")) || 0);
-    setShowFeaturedOnly(params.get("featured") === "true");
-    setCurrentPage(parseInt(params.get("page")) || 1);
-    setPriceRange([minPrice, maxPrice]);
-    if (cities) setSelectedLocations(cities.split(",").filter(Boolean));
+    // 🔥 CRITICAL: Use startTransition to batch ALL updates
+    startTransition(() => {
+      setSelectedCategories(initialState.categories);
+      setSearchQuery(initialState.search);
+      setSortBy(initialState.sortBy);
+      setSortOrder(initialState.sortOrder);
+      setSelectedSubcategory(initialState.subcategory);
+      setRatingFilter(initialState.rating);
+      setShowFeaturedOnly(initialState.featured);
+      setCurrentPage(initialState.page);
+      setPriceRange(initialState.priceRange);
+      setSelectedLocations(initialState.locations);
 
-    if (pageCategory) setActiveCategory(pageCategory);
+      if (pageCategory) setActiveCategory(pageCategory);
 
-    // 🔥 CHANGED: Set initialization flag synchronously
-    setIsInitialized(true);
-
+      // 🔥 Set flag AFTER all state updates are queued
+      setIsInitialized(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -3350,107 +3440,61 @@ export default function MarketplacePageWrapper() {
   }, [debouncedSearchQuery, setRecentSearches]);
 
   useEffect(() => {
-    // 🔥 CHANGED: Gate all fetches until initialization completes
     if (!isInitialized) return;
 
-    const controller = new AbortController();
+    // 🔥 CRITICAL: Use debounced values to match fetch effect
+    const timeoutId = setTimeout(() => {
+      const params = {};
 
-    const fetchVendors = async () => {
-      dispatchVendorData({ type: 'SET_LOADING', payload: true });
+      const isOnlyPath = selectedCategories.length === 1 && selectedCategories[0] === pageCategory;
 
-      const queryParams = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: ITEMS_PER_PAGE.toString(),
-        sortBy,
-        sortOrder,
-      });
-
-      // Add filters
-      if (debouncedSearchQuery) {
-        queryParams.set("search", decodeURIComponent(debouncedSearchQuery));
+      if (selectedCategories.length > 0 && !isOnlyPath) {
+        params.categories = selectedCategories.join(",");
       }
-      if (selectedCategories.length > 0) {
-        queryParams.set("categories", selectedCategories.join(","));
+      if (debouncedSearchQuery && debouncedSearchQuery.trim()) {
+        params.search = debouncedSearchQuery.trim();
       }
-      if (selectedSubcategory) queryParams.set("subcategory", selectedSubcategory);
-      if (showFeaturedOnly) queryParams.set("featured", "true");
-      if (selectedLocations.length > 0) queryParams.set("cities", selectedLocations.join(","));
-      if (debouncedPriceRange[0] > 0) queryParams.set("minPrice", debouncedPriceRange[0].toString());
-      if (debouncedPriceRange[1] < 1000000) queryParams.set("maxPrice", debouncedPriceRange[1].toString());
-      if (ratingFilter > 0) queryParams.set("minRating", ratingFilter.toString());
+      if (sortBy !== "rating") params.sortBy = sortBy;
+      if (sortOrder !== "desc") params.sortOrder = sortOrder;
+      if (selectedSubcategory) params.subcategory = selectedSubcategory;
+      if (currentPage > 1) params.page = currentPage;
 
-      try {
-        const response = await fetch(`/api/vendor?${queryParams.toString()}`, {
-          signal: controller.signal,
-        });
-        const result = await response.json();
+      // 🔥 CRITICAL: Use DEBOUNCED price range
+      if (debouncedPriceRange[0] > 0) params.minPrice = debouncedPriceRange[0];
+      if (debouncedPriceRange[1] < 1000000) params.maxPrice = debouncedPriceRange[1];
 
-        if (result.success) {
-          const mappedVendors = result.data.map((v) => {
-            let position;
+      if (selectedLocations.length > 0) params.cities = selectedLocations.join(",");
+      if (ratingFilter > 0) params.minRating = ratingFilter;
+      if (showFeaturedOnly) params.featured = "true";
 
-            if (v.location?.coordinates && Array.isArray(v.location.coordinates)) {
-              position = {
-                lat: v.location.coordinates[1],
-                lng: v.location.coordinates[0],
-              };
-            } else if (v.address?.city && CITY_COORDS[v.address.city]) {
-              position = CITY_COORDS[v.address.city];
-            } else {
-              position = DEFAULT_CENTER;
-            }
+      const queryString = buildUrlWithParams(params);
+      const base = selectedCategories.length === 0 ? "/vendors/marketplace" : window.location.pathname;
+      const newUrl = queryString ? `${base}?${queryString}` : base;
+      const currentSearch = window.location.search;
+      const newSearch = queryString ? `?${queryString}` : "";
 
-            return { ...v, position };
-          });
-
-          const cities = [...new Set(result.data.map((v) => v.address?.city).filter(Boolean))];
-
-          // 🔥 CHANGED: Single batched dispatch
-          dispatchVendorData({
-            type: 'SET_VENDORS',
-            payload: {
-              vendors: mappedVendors,
-              pagination: {
-                totalPages: result.pagination?.totalPages || 1,
-                totalVendors: result.pagination?.total || 0,
-              },
-              cities,
-            },
-          });
-
-        } else {
-          dispatchVendorData({
-            type: 'SET_VENDORS',
-            payload: {
-              vendors: [],
-              pagination: { totalPages: 1, totalVendors: 0 },
-              cities: [],
-            },
-          });
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          dispatchVendorData({ type: 'SET_ERROR', payload: "Failed to load vendors." });
-        }
+      // 🔥 ADD: Prevent unnecessary router updates
+      if (currentSearch !== newSearch) {
+        router.replace(newUrl, { scroll: false });
       }
-    };
+    }, 400);
 
-    fetchVendors();
-    return () => controller.abort();
-
+    return () => clearTimeout(timeoutId);
   }, [
-    // 🔥 CHANGED: Only essential dependencies
     isInitialized,
-    currentPage,
+    selectedCategories,
+    debouncedSearchQuery, // Use debounced
     sortBy,
     sortOrder,
-    debouncedSearchQuery,
-    debouncedPriceRange,
-    selectedCategories,
-    selectedSubcategory,
-    showFeaturedOnly,
+    currentPage,
+    debouncedPriceRange, // 🔥 CHANGED: Use debounced
     selectedLocations,
+    selectedSubcategory,
     ratingFilter,
+    showFeaturedOnly,
+    pageCategory,
+    router,
+    buildUrlWithParams,
   ]);
 
   useEffect(() => {
@@ -3484,10 +3528,10 @@ export default function MarketplacePageWrapper() {
       const currentSearch = window.location.search;
       const newSearch = queryString ? `?${queryString}` : "";
 
-      if (currentSearch !== newSearch) {
+      if (window.location.search !== newSearch) {
         router.replace(newUrl, { scroll: false });
       }
-    }, 400);
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [
@@ -3508,14 +3552,126 @@ export default function MarketplacePageWrapper() {
     buildUrlWithParams,
   ]);
 
+  useEffect(() => {
+  if (!isInitialized) return;
+
+  const controller = new AbortController();
+  let isMounted = true; // 🔥 ADD: Mount tracking
+
+  const fetchVendors = async () => {
+    // 🔥 CRITICAL: Don't update state if already loading
+    if (!isMounted) return;
+    
+    dispatchVendorData({ type: 'SET_LOADING', payload: true });
+
+    const queryParams = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: ITEMS_PER_PAGE.toString(),
+      sortBy,
+      sortOrder,
+    });
+
+    // Add filters (keep existing code)
+    if (debouncedSearchQuery) {
+      queryParams.set("search", decodeURIComponent(debouncedSearchQuery));
+    }
+    if (selectedCategories.length > 0) {
+      queryParams.set("categories", selectedCategories.join(","));
+    }
+    if (selectedSubcategory) queryParams.set("subcategory", selectedSubcategory);
+    if (showFeaturedOnly) queryParams.set("featured", "true");
+    if (selectedLocations.length > 0) queryParams.set("cities", selectedLocations.join(","));
+    if (debouncedPriceRange[0] > 0) queryParams.set("minPrice", debouncedPriceRange[0].toString());
+    if (debouncedPriceRange[1] < 1000000) queryParams.set("maxPrice", debouncedPriceRange[1].toString());
+    if (ratingFilter > 0) queryParams.set("minRating", ratingFilter.toString());
+
+    try {
+      const response = await fetch(`/api/vendor?${queryParams.toString()}`, {
+        signal: controller.signal,
+      });
+      
+      // 🔥 CRITICAL: Check mount status before parsing
+      if (!isMounted) return;
+      
+      const result = await response.json();
+
+      // 🔥 CRITICAL: Final mount check before state update
+      if (!isMounted) return;
+
+      if (result.success) {
+        const mappedVendors = result.data.map((v) => {
+          let position;
+          if (v.location?.coordinates && Array.isArray(v.location.coordinates)) {
+            position = {
+              lat: v.location.coordinates[1],
+              lng: v.location.coordinates[0],
+            };
+          } else if (v.address?.city && CITY_COORDS[v.address.city]) {
+            position = CITY_COORDS[v.address.city];
+          } else {
+            position = DEFAULT_CENTER;
+          }
+          return { ...v, position };
+        });
+
+        const cities = [...new Set(result.data.map((v) => v.address?.city).filter(Boolean))];
+
+        dispatchVendorData({
+          type: 'SET_VENDORS',
+          payload: {
+            vendors: mappedVendors,
+            pagination: {
+              totalPages: result.pagination?.totalPages || 1,
+              totalVendors: result.pagination?.total || 0,
+            },
+            cities,
+          },
+        });
+      } else {
+        dispatchVendorData({
+          type: 'SET_VENDORS',
+          payload: {
+            vendors: [],
+            pagination: { totalPages: 1, totalVendors: 0 },
+            cities: [],
+          },
+        });
+      }
+    } catch (err) {
+      if (err.name !== "AbortError" && isMounted) {
+        dispatchVendorData({ type: 'SET_ERROR', payload: "Failed to load vendors." });
+      }
+    }
+  };
+
+  fetchVendors();
+  
+  return () => {
+    isMounted = false; // 🔥 CRITICAL: Prevent state updates after unmount
+    controller.abort();
+  };
+}, [
+  isInitialized,
+  currentPage,
+  sortBy,
+  sortOrder,
+  debouncedSearchQuery,
+  debouncedPriceRange,
+  selectedCategories,
+  selectedSubcategory,
+  showFeaturedOnly,
+  selectedLocations,
+  ratingFilter,
+]);
+
   const { vendors, pagination: paginationInfo, cities: availableCities, isLoading, error } = vendorData;
 
   const showToast = useCallback((message, type = "success") => {
-    // Add to queue
     toastQueueRef.current.push({ message, type });
 
-    // Process queue if not currently showing a toast
     if (!isShowingToastRef.current) {
+      let timeoutId; // 🔥 ADD: Track timeout ID
+
       const processQueue = () => {
         if (toastQueueRef.current.length === 0) {
           isShowingToastRef.current = false;
@@ -3526,15 +3682,24 @@ export default function MarketplacePageWrapper() {
         const nextToast = toastQueueRef.current.shift();
         setToast({ ...nextToast, isVisible: true });
 
-        // Auto-hide after 3 seconds and process next
-        setTimeout(() => {
+        // 🔥 CRITICAL: Store timeout ID for cleanup
+        timeoutId = setTimeout(() => {
           setToast((prev) => ({ ...prev, isVisible: false }));
-          setTimeout(processQueue, 300); // Wait for exit animation
+          setTimeout(processQueue, 300);
         }, 3000);
       };
 
       processQueue();
     }
+  }, []);
+
+  // 🔥 ADD: Cleanup effect
+  useEffect(() => {
+    return () => {
+      // Clear queue and refs on unmount
+      toastQueueRef.current = [];
+      isShowingToastRef.current = false;
+    };
   }, []);
 
   const hideToast = useCallback(() => {
@@ -3544,33 +3709,35 @@ export default function MarketplacePageWrapper() {
   const handleCategoryChange = useCallback(
     (cat) => {
       haptic("light");
-      if (cat === "__clear__") {
-        setSelectedCategories([]);
-        setSelectedSubcategory("");
-        setCurrentPage(1);
-        if (pageCategory) {
-          router.push("/vendors/marketplace");
-        }
-      } else {
-        const isCurrentlySelected = selectedCategories.includes(cat);
-
-        if (isCurrentlySelected) {
+      startTransition(() => {
+        // 🔥 ADD: Batch updates
+        if (cat === "__clear__") {
           setSelectedCategories([]);
           setSelectedSubcategory("");
-        } else {
-          // When selecting new category, clear subcategory if it doesn't belong
-          const newCategory = [cat];
-          const subcategoryBelongsToNew = SUBCATEGORIES[cat]?.some((sub) => sub.id === selectedSubcategory);
-
-          setSelectedCategories(newCategory);
-          if (!subcategoryBelongsToNew) {
-            setSelectedSubcategory("");
+          setCurrentPage(1); // ✅ Already present
+          if (pageCategory) {
+            router.push("/vendors/marketplace");
           }
+        } else {
+          const isCurrentlySelected = selectedCategories.includes(cat);
+
+          if (isCurrentlySelected) {
+            setSelectedCategories([]);
+            setSelectedSubcategory("");
+          } else {
+            const newCategory = [cat];
+            const subcategoryBelongsToNew = SUBCATEGORIES[cat]?.some((sub) => sub.id === selectedSubcategory);
+
+            setSelectedCategories(newCategory);
+            if (!subcategoryBelongsToNew) {
+              setSelectedSubcategory("");
+            }
+          }
+          setCurrentPage(1); // ✅ Already present
         }
-        setCurrentPage(1);
-      }
+      });
     },
-    [pageCategory, selectedCategories, selectedSubcategory, router, haptic]
+    [pageCategory, selectedCategories, selectedSubcategory, router, haptic],
   );
 
   const handleFilterPanelCategoryChange = useCallback(
@@ -3582,7 +3749,7 @@ export default function MarketplacePageWrapper() {
         // Clear subcategory if no categories match it
         if (!newCategories.includes(cat) && selectedSubcategory) {
           const subcategoryBelongsToSelected = newCategories.some((catId) =>
-            SUBCATEGORIES[catId]?.some((sub) => sub.id === selectedSubcategory)
+            SUBCATEGORIES[catId]?.some((sub) => sub.id === selectedSubcategory),
           );
           if (!subcategoryBelongsToSelected) {
             setSelectedSubcategory("");
@@ -3592,7 +3759,7 @@ export default function MarketplacePageWrapper() {
       });
       setCurrentPage(1);
     },
-    [selectedSubcategory, haptic]
+    [selectedSubcategory, haptic],
   );
 
   const handleSubcategoryChange = useCallback((sub) => {
@@ -3608,29 +3775,35 @@ export default function MarketplacePageWrapper() {
   const handleCompareToggle = useCallback(
     (vendor) => {
       haptic("medium");
-      setCompareList((prev) => {
-        const exists = prev.find((v) => v._id === vendor._id);
-        let newList;
 
-        if (exists) {
-          newList = prev.filter((v) => v._id !== vendor._id);
-        } else {
-          if (prev.length >= MAX_COMPARE_ITEMS) {
-            showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
-            return prev;
+      // 🔥 CRITICAL: Batch all state updates
+      startTransition(() => {
+        setCompareList((prev) => {
+          const exists = prev.find((v) => v._id === vendor._id);
+          let newList;
+
+          if (exists) {
+            newList = prev.filter((v) => v._id !== vendor._id);
+          } else {
+            if (prev.length >= MAX_COMPARE_ITEMS) {
+              showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
+              return prev;
+            }
+            newList = [...prev, vendor];
           }
-          newList = [...prev, vendor];
-        }
 
-        // Auto-disable compare mode if list becomes empty
-        if (newList.length === 0 && compareMode) {
-          setCompareMode(false);
-        }
+          // 🔥 CRITICAL: Update compare mode in same batch
+          if (newList.length === 0) {
+            setCompareMode(false);
+          } else if (!compareMode) {
+            setCompareMode(true);
+          }
 
-        return newList;
+          return newList;
+        });
       });
     },
-    [haptic, showToast, compareMode]
+    [haptic, showToast, compareMode],
   );
 
   const handlePageChange = useCallback(
@@ -3639,7 +3812,7 @@ export default function MarketplacePageWrapper() {
       setCurrentPage(page);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [haptic]
+    [haptic],
   );
 
   const clearAllFilters = useCallback(() => {
@@ -3919,24 +4092,24 @@ export default function MarketplacePageWrapper() {
         </AnimatePresence>
 
         {error && (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3"
-  >
-    <AlertCircle className="text-red-500 shrink-0" size={20} />
-    <div className="flex-1">
-      <p className="text-red-700 font-medium text-sm">{error}</p>
-    </div>
-    {/* 🔥 CHANGED: Use reducer dispatch instead of setError */}
-    <button 
-      onClick={() => dispatchVendorData({ type: 'SET_ERROR', payload: null })} 
-      className="p-1 text-red-400 hover:text-red-600"
-    >
-      <X size={16} />
-    </button>
-  </motion.div>
-)}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3"
+          >
+            <AlertCircle className="text-red-500 shrink-0" size={20} />
+            <div className="flex-1">
+              <p className="text-red-700 font-medium text-sm">{error}</p>
+            </div>
+            {/* 🔥 CHANGED: Use reducer dispatch instead of setError */}
+            <button
+              onClick={() => dispatchVendorData({ type: "SET_ERROR", payload: null })}
+              className="p-1 text-red-400 hover:text-red-600"
+            >
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {isMapView ? (
@@ -3951,7 +4124,7 @@ export default function MarketplacePageWrapper() {
                 <MapView vendors={vendors} onVendorSelect={() => setIsMapView(false)} center={DEFAULT_CENTER} />
               </Suspense>
             </motion.div>
-          ) : !isInitialized ? (
+          ) : !isInitialized || (isLoading && vendors.length === 0) ? (
             /* PHASE 1: Initial Loading - Show skeletons until first fetch completes */
             <motion.div
               key="initial-loading"
@@ -3978,35 +4151,33 @@ export default function MarketplacePageWrapper() {
               ) : vendors.length > 0 ? (
                 /* Sub-Phase A: Results found */
                 <>
-                <div className="relative">
-                  {isLoading && (
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 animate-pulse z-10" />
-                  )}
-                  <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
-                    {vendors.map((vendor, index) => (
-                      <motion.div
-                        key={vendor._id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{
-                          duration: 0.15,
-                          delay: index * 0.01,
-                        }}
-                      >
-                        <VendorCard
-                          vendor={vendor}
-                          viewMode={viewMode}
-                          isComparing={compareMode}
-                          isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
-                          onCompare={handleCompareToggle}
-                          colorPrimary={COLORS.primary}
-                          onShowToast={showToast}
-                          setCompareMode={setCompareMode}
-                          setCompareList={setCompareList}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
+                  <div className="relative">
+                    {isLoading && <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 animate-pulse z-10" />}
+                    <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {vendors.map((vendor, index) => (
+                        <motion.div
+                          key={vendor._id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{
+                            duration: 0.15,
+                            delay: index * 0.01,
+                          }}
+                        >
+                          <VendorCard
+                            vendor={vendor}
+                            viewMode={viewMode}
+                            isComparing={compareMode}
+                            isSelectedForCompare={!!compareList.find((v) => v._id === vendor._id)}
+                            onCompare={handleCompareToggle}
+                            colorPrimary={COLORS.primary}
+                            onShowToast={showToast}
+                            setCompareMode={setCompareMode}
+                            setCompareList={setCompareList}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
 
                   <PaginationControls
@@ -4067,6 +4238,9 @@ export default function MarketplacePageWrapper() {
         colorPrimary={COLORS.primary}
         activeFilterCount={activeFilterCount}
         totalResults={paginationInfo.totalVendors}
+        setIsNavbarVisible={setIsNavbarVisible} 
+        isNavbarVisible={isNavbarVisible} 
+        showCompare={showCompare}
       >
         <FilterContent
           showFeaturedOnly={showFeaturedOnly}

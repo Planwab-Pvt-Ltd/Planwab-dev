@@ -113,7 +113,7 @@ export default function RootLayout({ children }) {
           <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}>
             <NextTopLoader color="#2563eb" height={3} crawl={false} showSpinner={false} easing="linear" speed={300} shadow={false} zIndex={1600} />
             {children}
-            <Toaster position="top-center" richColors closeButton />
+            <Toaster position="bottom-center" richColors closeButton />
           </body>
         </html>
       </ThemeClerkProvider>
