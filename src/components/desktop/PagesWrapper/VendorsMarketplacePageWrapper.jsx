@@ -711,7 +711,6 @@ export default function MarketplacePageWrapper() {
     const [guestCapacity, setGuestCapacity] = useState(0);
     const [selectedLocations, setSelectedLocations] = useState([]);
     const [availableCities, setAvailableCities] = useState([]);
-  
     const color = themeColors[activeCategory] || themeColors.Default;
     const vendorCategories = useMemo(
       () => ["venues", "photographers", "makeup", "planners", "catering", "clothes", "mehendi", "cakes", "jewellery", "invitations", "djs", "hairstyling", "other"],
@@ -737,7 +736,6 @@ export default function MarketplacePageWrapper() {
         const cities = [...new Set(vendors.map(v => v.address?.city).filter(Boolean))].sort();
         setAvailableCities(cities);
     }, [vendors]);
-
     const fetchVendors = useMemo(() => {
         return async () => {
             setIsLoading(true);
@@ -800,7 +798,6 @@ export default function MarketplacePageWrapper() {
           : [...prev, category]
       );
     }, []);
-  
     const handleLocationChange = useCallback((city) => {
       setSelectedLocations((prev) =>
         prev.includes(city)
