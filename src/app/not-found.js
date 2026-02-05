@@ -31,7 +31,7 @@ export default function NotFound() {
         </div>
 
         <Link
-          href=""
+          href="/"
           className="inline-flex items-center gap-2 px-8 py-3.5 bg-black text-white rounded-full font-bold shadow-xl hover:shadow-2xl active:scale-95 transition-all duration-300"
         >
           <Home size={20} strokeWidth={2.5} />

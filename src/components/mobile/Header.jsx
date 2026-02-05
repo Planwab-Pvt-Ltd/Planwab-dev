@@ -433,7 +433,7 @@ const HeaderLogic = () => {
 
           {/* --- STICKY HEADER (Fixed, Scroll Aware) --- */}
           <motion.div
-            className="fixed top-0 left-0 w-full z-[60] bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100 will-change-transform"
+            className="fixed top-0 left-0 w-full z-[60] bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100 will-change-transform -translate-y-full"
             initial={{ y: -100 }}
             animate={{ y: isStickyVisible ? 0 : -150 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }} // Snappy spring

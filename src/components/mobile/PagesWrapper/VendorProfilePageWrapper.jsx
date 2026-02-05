@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
+import ReactDOM from "react-dom/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, LayoutGroup } from "framer-motion";
 import {
@@ -498,245 +499,100 @@ const formatPrice = (price) => {
   return `₹${Number(price).toLocaleString("en-IN")}`;
 };
 
-export const getVideoThumbnail = async (videoSource, options = {}) => {
-  const {
-    seekTime = 1, // Time in seconds to capture
-    quality = 0.8, // JPEG quality (0-1)
-    maxWidth = 1280, // Max thumbnail width
-    maxHeight = 720, // Max thumbnail height
-    timeout = 30000, // 30 second timeout
-    retries = 2, // Number of retry attempts
-  } = options;
+const GLOBAL_THUMB_CACHE = new Map();
+// Simple queue to process one video at a time (prevents memory spikes)
+let isProcessingQueue = false;
+const thumbQueue = [];
 
-  // Retry wrapper
-  let lastError;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const result = await generateThumbnail(videoSource, {
-        seekTime,
-        quality,
-        maxWidth,
-        maxHeight,
-        timeout,
-      });
-      return result;
-    } catch (error) {
-      lastError = error;
-      console.warn(`Thumbnail attempt ${attempt + 1} failed:`, error.message);
-
-      // Wait before retry (exponential backoff)
-      if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-      }
-    }
-  }
-
-  throw lastError;
-};
-
-const generateThumbnail = (videoSource, options) => {
-  return new Promise((resolve, reject) => {
-    const { seekTime, quality, maxWidth, maxHeight, timeout } = options;
-
-    let objectUrl = null;
-    let resolved = false;
-    let video = null;
-
-    const cleanup = () => {
-      if (video) {
-        video.onloadedmetadata = null;
-        video.onloadeddata = null;
-        video.onseeked = null;
-        video.onerror = null;
-        video.oncanplay = null;
-        video.removeAttribute("src");
-        video.load();
-        video = null;
-      }
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        objectUrl = null;
-      }
-    };
-
-    const safeResolve = (value) => {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      resolve(value);
-    };
-
-    const safeReject = (error) => {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      reject(error);
-    };
-
-    const timeoutId = setTimeout(() => {
-      safeReject(new Error("Thumbnail generation timed out"));
-    }, timeout);
-
-    try {
-      video = document.createElement("video");
-
-      video.muted = true;
-      video.playsInline = true;
-      video.autoplay = false;
-      video.preload = "auto";
-
-      const isLocalFile = videoSource instanceof File || videoSource instanceof Blob;
-
-      if (isLocalFile) {
-        objectUrl = URL.createObjectURL(videoSource);
-        video.src = objectUrl;
-      } else if (typeof videoSource === "string") {
-        video.crossOrigin = "anonymous";
-
-        const separator = videoSource.includes("?") ? "&" : "?";
-        video.src = `${videoSource}${separator}_t=${Date.now()}`;
-      } else {
-        safeReject(new Error("Invalid video source type"));
-        return;
-      }
-
-      video.onerror = () => {
-        const errorCode = video.error?.code;
-        const errorMessages = {
-          1: "Video loading aborted",
-          2: "Network error while loading video",
-          3: "Video decoding failed",
-          4: "Video format not supported",
-        };
-        safeReject(new Error(errorMessages[errorCode] || "Failed to load video"));
-      };
-
-      video.onloadedmetadata = () => {
-        if (resolved) return;
-
-        if (!video.videoWidth || !video.videoHeight) {
-          setTimeout(() => {
-            if (!resolved && video && (!video.videoWidth || !video.videoHeight)) {
-              safeReject(new Error("Video has no dimensions"));
-            }
-          }, 1000);
-          return;
-        }
-
-        const duration = video.duration || 0;
-        let targetTime = seekTime;
-
-        if (duration > 0) {
-          if (duration < seekTime) {
-            targetTime = duration / 2;
-          }
-          targetTime = Math.min(targetTime, duration - 0.1);
-        }
-
-        video.currentTime = Math.max(0, targetTime);
-      };
-
-      video.onseeked = () => {
-        if (resolved) return;
-
-        requestAnimationFrame(() => {
-          if (resolved) return;
-
-          try {
-            const thumbnail = captureFrame(video, { quality, maxWidth, maxHeight });
-            safeResolve(thumbnail);
-          } catch (error) {
-            safeReject(error);
-          }
-        });
-      };
-
-      video.oncanplay = () => {
-        setTimeout(() => {
-          if (resolved) return;
-
-          try {
-            const thumbnail = captureFrame(video, { quality, maxWidth, maxHeight });
-            safeResolve(thumbnail);
-          } catch (error) {
-            console.warn("canplay capture failed, waiting for seeked");
-          }
-        }, 500);
-      };
-
-      video.load();
-    } catch (error) {
-      safeReject(error);
-    }
-  });
-};
-
-const captureFrame = (video, { quality, maxWidth, maxHeight }) => {
-  if (!video || !video.videoWidth || !video.videoHeight) {
-    throw new Error("Video not ready for capture");
-  }
-
-  let width = video.videoWidth;
-  let height = video.videoHeight;
-
-  if (width > maxWidth) {
-    height = (height * maxWidth) / width;
-    width = maxWidth;
-  }
-  if (height > maxHeight) {
-    width = (width * maxHeight) / height;
-    height = maxHeight;
-  }
-
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.floor(width);
-  canvas.height = Math.floor(height);
-
-  const ctx = canvas.getContext("2d", {
-    alpha: false,
-    willReadFrequently: false,
-  });
-
-  if (!ctx) {
-    throw new Error("Failed to get canvas context");
-  }
-
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+const processQueue = async () => {
+  if (isProcessingQueue || thumbQueue.length === 0) return;
+  isProcessingQueue = true;
+  const { videoSource, resolve, reject, options } = thumbQueue.shift();
 
   try {
-    ctx.getImageData(0, 0, 1, 1);
-  } catch (e) {
-    throw new Error("Canvas tainted - CORS not configured on video source");
+    const result = await performCapture(videoSource, options);
+    resolve(result);
+  } catch (err) {
+    reject(err);
+  } finally {
+    isProcessingQueue = false;
+    processQueue(); // Process next in line
   }
-
-  const dataUrl = canvas.toDataURL("image/jpeg", quality);
-
-  if (!dataUrl || dataUrl === "data:," || dataUrl.length < 1000) {
-    throw new Error("Generated thumbnail is empty or invalid");
-  }
-
-  return dataUrl;
 };
 
-export const dataUrlToBlob = (dataUrl) => {
-  const arr = dataUrl.split(",");
-  const mime = arr[0].match(/:(.*?);/)[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
+const performCapture = (videoSource, { seekTime, quality, maxWidth, maxHeight, timeout }) => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
 
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
+    // CRITICAL: Robust attribute setting
+    video.setAttribute("crossOrigin", "anonymous");
+    video.preload = "auto";
+    video.muted = true;
+    video.playsInline = true;
+    video.style.display = "none";
 
-  return new Blob([u8arr], { type: mime });
+    const timeoutId = setTimeout(() => cleanup(new Error("Timeout")), timeout);
+
+    const cleanup = (err) => {
+      clearTimeout(timeoutId);
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      video.remove();
+      if (err) reject(err);
+    };
+
+    video.onloadedmetadata = () => {
+      // Seek to 1 second or 10% of video (whichever is smaller) to avoid black frames
+      video.currentTime = Math.min(seekTime, video.duration * 0.1);
+    };
+
+    video.onseeked = () => {
+      try {
+        let w = video.videoWidth;
+        let h = video.videoHeight;
+
+        // Proper scaling logic
+        const ratio = Math.min(maxWidth / w, maxHeight / h);
+        canvas.width = w * ratio;
+        canvas.height = h * ratio;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Verify capture isn't a blank frame
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        if (dataUrl.length < 1000) throw new Error("Blank frame captured");
+
+        cleanup();
+        resolve(dataUrl);
+      } catch (err) {
+        cleanup(err);
+      }
+    };
+
+    video.onerror = () => cleanup(new Error("Video load error"));
+    video.src = videoSource;
+    video.load();
+  });
 };
 
-export const dataUrlToFile = (dataUrl, filename = "thumbnail.jpg") => {
-  const blob = dataUrlToBlob(dataUrl);
-  return new File([blob], filename, { type: "image/jpeg" });
+export const getBulletproofThumbnail = (videoSource, options = {}) => {
+  if (GLOBAL_THUMB_CACHE.has(videoSource)) return Promise.resolve(GLOBAL_THUMB_CACHE.get(videoSource));
+
+  return new Promise((resolve, reject) => {
+    thumbQueue.push({
+      videoSource,
+      resolve: (res) => {
+        GLOBAL_THUMB_CACHE.set(videoSource, res);
+        resolve(res);
+      },
+      reject,
+      options: { seekTime: 1, quality: 0.7, maxWidth: 480, maxHeight: 480, timeout: 15000, ...options },
+    });
+    processQueue();
+  });
 };
 
 const useBodyScrollLock = (isLocked) => {
@@ -1883,37 +1739,33 @@ const PostDetailModal = ({
   }, []);
 
   // Play/Pause with visual indicator
-  const togglePlayPause = useCallback(() => {
+  const togglePlayPause = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
 
-    // 1. Clear any existing indicator timeout so it doesn't hide prematurely
-    if (playPauseTimeoutRef.current) {
-      clearTimeout(playPauseTimeoutRef.current);
+    try {
+      if (video.paused) {
+        // Always clear timeout first
+        if (playPauseTimeoutRef.current) clearTimeout(playPauseTimeoutRef.current);
+        setShowPlayPauseIndicator(true);
+
+        // The robust way to handle the play promise
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          setIsPlaying(true);
+        }
+      } else {
+        video.pause();
+        setIsPlaying(false);
+        setShowPlayPauseIndicator(true);
+      }
+    } catch (error) {
+      console.warn("Playback interaction interrupted");
+    } finally {
+      playPauseTimeoutRef.current = setTimeout(() => setShowPlayPauseIndicator(false), 800);
     }
-
-    // 2. Show indicator immediately
-    setShowPlayPauseIndicator(true);
-
-    // 3. Perform Toggle
-    if (video.paused) {
-      video
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => {
-          console.error("Play failed:", err);
-          setIsPlaying(false);
-        });
-    } else {
-      video.pause();
-      setIsPlaying(false);
-    }
-
-    // 4. Hide indicator after 800ms (standard UX)
-    playPauseTimeoutRef.current = setTimeout(() => {
-      setShowPlayPauseIndicator(false);
-    }, 800);
-  }, []);
+  }, [isPlaying]);
 
   // Double tap to like
   const handlePointerDown = useCallback((e) => {
@@ -2545,12 +2397,12 @@ const PostDetailModal = ({
               <span className="text-white font-bold text-sm">{vendorName}</span>
               {currentPost.date && <p className="text-white/50 text-xs">{currentPost.date}</p>}
             </div>
-            <motion.button
+            {/* <motion.button
               whileTap={{ scale: 0.95 }}
               className="px-3 py-1.5 bg-white/20 backdrop-blur-xl rounded-lg border border-white/20"
             >
               <span className="text-white text-xs font-semibold">Follow</span>
-            </motion.button>
+            </motion.button> */}
           </div>
 
           {/* Caption */}
@@ -8088,15 +7940,16 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     }
   }, []);
 
-  // Only update "My Interaction" status (Liked/Trusted) when user loads
   useEffect(() => {
-    if (!isUserLoaded) return;
-
-    // Direct state updates - no deferral needed
-    if (isSignedIn && user?.id && profile && Object.keys(profile).length > 0) {
-      setHasLiked(Array.isArray(profile.likes) && profile.likes.includes(user.id));
-      setHasTrusted(Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id));
+    if (!isUserLoaded || !isSignedIn || !user?.id || !profile || Object.keys(profile).length === 0) {
+      return;
     }
+
+    const liked = Array.isArray(profile.likes) && profile.likes.includes(user.id);
+    const trusted = Array.isArray(profile.trustedBy) && profile.trustedBy.includes(user.id);
+
+    setHasLiked(liked);
+    setHasTrusted(trusted);
     setUserStateReady(true);
   }, [isUserLoaded, isSignedIn, user?.id, profile]);
 
@@ -8266,53 +8119,25 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   useEffect(() => {
     if (!posts.length) return;
 
-    // Use ref to track if we've already generated thumbnails for these posts
-    const postIds = posts.map((p) => p._id).join(",");
+    const generate = async () => {
+      // Only target videos that don't have a thumbnail in cache or state
+      const targetVideos = posts.filter((p) => p.mediaType === "video" && !p.thumbnailUrl && !videoThumbnails[p._id]);
 
-    const generateThumbnails = async () => {
-      const videoPosts = posts.filter(
-        (post) => post.mediaType === "video" && !post.thumbnailUrl && !videoThumbnails[post._id],
-      );
-
-      if (videoPosts.length === 0) return;
-
-      const newThumbnails = {};
-
-      await Promise.allSettled(
-        videoPosts.map(async (post) => {
-          try {
-            if (post.thumbnailUrl) {
-              newThumbnails[post._id] = post.thumbnailUrl;
-              return;
-            }
-
-            const thumbnail = await getVideoThumbnail(post.mediaUrl, {
-              seekTime: 1,
-              quality: 0.7,
-              maxWidth: 480,
-              maxHeight: 480,
-              timeout: 10000,
-              retries: 1,
-            });
-
-            newThumbnails[post._id] = thumbnail;
-          } catch (error) {
-            console.warn(`Failed to generate thumbnail for post ${post._id}:`, error.message);
-            newThumbnails[post._id] = null;
-          }
-        }),
-      );
-
-      if (Object.keys(newThumbnails).length > 0) {
-        // Direct update - no requestAnimationFrame needed
-        setVideoThumbnails((prev) => ({ ...prev, ...newThumbnails }));
+      for (const post of targetVideos) {
+        try {
+          const thumb = await getBulletproofThumbnail(post.mediaUrl);
+          setVideoThumbnails((prev) => ({ ...prev, [post._id]: thumb }));
+        } catch (error) {
+          console.warn(`Thumb failed for ${post._id}, using video fallback.`);
+          // Mark as "failed" so we don't keep retrying
+          setVideoThumbnails((prev) => ({ ...prev, [post._id]: "FALLBACK" }));
+        }
       }
     };
 
-    // Longer delay to ensure initial render is complete
-    const timer = setTimeout(generateThumbnails, 500);
+    const timer = setTimeout(generate, 300); // Small delay to let UI settle
     return () => clearTimeout(timer);
-  }, [posts, videoThumbnails]);
+  }, [posts]);
 
   // Add cleanup for video refs when component unmounts or posts change
   useEffect(() => {
@@ -8354,13 +8179,13 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     };
   }, []);
 
- const handleBack = useCallback(() => {
+  const handleBack = useCallback(() => {
     if (typeof window === "undefined") return;
 
-    if(category || id){
-      router.push(`/vendors/${category || "all"}/${id}`);
-    }else{
-      router.push('/');
+    if (category || id) {
+      router.push(`/vendor/${category || "all"}/${id}`);
+    } else {
+      router.push("/");
     }
   }, [router, category, id]);
 
@@ -9079,6 +8904,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                 <div className="grid grid-cols-2 gap-[8px] mx-[15px]">
                   {posts.map((post, index) => {
                     const posterUrl = post.thumbnailUrl || videoThumbnails[post._id] || null;
+                    const thumb = videoThumbnails[post._id];
                     return (
                       <motion.div
                         key={post?._id || `post-${index}`}
@@ -9174,22 +9000,21 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                       >
                         {post.mediaType === "video" ? (
                           <div className="relative w-full h-full">
-                            <video
-                              ref={(el) => {
-                                if (el) videoRefs.current[post._id] = el;
-                              }}
-                              src={post.mediaUrl}
-                              poster={posterUrl || undefined}
-                              className="w-full h-full object-cover"
-                              muted
-                              playsInline
-                              loop
-                              preload="metadata"
-                            />
-                            {!posterUrl && !videoThumbnails.hasOwnProperty(post._id) && (
-                              <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center">
-                                <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                              </div>
+                            {thumb && thumb !== "FALLBACK" ? (
+                              <img src={thumb} className="w-full h-full object-cover" />
+                            ) : (
+                              <video
+                                ref={(el) => {
+                                  if (el) videoRefs.current[post._id] = el;
+                                }}
+                                src={post.mediaUrl}
+                                poster={posterUrl || undefined}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                                loop
+                                preload="metadata"
+                              />
                             )}
                             <AnimatePresence>
                               {playingVideoId !== post._id && (

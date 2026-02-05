@@ -64,9 +64,8 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "../../GlobalState/CartDataStore";
-import { set } from "mongoose";
-import { act } from "react";
 import { useNavbarVisibilityStore } from "../../GlobalState/navbarVisibilityStore";
+import { cn } from "../../lib/utils";
 
 // =============================================================================
 // CONSTANTS
@@ -212,14 +211,14 @@ const Toast = memo(({ message, type = "success", isNavbarVisible, onClose }) => 
     <AnimatePresence>
       {isNavbarVisible && (
         <motion.div
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          className={`fixed top-4 left-4 right-4 z-[200] ${colors[type]} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3`}
+          initial={{ x: 400, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: 400, opacity: 0 }}
+          className={`fixed top-6 right-6 z-[200] ${colors[type]} text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 min-w-[300px]`}
         >
           <Icon size={20} />
           <span className="flex-1 font-medium text-sm">{message}</span>
-          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full">
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
             <X size={16} />
           </button>
         </motion.div>
@@ -245,70 +244,73 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100"
+      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-shadow"
     >
       {/* Image Section */}
-      <div className="relative h-36">
+      <div className="relative h-48">
         <img src={img} className="w-full h-full object-cover" alt={item.name} loading="lazy" />
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
         {/* Top Badges */}
-        <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-          <div className="flex gap-1.5">
+        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+          <div className="flex gap-2">
             {item.tags?.includes("Popular") && (
-              <div className="px-2 py-1 bg-amber-400 text-amber-900 text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
-                <Sparkles size={10} /> Popular
+              <div className="px-2.5 py-1.5 bg-amber-400 text-amber-900 text-xs font-bold uppercase rounded-lg shadow-md flex items-center gap-1.5">
+                <Sparkles size={12} /> Popular
               </div>
             )}
             {(item.isVerified || item.tags?.includes("Verified")) && (
-              <div className="px-2 py-1 bg-blue-500 text-white text-[9px] font-bold uppercase rounded-md shadow-md flex items-center gap-1">
-                <BadgeCheck size={10} /> Verified
+              <div className="px-2.5 py-1.5 bg-blue-500 text-white text-xs font-bold uppercase rounded-lg shadow-md flex items-center gap-1.5">
+                <BadgeCheck size={12} /> Verified
               </div>
             )}
           </div>
           <motion.button
             whileTap={{ scale: 0.8 }}
+            whileHover={{ scale: 1.1 }}
             onClick={(e) => {
               e.stopPropagation();
               haptic("medium");
               onToggleFavorite(item._id);
             }}
-            className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
+            className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
           >
-            <Heart size={16} className={isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"} />
+            <Heart size={18} className={isFavorite ? "fill-rose-500 text-rose-500" : "text-gray-600"} />
           </motion.button>
         </div>
 
         {/* Bottom Info */}
-        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center">
-          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
-            <span className="text-xs font-bold text-gray-800">{item.rating?.toFixed(1) || "4.5"}</span>
-            <span className="text-[10px] text-gray-500">({item.reviews || item.totalReviews || 0})</span>
+        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
+          <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
+            <Star size={14} className="fill-amber-400 text-amber-400" />
+            <span className="text-sm font-bold text-gray-800">{item.rating?.toFixed(1) || "4.5"}</span>
+            <span className="text-xs text-gray-500">({item.reviews || item.totalReviews || 0})</span>
           </div>
           {discount > 0 && (
-            <div className="px-2 py-1 bg-green-500 text-white text-[10px] font-bold rounded-md">{discount}% OFF</div>
+            <div className="px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded-lg shadow-md">
+              {discount}% OFF
+            </div>
           )}
         </div>
       </div>
 
       {/* Content Section */}
-      <div className="p-3">
-        <div className="flex items-start justify-between mb-1">
-          <div className="flex-1 min-w-0 pr-2">
-            <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <MapPin size={11} className="text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-500 truncate">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0 pr-3">
+            <h3 className="font-bold text-gray-900 text-base truncate">{item.name}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <MapPin size={13} className="text-gray-400 shrink-0" />
+              <span className="text-sm text-gray-500 truncate">
                 {item.address?.city || item.location || "Location"}
               </span>
               {(item.seating?.max || item.capacity) && (
                 <>
                   <span className="text-gray-300">•</span>
-                  <Users size={11} className="text-gray-400 shrink-0" />
-                  <span className="text-xs text-gray-500">{item.seating?.max || item.capacity} guests</span>
+                  <Users size={13} className="text-gray-400 shrink-0" />
+                  <span className="text-sm text-gray-500">{item.seating?.max || item.capacity} guests</span>
                 </>
               )}
             </div>
@@ -317,11 +319,11 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
 
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
-          <div className="flex gap-1 mt-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide">
             {item.tags.slice(0, 3).map((tag, idx) => (
               <span
                 key={idx}
-                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-medium rounded-md whitespace-nowrap"
+                className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg whitespace-nowrap"
               >
                 {tag}
               </span>
@@ -330,33 +332,34 @@ const VendorCard = memo(({ item, onAdd, isInCart, onToggleFavorite, isFavorite }
         )}
 
         {/* Price & Action */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
           <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-blue-600">₹{formatFullPrice(price)}</span>
-              {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-blue-600">₹{formatFullPrice(price)}</span>
+              {item.priceUnit && <span className="text-xs text-gray-400">/{item.priceUnit}</span>}
             </div>
             {originalPrice > price && (
-              <span className="text-xs text-gray-400 line-through">₹{formatFullPrice(originalPrice)}</span>
+              <span className="text-sm text-gray-400 line-through">₹{formatFullPrice(originalPrice)}</span>
             )}
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
             onClick={() => {
               haptic("medium");
               onAdd(item);
             }}
-            className={`px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2 ${
               isInCart ? "bg-green-100 text-green-700 border border-green-200" : "bg-yellow-400 text-blue-900"
             }`}
           >
             {isInCart ? (
               <>
-                <CheckCircle size={14} /> Added
+                <CheckCircle size={16} /> Added
               </>
             ) : (
               <>
-                <Plus size={14} /> Add
+                <Plus size={16} /> Add
               </>
             )}
           </motion.button>
@@ -384,15 +387,15 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
       transition={SPRING_CONFIG.gentle}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-3"
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-3 hover:shadow-md transition-shadow"
     >
-      <div className="p-3 flex gap-3">
+      <div className="p-4 flex gap-4">
         {/* Image */}
-        <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+        <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-gray-100 shrink-0">
           <img src={img} alt={item.name} className="w-full h-full object-cover" />
           {(item.isVerified || item.tags?.includes("Verified")) && (
-            <div className="absolute top-1 left-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-              <BadgeCheck size={12} className="text-white" />
+            <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+              <BadgeCheck size={14} className="text-white" />
             </div>
           )}
         </div>
@@ -401,47 +404,48 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0 pr-2">
-                <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <Star size={10} className="fill-amber-400 text-amber-400" />
-                  <span className="text-[10px] font-semibold text-gray-700">{item.rating?.toFixed(1) || "4.5"}</span>
-                  <span className="text-[10px] text-gray-400">({item.reviews || item.totalReviews || 0})</span>
+              <div className="flex-1 min-w-0 pr-3">
+                <h3 className="font-bold text-gray-900 text-base truncate">{item.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <Star size={12} className="fill-amber-400 text-amber-400" />
+                  <span className="text-xs font-semibold text-gray-700">{item.rating?.toFixed(1) || "4.5"}</span>
+                  <span className="text-xs text-gray-400">({item.reviews || item.totalReviews || 0})</span>
                 </div>
               </div>
               <motion.button
                 whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.1 }}
                 onClick={() => {
                   haptic("medium");
                   onRemove(item);
                 }}
-                className="p-2 bg-red-50 rounded-lg text-red-500 hover:bg-red-100 transition-colors"
+                className="p-2.5 bg-red-50 rounded-lg text-red-500 hover:bg-red-100 transition-colors"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </motion.button>
             </div>
 
             {/* Location & Category */}
-            <div className="flex items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-gray-600 capitalize">
+            <div className="flex items-center gap-2 mt-2">
+              <span className="px-2.5 py-1 bg-gray-100 rounded text-xs font-medium text-gray-600 capitalize">
                 {item.category}
               </span>
-              <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                <MapPin size={10} />
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+                <MapPin size={12} />
                 {item.address?.city || item.location || "Location"}
               </div>
             </div>
           </div>
 
           {/* Price */}
-          <div className="flex items-end justify-between mt-2">
+          <div className="flex items-end justify-between mt-3">
             <div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-base font-bold text-blue-600">₹{formatFullPrice(price)}</span>
-                {item.priceUnit && <span className="text-[10px] text-gray-400">/{item.priceUnit}</span>}
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-bold text-blue-600">₹{formatFullPrice(price)}</span>
+                {item.priceUnit && <span className="text-xs text-gray-400">/{item.priceUnit}</span>}
               </div>
               {discount > 0 && (
-                <span className="text-[10px] font-medium text-green-600">Save ₹{formatFullPrice(discount)}</span>
+                <span className="text-xs font-medium text-green-600">Save ₹{formatFullPrice(discount)}</span>
               )}
             </div>
 
@@ -452,17 +456,17 @@ const CartItemCard = memo(({ item, onRemove, onUpdateQuantity }) => {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onUpdateQuantity(item._id, (item.quantity || 1) - 1)}
                   disabled={(item.quantity || 1) <= 1}
-                  className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm disabled:opacity-50"
+                  className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm disabled:opacity-50 hover:bg-gray-50 transition-colors"
                 >
-                  <Minus size={14} className="text-gray-600" />
+                  <Minus size={16} className="text-gray-600" />
                 </motion.button>
-                <span className="text-sm font-bold text-gray-900 w-6 text-center">{item.quantity || 1}</span>
+                <span className="text-sm font-bold text-gray-900 w-8 text-center">{item.quantity || 1}</span>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onUpdateQuantity(item._id, (item.quantity || 1) + 1)}
-                  className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm"
+                  className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm hover:bg-gray-50 transition-colors"
                 >
-                  <Plus size={14} className="text-gray-600" />
+                  <Plus size={16} className="text-gray-600" />
                 </motion.button>
               </div>
             )}
@@ -522,26 +526,27 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {appliedCoupon ? (
-        <div className="p-3">
+        <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                <Tag size={18} className="text-green-600" />
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <Tag size={20} className="text-green-600" />
               </div>
               <div>
-                <p className="font-bold text-green-600 text-sm">{appliedCoupon.code}</p>
-                <p className="text-[10px] text-gray-500">{appliedCoupon.description}</p>
+                <p className="font-bold text-green-600 text-base">{appliedCoupon.code}</p>
+                <p className="text-xs text-gray-500">{appliedCoupon.description}</p>
               </div>
             </div>
             <motion.button
               whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.1 }}
               onClick={() => {
                 haptic("light");
                 onRemoveCoupon();
               }}
-              className="p-2 text-gray-400 hover:text-red-500"
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
             >
-              <X size={16} />
+              <X size={18} />
             </motion.button>
           </div>
         </div>
@@ -549,23 +554,24 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
         <>
           <motion.button
             whileTap={{ scale: 0.98 }}
+            whileHover={{ backgroundColor: "#f9fafb" }}
             onClick={() => {
               haptic("light");
               setIsExpanded(!isExpanded);
             }}
-            className="w-full p-3 flex items-center justify-between"
+            className="w-full p-4 flex items-center justify-between transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                <Percent size={18} className="text-orange-500" />
+              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Percent size={20} className="text-orange-500" />
               </div>
               <div className="text-left">
-                <p className="font-semibold text-gray-900 text-sm">Apply Coupon</p>
-                <p className="text-[10px] text-gray-500">{MOCK_COUPONS.length} coupons available</p>
+                <p className="font-semibold text-gray-900 text-base">Apply Coupon</p>
+                <p className="text-xs text-gray-500">{MOCK_COUPONS.length} coupons available</p>
               </div>
             </div>
             <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
-              <ChevronDown size={18} className="text-gray-400" />
+              <ChevronDown size={20} className="text-gray-400" />
             </motion.div>
           </motion.button>
 
@@ -578,7 +584,7 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
                 transition={SPRING_CONFIG.gentle}
                 className="border-t border-gray-100 overflow-hidden"
               >
-                <div className="p-3 space-y-3">
+                <div className="p-4 space-y-4">
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -588,15 +594,16 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
                         setError("");
                       }}
                       placeholder="Enter code"
-                      className="flex-1 px-3 py-2.5 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-4 py-3 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                     <motion.button
                       whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
                       onClick={handleApplyCoupon}
                       disabled={isLoading}
-                      className="px-4 py-2.5 rounded-xl text-white font-bold text-sm bg-blue-600 disabled:opacity-60"
+                      className="px-6 py-3 rounded-xl text-white font-bold text-sm bg-blue-600 disabled:opacity-60 hover:bg-blue-700 transition-colors"
                     >
-                      {isLoading ? <RefreshCw size={16} className="animate-spin" /> : "Apply"}
+                      {isLoading ? <RefreshCw size={18} className="animate-spin" /> : "Apply"}
                     </motion.button>
                   </div>
 
@@ -604,9 +611,9 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
                     <motion.p
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-xs text-red-500 font-medium flex items-center gap-1"
+                      className="text-sm text-red-500 font-medium flex items-center gap-1.5"
                     >
-                      <AlertCircle size={12} /> {error}
+                      <AlertCircle size={14} /> {error}
                     </motion.p>
                   )}
 
@@ -615,22 +622,23 @@ const CouponSection = memo(({ appliedCoupon, onApplyCoupon, onRemoveCoupon, subt
                       <motion.button
                         key={coupon.code}
                         whileTap={{ scale: 0.98 }}
+                        whileHover={{ backgroundColor: "#f3f4f6" }}
                         onClick={() => {
                           setCouponCode(coupon.code);
                           setError("");
                         }}
-                        className="w-full p-2.5 bg-gray-50 rounded-xl flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
+                        className="w-full p-3 bg-gray-50 rounded-xl flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Tag size={14} className="text-blue-600" />
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Tag size={16} className="text-blue-600" />
                           </div>
                           <div>
                             <p className="text-sm font-bold text-gray-900">{coupon.code}</p>
-                            <p className="text-[10px] text-gray-500">{coupon.description}</p>
+                            <p className="text-xs text-gray-500">{coupon.description}</p>
                           </div>
                         </div>
-                        <ChevronRight size={16} className="text-gray-400" />
+                        <ChevronRight size={18} className="text-gray-400" />
                       </motion.button>
                     ))}
                   </div>
@@ -653,39 +661,40 @@ const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, 
   const haptic = useHapticFeedback();
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold text-gray-900 text-sm">Price Details</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-gray-900 text-base">Price Details</h3>
         <motion.button
           whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05 }}
           onClick={() => {
             haptic("light");
             setShowDetails(!showDetails);
           }}
-          className="text-[10px] font-semibold text-blue-600 flex items-center gap-1"
+          className="text-xs font-semibold text-blue-600 flex items-center gap-1 hover:text-blue-700 transition-colors"
         >
           {showDetails ? "Hide" : "View"} breakdown
           <motion.div animate={{ rotate: showDetails ? 180 : 0 }}>
-            <ChevronDown size={12} />
+            <ChevronDown size={14} />
           </motion.div>
         </motion.button>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
+      <div className="space-y-3">
+        <div className="flex justify-between text-base">
           <span className="text-gray-500">Subtotal</span>
           <span className="font-medium text-gray-900">₹{formatFullPrice(subtotal)}</span>
         </div>
 
         {vendorDiscount > 0 && (
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-base">
             <span className="text-green-600">Vendor Discount</span>
             <span className="font-medium text-green-600">-₹{formatFullPrice(vendorDiscount)}</span>
           </div>
         )}
 
         {couponDiscount > 0 && (
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-base">
             <span className="text-green-600">Coupon Discount</span>
             <span className="font-medium text-green-600">-₹{formatFullPrice(couponDiscount)}</span>
           </div>
@@ -697,13 +706,13 @@ const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, 
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="space-y-2 pt-2 border-t border-dashed border-gray-200 overflow-hidden"
+              className="space-y-3 pt-3 border-t border-dashed border-gray-200 overflow-hidden"
             >
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-400">Platform Fee</span>
                 <span className="font-medium text-gray-600">₹{formatFullPrice(platformFee)}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-400">GST (18%)</span>
                 <span className="font-medium text-gray-600">₹{formatFullPrice(taxes)}</span>
               </div>
@@ -711,15 +720,15 @@ const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, 
           )}
         </AnimatePresence>
 
-        <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-          <span className="font-bold text-gray-900">Total</span>
-          <span className="text-xl font-black text-blue-600">₹{formatFullPrice(total)}</span>
+        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+          <span className="font-bold text-gray-900 text-lg">Total</span>
+          <span className="text-2xl font-black text-blue-600">₹{formatFullPrice(total)}</span>
         </div>
 
         {(vendorDiscount > 0 || couponDiscount > 0) && (
-          <div className="mt-2 p-2.5 bg-green-50 rounded-xl">
-            <p className="text-xs font-bold text-green-700 flex items-center gap-1.5">
-              <Sparkles size={14} />
+          <div className="mt-3 p-3 bg-green-50 rounded-xl">
+            <p className="text-sm font-bold text-green-700 flex items-center gap-2">
+              <Sparkles size={16} />
               You save ₹{formatFullPrice(vendorDiscount + couponDiscount)} on this order!
             </p>
           </div>
@@ -731,7 +740,7 @@ const PriceBreakdown = memo(({ subtotal, vendorDiscount, couponDiscount, taxes, 
 PriceBreakdown.displayName = "PriceBreakdown";
 
 // =============================================================================
-// ENHANCED EXPLORE DRAWER - NOW WITH DYNAMIC API DATA
+// ENHANCED EXPLORE DRAWER - DESKTOP OPTIMIZED
 // =============================================================================
 const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDrawer }) => {
   const [activeCat, setActiveCat] = useState("all");
@@ -757,12 +766,12 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
           sortBy === "popular"
             ? "bookings"
             : sortBy === "rating"
-            ? "rating"
-            : sortBy === "price-low"
-            ? "price-asc"
-            : sortBy === "price-high"
-            ? "price-desc"
-            : "rating",
+              ? "rating"
+              : sortBy === "price-low"
+                ? "price-asc"
+                : sortBy === "price-high"
+                  ? "price-desc"
+                  : "rating",
       });
 
       if (debouncedSearch) {
@@ -786,7 +795,6 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
         if (result.success !== false && result.data && Array.isArray(result.data)) {
           const processedVendors = result.data.map((v) => ({
             ...v,
-            // Normalize price for consistency
             price: getVendorPrice(v),
             originalPrice: v.originalPrice || getVendorPrice(v),
           }));
@@ -814,7 +822,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
 
   const cartTotal = useMemo(
     () => cartItems.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0),
-    [cartItems]
+    [cartItems],
   );
 
   return (
@@ -824,60 +832,59 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 z-[50] backdrop-blur-sm"
       />
       <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
         transition={SPRING_CONFIG.gentle}
-        className="fixed bottom-0 left-0 right-0 h-[80vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="fixed right-0 top-0 bottom-0 w-[600px] max-w-[90vw] bg-gray-50 z-[70] shadow-2xl overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="bg-white px-4 pt-3 pb-3 shadow-sm z-10 sticky top-0 border-b border-gray-100">
-          <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3" />
-
-          <div className="flex justify-between items-center mb-3">
+        <div className="bg-white px-6 py-5 shadow-sm z-10 sticky top-0 border-b border-gray-100">
+          <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-xl font-black text-gray-900">Explore Vendors</h2>
-              <p className="text-xs text-gray-500 font-medium">
+              <h2 className="text-2xl font-black text-gray-900">Explore Vendors</h2>
+              <p className="text-sm text-gray-500 font-medium mt-1">
                 {isLoading ? "Loading..." : `${vendors.length} vendors found`}
               </p>
             </div>
             <motion.button
               whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
               onClick={onClose}
-              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-2.5 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={22} className="text-gray-600" />
             </motion.button>
           </div>
 
           {/* Search Bar */}
-          <div className="relative mb-3">
+          <div className="relative mb-4">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search vendors, locations..."
-              className="w-full pl-10 pr-10 py-2.5 bg-gray-100 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+              className="w-full pl-12 pr-12 py-3 bg-gray-100 rounded-xl text-base font-medium text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
             />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             {searchQuery && (
               <motion.button
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-gray-300 rounded-full"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 bg-gray-300 rounded-full hover:bg-gray-400 transition-colors"
               >
-                <X size={12} className="text-gray-600" />
+                <X size={14} className="text-gray-600" />
               </motion.button>
             )}
           </div>
 
           {/* Categories */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
             {DRAWER_CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               const isActive = activeCat === cat.id;
@@ -885,16 +892,19 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
                 <motion.button
                   key={cat.id}
                   whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: isActive ? 1 : 1.05 }}
                   onClick={() => {
                     haptic("light");
                     setActiveCat(cat.id);
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                    isActive ? "text-white shadow-md" : "bg-gray-100 text-gray-600 border border-gray-200"
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
+                    isActive
+                      ? "text-white shadow-lg"
+                      : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
                   }`}
                   style={isActive ? { backgroundColor: cat.color } : {}}
                 >
-                  <Icon size={14} />
+                  <Icon size={16} />
                   {cat.label}
                 </motion.button>
               );
@@ -902,7 +912,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
           </div>
 
           {/* Sort & Filter Row */}
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-3 mt-4">
             <div className="flex-1 relative">
               <select
                 value={sortBy}
@@ -910,7 +920,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
                   haptic("light");
                   setSortBy(e.target.value);
                 }}
-                className="w-full px-3 py-2 bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 appearance-none outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-gray-100 rounded-xl text-sm font-semibold text-gray-700 appearance-none outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 <option value="popular">Most Popular</option>
                 <option value="rating">Top Rated</option>
@@ -918,56 +928,58 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
                 <option value="price-high">Price: High to Low</option>
               </select>
               <ChevronDown
-                size={14}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                size={16}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
               />
             </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
               onClick={() => {
                 haptic("light");
                 setShowFilters(!showFilters);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                showFilters ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+              className={`px-5 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                showFilters ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              <SlidersHorizontal size={14} />
+              <SlidersHorizontal size={16} />
               Filters
             </motion.button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 size={40} className="text-blue-600 animate-spin mb-4" />
-              <p className="text-sm text-gray-500">Loading vendors...</p>
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 size={48} className="text-blue-600 animate-spin mb-4" />
+              <p className="text-base text-gray-500">Loading vendors...</p>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <AlertCircle size={40} className="text-red-500 mb-4" />
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Error</h3>
-              <p className="text-sm text-gray-500">{error}</p>
+            <div className="flex flex-col items-center justify-center py-20">
+              <AlertCircle size={48} className="text-red-500 mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Error</h3>
+              <p className="text-base text-gray-500 mb-4">{error}</p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => setActiveCat(activeCat)}
-                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm"
+                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-base shadow-lg hover:bg-blue-700 transition-colors"
               >
                 Try Again
               </motion.button>
             </div>
           ) : vendors.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
-                <Search size={32} className="text-gray-300" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
+                <Search size={40} className="text-gray-300" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">No vendors found</h3>
-              <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No vendors found</h3>
+              <p className="text-base text-gray-500">Try adjusting your search or filters</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-5">
               <AnimatePresence mode="popLayout">
                 {vendors.map((item) => (
                   <VendorCard
@@ -982,7 +994,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
               </AnimatePresence>
             </div>
           )}
-          <div className="h-24" />
+          <div className="h-32" />
         </div>
 
         {/* Cart Summary Footer */}
@@ -990,19 +1002,20 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
           <motion.div
             initial={{ y: 100 }}
             animate={{ y: 0 }}
-            className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]"
+            className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-4 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500">{cartItems.length} items in cart</p>
-                <p className="text-lg font-black text-blue-600">₹{formatFullPrice(cartTotal)}</p>
+                <p className="text-sm text-gray-500">{cartItems.length} items in cart</p>
+                <p className="text-2xl font-black text-blue-600">₹{formatFullPrice(cartTotal)}</p>
               </div>
               <motion.button
                 whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => setActiveDrawer("cart")}
-                className="px-6 py-3 bg-yellow-400 text-blue-900 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2"
+                className="px-8 py-4 bg-yellow-400 text-blue-900 rounded-xl font-bold text-base shadow-lg flex items-center gap-3 hover:bg-yellow-500 transition-colors"
               >
-                <ShoppingBag size={18} />
+                <ShoppingBag size={20} />
                 View Cart
               </motion.button>
             </div>
@@ -1015,7 +1028,7 @@ const ExploreDrawer = memo(({ onClose, onAdd, cartItems, showToast, setActiveDra
 ExploreDrawer.displayName = "ExploreDrawer";
 
 // =============================================================================
-// ENHANCED CART DRAWER - NOW SYNCED WITH GLOBAL STATE
+// ENHANCED CART DRAWER - DESKTOP OPTIMIZED
 // =============================================================================
 const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore, showToast }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -1027,7 +1040,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
     const subtotal = items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0);
     const originalTotal = items.reduce(
       (acc, item) => acc + (item.originalPrice || item.price || 0) * (item.quantity || 1),
-      0
+      0,
     );
     const vendorDiscount = originalTotal - subtotal;
 
@@ -1036,7 +1049,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
       if (appliedCoupon.type === "percent") {
         couponDiscount = Math.min(
           Math.round((subtotal * appliedCoupon.discount) / 100),
-          appliedCoupon.maxDiscount || Infinity
+          appliedCoupon.maxDiscount || Infinity,
         );
       } else {
         couponDiscount = appliedCoupon.discount;
@@ -1064,7 +1077,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
       onRemove(item._id);
       showToast("Item removed from cart", "info");
     },
-    [onRemove, haptic, showToast]
+    [onRemove, haptic, showToast],
   );
 
   const handleApplyCoupon = useCallback((coupon) => {
@@ -1084,53 +1097,54 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 z-[50] backdrop-blur-sm"
       />
       <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
         transition={SPRING_CONFIG.gentle}
-        className="fixed bottom-0 left-0 right-0 max-h-[80vh] bg-gray-50 z-[70] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="fixed right-0 top-0 bottom-0 w-[600px] max-w-[90vw] bg-gray-50 z-[70] shadow-2xl overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 sticky top-0 z-10">
-          <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3" />
+        <div className="bg-white px-6 py-5 border-b border-gray-100 sticky top-0 z-10">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <ShoppingBag className="text-blue-600" size={20} />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="text-blue-600" size={24} />
               </div>
               <div>
-                <h2 className="text-lg font-black text-gray-900">Your Cart</h2>
-                <p className="text-xs text-gray-500">
+                <h2 className="text-2xl font-black text-gray-900">Your Cart</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
                   {items.length} {items.length === 1 ? "item" : "items"}
                 </p>
               </div>
             </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
               onClick={onExplore}
-              className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-xl flex items-center gap-1.5"
+              className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-blue-100 transition-colors"
             >
-              <Plus size={14} /> Add More
+              <Plus size={16} /> Add More
             </motion.button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mb-4">
-                <ShoppingBag size={40} className="text-gray-300" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-28 h-28 bg-gray-100 rounded-3xl flex items-center justify-center mb-5">
+                <ShoppingBag size={48} className="text-gray-300" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Your cart is empty</h3>
-              <p className="text-sm text-gray-500 mb-4">Add vendors to start planning your event</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h3>
+              <p className="text-base text-gray-500 mb-6">Add vendors to start planning your event</p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={onExplore}
-                className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg"
+                className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-base shadow-lg hover:bg-blue-700 transition-colors"
               >
                 Explore Vendors
               </motion.button>
@@ -1138,7 +1152,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
           ) : (
             <>
               {/* Cart Items */}
-              <div className="mb-4">
+              <div className="mb-5">
                 <AnimatePresence mode="popLayout">
                   {items.map((item) => (
                     <CartItemCard
@@ -1152,7 +1166,7 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
               </div>
 
               {/* Coupon Section */}
-              <div className="mb-4">
+              <div className="mb-5">
                 <CouponSection
                   appliedCoupon={appliedCoupon}
                   onApplyCoupon={handleApplyCoupon}
@@ -1173,41 +1187,41 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
               />
 
               {/* Trust Badges */}
-              <div className="mt-4 p-3 bg-white rounded-2xl border border-gray-100">
+              <div className="mt-5 p-4 bg-white rounded-2xl border border-gray-100">
                 <div className="flex items-center justify-around">
-                  <div className="flex items-center gap-1.5 text-gray-500">
-                    <Shield size={14} className="text-green-500" />
-                    <span className="text-[10px] font-medium">Secure</span>
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Shield size={18} className="text-green-500" />
+                    <span className="text-sm font-medium">Secure</span>
                   </div>
-                  <div className="w-px h-4 bg-gray-200" />
-                  <div className="flex items-center gap-1.5 text-gray-500">
-                    <BadgeCheck size={14} className="text-blue-500" />
-                    <span className="text-[10px] font-medium">Verified</span>
+                  <div className="w-px h-6 bg-gray-200" />
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <BadgeCheck size={18} className="text-blue-500" />
+                    <span className="text-sm font-medium">Verified</span>
                   </div>
-                  <div className="w-px h-4 bg-gray-200" />
-                  <div className="flex items-center gap-1.5 text-gray-500">
-                    <Clock size={14} className="text-amber-500" />
-                    <span className="text-[10px] font-medium">24/7 Support</span>
+                  <div className="w-px h-6 bg-gray-200" />
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Clock size={18} className="text-amber-500" />
+                    <span className="text-sm font-medium">24/7 Support</span>
                   </div>
                 </div>
               </div>
 
-              <div className="h-32" />
+              <div className="h-40" />
             </>
           )}
         </div>
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="bg-white p-4 pb-2 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-white p-6 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-[10px] text-gray-400 uppercase font-semibold">Grand Total</p>
-                <p className="text-2xl font-black text-blue-600">₹{formatFullPrice(priceDetails.total)}</p>
+                <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Grand Total</p>
+                <p className="text-3xl font-black text-blue-600 mt-1">₹{formatFullPrice(priceDetails.total)}</p>
               </div>
               {(priceDetails.vendorDiscount > 0 || priceDetails.couponDiscount > 0) && (
-                <div className="px-3 py-1.5 bg-green-100 rounded-xl">
-                  <p className="text-xs font-bold text-green-700">
+                <div className="px-4 py-2 bg-green-100 rounded-xl">
+                  <p className="text-sm font-bold text-green-700">
                     Save ₹{formatFullPrice(priceDetails.vendorDiscount + priceDetails.couponDiscount)}
                   </p>
                 </div>
@@ -1219,14 +1233,14 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
                 haptic("medium");
                 onClose();
               }}
-              className="w-full bg-[#E5B80B] text-blue-900 py-4 rounded-2xl font-bold text-base shadow-lg shadow-yellow-200/50 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="w-full bg-[#E5B80B] text-blue-900 py-4 rounded-xl font-bold text-lg shadow-lg shadow-yellow-200/50 flex items-center justify-center gap-3 hover:bg-[#d4a909] transition-all active:scale-[0.98]"
             >
-              <Lock size={18} />
+              <Lock size={20} />
               Proceed to Checkout
-              <ArrowRight size={18} />
+              <ArrowRight size={20} />
             </Link>
-            <p className="text-center text-[10px] text-gray-400 mt-2 flex items-center justify-center gap-1">
-              <Lock size={10} /> Secured by 256-bit SSL encryption
+            <p className="text-center text-xs text-gray-400 mt-3 flex items-center justify-center gap-1">
+              <Lock size={12} /> Secured by 256-bit SSL encryption
             </p>
           </div>
         )}
@@ -1237,15 +1251,15 @@ const CartDrawer = memo(({ onClose, items, onRemove, onUpdateQuantity, onExplore
 CartDrawer.displayName = "CartDrawer";
 
 // =============================================================================
-// MAIN NAVBAR COMPONENT
+// MAIN DESKTOP NAVBAR COMPONENT - VERTICAL FLOATING
 // =============================================================================
-const MobileNavbar = () => {
+const DesktopNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // --- OPTIMIZATION 1: useTransition for Instant Feedback ---
   const [isPending, startTransition] = useTransition();
   const [pendingRoute, setPendingRoute] = useState(null);
+  const [hoveredItem, setHoveredItem] = useState(null);
   const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success", isNavbarVisible: false });
@@ -1266,7 +1280,7 @@ const MobileNavbar = () => {
     setToast((prev) => ({ ...prev, isNavbarVisible: false }));
   }, []);
 
-  // --- OPTIMIZATION 2: Throttled Scroll ---
+  // --- OPTIMIZATION: Throttled Scroll ---
   const { scrollY } = useScroll();
   const lastScrollY = useRef(0);
 
@@ -1293,7 +1307,7 @@ const MobileNavbar = () => {
       { id: "bookings", label: "Bookings", icon: Calendar, route: "/user/bookings" },
       { id: "profile", label: "Profile", icon: User, route: "/user/profile" },
     ],
-    []
+    [],
   );
 
   useEffect(() => {
@@ -1307,7 +1321,6 @@ const MobileNavbar = () => {
     return pathname?.startsWith(route);
   };
 
-  // --- OPTIMIZATION 3: Instant Handler ---
   const handleTabChange = useCallback(
     (item) => {
       if (item.type === "center") {
@@ -1325,10 +1338,9 @@ const MobileNavbar = () => {
         router.push(item.route);
       });
     },
-    [pathname, cartItems.length, router, haptic]
+    [pathname, cartItems.length, router, haptic],
   );
 
-  // Reset pending state when path changes
   useEffect(() => {
     setPendingRoute(null);
   }, [pathname]);
@@ -1363,14 +1375,14 @@ const MobileNavbar = () => {
         showToast(`${item.name} added to cart`, "success");
       }
     },
-    [cartItems, addToCart, removeFromCart, showToast]
+    [cartItems, addToCart, removeFromCart, showToast],
   );
 
   const handleUpdateQuantity = useCallback(
     (id, quantity) => {
       updateQuantity(id, quantity);
     },
-    [updateQuantity]
+    [updateQuantity],
   );
 
   // Lock body scroll when drawer is open
@@ -1390,58 +1402,76 @@ const MobileNavbar = () => {
       {/* Toast Notification */}
       <Toast {...toast} onClose={hideToast} />
 
-      {/* Main Navbar */}
+      {/* Main Desktop Navbar - Vertical Floating */}
       <motion.div
-        animate={{ y: isNavbarVisible ? 0 : 120 }}
+        animate={{
+          x: isNavbarVisible ? 0 : 120,
+          opacity: isNavbarVisible ? 1 : 0,
+        }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-blue-100/50 pb-[calc(env(safe-area-inset-bottom))] pt-0 px-0 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] rounded-t-2xl will-change-transform"
+        className="fixed right-1 bottom-2 z-[9999] will-change-transform group"
       >
-        <div className="flex items-end justify-between max-w-md mx-auto pb-1 relative">
+        <div
+          className={cn(
+            "bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-2 py-1 flex flex-col gap-1",
+            "opacity-60 group-hover:opacity-100 transition-opacity duration-300",
+          )}
+        >
           {navItems.map((item) => {
             if (item.type === "center") {
               const hasItems = cartCount > 0;
               return (
-                <div key={item.id} className="relative -top-1 flex justify-center w-full pointer-events-none z-50">
+                <div key={item.id} className="relative flex justify-center py-1 px-0">
                   <motion.button
                     onClick={() => handleTabChange(item)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="pointer-events-auto flex items-center justify-center focus:outline-none relative"
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
+                    className="relative focus:outline-none group cursor-pointer"
                   >
                     <motion.div
-                      className="flex justify-center items-center w-16 h-14 rounded-full bg-white border-[4px] border-white shadow-[0_12px_24px_rgba(30,58,138,0.2)]"
+                      className="flex justify-center items-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow"
                       animate={{
-                        boxShadow: hasItems ? "0_12px_24px_rgba(229,184,11,0.3)" : "0_12px_24px_rgba(30,58,138,0.2)",
+                        background: hasItems
+                          ? "linear-gradient(to bottom right, #E5B80B, #d4a909)"
+                          : "linear-gradient(to bottom right, #3b82f6, #2563eb)",
                       }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <ShoppingBag
-                        size={28}
-                        className={`transition-colors duration-300 ${hasItems ? "text-blue-900" : "text-slate-400"}`}
-                        strokeWidth={2.5}
-                      />
-                      <AnimatePresence>
-                        {hasItems ? (
-                          <motion.div
-                            key="badge"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#E5B80B] flex items-center justify-center border-2 border-white shadow-sm"
-                          >
-                            <span className="text-[11px] font-black text-blue-900">{cartCount}</span>
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="plus"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center border-2 border-white shadow-sm"
-                          >
-                            <Plus size={14} strokeWidth={4} className="text-white" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <ShoppingBag size={26} className="text-white" strokeWidth={2.5} />
+                    </motion.div>
+
+                    <AnimatePresence>
+                      {hasItems && (
+                        <motion.div
+                          key="badge"
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          exit={{ scale: 0, rotate: 180 }}
+                          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white shadow-md"
+                        >
+                          <span className="text-[10px] font-black text-white">{cartCount}</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {!hasItems && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-white shadow-md"
+                      >
+                        <Plus size={12} strokeWidth={4} className="text-white" />
+                      </motion.div>
+                    )}
+
+                    {/* Tooltip on hover */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 10 }}
+                      whileHover={{ opacity: 1, x: 0 }}
+                      className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none shadow-lg"
+                    >
+                      {hasItems ? `Cart (${cartCount})` : "Explore Vendors"}
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-4 border-l-gray-900" />
                     </motion.div>
                   </motion.button>
                 </div>
@@ -1450,48 +1480,102 @@ const MobileNavbar = () => {
 
             const isActive = isTabActive(item.route);
             const isLoading = isPending && pendingRoute === item.route;
+            const isCenter = item.isCenter;
 
             return (
-              <button
+              <motion.button
                 key={item.id}
                 onClick={() => handleTabChange(item)}
-                className="relative flex flex-col items-center justify-center w-full py-2 group focus:outline-none"
+                onMouseEnter={() => setHoveredItem(item.id)}
+                onMouseLeave={() => setHoveredItem(null)}
+                whileHover={{ scale: 1.05, x: -5 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative flex items-center justify-center w-14 h-14 rounded-xl group focus:outline-none transition-all cursor-pointer"
               >
+                <AnimatePresence>
+                  {hoveredItem === item.id && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 10, scale: 0.9 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: 10, scale: 0.9 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      className={`absolute right-full mr-3 px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none font-semibold shadow-xl ${
+                        isActive ? "bg-blue-600 text-white text-sm" : "bg-gray-900 text-white text-sm"
+                      }`}
+                    >
+                      {item.label}
+                      {/* Arrow pointer */}
+                      <div
+                        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] ${
+                          isActive ? "border-l-blue-600" : "border-l-gray-900"
+                        }`}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {/* Active Background */}
                 {isActive && (
                   <motion.div
-                    layoutId="nav-active-bg"
-                    className="absolute inset-0 bg-blue-50/80 rounded-2xl -z-10"
+                    layoutId="desktop-nav-active-bg"
+                    className="absolute inset-0 bg-blue-50 rounded-xl border-2 border-blue-200"
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
                 )}
 
-                <div className="relative p-1.3">
-                  <motion.div animate={isActive ? { y: -3, scale: 1.1 } : { y: 0, scale: 1 }}>
-                    {isLoading ? (
-                      <Loader2 size={24} className="text-blue-600 animate-spin" />
-                    ) : (
+                {/* Icon Container */}
+                <div className="relative z-10">
+                  {isLoading ? (
+                    <Loader2 size={24} className="text-blue-600 animate-spin" />
+                  ) : (
+                    <motion.div
+                      animate={isActive ? { scale: 1.15 } : { scale: 1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    >
                       <item.icon
                         size={24}
                         strokeWidth={isActive ? 2.5 : 2}
-                        className={`transition-colors duration-300 ${isActive ? "text-blue-700" : "text-slate-400"}`}
+                        className={`transition-colors duration-300 ${
+                          isActive ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600"
+                        }`}
                       />
-                    )}
-                  </motion.div>
+                    </motion.div>
+                  )}
+
+                  {/* Active Indicator Dot */}
                   {isActive && !isLoading && (
                     <motion.div
-                      layoutId="active-dot"
-                      className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-yellow-400 rounded-full ring-2 ring-white shadow-sm"
+                      layoutId="desktop-active-dot"
+                      className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full ring-2 ring-white shadow-sm"
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
                 </div>
 
-                <motion.span
-                  animate={isActive ? { y: 0, opacity: 1, color: "#1d4ed8" } : { y: 2, opacity: 0.8, color: "#94a3b8" }}
-                  className="text-[10px] font-bold tracking-wide"
+                {/* Hover Tooltip */}
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  whileHover={{ opacity: 1, x: 0 }}
+                  className={`absolute right-full mr-3 px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none text-xs font-semibold shadow-lg ${
+                    isActive ? "bg-blue-600 text-white" : "bg-gray-900 text-white"
+                  }`}
                 >
                   {item.label}
-                </motion.span>
-              </button>
+                  <div
+                    className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-4 ${
+                      isActive ? "border-l-blue-600" : "border-l-gray-900"
+                    }`}
+                  />
+                </motion.div>
+
+                {/* Hover Effect Background */}
+                {!isActive && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gray-100 rounded-xl -z-10"
+                  />
+                )}
+              </motion.button>
             );
           })}
         </div>
@@ -1535,12 +1619,14 @@ const MobileNavbar = () => {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        .pb-safe {
-          padding-bottom: env(safe-area-inset-bottom);
+        @supports (backdrop-filter: blur(20px)) {
+          .backdrop-blur-xl {
+            backdrop-filter: blur(20px);
+          }
         }
       `}</style>
     </>
   );
 };
 
-export default MobileNavbar;
+export default DesktopNavbar;
