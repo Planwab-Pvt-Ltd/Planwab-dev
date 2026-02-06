@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, memo, useCallback, useMemo } from "react";
+import React, { useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight } from "lucide-react";
@@ -8,21 +8,38 @@ import Link from "next/link";
 import SmartMedia from "./../SmartMediaLoader";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
-// STANDARD IMPORTS for Instant Rendering (No Shimmer for these)
+// INSTANT — above the fold
 import CategoryGrid from "../homepage/CategoriesGrid";
-import ServicesSteps from "../homepage/ServicesSteps";
-import SampleProposal from "../homepage/SampleProposals";
-import WhyWeBetter from "../homepage/WhyWeBetter";
-import AreYouAVendorSection from "../homepage/AreYouVendor";
-import QuickServices from "../homepage/QuickServices";
-import { VendorOnboardingDrawer } from "../homepage/AreYouVendor";
 
-const OFFERS = ["Get 10% OFF on all bookings", "Free Consultation", "Flat ₹500 OFF First Booking"];
+// LAZY — below the fold, not needed at first paint
+const ServicesSteps = lazy(() => import("../homepage/ServicesSteps"));
+const SampleProposal = lazy(() => import("../homepage/SampleProposals"));
+const WhyWeBetter = lazy(() => import("../homepage/WhyWeBetter"));
+const AreYouAVendorSection = lazy(() => import("../homepage/AreYouVendor"));
+const QuickServices = lazy(() => import("../homepage/QuickServices"));
+
+// Lazy-load the drawer separately since it's conditionally rendered
+const VendorOnboardingDrawer = lazy(() =>
+  import("../homepage/AreYouVendor").then((mod) => ({
+    default: mod.VendorOnboardingDrawer,
+  }))
+);
+
+const OFFERS = [
+  "Get 10% OFF on all bookings",
+  "Free Consultation",
+  "Flat ₹500 OFF First Booking",
+];
 
 function useHapticFeedback() {
   return useCallback((type = "light") => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
-      const patterns = { light: 10, medium: 25, heavy: 50, success: [10, 50, 10] };
+      const patterns = {
+        light: 10,
+        medium: 25,
+        heavy: 50,
+        success: [10, 50, 10],
+      };
       navigator.vibrate(patterns[type] || 10);
     }
   }, []);
@@ -59,20 +76,25 @@ const HeroSection = memo(() => {
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "Default";
   const videoSrc = useMemo(
-    () => (category === "Default" ? "/CatVideos/EventsHeroMob.mp4" : `/CatVideos/${category}HeroMob.mp4`),
+    () =>
+      category === "Default"
+        ? "/CatVideos/EventsHeroMob.mp4"
+        : `/CatVideos/${category}HeroMob.mp4`,
     [category]
   );
-
   const posterSrc = useMemo(
-    () => (category === "Default" ? "/CatVideos/DefaultHeroMobImg.png" : `/CatVideos/${category}HeroMobImg.png`),
+    () =>
+      category === "Default"
+        ? "/CatVideos/DefaultHeroMobImg.png"
+        : `/CatVideos/${category}HeroMobImg.png`,
     [category]
   );
 
   return (
     <div className="relative h-[55vh] w-full bg-gray-200">
-     <SmartMedia
+      <SmartMedia
         src={videoSrc}
-        poster={posterSrc} 
+        poster={posterSrc}
         type="video"
         className="w-full h-full"
         alt={`${category} Hero Video`}
@@ -81,6 +103,9 @@ const HeroSection = memo(() => {
     </div>
   );
 });
+
+// Minimal fallback for lazy sections — invisible but reserves no awkward space
+const LazyFallback = () => null;
 
 const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
   const haptic = useHapticFeedback();
@@ -108,7 +133,9 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
 
       <div className="w-full bg-black py-2.5 px-4 flex items-center justify-between relative overflow-hidden z-20 shadow-md">
         <div className="flex items-center gap-3 z-10 w-full overflow-hidden">
-          <span className="font-serif text-[#E5B80B] text-xl font-bold italic tracking-wide shrink-0">Elite</span>
+          <span className="font-serif text-[#E5B80B] text-xl font-bold italic tracking-wide shrink-0">
+            Elite
+          </span>
           <div className="h-5 w-[1px] bg-gray-700 mx-1 shrink-0" />
           <OfferTicker />
         </div>
@@ -132,13 +159,9 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
         </Link>
       </div>
 
-      {/* Renders Instantly */}
       <CategoryGrid currentCategory={currentCategory} />
 
-      {/* Slot 1: Streaming Planners */}
-      <div className="min-h-[280px] transition-all">
-        {plannersSlot}
-      </div>
+      <div className="min-h-[280px] transition-all">{plannersSlot}</div>
 
       <div className="mx-1 mt-2 px-2 mb-6 pb-4">
         <Link href={`/events/${currentCategory}`}>
@@ -148,19 +171,16 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
             className="w-full aspect-[1/1.1] relative rounded-xl overflow-hidden"
           >
             <SmartMedia
-              src={`/Banners/banner8.gif`}
+              src="/Banners/banner8.gif"
               type="image"
               className="w-full h-full object-cover object-center"
-              priority={true}
+              priority={false}
             />
           </motion.div>
         </Link>
       </div>
 
-      {/* Slot 2: Streaming Most Booked */}
-      <div className="min-h-[200px] transition-all">
-        {mostBookedSlot}
-      </div>
+      <div className="min-h-[200px] transition-all">{mostBookedSlot}</div>
 
       <div className="mx-1 mt-2 px-2 mb-6 pb-4">
         <Link href={`/events/${currentCategory}`}>
@@ -173,18 +193,21 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
               src={`/Banners/${banner2Url[currentCategory?.toLowerCase()] || "banner2.png"}`}
               type="image"
               className="w-full h-full object-cover object-center"
-              priority={true}
+              priority={false}
             />
           </motion.div>
         </Link>
       </div>
 
-      <ServicesSteps />
+      {/* Lazy-loaded below-fold sections */}
+      <Suspense fallback={<LazyFallback />}>
+        <ServicesSteps />
+      </Suspense>
 
       <div className="mx-1 mt-6 px-2 mb-2">
         <div className="w-full aspect-[4/2.3] bg-gray-200 rounded-2xl overflow-hidden shadow-sm">
           <SmartMedia
-            src={`/Banners/banner1.png`}
+            src="/Banners/banner1.png"
             type="image"
             className="w-full h-full object-cover object-center"
             loading="lazy"
@@ -192,12 +215,11 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
         </div>
       </div>
 
-      {/* Slot 3: Streaming Trending */}
-      <div className="min-h-[280px] transition-all">
-        {trendingSlot}
-      </div>
+      <div className="min-h-[280px] transition-all">{trendingSlot}</div>
 
-      <SampleProposal category={currentCategory} />
+      <Suspense fallback={<LazyFallback />}>
+        <SampleProposal category={currentCategory} />
+      </Suspense>
 
       <div className="rotate-180 bottom-5 z-50 opacity-100 pointer-events-none mb-9">
         <img
@@ -209,15 +231,42 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
         />
       </div>
 
-      <QuickServices category={currentCategory} />
-      <WhyWeBetter />
-      <AreYouAVendorSection haptic={haptic} setIsDrawerOpen={setIsDrawerOpen} />
-      <VendorOnboardingDrawer isOpen={isDrawerOpen} onClose={handleCloseDrawer} haptic={haptic} />
+      <Suspense fallback={<LazyFallback />}>
+        <QuickServices category={currentCategory} />
+      </Suspense>
+
+      <Suspense fallback={<LazyFallback />}>
+        <WhyWeBetter />
+      </Suspense>
+
+      <Suspense fallback={<LazyFallback />}>
+        <AreYouAVendorSection
+          haptic={haptic}
+          setIsDrawerOpen={setIsDrawerOpen}
+        />
+      </Suspense>
+
+      {isDrawerOpen && (
+        <Suspense fallback={null}>
+          <VendorOnboardingDrawer
+            isOpen={isDrawerOpen}
+            onClose={handleCloseDrawer}
+            haptic={haptic}
+          />
+        </Suspense>
+      )}
 
       <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        * { -webkit-tap-highlight-color: transparent; }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
       `}</style>
     </div>
   );

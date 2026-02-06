@@ -12,7 +12,7 @@ export default function ClientWrapper({ children }) {
   return (
     <>
       {!isAdminRoute && <MobileHeader />}
-      <main>{children}</main>
+      <main className="min-h-screen">{children}</main>
       <footer>
         <Footer />
       </footer>
