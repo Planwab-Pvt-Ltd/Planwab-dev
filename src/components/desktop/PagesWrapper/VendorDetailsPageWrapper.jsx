@@ -118,6 +118,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+const AUTOPLAY_DELAY = 5000;
 
 const QuickStatCard = ({ icon: Icon, label, value, color = "blue", subtext }) => (
   <div className={`p-3 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl text-center`}>
@@ -626,6 +627,7 @@ const VendorDetailsPageWrapper = () => {
   const [slideDirection, setSlideDirection] = useState(0);          // Track slide direction for animation
   const dragStartX = useRef(0);                                      // Touch drag start position
   const isDragging = useRef(false);                                    // Touch drag state
+  const autoplayTimerRef = useRef(null);                              // Autoplay timer reference
 
   // === LIKE FUNCTIONALITY STATE ===
   const [likingLoading, setLikingLoading] = useState(false);          // Like button loading state
@@ -775,15 +777,57 @@ const VendorDetailsPageWrapper = () => {
     };
   }, [showHeaderTabs]);
 
-  const handleNext = () => {
-    setSlideDirection(1); // Moving forward
-    setCurrentImageIndex((prev) => (prev + 1) % (vendor?.images.length || 1));
-  };
+  const images = useMemo(() => vendor?.images || [], [vendor]);
 
-  const handlePrev = () => {
-    setSlideDirection(-1); // Moving backward
-    setCurrentImageIndex((prev) => (prev - 1 + (vendor?.images.length || 1)) % (vendor?.images.length || 1));
-  };
+  // === MOBILE-STYLE SWIPE FUNCTIONS ===
+  const goToImage = useCallback(
+    (index, direction = null) => {
+      if (images.length <= 1) return;
+      // Always use the provided direction, or calculate simple forward/backward
+      const newDirection = direction !== null ? direction : index > currentImageIndex ? 1 : -1;
+      setSlideDirection(newDirection);
+      setCurrentImageIndex(index);
+    },
+    [images.length, currentImageIndex]
+  );
+
+  const nextImage = useCallback(() => {
+    if (images.length <= 1) return;
+    goToImage((currentImageIndex + 1) % images.length, 1);
+  }, [currentImageIndex, images.length, goToImage]);
+
+  const prevImage = useCallback(() => {
+    if (images.length <= 1) return;
+    goToImage((currentImageIndex - 1 + images.length) % images.length, -1);
+  }, [currentImageIndex, images.length, goToImage]);
+
+  // === AUTOPLAY FUNCTIONALITY ===
+  useEffect(() => {
+    // Clear any existing timer
+    if (autoplayTimerRef.current) {
+      clearTimeout(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
+
+    // Don't autoplay if paused or only one image
+    if (isPaused || images.length <= 1) return;
+
+    // Set new timer
+    autoplayTimerRef.current = setTimeout(() => {
+      // Double-check conditions before advancing
+      if (!isPaused && images.length > 1) {
+        nextImage();
+      }
+    }, AUTOPLAY_DELAY);
+
+    // Cleanup
+    return () => {
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+        autoplayTimerRef.current = null;
+      }
+    };
+  }, [currentImageIndex, isPaused, images.length, nextImage]);
 
   // === SWIPE GESTURE HANDLERS ===
   const handleTouchStart = useCallback((e) => {
@@ -803,18 +847,18 @@ const VendorDetailsPageWrapper = () => {
       const diff = dragStartX.current - e.changedTouches[0].clientX;
       const threshold = 50;
 
-      if (Math.abs(diff) > threshold && vendor?.images?.length > 1) {
+      if (Math.abs(diff) > threshold && images.length > 1) {
         if (diff > 0) {
-          handleNext();
+          nextImage();
         } else {
-          handlePrev();
+          prevImage();
         }
       }
 
       isDragging.current = false;
       dragStartX.current = 0;
     },
-    [handleNext, handlePrev, vendor?.images?.length]
+    [nextImage, prevImage, images.length]
   );
 
 
@@ -896,9 +940,6 @@ const VendorDetailsPageWrapper = () => {
   const displayPrice = vendor?.perDayPrice?.min?.toLocaleString("en-IN") || "N/A";
   const displayMaxPrice = vendor?.perDayPrice?.max?.toLocaleString("en-IN") || "N/A";
 
-  // Get vendor images array
-  const images = vendor?.images || [];
-
   /**
    * Dynamic tab configuration based on vendor data
    * Filters tabs based on available content and vendor properties
@@ -943,7 +984,6 @@ const VendorDetailsPageWrapper = () => {
 
   if (error) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>;
   if (!vendor) return <div className="flex items-center justify-center h-screen">Vendor not found.</div>;
-
 
   const AMENITY_ICONS = {
     "Air Conditioning": Wind,
@@ -1773,7 +1813,7 @@ const VendorDetailsPageWrapper = () => {
               onMouseLeave={() => setIsPaused(false)}
             >
               <div className="relative h-96 md:h-[500px] rounded-3xl overflow-hidden shadow-2xl" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-                <AnimatePresence mode="wait">
+                <AnimatePresence initial={false} custom={slideDirection} mode="wait">
                   <motion.div
                     key={currentImageIndex}
                     custom={slideDirection}
@@ -1791,9 +1831,6 @@ const VendorDetailsPageWrapper = () => {
                       src={vendor.images[currentImageIndex]}
                       alt={vendor.name}
                       className="w-full h-full object-cover"
-                      initial={{ scale: 1.1 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
                     />
                   </motion.div>
                 </AnimatePresence>
@@ -1801,16 +1838,16 @@ const VendorDetailsPageWrapper = () => {
 
                 {/* === CAROUSEL NAVIGATION CONTROLS === */}
 
-                {vendor.images.length > 1 && (
+                {images.length > 1 && (
                   <>
                     <button
-                      onClick={handlePrev}
+                      onClick={prevImage}
                       className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white/30 transition-all duration-300 opacity-0 group-hover:opacity-100 z-[10000]"
                     >
                       <ChevronLeft size={24} className="text-white" />
                     </button>
                     <button
-                      onClick={handleNext}
+                      onClick={nextImage}
                       className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white/30 transition-all duration-300 opacity-0 group-hover:opacity-100 z-[10000]"
                     >
                       <ChevronRight size={24} className="text-white" />
@@ -3791,7 +3828,7 @@ const VendorDetailsPageWrapper = () => {
                             />
                           ))}
                         </div>
-                        <span className="text-sm font-medium">{vendor.rating}</span>
+                        <span className="text-sm font-medium dark:text-white">{vendor.rating}</span>
                       </div>
 
                     
@@ -3812,13 +3849,16 @@ const VendorDetailsPageWrapper = () => {
                     
                     {/* Vendor Profile Image - Right Side */}
                     <div className="flex-shrink-0 relative">
-                      <div className="absolute top-17 -right-2 bg-blue-500 rounded-full p-1 z-10">
-                        <Eye size={16} className="text-white" />
+                      <div 
+                        className="absolute top-17 -right-2 bg-blue-500 rounded-full p-1 z-10 dark:bg-purple-600 cursor-pointer hover:bg-blue-600 dark:hover:bg-purple-700 transition-colors"
+                        onClick={() => window.location.href = `/m/vendor/${id}/profile`}
+                      >
+                        <Eye size={16} className="text-white dark:text-white" />
                       </div>
                       <img
                         src={vendor.images?.[0] || '/placeholder-vendor.jpg'}
                         alt={vendor.name}
-                        className="w-24 h-24 rounded-2xl object-cover border-2 border-gray-400 shadow-lg"
+                        className="w-24 h-24 rounded-2xl object-cover border-3 border-blue-500 dark:border-purple-400 shadow-lg"
                       />
                     </div>
                   </div>
