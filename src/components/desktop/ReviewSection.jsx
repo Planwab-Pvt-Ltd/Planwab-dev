@@ -750,7 +750,7 @@ export default function ReviewSection({ vendorId, vendorName }) {
           {/* Total Score - Enhanced */}
           <div className="flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-600 pb-6 md:pb-0">
             <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-6xl font-black text-gray-900 dark:text-white bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-6xl font-black text-gray-900 dark:text-white bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
                 {stats?.averageRating ? stats?.averageRating?.toFixed(1) : "0.0"}
               </span>
               <span className="text-sm text-gray-400 font-medium">/5</span>

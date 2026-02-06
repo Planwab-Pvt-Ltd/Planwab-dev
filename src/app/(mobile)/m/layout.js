@@ -4,10 +4,11 @@ import ForceLightMode from "@/components/mobile/ForceLightMode";
 
 export const metadata = {
   title: {
-    default: "PlanWAB Marketplace",
-    template: "%s | PlanWAB",
+    default: "PlanWAB - Book Event Vendors & Plan Weddings, Birthdays Online",
+    template: "%s | PlanWAB Marketplace",
   },
-  description: "Book verified event vendors, plan weddings, and manage bookings on the PlanWAB App.",
+  description:
+    "India's most affordable event planning marketplace. Find and book verified vendors for Weddings, Anniversaries, and Birthdays.",
   appleWebApp: {
     title: "PlanWAB",
     statusBarStyle: "default",
@@ -17,9 +18,9 @@ export const metadata = {
 export default function MobileLayout({ children }) {
   return (
     <ForceLightMode>
-        <ClientWrapper>
-          {children}
-        </ClientWrapper>
+      <ClientWrapper>
+        {children}
+      </ClientWrapper>
       <ConditionalNavbar />
     </ForceLightMode>
   );
