@@ -24,6 +24,27 @@ import {
   Calendar,
   Phone,
   LucideLayoutDashboard,
+  SlidersHorizontal,
+  Building2,
+  Camera,
+  Paintbrush2,
+  UserCheck,
+  UtensilsCrossed,
+  Shirt,
+  Hand,
+  CakeSlice,
+  Gem,
+  Mail,
+  Music,
+  Scissors,
+  Lamp,
+  Drum,
+  MicVocal,
+  Sparkles,
+  FlameKindling,
+  FileText,
+  Images,
+  Store,
 } from "lucide-react";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import { usePathname } from "next/navigation";
@@ -31,6 +52,29 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, useClerk, UserButton, useUser } from "@clerk/nextjs";
+import SearchModal from "./SearchModal";
+
+const vendorCategories = [
+  { key: "venues", label: "Venues", icon: Building2, description: "Banquet halls, hotels, resorts" },
+  { key: "photographers", label: "Photographers", icon: Camera, description: "Wedding & event photography" },
+  { key: "makeup", label: "Makeup", icon: Paintbrush2, description: "Bridal & party makeup" },
+  { key: "planners", label: "Planners", icon: UserCheck, description: "Wedding & event planning" },
+  { key: "catering", label: "Catering", icon: UtensilsCrossed, description: "Food & beverage services" },
+  { key: "clothes", label: "Clothes", icon: Shirt, description: "Bridal & groom wear" },
+  { key: "mehendi", label: "Mehendi", icon: Hand, description: "Mehendi artists" },
+  { key: "cakes", label: "Cakes", icon: CakeSlice, description: "Wedding & celebration cakes" },
+  { key: "jewellery", label: "Jewellery", icon: Gem, description: "Bridal & fashion jewellery" },
+  { key: "invitations", label: "Invitations", icon: Mail, description: "Wedding cards & invites" },
+  { key: "djs", label: "DJs", icon: Music, description: "Music & entertainment" },
+  { key: "hairstyling", label: "Hairstyling", icon: Scissors, description: "Hair styling services" },
+  { key: "decor", label: "Decorators", icon: Lamp, description: "Event decoration services" },
+  { key: "dhol", label: "Dhol", icon: Drum, description: "Traditional drum players" },
+  { key: "anchor", label: "Anchor", icon: MicVocal, description: "Event anchors and hosts" },
+  { key: "stageEntry", label: "Stage Entry", icon: Sparkles, description: "Grand stage entry & concepts" },
+  { key: "fireworks", label: "Fireworks", icon: FlameKindling, description: "Fireworks & pyro displays" },
+  { key: "barat", label: "Barat", icon: Music, description: "Bands, horses & Barat processions" },
+  { key: "other", label: "Other", icon: FileText, description: "Other services" },
+];
 
 const CategoryButton = ({ category, imageSrc, active }) => (
   <div
@@ -86,8 +130,7 @@ const PlannerDropdown = ({ isOpen }) => {
     <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-6 px-6 z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
       <div className="text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-          {" "}
-          <Star className="w-8 h-8 text-white" />{" "}
+          <Star className="w-8 h-8 text-white" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Become a Planner</h3>
         <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
@@ -95,12 +138,10 @@ const PlannerDropdown = ({ isOpen }) => {
         </p>
         <div className="space-y-3">
           <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
-            {" "}
-            Start Application{" "}
+            Start Application
           </button>
           <button className="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
-            {" "}
-            Learn More{" "}
+            Learn More
           </button>
         </div>
       </div>
@@ -112,63 +153,31 @@ const LocationDropdown = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentCity, setCurrentCity] = useState("");
   const cities = [
-    "Mumbai, Maharashtra",
-    "Delhi, Delhi",
-    "Bangalore, Karnataka",
-    "Hyderabad, Telangana",
-    "Chennai, Tamil Nadu",
-    "Kolkata, West Bengal",
-    "Pune, Maharashtra",
-    "Ahmedabad, Gujarat",
-    "Jaipur, Rajasthan",
-    "Lucknow, Uttar Pradesh",
-    "Kanpur, Uttar Pradesh",
-    "Nagpur, Maharashtra",
-    "Indore, Madhya Pradesh",
-    "Thane, Maharashtra",
-    "Bhopal, Madhya Pradesh",
-    "Visakhapatnam, Andhra Pradesh",
-    "Vadodara, Gujarat",
-    "Firozabad, Uttar Pradesh",
-    "Ludhiana, Punjab",
-    "Rajkot, Gujarat",
-    "Agra, Uttar Pradesh",
-    "Siliguri, West Bengal",
-    "Nashik, Maharashtra",
-    "Faridabad, Haryana",
-    "Patiala, Punjab",
-    "Meerut, Uttar Pradesh",
-    "Kalyan-Dombivali, Maharashtra",
-    "Vasai-Virar, Maharashtra",
-    "Varanasi, Uttar Pradesh",
-    "Srinagar, Jammu and Kashmir",
-    "Dhanbad, Jharkhand",
-    "Jodhpur, Rajasthan",
-    "Amritsar, Punjab",
-    "Raipur, Chhattisgarh",
-    "Allahabad, Uttar Pradesh",
-    "Coimbatore, Tamil Nadu",
-    "Jabalpur, Madhya Pradesh",
-    "Gwalior, Madhya Pradesh",
-    "Vijayawada, Andhra Pradesh",
-    "Madurai, Tamil Nadu",
+    "Mumbai, Maharashtra", "Delhi, Delhi", "Bangalore, Karnataka", "Hyderabad, Telangana",
+    "Chennai, Tamil Nadu", "Kolkata, West Bengal", "Pune, Maharashtra", "Ahmedabad, Gujarat",
+    "Jaipur, Rajasthan", "Lucknow, Uttar Pradesh", "Kanpur, Uttar Pradesh", "Nagpur, Maharashtra",
+    "Indore, Madhya Pradesh", "Thane, Maharashtra", "Bhopal, Madhya Pradesh",
+    "Visakhapatnam, Andhra Pradesh", "Vadodara, Gujarat", "Firozabad, Uttar Pradesh",
+    "Ludhiana, Punjab", "Rajkot, Gujarat", "Agra, Uttar Pradesh", "Siliguri, West Bengal",
+    "Nashik, Maharashtra", "Faridabad, Haryana", "Patiala, Punjab", "Meerut, Uttar Pradesh",
+    "Kalyan-Dombivali, Maharashtra", "Vasai-Virar, Maharashtra", "Varanasi, Uttar Pradesh",
+    "Srinagar, Jammu and Kashmir", "Dhanbad, Jharkhand", "Jodhpur, Rajasthan",
+    "Amritsar, Punjab", "Raipur, Chhattisgarh", "Allahabad, Uttar Pradesh",
+    "Coimbatore, Tamil Nadu", "Jabalpur, Madhya Pradesh", "Gwalior, Madhya Pradesh",
+    "Vijayawada, Andhra Pradesh", "Madurai, Tamil Nadu",
   ];
   const filteredCities = cities.filter((city) => city?.toLowerCase().includes(searchTerm?.toLowerCase()));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCity = localStorage.getItem("activeCity");
-      if (savedCity) {
-        setCurrentCity(savedCity);
-      }
+      if (savedCity) setCurrentCity(savedCity);
     }
   }, []);
 
   const handleCitySelect = (city) => {
     setCurrentCity(city);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("activeCity", city);
-    }
+    if (typeof window !== "undefined") localStorage.setItem("activeCity", city);
     onClose();
   };
 
@@ -308,6 +317,282 @@ const ProfileDropdown = ({ isOpen }) => {
   );
 };
 
+/* ─── Homepage Search Bar ─── */
+const HomeSearchBar = () => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative w-full max-w-lg"
+    >
+      <div
+        className={`relative flex items-center transition-all duration-300 ${
+          isFocused ? "scale-[1.02]" : ""
+        }`}
+      >
+        <Search
+          className={`absolute left-4 w-[18px] h-[18px] transition-colors duration-300 ${
+            isFocused ? "text-blue-500" : "text-gray-400 dark:text-gray-500"
+          }`}
+        />
+        <input
+          type="text"
+          placeholder="Search vendors, venues, services..."
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className={`w-full pl-11 pr-4 py-2.5 bg-gray-50/80 dark:bg-gray-800/60 border rounded-2xl
+            text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500
+            transition-all duration-300 focus:outline-none
+            ${
+              isFocused
+                ? "border-blue-400/70 dark:border-blue-500/60 ring-[3px] ring-blue-500/10 shadow-lg shadow-blue-500/5"
+                : "border-gray-200/70 dark:border-gray-700/50 shadow-sm"
+            }`}
+        />
+        <div
+          className={`absolute right-3 px-2 py-1 rounded-lg text-[11px] font-medium tracking-wide transition-all duration-300 ${
+            isFocused
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200/80 dark:bg-gray-700/80 text-gray-400 dark:text-gray-500"
+          }`}
+        >
+          ⌘K
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── Sub-Navigation (Homepage only) ─── */
+const SubNavigation = () => {
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const timeoutRef = useRef(null);
+
+  const open = (name) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setActiveDropdown(name);
+  };
+
+  const close = () => {
+    timeoutRef.current = setTimeout(() => setActiveDropdown(null), 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const navBtnClass = (name) =>
+    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none ${
+      activeDropdown === name
+        ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800"
+        : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+    }`;
+
+  const galleryLinks = [
+    { label: "Vendor Gallery", href: "/gallery/vendors", icon: Images },
+    { label: "Profile Media", href: "/gallery/profile-media", icon: Camera },
+    { label: "Marketplace", href: "/gallery/marketplace", icon: Store },
+  ];
+
+  const planningLinks = [
+    { label: "Wedding Planning", href: "/events/wedding", icon: Heart },
+    { label: "Anniversary Planning", href: "/events/anniversary", icon: Star },
+    { label: "Birthday Planning", href: "/events/birthday", icon: CakeSlice },
+  ];
+
+  return (
+    <div className="relative w-full">
+    <div className="flex items-center justify-between py-2">
+  {/* Left group: All */}
+  <div className="flex items-center">
+    <div
+      onMouseEnter={() => open("all")}
+      onMouseLeave={close}
+      className="relative"
+    >
+      <button className={navBtnClass("all")}>
+        <SlidersHorizontal className="w-4 h-4" />
+        <span>All</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            activeDropdown === "all" ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+    </div>
+  </div>
+
+  {/* Right group: Vendors, Gallery, Blogs, Planning */}
+  <div className="flex items-center gap-6">
+    {/* Vendors */}
+    <div
+      onMouseEnter={() => open("vendors")}
+      onMouseLeave={close}
+      className="relative"
+    >
+      <button className={navBtnClass("vendors")}>
+        <span>Vendors</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            activeDropdown === "vendors" ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+    </div>
+
+    {/* Gallery */}
+    <div
+      onMouseEnter={() => open("gallery")}
+      onMouseLeave={close}
+      className="relative"
+    >
+      <button className={navBtnClass("gallery")}>
+        <span>Gallery</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            activeDropdown === "gallery" ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {/* Gallery dropdown — now INSIDE its trigger */}
+      <AnimatePresence>
+        {activeDropdown === "gallery" && (
+          <motion.div
+            key="gallery"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onMouseEnter={() => open("gallery")}
+            onMouseLeave={close}
+            className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xl shadow-black/6 dark:shadow-black/30 z-50 py-2"
+          >
+            {galleryLinks.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 group"
+              >
+                <item.icon className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-200">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+
+    {/* Blogs — no dropdown */}
+    <Link
+      href="/about/blogs"
+      onMouseEnter={() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        setActiveDropdown(null);
+      }}
+      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200"
+    >
+      <span>Blogs</span>
+    </Link>
+
+    {/* Planning */}
+    <div
+      onMouseEnter={() => open("planning")}
+      onMouseLeave={close}
+      className="relative"
+    >
+      <button className={navBtnClass("planning")}>
+        <span>Planning</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            activeDropdown === "planning" ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {/* Planning dropdown — now INSIDE its trigger */}
+      <AnimatePresence>
+        {activeDropdown === "planning" && (
+          <motion.div
+            key="planning"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onMouseEnter={() => open("planning")}
+            onMouseLeave={close}
+            className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xl shadow-black/6 dark:shadow-black/30 z-50 py-2"
+          >
+            {planningLinks.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/40 flex items-center justify-center transition-colors duration-200">
+                  <item.icon className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
+                </div>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-200">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  </div>
+</div>
+
+      {/* ── Mega dropdown for All & Vendors ── */}
+      <AnimatePresence>
+        {(activeDropdown === "all" || activeDropdown === "vendors") && (
+          <motion.div
+            key="mega"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onMouseEnter={() => open(activeDropdown)}
+            onMouseLeave={close}
+            className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700/80 rounded-2xl shadow-2xl shadow-black/8 dark:shadow-black/30 z-50 p-5"
+          >
+            <div className="grid grid-cols-4 gap-2">
+              {vendorCategories.map((cat) => (
+                <Link
+                  key={cat.key}
+                  href={`/vendors/marketplace/${cat.key}`}
+                  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 group"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/40 flex items-center justify-center transition-colors duration-200">
+                    <cat.icon className="w-[18px] h-[18px] text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate transition-colors duration-200">
+                      {cat.label}
+                    </p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">
+                      {cat.description}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+/* ─── Mobile Sidebar (unchanged) ─── */
 const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) => {
   const [openAccordion, setOpenAccordion] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -316,46 +601,18 @@ const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) =>
   const { signOut } = useClerk();
 
   const cities = [
-    "Mumbai, Maharashtra",
-    "Delhi, Delhi",
-    "Bangalore, Karnataka",
-    "Hyderabad, Telangana",
-    "Chennai, Tamil Nadu",
-    "Kolkata, West Bengal",
-    "Pune, Maharashtra",
-    "Ahmedabad, Gujarat",
-    "Jaipur, Rajasthan",
-    "Lucknow, Uttar Pradesh",
-    "Kanpur, Uttar Pradesh",
-    "Nagpur, Maharashtra",
-    "Indore, Madhya Pradesh",
-    "Thane, Maharashtra",
-    "Bhopal, Madhya Pradesh",
-    "Visakhapatnam, Andhra Pradesh",
-    "Vadodara, Gujarat",
-    "Firozabad, Uttar Pradesh",
-    "Ludhiana, Punjab",
-    "Rajkot, Gujarat",
-    "Agra, Uttar Pradesh",
-    "Siliguri, West Bengal",
-    "Nashik, Maharashtra",
-    "Faridabad, Haryana",
-    "Patiala, Punjab",
-    "Meerut, Uttar Pradesh",
-    "Kalyan-Dombivali, Maharashtra",
-    "Vasai-Virar, Maharashtra",
-    "Varanasi, Uttar Pradesh",
-    "Srinagar, Jammu and Kashmir",
-    "Dhanbad, Jharkhand",
-    "Jodhpur, Rajasthan",
-    "Amritsar, Punjab",
-    "Raipur, Chhattisgarh",
-    "Allahabad, Uttar Pradesh",
-    "Coimbatore, Tamil Nadu",
-    "Jabalpur, Madhya Pradesh",
-    "Gwalior, Madhya Pradesh",
-    "Vijayawada, Andhra Pradesh",
-    "Madurai, Tamil Nadu",
+    "Mumbai, Maharashtra", "Delhi, Delhi", "Bangalore, Karnataka", "Hyderabad, Telangana",
+    "Chennai, Tamil Nadu", "Kolkata, West Bengal", "Pune, Maharashtra", "Ahmedabad, Gujarat",
+    "Jaipur, Rajasthan", "Lucknow, Uttar Pradesh", "Kanpur, Uttar Pradesh", "Nagpur, Maharashtra",
+    "Indore, Madhya Pradesh", "Thane, Maharashtra", "Bhopal, Madhya Pradesh",
+    "Visakhapatnam, Andhra Pradesh", "Vadodara, Gujarat", "Firozabad, Uttar Pradesh",
+    "Ludhiana, Punjab", "Rajkot, Gujarat", "Agra, Uttar Pradesh", "Siliguri, West Bengal",
+    "Nashik, Maharashtra", "Faridabad, Haryana", "Patiala, Punjab", "Meerut, Uttar Pradesh",
+    "Kalyan-Dombivali, Maharashtra", "Vasai-Virar, Maharashtra", "Varanasi, Uttar Pradesh",
+    "Srinagar, Jammu and Kashmir", "Dhanbad, Jharkhand", "Jodhpur, Rajasthan",
+    "Amritsar, Punjab", "Raipur, Chhattisgarh", "Allahabad, Uttar Pradesh",
+    "Coimbatore, Tamil Nadu", "Jabalpur, Madhya Pradesh", "Gwalior, Madhya Pradesh",
+    "Vijayawada, Andhra Pradesh", "Madurai, Tamil Nadu",
   ];
 
   const filteredCities = cities.filter((city) => city?.toLowerCase().includes(searchTerm?.toLowerCase()));
@@ -376,17 +633,13 @@ const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) =>
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCity = localStorage.getItem("activeCity");
-      if (savedCity) {
-        setCurrentCity(savedCity);
-      }
+      if (savedCity) setCurrentCity(savedCity);
     }
   }, []);
 
   const handleCitySelect = (city) => {
     setCurrentCity(city);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("activeCity", city);
-    }
+    if (typeof window !== "undefined") localStorage.setItem("activeCity", city);
     setOpenAccordion(null);
   };
 
@@ -734,10 +987,28 @@ export default function DesktopHeader() {
   const [isHovered, setIsHovered] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const inputRef = useRef(null);
+
+  const isHomePage = pathname === "/";
 
   const plannerRef = useRef(null);
   const locationRef = useRef(null);
   const profileRef = useRef(null);
+
+  useEffect(() => {
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      e.preventDefault();
+      e.stopPropagation();
+      setSearchOpen((prev) => !prev);
+    }
+  };
+  document.addEventListener("keydown", handleKeyDown, { capture: true });
+  return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+}, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 100);
@@ -802,7 +1073,9 @@ export default function DesktopHeader() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* ── Row 1: Logo / Search or Categories / Actions ── */}
           <div className="flex justify-between items-center h-20">
+            {/* Logo */}
             <div className="flex-shrink-0">
               <Link
                 href="/"
@@ -816,7 +1089,9 @@ export default function DesktopHeader() {
                     alt="PlanWAB Logo"
                     width={38}
                     height={38}
-                    className={`transition-all duration-400 ease-out ${isHovered ? "rotate-12 scale-110" : ""}`}
+                    className={`transition-all duration-400 ease-out mix-blend-multiply dark:mix-blend-normal dark:brightness-110 ${
+                      isHovered ? "rotate-12 scale-110" : ""
+                    }`}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = "https://placehold.co/38x38/FDE2E8/C1284A?text=P";
@@ -833,23 +1108,46 @@ export default function DesktopHeader() {
               </Link>
             </div>
 
+            {/* Center: Search bar on home, Category tabs otherwise */}
             <div className="hidden lg:flex flex-1 justify-center items-center h-full max-w-lg">
-              <div
-                className={`flex items-center bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1.5 shadow-inner border border-gray-200/50 dark:border-gray-700/50`}
-              >
-                {categories.map((cat) => {
-                  const categoryPath = `/events/${cat?.name?.toLowerCase()}`;
-                  const isActive =
-                    pathname === categoryPath || pathname === `/plan-my-event/${cat?.name?.toLowerCase()}`;
-                  return (
-                    <Link href={categoryPath} key={cat.name} passHref>
-                      <CategoryButton category={cat.name} imageSrc={cat.image} active={isActive} />
-                    </Link>
-                  );
-                })}
-              </div>
+              <AnimatePresence mode="wait">
+                {isHomePage ? (
+                  <motion.div
+                    key="search"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full"
+                  >
+                    <HomeSearchBar />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="categories"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-center bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-2xl p-1.5 shadow-inner border border-gray-200/50 dark:border-gray-700/50">
+                      {categories.map((cat) => {
+                        const categoryPath = `/events/${cat?.name?.toLowerCase()}`;
+                        const isActive =
+                          pathname === categoryPath || pathname === `/plan-my-event/${cat?.name?.toLowerCase()}`;
+                        return (
+                          <Link href={categoryPath} key={cat.name} passHref>
+                            <CategoryButton category={cat.name} imageSrc={cat.image} active={isActive} />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
+            {/* Right actions */}
             <div className="hidden lg:flex items-center space-x-2">
               <button
                 onClick={toggleTheme}
@@ -899,6 +1197,7 @@ export default function DesktopHeader() {
               </div>
             </div>
 
+            {/* Mobile hamburger */}
             <div className="lg:hidden flex items-center gap-2">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -908,13 +1207,32 @@ export default function DesktopHeader() {
               </button>
             </div>
           </div>
+
+          {/* ── Row 2: Sub-navigation (homepage only, desktop only) ── */}
+          <AnimatePresence>
+            {isHomePage && (
+              <motion.div
+                key="subnav"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="hidden lg:block overflow-visible"
+              >
+                <SubNavigation />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* Bottom gradient line */}
         <div
           className={`absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-300 to-transparent transition-all duration-500 ease-out ${
             isScrolled ? "opacity-100 scale-x-100" : "opacity-0 scale-x-50"
           }`}
         ></div>
       </header>
+
       <AnimatePresence>
         {isMobileMenuOpen && (
           <MobileSidebar
@@ -926,6 +1244,7 @@ export default function DesktopHeader() {
           />
         )}
       </AnimatePresence>
+      <SearchModal />
     </>
   );
 }
