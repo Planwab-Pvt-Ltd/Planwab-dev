@@ -9555,7 +9555,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                             setIsLongPressing(false);
                           }
                         }}
-                        className="aspect-[1/1.2] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer select-none rounded-[10px] group"
+                        className="aspect-[1/1.3] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer select-none rounded-[10px] group"
                       >
                         {post.mediaType === "video" ? (
                           <div className="relative w-full h-full">
@@ -9695,7 +9695,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                         }}
                         className="overflow-hidden"
                       >
-                        <div className="grid grid-cols-3 gap-3 pt-4 pb-2">
+                        <div className="grid grid-cols-2 gap-3 pt-4 pb-2">
                           {vendor?.images.map((img, idx) => (
                             <motion.div
                               key={`gallery-img-${idx}`}
