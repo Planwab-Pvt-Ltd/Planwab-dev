@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import { useCartStore } from "@/GlobalState/CartDataStore";
 import ReviewSection from "../ReviewSection";
@@ -107,7 +110,15 @@ import {
 } from "lucide-react";
 import DetailsPageSkeleton from "../ui/skeletons/DetailsPageSkeleton";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
+import {
+  Download,
+  QrCode,
+  Linkedin,
+  MessageSquare,
+} from "lucide-react";
 
+const AUTOPLAY_DELAY = 5000;
 
 const QuickStatCard = ({ icon: Icon, label, value, color = "blue", subtext }) => (
   <div className={`p-3 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl text-center`}>
@@ -226,6 +237,336 @@ const CATEGORY_CONFIG = {
   other: { label: "Services", icon: FileText, color: "gray" },
 };
 
+const ShareModal = ({ isOpen, onClose, vendorName }) => {
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
+
+  // Body scroll lock effect
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const originalStyle = window.getComputedStyle(document.body);
+    const originalOverflow = originalStyle.overflow;
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalOverflow;
+    }
+
+    // Cleanup on unmount or when isOpen changes
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const shareOptions = [
+    {
+      id: "whatsapp",
+      label: "WhatsApp",
+      icon: MessageCircle,
+      color: "bg-green-500",
+      action: () => {
+        window.open(`https://wa.me/?text=Check out ${vendorName}! ${currentUrl}`);
+        onClose();
+      },
+    },
+    {
+      id: "facebook",
+      label: "Facebook",
+      icon: Facebook,
+      color: "bg-blue-600",
+      action: () => {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`);
+        onClose();
+      },
+    },
+    {
+      id: "twitter",
+      label: "Twitter",
+      icon: Twitter,
+      color: "bg-sky-500",
+      action: () => {
+        window.open(
+          `https://twitter.com/intent/tweet?text=Check out ${vendorName}!&url=${encodeURIComponent(currentUrl)}`,
+        );
+        onClose();
+      },
+    },
+    {
+      id: "linkedin",
+      label: "LinkedIn",
+      icon: Linkedin,
+      color: "bg-blue-700",
+      action: () => {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`);
+        onClose();
+      },
+    },
+    {
+      id: "instagram",
+      label: "Instagram",
+      icon: Instagram,
+      color: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
+      action: () => {
+        onClose();
+      },
+    },
+    {
+      id: "email",
+      label: "Email",
+      icon: Mail,
+      color: "bg-gray-600",
+      action: () => {
+        window.open(`mailto:?subject=Check out ${vendorName}&body=${encodeURIComponent(currentUrl)}`);
+        onClose();
+      },
+    },
+    {
+      id: "sms",
+      label: "Message",
+      icon: MessageSquare,
+      color: "bg-green-600",
+      action: () => {
+        window.open(`sms:?body=Check out ${vendorName}! ${currentUrl}`);
+        onClose();
+      },
+    },
+    {
+      id: "copy",
+      label: "Copy Link",
+      icon: Copy,
+      color: "bg-gray-500",
+      action: () => {
+        navigator.clipboard.writeText(currentUrl);
+        setCopiedFeedback(true);
+        setTimeout(() => {
+          setCopiedFeedback(false);
+          onClose();
+        }, 1500);
+      },
+    },
+  ];
+
+  const handleDownloadQR = () => {
+    const svg = document.getElementById("share-qr-code");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new window.Image();
+
+    img.onload = () => {
+      canvas.width = img.width * 2;
+      canvas.height = img.height * 2;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${vendorName?.replace(/\s+/g, "_") || "profile"}_QR.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+ return (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    onClick={onClose}
+    className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end lg:items-center lg:justify-center lg:p-6"
+  >
+    <motion.div
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ type: "spring", damping: 28, stiffness: 300 }}
+      onClick={(e) => e.stopPropagation()}
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0, bottom: 0.5 }}
+      onDragEnd={(_, info) => {
+        if (info.offset.y > 100) onClose();
+      }}
+      className="w-full lg:max-w-lg bg-white dark:bg-gray-900 rounded-t-[32px] lg:rounded-2xl p-5 pb-8 lg:pb-6 lg:shadow-2xl"
+    >
+      {/* Drag handle — mobile only */}
+      <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-5 lg:hidden" />
+
+      {/* Desktop header */}
+      <div className="hidden lg:flex items-center justify-between mb-5">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          Share Profile
+        </h3>
+        <button
+          onClick={onClose}
+          className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+        >
+          <X size={18} className="text-gray-500" />
+        </button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {showQR ? (
+          <motion.div
+            key="qr-view"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowQR(false)}
+                className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                <ArrowLeft
+                  size={18}
+                  className="text-gray-600 dark:text-gray-400"
+                />
+              </motion.button>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                QR Code
+              </h3>
+              <div className="w-10" />
+            </div>
+
+            {/* QR Code */}
+            <div className="flex justify-center py-4">
+              <div className="bg-white p-4 rounded-2xl shadow-lg">
+                <QRCodeSVG
+                  id="share-qr-code"
+                  value={currentUrl}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                />
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+              Scan to visit this profile
+            </p>
+
+            {/* URL display */}
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-3">
+              <p className="text-xs text-gray-600 dark:text-gray-400 break-all text-center">
+                {currentUrl}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDownloadQR}
+                className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 rounded-xl font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                <Download size={18} />
+                Download
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  navigator.clipboard.writeText(currentUrl);
+                  setCopiedFeedback(true);
+                  setTimeout(() => setCopiedFeedback(false), 2000);
+                }}
+                className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                {copiedFeedback ? <Check size={18} /> : <Copy size={18} />}
+                {copiedFeedback ? "Copied!" : "Copy Link"}
+              </motion.button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="share-options"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Mobile title */}
+            <h3 className="text-lg font-bold text-center mb-6 text-gray-900 dark:text-white lg:hidden">
+              Share Profile
+            </h3>
+
+            {/* QR Code Button */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowQR(true)}
+              className="w-full flex items-center gap-4 p-4 mb-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 hover:from-gray-100 hover:to-gray-150 dark:hover:from-gray-750 dark:hover:to-gray-800 transition-all cursor-pointer"
+            >
+              <div className="w-14 h-14 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
+                <QrCode
+                  size={28}
+                  className="text-gray-700 dark:text-gray-300"
+                />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  QR Code
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Scan to share instantly
+                </p>
+              </div>
+              <ChevronRight size={20} className="text-gray-400" />
+            </motion.button>
+
+            {/* Share Options Grid */}
+            <div className="grid grid-cols-4 gap-5 lg:gap-4">
+              {shareOptions.map((option) => (
+                <motion.button
+                  key={option.id}
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  onClick={option.action}
+                  className="flex flex-col items-center gap-2 relative cursor-pointer"
+                >
+                  <div
+                    className={`w-14 h-14 rounded-2xl ${option.color} flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow`}
+                  >
+                    {option.id === "copy" && copiedFeedback ? (
+                      <Check size={24} className="text-white" />
+                    ) : (
+                      <option.icon size={24} className="text-white" />
+                    )}
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">
+                    {option.id === "copy" && copiedFeedback
+                      ? "Copied!"
+                      : option.label}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  </motion.div>
+);
+};
+
 /**
  * Main VendorDetailsPageWrapper component
  * Manages vendor data fetching, state management, and UI rendering
@@ -244,14 +585,33 @@ const VendorDetailsPageWrapper = () => {
 
   const [similarVendors, setSimilarVendors] = useState([]);     // Similar vendors list
   const [recommendedVendors, setRecommendedVendors] = useState([]); // Recommended vendors list
+  const [likedVendors, setLikedVendors] = useState(() => {
+    if (typeof window === 'undefined') return new Set();
+    const saved = localStorage.getItem('likedVendors');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });   // Track liked vendors by ID
   const [listsLoading, setListsLoading] = useState(true);       // Lists loading state
   const [listsError, setListsError] = useState(null);           // Lists error state
   const { addToCart, removeFromCart, isInCart } = useCartStore();
 
+  // Handle liking/unliking vendors
+  const handleLikeVendor = (vendorId) => {
+    setLikedVendors(prev => {
+      const newLiked = new Set(prev);
+      newLiked.has(vendorId) ? newLiked.delete(vendorId) : newLiked.add(vendorId);
+      
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('likedVendors', JSON.stringify([...newLiked]));
+      }
+      
+      return newLiked;
+    });
+  };
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // Current carousel image
   const [isPaused, setIsPaused] = useState(false);              // Carousel pause state
-  const [isLiked, setIsLiked] = useState(false);                // Favorite status
+  const [isLiked, setIsLiked] = useState(false);                // Favorite status (for main vendor)
   const [showAllImages, setShowAllImages] = useState(false);     // Show all images modal
   const [activeTab, setActiveTab] = useState("overview");       // Active tab
   const [expandedFaq, setExpandedFaq] = useState(null);         // Expanded FAQ item
@@ -262,6 +622,22 @@ const VendorDetailsPageWrapper = () => {
   const [modalImageIndex, setModalImageIndex] = useState(0);     // Modal image index
   const [showFullStory, setShowFullStory] = useState(false);     // Full story collapsible effect
   const [selectedPackage, setSelectedPackage] = useState(null);   // Selected package state
+  const [showHeaderTabs, setShowHeaderTabs] = useState(false);   // Header tabs visibility on scroll
+  const lastScrollY = useRef(0);                                   // Track last scroll position
+  const [slideDirection, setSlideDirection] = useState(0);          // Track slide direction for animation
+  const dragStartX = useRef(0);                                      // Touch drag start position
+  const isDragging = useRef(false);                                    // Touch drag state
+  const autoplayTimerRef = useRef(null);                              // Autoplay timer reference
+
+  // === LIKE FUNCTIONALITY STATE ===
+  const [likingLoading, setLikingLoading] = useState(false);          // Like button loading state
+
+  // === SLIDE VARIANTS (MOBILE STYLE) ===
+  const slideVariants = {
+    enter: (direction) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction) => ({ x: direction < 0 ? "100%" : "-100%", opacity: 0 }),
+  };
 
   // === COLLAPSIBLE SECTIONS STATE ===
 
@@ -369,11 +745,121 @@ const VendorDetailsPageWrapper = () => {
     }
   }, [currentImageIndex, isPaused, timerControls]);
 
-  const handleNext = () => setCurrentImageIndex((prev) => (prev + 1) % (vendor?.images.length || 1));
+  // === SCROLL-BASED HEADER TABS ===
+  useEffect(() => {
+    let rafId = null;
 
+    const handleScroll = () => {
+      if (rafId) return;
 
-  const handlePrev = () =>
-    setCurrentImageIndex((prev) => (prev - 1 + (vendor?.images.length || 1)) % (vendor?.images.length || 1));
+      rafId = window.requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+        const threshold = 550; 
+
+        if (scrollY > threshold && !showHeaderTabs) {
+          setShowHeaderTabs(true);
+        } else if (scrollY <= threshold && showHeaderTabs) {
+          setShowHeaderTabs(false);
+        }
+
+        lastScrollY.current = scrollY;
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [showHeaderTabs]);
+
+  const images = useMemo(() => vendor?.images || [], [vendor]);
+
+  // === MOBILE-STYLE SWIPE FUNCTIONS ===
+  const goToImage = useCallback(
+    (index, direction = null) => {
+      if (images.length <= 1) return;
+      // Always use the provided direction, or calculate simple forward/backward
+      const newDirection = direction !== null ? direction : index > currentImageIndex ? 1 : -1;
+      setSlideDirection(newDirection);
+      setCurrentImageIndex(index);
+    },
+    [images.length, currentImageIndex]
+  );
+
+  const nextImage = useCallback(() => {
+    if (images.length <= 1) return;
+    goToImage((currentImageIndex + 1) % images.length, 1);
+  }, [currentImageIndex, images.length, goToImage]);
+
+  const prevImage = useCallback(() => {
+    if (images.length <= 1) return;
+    goToImage((currentImageIndex - 1 + images.length) % images.length, -1);
+  }, [currentImageIndex, images.length, goToImage]);
+
+  // === AUTOPLAY FUNCTIONALITY ===
+  useEffect(() => {
+    // Clear any existing timer
+    if (autoplayTimerRef.current) {
+      clearTimeout(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
+
+    // Don't autoplay if paused or only one image
+    if (isPaused || images.length <= 1) return;
+
+    // Set new timer
+    autoplayTimerRef.current = setTimeout(() => {
+      // Double-check conditions before advancing
+      if (!isPaused && images.length > 1) {
+        nextImage();
+      }
+    }, AUTOPLAY_DELAY);
+
+    // Cleanup
+    return () => {
+      if (autoplayTimerRef.current) {
+        clearTimeout(autoplayTimerRef.current);
+        autoplayTimerRef.current = null;
+      }
+    };
+  }, [currentImageIndex, isPaused, images.length, nextImage]);
+
+  // === SWIPE GESTURE HANDLERS ===
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    dragStartX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e) => {
+      if (!isDragging.current) return;
+      if (e.changedTouches.length !== 1) {
+        isDragging.current = false;
+        return;
+      }
+
+      const diff = dragStartX.current - e.changedTouches[0].clientX;
+      const threshold = 50;
+
+      if (Math.abs(diff) > threshold && images.length > 1) {
+        if (diff > 0) {
+          nextImage();
+        } else {
+          prevImage();
+        }
+      }
+
+      isDragging.current = false;
+      dragStartX.current = 0;
+    },
+    [nextImage, prevImage, images.length]
+  );
 
 
   const handleImageClick = (index) => {
@@ -383,6 +869,44 @@ const VendorDetailsPageWrapper = () => {
 
 
   const handleModalClose = () => setShowImageModal(false);
+
+  // === API-BASED LIKE FUNCTIONALITY ===
+  const { user } = useUser();
+
+  const handleToggleLike = async (vendorId) => {
+    // Prevent multiple clicks
+    if (!user || likingLoading) return;
+
+    if (!user) {
+      toast.error("Please login to like vendors");
+      return;
+    }
+
+    setLikingLoading(true);
+    const prevLiked = likedVendors.has(vendorId);
+    
+    // Optimistic update
+    handleLikeVendor(vendorId);
+
+    try {
+      const res = await fetch("/api/user/toggle-like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId }),
+      });
+
+      if (!res.ok) throw new Error("Failed to toggle like");
+      
+      const data = await res.json();
+      toast.success(data.message);
+    } catch (error) {
+      // Revert on error
+      handleLikeVendor(vendorId);
+      toast.error("Something went wrong");
+    } finally {
+      setLikingLoading(false);
+    }
+  };
 
   const handleModalNext = () => setModalImageIndex((prev) => (prev + 1) % vendor.images.length);
 
@@ -415,9 +939,6 @@ const VendorDetailsPageWrapper = () => {
   // Format pricing for display
   const displayPrice = vendor?.perDayPrice?.min?.toLocaleString("en-IN") || "N/A";
   const displayMaxPrice = vendor?.perDayPrice?.max?.toLocaleString("en-IN") || "N/A";
-
-  // Get vendor images array
-  const images = vendor?.images || [];
 
   /**
    * Dynamic tab configuration based on vendor data
@@ -463,7 +984,6 @@ const VendorDetailsPageWrapper = () => {
 
   if (error) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>;
   if (!vendor) return <div className="flex items-center justify-center h-screen">Vendor not found.</div>;
-
 
   const AMENITY_ICONS = {
     "Air Conditioning": Wind,
@@ -1120,25 +1640,153 @@ const VendorDetailsPageWrapper = () => {
     <div
       className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-18`}
     >
+      {/* === FIXED HEADER WITH TABS === */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 rounded-b-2xl transition-all duration-300">
+        <div className="flex items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Link href="/vendors" className="flex-shrink-0">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
+              </motion.button>
+            </Link>
+
+            {/* Compact Vendor Name - Shows only when tabs are in header */}
+            <AnimatePresence mode="wait">
+              {showHeaderTabs && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{
+                    duration: 0.25,
+                    ease: [0.4, 0, 0.2, 1],
+                  }}
+                  className="flex-1 min-w-0"
+                >
+                  <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{vendor.name}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex gap-2 flex-shrink-0">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleToggleLike(vendor._id)}
+              disabled={likingLoading}
+              className={`p-2 rounded-full transition-all ${
+                likedVendors.has(vendor._id)
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+              }`}
+            >
+              {likingLoading ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Heart size={18} className={likedVendors.has(vendor._id) ? "fill-current" : ""} />
+              )}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowShareModal(true)}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
+            >
+              <Share2 size={18} />
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Tab Navigation in Header - Shows on scroll */}
+        <AnimatePresence mode="wait">
+          {showHeaderTabs && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                height: { duration: 0.3 },
+                opacity: { duration: 0.2 },
+              }}
+              className="overflow-hidden border-t border-gray-100 dark:border-gray-800/50 mt-7"
+            >
+              <div className="flex gap-4 overflow-x-auto px-6 py-3">
+                {TAB_CONFIG.map((tab, index) => (
+                  <motion.button
+                    key={tab.id}
+                    initial={{ opacity: 0, scale: 0.9, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{
+                      delay: index * 0.03,
+                      duration: 0.2,
+                      ease: "easeOut",
+                    }}
+                    onClick={() => setActiveTab(tab.id)}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-300 relative whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                    }`}
+                  >
+                    <tab.icon size={18} />
+                    {tab.label}
+                    {/* === ACTIVE TAB INDICATOR === */}
+                    {activeTab === tab.id && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"
+                      />
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       {/* === STICKY NAVIGATION BAR === */}
       {/* Provides navigation back to search and quick access to favorites/share */}
       <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link
-              href={`/vendors/marketplace/${vendor?.category?.toLowerCase()}`}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            >
-              <ArrowLeft size={20} />
-              <span className="font-medium">Back to Search</span>
-            </Link>
+            <nav className="flex items-center gap-2 text-sm">
+              <Link
+                href="/"
+                className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                <Home size={16} />
+                <span>Home</span>
+              </Link>
+              <ChevronRight size={16} className="text-gray-400" />
+              <Link
+                href={`/vendors/marketplace/${vendor?.category?.toLowerCase()}`}
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                {vendor?.category}
+              </Link>
+              <ChevronRight size={16} className="text-gray-400" />
+              <span className="text-gray-900 dark:text-gray-100 font-medium">{vendor?.name}</span>
+            </nav>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setIsLiked(!isLiked)}
-                className={`p-2 rounded-full transition-all duration-300 ${isLiked ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                onClick={() => handleToggleLike(vendor._id)}
+                disabled={likingLoading}
+                className={`p-2 rounded-full transition-all duration-300 ${likedVendors.has(vendor?._id) ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   } dark:bg-gray-700 dark:text-gray-300`}
               >
-                <Heart size={20} className={isLiked ? "fill-current" : ""} />
+                {likingLoading ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Heart size={20} className={likedVendors.has(vendor?._id) ? "fill-current" : ""} />
+                )}
               </button>
               <button
                 onClick={() => setShowShareModal(true)}
@@ -1154,33 +1802,6 @@ const VendorDetailsPageWrapper = () => {
       {/* === MAIN CONTENT AREA === */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 !pt-[12px]">
 
-        <nav aria-label="Breadcrumb" className="mb-3">
-          <ol className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-            <li>
-              <a href="/" className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-                Home
-              </a>
-            </li>
-            <li>
-              <ChevronRight size={16} />
-            </li>
-            <li>
-              <a
-                href={`/vendors/marketplace/${vendor?.category?.toLowerCase()}`}
-                className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-              >
-                {vendor.category}
-              </a>
-            </li>
-            <li>
-              <ChevronRight size={16} />
-            </li>
-            <li className="font-medium text-gray-700 dark:text-gray-200 truncate" aria-current="page">
-              {vendor.name}
-            </li>
-          </ol>
-        </nav>
-
         {/* === MAIN LAYOUT GRID === */}
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
@@ -1191,33 +1812,42 @@ const VendorDetailsPageWrapper = () => {
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
-              <div className="relative h-96 md:h-[500px] rounded-3xl overflow-hidden shadow-2xl">
-                <AnimatePresence mode="wait">
-                  <motion.img
+              <div className="relative h-96 md:h-[500px] rounded-3xl overflow-hidden shadow-2xl" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+                <AnimatePresence initial={false} custom={slideDirection} mode="wait">
+                  <motion.div
                     key={currentImageIndex}
-                    src={vendor.images[currentImageIndex]}
-                    alt={vendor.name}
-                    className="w-full h-full object-cover"
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
+                    custom={slideDirection}
+                    variants={slideVariants}
+                    initial={currentImageIndex === 0 && slideDirection === 0 ? false : "enter"}
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: "spring", stiffness: 300, damping: 35 },
+                      opacity: { duration: 0.2 },
+                    }}
+                    className="absolute inset-0"
+                  >
+                    <motion.img
+                      src={vendor.images[currentImageIndex]}
+                      alt={vendor.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
                 </AnimatePresence>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
                 {/* === CAROUSEL NAVIGATION CONTROLS === */}
 
-                {vendor.images.length > 1 && (
+                {images.length > 1 && (
                   <>
                     <button
-                      onClick={handlePrev}
+                      onClick={prevImage}
                       className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white/30 transition-all duration-300 opacity-0 group-hover:opacity-100 z-[10000]"
                     >
                       <ChevronLeft size={24} className="text-white" />
                     </button>
                     <button
-                      onClick={handleNext}
+                      onClick={nextImage}
                       className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white/30 transition-all duration-300 opacity-0 group-hover:opacity-100 z-[10000]"
                     >
                       <ChevronRight size={24} className="text-white" />
@@ -1304,38 +1934,46 @@ const VendorDetailsPageWrapper = () => {
                 </motion.div>
               )}
             </div>
-            {/* === TABBED CONTENT SECTION === */}
-            {/* Dynamic content area with smooth tab transitions */}
+            {/* === TAB NAVIGATION - ORIGINAL (shows when header tabs are hidden) === */}
+            <AnimatePresence mode="wait">
+              {!showHeaderTabs && (
+                <motion.div
+                  initial={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl mx-4"
+                >
+                  <div className="overflow-x-auto">
+                    <div className="flex gap-4 min-w-max px-1 py-2">
+                      {TAB_CONFIG.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-300 relative whitespace-nowrap ${
+                            activeTab === tab.id
+                              ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20"
+                              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                            }`}
+                        >
+                          <tab.icon size={18} />
+                          {tab.label}
+                          {/* === ACTIVE TAB INDICATOR === */}
+                          {activeTab === tab.id && (
+                            <motion.div
+                              layoutId="activeTab"
+                              className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* === TAB CONTENT AREA === */}
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
-              {/* === TAB NAVIGATION === */}
-
-              <div className="overflow-x-auto mb-8 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex gap-4 min-w-max px-1">
-                  {TAB_CONFIG.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-300 relative whitespace-nowrap ${activeTab === tab.id
-                        ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                        }`}
-                    >
-                      <tab.icon size={18} />
-                      {tab.label}
-                      {/* === ACTIVE TAB INDICATOR === */}
-
-                      {activeTab === tab.id && (
-                        <motion.div
-                          layoutId="activeTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* === TAB CONTENT AREA === */}
 
               <AnimatePresence mode="wait">
                 <motion.div
@@ -1899,28 +2537,85 @@ const VendorDetailsPageWrapper = () => {
                             <div className="space-y-4">
                               {/* Main Description with Read More functionality */}
                               <div>
-                                <div className={`text-slate-600 dark:text-slate-300 leading-relaxed ${!showFullStory ? 'max-h-20 overflow-hidden' : ''
-                                  }`}>
-                                  <p>
-                                    {vendor.about || vendor.description || vendor.story ||
-                                      `${vendor.name} is a professional ${vendor.category} service provider with years of experience in the industry. We are committed to delivering exceptional quality and service to make your special occasions memorable.`
-                                    }
-                                  </p>
-                                </div>
+                                <AnimatePresence mode="wait">
+                                  <motion.div
+                                    key={showFullStory ? 'full' : 'collapsed'}
+                                    initial={{ 
+                                      opacity: 0, 
+                                      scale: 0.98,
+                                      filter: 'blur(4px)',
+                                      height: showFullStory ? 0 : 'auto'
+                                    }}
+                                    animate={{ 
+                                      opacity: 1, 
+                                      scale: 1,
+                                      filter: 'blur(0px)',
+                                      height: 'auto'
+                                    }}
+                                    exit={{ 
+                                      opacity: 0, 
+                                      scale: 0.98,
+                                      filter: 'blur(4px)',
+                                      height: showFullStory ? 0 : 'auto'
+                                    }}
+                                    transition={{ 
+                                      duration: 0.6, 
+                                      ease: [0.23, 1, 0.32, 1],
+                                      scale: { duration: 0.4 },
+                                      filter: { duration: 0.3 },
+                                      height: { duration: 0.4 }
+                                    }}
+                                    className="overflow-hidden origin-top"
+                                  >
+                                    <div className={`text-slate-600 dark:text-slate-300 leading-relaxed transition-all duration-500 ${
+                                      !showFullStory ? 'max-h-20 overflow-hidden' : ''
+                                    }`}>
+                                      <motion.p 
+                                        className="transition-all duration-500"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.1, duration: 0.4 }}
+                                      >
+                                        {vendor.about || vendor.description || vendor.story ||
+                                          `${vendor.name} is a professional ${vendor.category} service provider with years of experience in the industry. We are committed to delivering exceptional quality and service to make your special occasions memorable.`
+                                        }
+                                      </motion.p>
+                                    </div>
+                                  </motion.div>
+                                </AnimatePresence>
 
                                 {/* Read More/Less button for main description */}
                                 {!(vendor.fullStory || vendor.detailedDescription) && (
-                                  <button
-                                    onClick={() => setShowFullStory(!showFullStory)}
-                                    className="mt-3 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                                  <motion.div
+                                    className="mt-4 overflow-hidden"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    transition={{ delay: 0.2, duration: 0.3 }}
                                   >
-                                    <span>{showFullStory ? 'Show Less' : 'Read More'}</span>
-                                    <ChevronDown
-                                      size={14}
-                                      className={`transition-transform duration-200 ${showFullStory ? 'rotate-180' : ''
-                                        }`}
-                                    />
-                                  </button>
+                                    <motion.button
+                                      onClick={() => setShowFullStory(!showFullStory)}
+                                      className="group relative flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] hover:bg-[position:100%_0] text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                                      whileHover={{ scale: 1.05, y: -2 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                      <motion.span
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.3, duration: 0.3 }}
+                                        className="relative z-10"
+                                      >
+                                        {showFullStory ? 'Show Less' : 'Read More'}
+                                      </motion.span>
+                                      <motion.div
+                                        animate={{ rotate: showFullStory ? 180 : 0 }}
+                                        transition={{ duration: 0.5, ease: 'easeInOut' }}
+                                        className="relative z-10"
+                                      >
+                                        <ChevronDown size={16} className="text-white" />
+                                      </motion.div>
+                                    </motion.button>
+                                  </motion.div>
                                 )}
                               </div>
 
@@ -1928,17 +2623,33 @@ const VendorDetailsPageWrapper = () => {
                               <AnimatePresence>
                                 {showFullStory && (vendor.fullStory || vendor.detailedDescription) && (
                                   <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                    className="overflow-hidden"
+                                    initial={{ height: 0, opacity: 0, scale: 0.95 }}
+                                    animate={{ height: 'auto', opacity: 1, scale: 1 }}
+                                    exit={{ height: 0, opacity: 0, scale: 0.95 }}
+                                    transition={{ 
+                                      duration: 0.5, 
+                                      ease: [0.23, 1, 0.32, 1],
+                                      height: { duration: 0.4 },
+                                      opacity: { duration: 0.3 },
+                                      scale: { duration: 0.4 }
+                                    }}
+                                    className="overflow-hidden origin-top"
                                   >
-                                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                                      <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                    <motion.div 
+                                      className="pt-6 border-t border-slate-200 dark:border-slate-700 bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-transparent dark:from-indigo-950/20 dark:via-purple-950/10 rounded-2xl p-6"
+                                      initial={{ opacity: 0, y: 30 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: 0.1, duration: 0.5 }}
+                                    >
+                                      <motion.p 
+                                        className="text-slate-600 dark:text-slate-300 leading-relaxed text-lg"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2, duration: 0.4 }}
+                                      >
                                         {vendor.fullStory || vendor.detailedDescription}
-                                      </p>
-                                    </div>
+                                      </motion.p>
+                                    </motion.div>
                                   </motion.div>
                                 )}
                               </AnimatePresence>
@@ -1960,19 +2671,37 @@ const VendorDetailsPageWrapper = () => {
 
                              
                               {(vendor.fullStory || vendor.detailedDescription) && (
-                                <button
-                                  onClick={() => setShowFullStory(!showFullStory)}
-                                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/20 hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-950/40 dark:hover:to-purple-950/30 border border-indigo-200/60 dark:border-indigo-800/40 rounded-xl transition-all duration-200 group"
+                                <motion.div
+                                  className="mt-6 overflow-hidden"
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  transition={{ delay: 0.3, duration: 0.4 }}
                                 >
-                                  <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                                    {showFullStory ? 'Show Less' : 'Read Full Story'}
-                                  </span>
-                                  <ChevronDown
-                                    size={16}
-                                    className={`text-indigo-600 dark:text-indigo-400 transition-transform duration-200 ${showFullStory ? 'rotate-180' : 'group-hover:translate-y-0.5'
-                                      }`}
-                                  />
-                                </button>
+                                  <motion.button
+                                    onClick={() => setShowFullStory(!showFullStory)}
+                                    className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_100%] hover:bg-[position:100%_0] text-white font-semibold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-400 overflow-hidden"
+                                    whileHover={{ scale: 1.03, y: -3 }}
+                                    whileTap={{ scale: 0.97 }}
+                                  >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+                                    <motion.span 
+                                      className="relative z-10 text-lg"
+                                      initial={{ opacity: 0, x: -15 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: 0.4, duration: 0.4 }}
+                                    >
+                                      {showFullStory ? 'Show Less' : 'Read Full Story'}
+                                    </motion.span>
+                                    <motion.div
+                                      animate={{ rotate: showFullStory ? 180 : 0 }}
+                                      transition={{ duration: 0.6, ease: 'easeInOut' }}
+                                      className="relative z-10"
+                                    >
+                                      <ChevronDown size={18} className="text-white" />
+                                    </motion.div>
+                                  </motion.button>
+                                </motion.div>
                               )}
                             </div>
                           </div>
@@ -3072,34 +3801,69 @@ const VendorDetailsPageWrapper = () => {
             <div className="xl:sticky top-24">
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
                 <div className="space-y-6">
+                  {/* Vendor Name - Separate at Top */}
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{vendor.name}</h1>
-                    <div className="flex items-center gap-4 mb-4">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{vendor.name}</h1>
+                  </div>
+
+                  <div className="flex justify-between">
+                    {/* Vendor Details and Info - Left Side */}
+                    <div className="flex-shrink-0 min-w-0 space-y-3">
+
+                        {/* Number of Reviews */}
+                      <div className="text-gray-600 dark:text-gray-400 text-lg">
+                        ({vendor.reviews} reviews)
+                      </div>
+
+                      {/* Rating Stars */}
+
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              size={18}
+                              size={14}
                               className={`${i < Math.floor(vendor.rating) ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
                                 }`}
                             />
                           ))}
                         </div>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">{vendor.rating}</span>
-                        <span className="text-gray-600 dark:text-gray-400">({vendor.reviews} reviews)</span>
+                        <span className="text-sm font-medium dark:text-white">{vendor.rating}</span>
+                      </div>
+
+                    
+
+                      {/* Location */}
+                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                        <MapPin size={14} />
+                        <span className="truncate max-w-[120px]">{vendor.address.city}</span>
+                      </div>
+                      
+                      {/* Category */}
+                      <div>
+                        <span className="inline-block px-3 py-1.5 bg-purple-100 dark:bg-purple-800/50 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium">
+                          {vendor.category}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-4">
-                      <MapPin size={18} />
-                      <span>
-                        {vendor.address.city}, {vendor.address.state}
-                      </span>
-                    </div>
-                    <div className="inline-block px-3 py-1 bg-purple-100 dark:bg-purple-800/50 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium">
-                      {vendor.category}
+                    
+                    {/* Vendor Profile Image - Right Side */}
+                    <div className="flex-shrink-0 relative">
+                      <div 
+                        className="absolute top-17 -right-2 bg-blue-500 rounded-full p-1 z-10 dark:bg-purple-600 cursor-pointer hover:bg-blue-600 dark:hover:bg-purple-700 transition-colors"
+                        onClick={() => window.location.href = `/m/vendor/${id}/profile`}
+                      >
+                        <Eye size={16} className="text-white dark:text-white" />
+                      </div>
+                      <img
+                        src={vendor.images?.[0] || '/placeholder-vendor.jpg'}
+                        alt={vendor.name}
+                        className="w-24 h-24 rounded-2xl object-cover border-3 border-blue-500 dark:border-purple-400 shadow-lg"
+                      />
                     </div>
                   </div>
+
+
                   <div className="space-y-4">
                     <div className="text-center py-4">
                       <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Starting from</div>
@@ -3416,10 +4180,10 @@ const VendorDetailsPageWrapper = () => {
                         <span className="text-sm text-gray-700 dark:text-gray-300">Premium Member</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-3">
+                    {/* <div className="flex items-center gap-3">
                     <Zap size={18} className="text-yellow-600" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Instant Booking</span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ) : null}
@@ -3471,9 +4235,22 @@ const VendorDetailsPageWrapper = () => {
                             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute top-3 right-3">
-                            <button className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors">
-                              <Heart size={16} className="text-white" />
-                            </button>
+                            <motion.button
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleToggleLike(item._id)}
+                              disabled={likingLoading}
+                              className={`p-2 backdrop-blur-sm rounded-full transition-all duration-300 ${
+                                likedVendors.has(item._id) 
+                                  ? 'bg-red-500/80 text-white' 
+                                  : 'bg-white/20 text-white hover:bg-white/30'
+                              }`}
+                            >
+                              {likingLoading ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Heart size={16} className={likedVendors.has(item._id) ? 'fill-current' : ''} />
+                              )}
+                            </motion.button>
                           </div>
                         </div>
                         <div className="p-4">
@@ -3635,46 +4412,11 @@ const VendorDetailsPageWrapper = () => {
       </AnimatePresence>
       <AnimatePresence>
         {showShareModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]"
-            onClick={() => setShowShareModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Share This Venue</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <button
-                  onClick={() => handleShare("facebook")}
-                  className="flex flex-col items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                >
-                  <Facebook size={24} className="text-blue-600" />
-                  <span className="text-sm font-medium text-blue-600">Facebook</span>
-                </button>
-                <button
-                  onClick={() => handleShare("twitter")}
-                  className="flex flex-col items-center gap-2 p-4 bg-sky-50 dark:bg-sky-900/20 rounded-2xl hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors"
-                >
-                  <Twitter size={24} className="text-sky-600" />
-                  <span className="text-sm font-medium text-sky-600">Twitter</span>
-                </button>
-                <button
-                  onClick={() => handleShare("copy")}
-                  className="flex flex-col items-center gap-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <Copy size={24} className="text-gray-600 dark:text-gray-300" />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Copy Link</span>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <ShareModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            vendorName={vendor.name}
+          />
         )}
       </AnimatePresence>
     </div>
