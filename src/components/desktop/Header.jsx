@@ -1066,7 +1066,7 @@ export default function DesktopHeader() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 !z-[40] transition-all duration-500 ease-out rounded-b-3xl ${
+        className={`fixed top-0 left-0 right-0 !z-[40] transition-all duration-500 ease-out rounded-b-xl ${
           isScrolled
             ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-xl"
             : "bg-white/10 dark:bg-black/10 backdrop-blur-2xl"

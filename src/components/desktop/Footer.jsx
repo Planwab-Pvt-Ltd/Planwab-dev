@@ -7,7 +7,7 @@ import Link from "next/link";
 const Footer = () => {
   return (
     <footer
-      className="w-full relative z-10 bg-[#F8FAFC]"
+      className="w-full relative z-60 bg-[#F8FAFC] dark:bg-gray-900"
       id="footer"
       style={{ contentVisibility: "auto", containIntrinsicSize: "600px" }}
     >
