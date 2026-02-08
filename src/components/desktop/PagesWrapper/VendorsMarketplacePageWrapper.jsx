@@ -10,6 +10,7 @@ import React, {
   useReducer,
   startTransition,
   Suspense,
+  useTransition,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
@@ -98,6 +99,7 @@ import {
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useUser } from "@clerk/clerk-react";
 import SmartMedia from "../SmartMediaLoader";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
 const COLORS = {
   primary: "#2563eb",
@@ -438,14 +440,16 @@ function useDoubleTap(callback, delay = 300) {
 
 // Utility Functions
 const formatPrice = (price) => {
-  if (!price || isNaN(price) || price === 0) return "N/A";
+  if (price == null || isNaN(price)) return "N/A";
+  if (price === 0) return "0";
   if (price >= 100000) return `${(price / 100000).toFixed(1)}L`;
   if (price >= 1000) return `${(price / 1000).toFixed(0)}K`;
   return price.toLocaleString("en-IN");
 };
 
 const formatFullPrice = (price) => {
-  if (!price || isNaN(price) || price === 0) return "N/A";
+  if (price == null || isNaN(price)) return "N/A";
+  if (price === 0) return "0";
   return price.toLocaleString("en-IN");
 };
 
@@ -522,7 +526,7 @@ const vendorDataReducer = (state, action) => {
 };
 
 // Sub-components
-const ShareModal = ({ isOpen, onClose, vendorName }) => {
+const ShareModal = ({ isOpen, onClose, shareItem }) => {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -537,7 +541,8 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") setCurrentUrl(window.location.href);
+    if (typeof window !== "undefined")
+      setCurrentUrl(`https://${window.location.host}/vendor/${shareItem?.category}/${shareItem?._id}`);
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -549,9 +554,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: MessageCircle,
       color: "bg-green-500",
       action: () => {
-        window.open(
-          `https://wa.me/?text=Check out ${vendorName ? vendorName : "vendor"}! ${currentUrl}`,
-        );
+        window.open(`https://wa.me/?text=Check out ${shareItem ? shareItem.name : "vendor"}! ${currentUrl}`);
         onClose();
       },
     },
@@ -561,9 +564,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Facebook,
       color: "bg-blue-600",
       action: () => {
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
-        );
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -574,7 +575,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       color: "bg-sky-500",
       action: () => {
         window.open(
-          `https://twitter.com/intent/tweet?text=Check out ${vendorName ? vendorName : "vendor"}!&url=${encodeURIComponent(currentUrl)}`,
+          `https://twitter.com/intent/tweet?text=Check out ${shareItem ? shareItem.name : "vendor"}!&url=${encodeURIComponent(currentUrl)}`,
         );
         onClose();
       },
@@ -585,9 +586,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Linkedin,
       color: "bg-blue-700",
       action: () => {
-        window.open(
-          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
-        );
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -605,7 +604,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       color: "bg-gray-600",
       action: () => {
         window.open(
-          `mailto:?subject=Check out ${vendorName ? vendorName : "vendor"}&body=${encodeURIComponent(currentUrl)}`,
+          `mailto:?subject=Check out ${shareItem ? shareItem.name : "vendor"}&body=${encodeURIComponent(currentUrl)}`,
         );
         onClose();
       },
@@ -616,7 +615,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: MessageSquare,
       color: "bg-green-600",
       action: () => {
-        window.open(`sms:?body=Check out ${vendorName ? vendorName : "vendor"}! ${currentUrl}`);
+        window.open(`sms:?body=Check out ${shareItem ? shareItem.name : "vendor"}! ${currentUrl}`);
         onClose();
       },
     },
@@ -651,13 +650,11 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const pngFile = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
-      downloadLink.download = `${vendorName ? vendorName.replace(/\s+/g, "_") : "profile"}_QR.png`;
+      downloadLink.download = `${shareItem ? shareItem.name.replace(/\s+/g, "_") : "profile"}_QR.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
-    img.src =
-      "data:image/svg+xml;base64," +
-      btoa(unescape(encodeURIComponent(svgData)));
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (
@@ -677,9 +674,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
         className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-2xl"
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Share Profile
-          </h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Share Profile</h3>
           <button
             onClick={onClose}
             className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
@@ -701,14 +696,9 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
                   onClick={() => setShowQR(false)}
                   className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
-                  <ArrowLeft
-                    size={18}
-                    className="text-gray-600 dark:text-gray-400"
-                  />
+                  <ArrowLeft size={18} className="text-gray-600 dark:text-gray-400" />
                 </button>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  QR Code
-                </h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">QR Code</h3>
                 <div className="w-10" />
               </div>
               <div className="flex justify-center py-4">
@@ -724,13 +714,9 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
                   />
                 </div>
               </div>
-              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                Scan to visit this profile
-              </p>
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">Scan to visit this profile</p>
               <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-3">
-                <p className="text-xs text-gray-600 dark:text-gray-400 break-all text-center">
-                  {currentUrl}
-                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 break-all text-center">{currentUrl}</p>
               </div>
               <div className="flex gap-3">
                 <button
@@ -753,29 +739,17 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
               </div>
             </motion.div>
           ) : (
-            <motion.div
-              key="share-options"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+            <motion.div key="share-options" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <button
                 onClick={() => setShowQR(true)}
                 className="w-full flex items-center gap-4 p-4 mb-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 hover:from-gray-100 hover:to-gray-150 transition-all cursor-pointer"
               >
                 <div className="w-14 h-14 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
-                  <QrCode
-                    size={28}
-                    className="text-gray-700 dark:text-gray-300"
-                  />
+                  <QrCode size={28} className="text-gray-700 dark:text-gray-300" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    QR Code
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Scan to share instantly
-                  </p>
+                  <p className="font-semibold text-gray-900 dark:text-white">QR Code</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Scan to share instantly</p>
                 </div>
                 <ChevronRight size={20} className="text-gray-400" />
               </button>
@@ -796,9 +770,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
                       )}
                     </div>
                     <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">
-                      {option.id === "copy" && copiedFeedback
-                        ? "Copied!"
-                        : option.label}
+                      {option.id === "copy" && copiedFeedback ? "Copied!" : option.label}
                     </span>
                   </button>
                 ))}
@@ -1062,7 +1034,7 @@ const CartPreview = memo(() => {
   }, []);
 
   if (!isClient) return null;
-  
+
   if (cartCount === 0) return null;
 
   return (
@@ -1496,7 +1468,9 @@ const FilterSidebar = memo(
                         setCurrentPage(1);
                       }}
                       onFocus={() => setSearchFocused(true)}
-                      onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                      onBlur={() => {
+                        setTimeout(() => setSearchFocused(false), 200);
+                      }}
                       placeholder="Search vendors, services..."
                       className="w-full pl-10 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
@@ -1520,23 +1494,37 @@ const FilterSidebar = memo(
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-500">Recent Searches</span>
                         <button
-                          onClick={onClearRecentSearches}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClearRecentSearches();
+                          }}
                           className="text-xs text-gray-400 hover:text-red-500 transition-colors"
                         >
                           Clear
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {recentSearches.slice(0, 5).map((search, i) => (
-                          <button
-                            key={i}
-                            onClick={() => onSelectRecentSearch(search)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-600 rounded-lg text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors"
-                          >
-                            <Clock size={12} />
-                            {search}
-                          </button>
-                        ))}
+                        {recentSearches.slice(0, 5).map((search, i) => {
+                          if (!search || !search.trim()) return null;
+                          return (
+                            <button
+                              key={`recent-${i}-${search}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onSelectRecentSearch(search);
+                                setSearchFocused(false);
+                              }}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                              }}
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-600 rounded-lg text-xs text-gray-600 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-500 transition-all cursor-pointer"
+                            >
+                              <Clock size={12} />
+                              {search}
+                            </button>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}
@@ -1951,6 +1939,7 @@ const CategoryChips = memo(({ selectedCategories, onSelect }) => {
   const scrollRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const handleScroll = useCallback(() => {
     if (scrollRef.current) {
@@ -1962,62 +1951,141 @@ const CategoryChips = memo(({ selectedCategories, onSelect }) => {
 
   useEffect(() => {
     handleScroll();
+
+    // Also check on resize
+    const handleResize = () => handleScroll();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [handleScroll]);
 
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: direction * 200, behavior: "smooth" });
-    }
-  };
+  // IMPROVED: Smooth scroll function with better animation
+  const scroll = useCallback(
+    (direction) => {
+      if (scrollRef.current && !isScrolling) {
+        setIsScrolling(true);
+
+        const container = scrollRef.current;
+        const scrollAmount = container.clientWidth * 0.8; // Scroll 80% of visible width
+        const start = container.scrollLeft;
+        const target = start + direction * scrollAmount;
+        const duration = 400; // milliseconds
+        const startTime = performance.now();
+
+        // Easing function for smooth animation
+        const easeInOutCubic = (t) => {
+          return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        };
+
+        const animateScroll = (currentTime) => {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = easeInOutCubic(progress);
+
+          container.scrollLeft = start + (target - start) * eased;
+
+          if (progress < 1) {
+            requestAnimationFrame(animateScroll);
+          } else {
+            setIsScrolling(false);
+          }
+        };
+
+        requestAnimationFrame(animateScroll);
+      }
+    },
+    [isScrolling],
+  );
 
   return (
-    <div className="relative mb-1">
-      {showLeftArrow && (
-        <button
-          onClick={() => scroll(-1)}
-          className="absolute -left-4 top-[23px] -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-gray-800 shadow-md rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-700 hover:bg-gray-50 transition-colors"
-        >
-          <ChevronLeft size={16} className="text-gray-600" />
-        </button>
-      )}
+    <div className="relative">
+      {/* Left Arrow */}
+      <AnimatePresence>
+        {showLeftArrow && (
+          <motion.button
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => scroll(-1)}
+            disabled={isScrolling}
+            className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-gray-800 shadow-lg rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} className="text-gray-600 dark:text-gray-400" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
+      {/* Scrollable Container - REMOVED scroll-smooth class */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-1 py-1"
+        className="flex items-center gap-2 overflow-x-auto px-1 py-1 hide-scrollbar"
+        style={{
+          scrollbarWidth: "none", // Firefox
+          msOverflowStyle: "none", // IE/Edge
+        }}
       >
-        <button
+        <motion.button
           onClick={() => onSelect(null)}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${selectedCategories.length === 0 ? "bg-blue-600 text-white border-transparent shadow-md" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${
+            selectedCategories.length === 0
+              ? "bg-blue-600 text-white border-transparent shadow-md"
+              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+          }`}
         >
           <Sparkles size={15} />
           All Categories
-        </button>
+        </motion.button>
 
         {VENDOR_CATEGORIES.map((cat) => {
           const isSelected = selectedCategories.includes(cat.id);
           const CatIcon = cat.icon;
           return (
-            <button
+            <motion.button
               key={cat.id}
               onClick={() => onSelect(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${isSelected ? "bg-blue-600 text-white border-transparent shadow-md" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${
+                isSelected
+                  ? "bg-blue-600 text-white border-transparent shadow-md"
+                  : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
             >
               <CatIcon size={15} />
               {cat.label}
-            </button>
+            </motion.button>
           );
         })}
       </div>
 
-      {showRightArrow && (
-        <button
-          onClick={() => scroll(1)}
-          className="absolute -right-4 top-[23px] -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-gray-800 shadow-md rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-700 hover:bg-gray-50 transition-colors"
-        >
-          <ChevronRight size={16} className="text-gray-600" />
-        </button>
-      )}
+      {/* Right Arrow */}
+      <AnimatePresence>
+        {showRightArrow && (
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => scroll(1)}
+            disabled={isScrolling}
+            className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-gray-800 shadow-lg rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={16} className="text-gray-600 dark:text-gray-400" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* CSS to hide scrollbar */}
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 });
@@ -2043,7 +2111,7 @@ const SubcategoryChips = memo(({ selectedCategory, selectedSubcategory, onSubcat
         </div>
         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{categoryInfo?.label} Types</span>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => onSubcategoryChange("")}
           className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${!selectedSubcategory ? "bg-blue-600 text-white border-transparent shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50"}`}
@@ -2068,159 +2136,161 @@ const SubcategoryChips = memo(({ selectedCategory, selectedSubcategory, onSubcat
 });
 SubcategoryChips.displayName = "SubcategoryChips";
 
-const ImageCarousel = memo(({ images, vendorName, vendor, isLiked, onFavorite, tags, isLiking, rating, viewMode, addToRecentlyViewed  }) => {
-  const [[page, direction], setPage] = useState([0, 0]);
-  const [showHeart, setShowHeart] = useState(false);
+const ImageCarousel = memo(
+  ({ images, vendorName, vendor, isLiked, onFavorite, tags, isLiking, rating, viewMode, addToRecentlyViewed }) => {
+    const [[page, direction], setPage] = useState([0, 0]);
+    const [showHeart, setShowHeart] = useState(false);
 
-  const imageIndex = ((page % images.length) + images.length) % images.length;
-  const hasMultipleImages = images.length > 1;
-  const isListView = viewMode === "list";
+    const imageIndex = ((page % images.length) + images.length) % images.length;
+    const hasMultipleImages = images.length > 1;
+    const isListView = viewMode === "list";
 
-  const paginate = useCallback(
-    (newDirection) => {
-      if (!hasMultipleImages) return;
-      setPage([page + newDirection, newDirection]);
-    },
-    [hasMultipleImages, page],
-  );
+    const paginate = useCallback(
+      (newDirection) => {
+        if (!hasMultipleImages) return;
+        setPage([page + newDirection, newDirection]);
+      },
+      [hasMultipleImages, page],
+    );
 
-  const handleDoubleTap = useDoubleTap(() => {
-    setShowHeart(true);
-    setTimeout(() => setShowHeart(false), 800);
-    if (!isLiked) onFavorite();
-  });
+    const handleDoubleTap = useDoubleTap(() => {
+      setShowHeart(true);
+      setTimeout(() => setShowHeart(false), 800);
+      if (!isLiked) onFavorite();
+    });
 
-  const slideVariants = {
-    enter: (d) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
-    center: { x: 0, opacity: 1, zIndex: 1 },
-    exit: (d) => ({ x: d < 0 ? "100%" : "-100%", opacity: 0, zIndex: 0 }),
-  };
+    const slideVariants = {
+      enter: (d) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+      center: { x: 0, opacity: 1, zIndex: 1 },
+      exit: (d) => ({ x: d < 0 ? "100%" : "-100%", opacity: 0, zIndex: 0 }),
+    };
 
-  return (
-    <div
-      className={`relative bg-gray-100 overflow-hidden group ${isListView ? "w-80 h-full" : "w-full aspect-[16/10]"}`}
-      onClick={handleDoubleTap}
-    >
-      <AnimatePresence initial={false} custom={direction} mode="popLayout">
-        <motion.div
-          key={page}
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{
-            x: { type: "spring", stiffness: 400, damping: 40 },
-            opacity: { duration: 0.25 },
-          }}
-          className="absolute inset-0 w-full h-full"
-          onClick={(e) => {
-            e.stopPropagation();
-            addToRecentlyViewed(vendor);
-          }}
-        >
-          <SmartMedia
-            src={images[imageIndex]}
-            alt={vendorName}
-            type="image"
-            className="w-full h-full select-none"
-            objectFit="cover"
-            priority={imageIndex === 0}
-            quality={85}
-            sizes={isListView ? "320px" : "(max-width: 768px) 100vw, 33vw"}
-          />
-        </motion.div>
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showHeart && (
+    return (
+      <div
+        className={`relative bg-gray-100 overflow-hidden group ${isListView ? "w-80 h-full" : "w-full aspect-[16/10]"}`}
+        onClick={handleDoubleTap}
+      >
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1.2, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+            key={page}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 400, damping: 40 },
+              opacity: { duration: 0.25 },
+            }}
+            className="absolute inset-0 w-full h-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              addToRecentlyViewed(vendor);
+            }}
           >
-            <Heart size={60} className="fill-white text-white drop-shadow-lg" />
+            <SmartMedia
+              src={images[imageIndex]}
+              alt={vendorName}
+              type="image"
+              className="w-full h-full select-none"
+              objectFit="cover"
+              priority={imageIndex === 0}
+              quality={85}
+              sizes={isListView ? "320px" : "(max-width: 768px) 100vw, 33vw"}
+            />
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+        <AnimatePresence>
+          {showHeart && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+            >
+              <Heart size={60} className="fill-white text-white drop-shadow-lg" />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
-        <div className="flex gap-1.5 flex-wrap">
-          {tags?.includes("Popular") && (
-            <span className="px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold uppercase rounded-lg shadow-md flex items-center gap-1">
-              <Flame size={11} /> Popular
-            </span>
-          )}
-          {tags?.includes("Verified") && (
-            <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold uppercase rounded-lg shadow-md flex items-center gap-1">
-              <BadgeCheck size={11} /> Verified
-            </span>
-          )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+
+        <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
+          <div className="flex gap-1.5 flex-wrap">
+            {tags?.includes("Popular") && (
+              <span className="px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold uppercase rounded-lg shadow-md flex items-center gap-1">
+                <Flame size={11} /> Popular
+              </span>
+            )}
+            {tags?.includes("Verified") && (
+              <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold uppercase rounded-lg shadow-md flex items-center gap-1">
+                <BadgeCheck size={11} /> Verified
+              </span>
+            )}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isLiking) onFavorite();
+            }}
+            disabled={isLiking}
+            className={`p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md ${isLiking ? "opacity-50" : ""}`}
+          >
+            <Heart size={18} className={isLiked ? "fill-rose-500 text-rose-500" : "text-gray-600"} strokeWidth={2} />
+          </motion.button>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.85 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isLiking) onFavorite();
-          }}
-          disabled={isLiking}
-          className={`p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md ${isLiking ? "opacity-50" : ""}`}
-        >
-          <Heart size={18} className={isLiked ? "fill-rose-500 text-rose-500" : "text-gray-600"} strokeWidth={2} />
-        </motion.button>
-      </div>
 
-      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-10">
-        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-sm">
-          <Star size={14} className="fill-amber-400 text-amber-400" />
-          <span className="text-sm font-bold text-gray-800">{rating?.toFixed(1) || "4.5"}</span>
+        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-10">
+          <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-sm">
+            <Star size={14} className="fill-amber-400 text-amber-400" />
+            <span className="text-sm font-bold text-gray-800">{rating?.toFixed(1) || "4.5"}</span>
+          </div>
+
+          {hasMultipleImages && (
+            <div className="flex gap-1.5">
+              {images.slice(0, 5).map((_, idx) => (
+                <motion.div
+                  key={idx}
+                  animate={{
+                    width: idx === imageIndex ? 16 : 6,
+                    opacity: idx === imageIndex ? 1 : 0.5,
+                  }}
+                  className="h-1.5 bg-white rounded-full shadow-sm"
+                />
+              ))}
+              {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
+            </div>
+          )}
         </div>
 
         {hasMultipleImages && (
-          <div className="flex gap-1.5">
-            {images.slice(0, 5).map((_, idx) => (
-              <motion.div
-                key={idx}
-                animate={{
-                  width: idx === imageIndex ? 16 : 6,
-                  opacity: idx === imageIndex ? 1 : 0.5,
-                }}
-                className="h-1.5 bg-white rounded-full shadow-sm"
-              />
-            ))}
-            {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
-          </div>
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                paginate(-1);
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronLeft size={18} className="text-gray-700" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                paginate(1);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronRight size={18} className="text-gray-700" />
+            </button>
+          </>
         )}
       </div>
-
-      {hasMultipleImages && (
-        <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              paginate(-1);
-            }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronLeft size={18} className="text-gray-700" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              paginate(1);
-            }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronRight size={18} className="text-gray-700" />
-          </button>
-        </>
-      )}
-    </div>
-  );
-});
+    );
+  },
+);
 ImageCarousel.displayName = "ImageCarousel";
 
 const QuickActionButton = memo(({ icon: Icon, label, onClick, color }) => (
@@ -2240,13 +2310,30 @@ const QuickActionButton = memo(({ icon: Icon, label, onClick, color }) => (
 QuickActionButton.displayName = "QuickActionButton";
 
 const VendorCard = memo(
-  ({ vendor, viewMode, isComparing, isSelectedForCompare, onCompare, onShowToast, addToRecentlyViewed, setShowShareModal }) => {
+  ({
+    vendor,
+    viewMode,
+    isComparing,
+    isSelectedForCompare,
+    onCompare,
+    onShowToast,
+    addToRecentlyViewed,
+    setShowShareModal,
+    setShareItem,
+  }) => {
     const [showActions, setShowActions] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [likingLoading, setLikingLoading] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
+    const [showProfileTooltip, setShowProfileTooltip] = useState(false);
+    const [isPending, startTransition] = useTransition();
     const { user } = useUser();
     const { addToCart, isInCart, removeFromCart } = useCartStore();
     const inCart = isInCart(vendor._id);
+
+    const { getHrefWithState } = useNavigationState();
+
+    const router = useRouter();
 
     const isListView = viewMode === "list";
     const isGrid2 = viewMode === "grid-2";
@@ -2312,7 +2399,7 @@ const VendorCard = memo(
     const hasDiscount = originalPrice && originalPrice > price && price > 0;
     const discountPercent = hasDiscount ? Math.round((1 - price / originalPrice) * 100) : 0;
 
-    const vendorUrl = `/vendor/${vendor.category}/${vendor._id}`;
+    const vendorUrl = getHrefWithState(`/vendor/${vendor.category}/${vendor._id}`);
     const categoryConfig = VENDOR_CATEGORIES.find((c) => c.id === vendor.category);
 
     const handleAddToCart = useCallback(() => {
@@ -2338,6 +2425,7 @@ const VendorCard = memo(
     }, [vendor, onCompare]);
 
     const handleShare = useCallback(async () => {
+      setShareItem(vendor);
       setShowShareModal(true);
       // const shareData = {
       //   title: vendor.name,
@@ -2355,6 +2443,17 @@ const VendorCard = memo(
       //   } catch {}
       // }
     }, [vendor.name, vendorUrl, onShowToast]);
+
+    const handleProfileClick = useCallback(
+      (vendorId) => {
+        if (isNavigating || isPending) return;
+        startTransition(() => {
+          setIsNavigating(true);
+          router.push(`/vendor/${vendor.category}/${vendorId}/profile`);
+        });
+      },
+      [isNavigating, isPending, router, vendor.category],
+    );
 
     const handleCall = useCallback(() => {
       if (vendor.phoneNo) window.location.href = `tel:${vendor.phoneNo}`;
@@ -2389,32 +2488,95 @@ const VendorCard = memo(
             </div>
           )}
 
-         <ImageCarousel
-  images={images}
-  vendorName={vendor.name}
-  vendor={vendor}
-  isLiked={isLiked}
-  isLiking={likingLoading}
-  onFavorite={handleToggleLike}
-  tags={vendor.tags}
-  rating={vendor.rating}
-  viewMode={viewMode} 
-  addToRecentlyViewed={addToRecentlyViewed}
-/>
+          <ImageCarousel
+            images={images}
+            vendorName={vendor.name}
+            vendor={vendor}
+            isLiked={isLiked}
+            isLiking={likingLoading}
+            onFavorite={handleToggleLike}
+            tags={vendor.tags}
+            rating={vendor.rating}
+            viewMode={viewMode}
+            addToRecentlyViewed={addToRecentlyViewed}
+          />
 
           <Link href={vendorUrl} className="flex-1 p-5 flex flex-col min-w-0">
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2.5 mb-1">
                   {(vendor.defaultImage || vendor.images?.[0]) && (
-                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-100 shrink-0">
-                      <Image
-                        src={vendor.defaultImage || vendor.images[0]}
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-cover"
-                      />
+                    <div
+                      className="relative group"
+                      onMouseEnter={() => setShowProfileTooltip(true)}
+                      onMouseLeave={() => setShowProfileTooltip(false)}
+                    >
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleProfileClick(vendor._id);
+                        }}
+                        className={`w-10 h-10 rounded-full overflow-hidden border-2 shrink-0 cursor-pointer transition-all duration-300 relative ${
+                          isNavigating || isPending
+                            ? "border-blue-500 shadow-lg"
+                            : "border-gray-100 hover:border-blue-400 hover:shadow-md"
+                        }`}
+                      >
+                        {/* Loading Border Animation */}
+                        {(isNavigating || isPending) && (
+                          <div className="absolute inset-0 rounded-full">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                              <circle
+                                cx="18"
+                                cy="18"
+                                r="16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeDasharray="100"
+                                strokeDashoffset="0"
+                                strokeLinecap="round"
+                                className="text-blue-500 animate-spin"
+                                style={{
+                                  animation: "spin 1s linear infinite",
+                                  strokeDasharray: "75, 100",
+                                }}
+                              />
+                            </svg>
+                          </div>
+                        )}
+                        <Image
+                          src={vendor.defaultImage || vendor.images[0]}
+                          alt=""
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* ADD THIS TOOLTIP: */}
+                      <AnimatePresence>
+                        {showProfileTooltip && !isNavigating && !isPending && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 5, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 5, scale: 0.9 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-1/2 -translate-x-1/2 top-full mb-8 z-50 pointer-events-none"
+                          >
+                            <div className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shadow-xl">
+                              <div className="flex items-center gap-1.5">
+                                <Eye size={12} />
+                                <span>See Profile</span>
+                              </div>
+                              {/* Tooltip Arrow */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mt-px">
+                                <div className="border-4 border-transparent border-b-gray-900" />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">{vendor.name}</h3>
@@ -2540,18 +2702,18 @@ const VendorCard = memo(
           </div>
         )}
 
-       <ImageCarousel
-  images={images}
-  vendorName={vendor.name}
-  vendor={vendor}
-  isLiked={isLiked}
-  isLiking={likingLoading}
-  onFavorite={handleToggleLike}
-  tags={vendor.tags}
-  rating={vendor.rating}
-  viewMode={viewMode} 
-  addToRecentlyViewed={addToRecentlyViewed}
-/>
+        <ImageCarousel
+          images={images}
+          vendorName={vendor.name}
+          vendor={vendor}
+          isLiked={isLiked}
+          isLiking={likingLoading}
+          onFavorite={handleToggleLike}
+          tags={vendor.tags}
+          rating={vendor.rating}
+          viewMode={viewMode}
+          addToRecentlyViewed={addToRecentlyViewed}
+        />
 
         <Link href={vendorUrl} className="flex-1 flex flex-col p-4">
           <div className="flex items-start justify-between gap-2 mb-2">
@@ -3144,44 +3306,427 @@ const Pagination = memo(({ currentPage, totalPages, onPageChange, isLoading }) =
 });
 Pagination.displayName = "Pagination";
 
-const ActiveFiltersDisplay = memo(({ filters, onClearAll }) => {
-  if (filters.length === 0) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <Filter size={14} className="text-blue-600" />
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-              Active Filters ({filters.length})
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {filters.map((filter, idx) => (
-              <span
-                key={idx}
-                className="px-3 py-1 bg-white dark:bg-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 border border-blue-200 dark:border-blue-700 shadow-sm"
-              >
-                {filter}
+// ADD THIS NEW HELPER FUNCTION:
+const generateFilterBreadcrumb = (
+  filters,
+  {
+    selectedCategories,
+    searchQuery,
+    selectedSubcategory,
+    selectedLocations,
+    priceRange,
+    ratingFilter,
+    showFeaturedOnly,
+    totalResults,
+  },
+) => {
+  const breadcrumbs = [{ label: "All Vendors", type: "root", removable: false }];
+
+  // Category level
+  if (selectedCategories.length > 0) {
+    const categoryNames = selectedCategories
+      .map((id) => VENDOR_CATEGORIES.find((c) => c.id === id)?.label)
+      .filter(Boolean);
+
+    breadcrumbs.push({
+      label: categoryNames.length === 1 ? categoryNames[0] : `${categoryNames.length} Categories`,
+      type: "category",
+      removable: true,
+      action: "clearCategories",
+      detail: categoryNames.join(", "),
+    });
+  }
+
+  // Subcategory level
+  if (selectedSubcategory) {
+    const allSubs = Object.values(SUBCATEGORIES).flat();
+    const sub = allSubs.find((s) => s.id === selectedSubcategory);
+    if (sub) {
+      breadcrumbs.push({
+        label: sub.label,
+        type: "subcategory",
+        removable: true,
+        action: "clearSubcategory",
+      });
+    }
+  }
+
+  // Location level
+  if (selectedLocations.length > 0) {
+    breadcrumbs.push({
+      label: selectedLocations.length === 1 ? selectedLocations[0] : `${selectedLocations.length} Cities`,
+      type: "location",
+      removable: true,
+      action: "clearLocations",
+      detail: selectedLocations.join(", "),
+    });
+  }
+
+  // Filters level
+  const activeFilterTypes = [];
+  if (priceRange[0] > 0 || priceRange[1] < 1000000) activeFilterTypes.push("Budget");
+  if (ratingFilter > 0) activeFilterTypes.push("Rating");
+  if (showFeaturedOnly) activeFilterTypes.push("Featured");
+  if (searchQuery) activeFilterTypes.push("Search");
+
+  if (activeFilterTypes.length > 0) {
+    breadcrumbs.push({
+      label: activeFilterTypes.length === 1 ? activeFilterTypes[0] : `${activeFilterTypes.length} Filters`,
+      type: "filters",
+      removable: true,
+      action: "clearFilters",
+      detail: activeFilterTypes.join(" • "),
+    });
+  }
+
+  // Results level
+  breadcrumbs.push({
+    label: `${totalResults || 0} Results`,
+    type: "results",
+    removable: false,
+    isEnd: true,
+  });
+
+  return breadcrumbs;
+};
+
+// REPLACE THE ENTIRE ActiveFiltersDisplay COMPONENT WITH FIXES:
+const ActiveFiltersDisplay = memo(
+  ({
+    filters,
+    onClearAll,
+    selectedCategories,
+    searchQuery,
+    selectedSubcategory,
+    selectedLocations,
+    priceRange,
+    ratingFilter,
+    showFeaturedOnly,
+    totalResults,
+    onClearCategories,
+    onClearSubcategory,
+    onClearLocations,
+    onClearFilters,
+    isBreadcrumbOpen,
+    setIsBreadcrumbOpen,
+  }) => {
+    const [showBreadcrumbTooltip, setShowBreadcrumbTooltip] = useState(null);
+    const [hoveredCrumb, setHoveredCrumb] = useState(null);
+
+    if (filters.length === 0) return null;
+
+    const breadcrumbs = generateFilterBreadcrumb(filters, {
+      selectedCategories,
+      searchQuery,
+      selectedSubcategory,
+      selectedLocations,
+      priceRange,
+      ratingFilter,
+      showFeaturedOnly,
+      totalResults,
+    });
+
+    const handleBreadcrumbAction = (action) => {
+      switch (action) {
+        case "clearCategories":
+          onClearCategories();
+          break;
+        case "clearSubcategory":
+          onClearSubcategory();
+          break;
+        case "clearLocations":
+          onClearLocations();
+          break;
+        case "clearFilters":
+          onClearFilters();
+          break;
+        default:
+          break;
+      }
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 relative overflow-visible"
+        style={{ zIndex: 10 }}
+      >
+        <div className="flex items-start justify-between gap-3 overflow-visible">
+          {/* Left: Filter Tags */}
+          <div className="flex-1 overflow-visible">
+            <div className="flex items-center gap-2 mb-2">
+              <Filter size={14} className="text-blue-600" />
+              <span className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                Active Filters ({filters.length})
               </span>
-            ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filters.map((filter, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 bg-white dark:bg-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 border border-blue-200 dark:border-blue-700 shadow-sm"
+                >
+                  {filter}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Buttons Column */}
+          <div className="flex flex-col gap-2 shrink-0">
+            {/* Clear All Button */}
+            <button
+              onClick={onClearAll}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg text-blue-600 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+            >
+              Clear All
+            </button>
+
+            {/* Breadcrumb Toggle Button */}
+            <motion.button
+              onClick={() => setIsBreadcrumbOpen(!isBreadcrumbOpen)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`relative px-3 py-1.5 text-xs font-semibold rounded-lg ${isBreadcrumbOpen ? "bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 text-purple-700 dark:text-purple-300 hover:from-purple-200 hover:to-blue-200 dark:hover:from-purple-800/40 dark:hover:to-blue-800/40 transition-all duration-300 border border-purple-200 dark:border-purple-700 shadow-sm hover:shadow-md" : "text-blue-600 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700"} overflow-hidden group`}
+            >
+              {/* Animated Background Effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-blue-400/20"
+                animate={{
+                  x: isBreadcrumbOpen ? ["-100%", "100%"] : 0,
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: isBreadcrumbOpen ? Infinity : 0,
+                  ease: "linear",
+                }}
+              />
+
+              {/* Button Content */}
+              <span className="relative flex items-center gap-1.5">
+                <motion.span
+                  animate={{ rotate: isBreadcrumbOpen ? 180 : 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Navigation size={12} />
+                </motion.span>
+
+                <span className="hidden sm:inline">Path</span>
+
+                <motion.span
+                  animate={{ rotate: isBreadcrumbOpen ? 180 : 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <ChevronDown size={12} />
+                </motion.span>
+              </span>
+
+              {/* Pulse Effect when closed */}
+              <AnimatePresence>
+                {!isBreadcrumbOpen && (
+                  <motion.div
+                    initial={{ scale: 1, opacity: 0.5 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    exit={{ scale: 1, opacity: 0 }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="absolute inset-0 rounded-lg border-2 border-purple-400 dark:border-purple-500"
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Active Indicator */}
+              {isBreadcrumbOpen && (
+                <motion.div
+                  layoutId="breadcrumb-active"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  exit={{ scaleX: 0 }}
+                />
+              )}
+            </motion.button>
           </div>
         </div>
-        <button
-          onClick={onClearAll}
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg text-blue-600 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
-        >
-          Clear All
-        </button>
-      </div>
-    </motion.div>
-  );
-});
+
+        {/* FIXED: Breadcrumb Section with Proper Overflow */}
+        <AnimatePresence mode="wait">
+          {isBreadcrumbOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, y: -10 }}
+              animate={{
+                height: "auto",
+                opacity: 1,
+                y: 0,
+                transition: {
+                  height: { duration: 0.3, ease: "easeOut" },
+                  opacity: { duration: 0.2, delay: 0.1 },
+                  y: { duration: 0.3, ease: "easeOut" },
+                },
+              }}
+              exit={{
+                height: 0,
+                opacity: 0,
+                y: -10,
+                transition: {
+                  height: { duration: 0.3, ease: "easeIn" },
+                  opacity: { duration: 0.15 },
+                  y: { duration: 0.3, ease: "easeIn" },
+                },
+              }}
+              className="overflow-visible"
+              style={{ zIndex: 20 }}
+            >
+              <motion.div
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800 overflow-visible"
+              >
+                <div className="flex items-center justify-between mb-3 overflow-visible">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    <Navigation size={12} className="text-blue-600" />
+                    <span className="uppercase tracking-wide">Navigation Path:</span>
+                  </div>
+                </div>
+
+                {/* FIXED: Breadcrumb Navigation with Proper Overflow */}
+                <div
+                  className="flex items-center gap-1 flex-wrap overflow-visible"
+                  style={{ position: "relative", zIndex: 30 }}
+                >
+                  {breadcrumbs.map((crumb, index) => (
+                    <motion.div
+                      key={index}
+                      className="flex items-center gap-1 overflow-visible"
+                      style={{ position: "relative", zIndex: 30 + index }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{
+                        opacity: 1,
+                        x: 0,
+                        transition: { delay: index * 0.05 },
+                      }}
+                      exit={{
+                        opacity: 0,
+                        x: -10,
+                        transition: { delay: (breadcrumbs.length - index) * 0.03 },
+                      }}
+                    >
+                      {/* FIXED: Breadcrumb Item with Portal-like Z-index */}
+                      <div className="relative overflow-visible" style={{ zIndex: 50 + index }}>
+                        <motion.button
+                          whileHover={crumb.removable ? { scale: 1.05 } : {}}
+                          whileTap={crumb.removable ? { scale: 0.95 } : {}}
+                          disabled={!crumb.removable}
+                          onClick={() => crumb.removable && handleBreadcrumbAction(crumb.action)}
+                          onMouseEnter={() => {
+                            if (crumb.detail) {
+                              setHoveredCrumb(index);
+                              setShowBreadcrumbTooltip(index);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredCrumb(null);
+                            setShowBreadcrumbTooltip(null);
+                          }}
+                          className={`
+                          px-2.5 py-1 rounded-md text-xs font-semibold transition-all duration-200
+                          ${
+                            crumb.type === "root"
+                              ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                              : crumb.isEnd
+                                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700"
+                                : crumb.removable
+                                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 border border-blue-300 dark:border-blue-700 cursor-pointer"
+                                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                          }
+                          ${hoveredCrumb === index && crumb.removable ? "shadow-md" : ""}
+                        `}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {crumb.type === "root" && <Sparkles size={10} />}
+                            {crumb.type === "category" && <Tag size={10} />}
+                            {crumb.type === "subcategory" && <Columns size={10} />}
+                            {crumb.type === "location" && <MapPin size={10} />}
+                            {crumb.type === "filters" && <SlidersHorizontal size={10} />}
+                            {crumb.type === "results" && <BarChart3 size={10} />}
+
+                            <span>{crumb.label}</span>
+
+                            {crumb.removable && hoveredCrumb === index && (
+                              <motion.span
+                                initial={{ scale: 0, rotate: -90 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <X size={10} className="ml-0.5" />
+                              </motion.span>
+                            )}
+                          </span>
+                        </motion.button>
+
+                        {/* FIXED: Tooltip with Maximum Z-index */}
+                        <AnimatePresence>
+                          {showBreadcrumbTooltip === index && crumb.detail && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 5, scale: 0.9 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 5, scale: 0.9 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute top-full left-1/2 -translate-x-1/2 mt-2 pointer-events-none"
+                              style={{ zIndex: 9999 }}
+                            >
+                              <div className="bg-gray-900 dark:bg-gray-800 text-white px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shadow-2xl border border-gray-700 dark:border-gray-600">
+                                <div className="text-center">{crumb.detail}</div>
+                                {/* Arrow pointing up */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-px">
+                                  <div className="border-[5px] border-transparent border-b-gray-900 dark:border-b-gray-800" />
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Separator */}
+                      {index < breadcrumbs.length - 1 && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{
+                            scale: 1,
+                            opacity: 1,
+                            transition: { delay: index * 0.05 + 0.1 },
+                          }}
+                          exit={{ scale: 0, opacity: 0 }}
+                        >
+                          <ChevronRight size={12} className="text-gray-400 dark:text-gray-600" />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Progress Indicator */}
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  exit={{ scaleX: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mt-3 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full origin-left"
+                  style={{
+                    width: `${Math.min((breadcrumbs.filter((b) => b.removable && b.action).length / 4) * 100, 100)}%`,
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  },
+);
 ActiveFiltersDisplay.displayName = "ActiveFiltersDisplay";
 
 const EmptyState = memo(({ onClearFilters, searchQuery }) => (
@@ -3415,10 +3960,10 @@ const RecentlyViewed = () => {
         </h2>
         <button
           onClick={() => {
-  localStorage.removeItem("recentlyViewed");
-  setVendors([]);
-  toast.info("Recently viewed cleared");
-}}
+            localStorage.removeItem("recentlyViewed");
+            setVendors([]);
+            toast.info("Recently viewed cleared");
+          }}
           className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
           Clear All
@@ -3427,7 +3972,7 @@ const RecentlyViewed = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {vendors.map((vendor) => (
-        <Link key={vendor._id} href={`/vendor/${vendor._id}`} className="group">  
+          <Link key={vendor._id} href={`/vendor/${vendor._id}`} className="group">
             <motion.div
               whileHover={{ y: -4 }}
               className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden"
@@ -3492,6 +4037,8 @@ export default function DesktopVendorMarketplace() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [recentlyViewedVendors, setRecentlyViewedVendors] = useState([]);
   const [isBulkAddToCart, setIsBulkAddToCart] = useState(false);
+  const [shareItem, setShareItem] = useState(null);
+  const [isBreadcrumbOpen, setIsBreadcrumbOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage("desktop_sidebarCollapsed", false);
 
   const [sortBy, setSortBy] = useState("rating");
@@ -3520,79 +4067,82 @@ export default function DesktopVendorMarketplace() {
 
   const { setActiveCategory } = useCartStore();
 
-  const addToRecentlyViewed = useCallback((vendor) => {
-    try {
-      // Validation: Check if vendor object is valid
-      if (!vendor || !vendor._id) {
-        console.warn("Invalid vendor object:", vendor);
-        return false;
-      }
-
-      // Get existing recently viewed from localStorage
-      let recentlyViewed = [];
+  const addToRecentlyViewed = useCallback(
+    (vendor) => {
       try {
-        const stored = localStorage.getItem("recentlyViewed");
-        if (stored) {
-          recentlyViewed = JSON.parse(stored);
-          // Ensure it's an array
-          if (!Array.isArray(recentlyViewed)) {
-            recentlyViewed = [];
+        // Validation: Check if vendor object is valid
+        if (!vendor || !vendor._id) {
+          console.warn("Invalid vendor object:", vendor);
+          return false;
+        }
+
+        // Get existing recently viewed from localStorage
+        let recentlyViewed = [];
+        try {
+          const stored = localStorage.getItem("recentlyViewed");
+          if (stored) {
+            recentlyViewed = JSON.parse(stored);
+            // Ensure it's an array
+            if (!Array.isArray(recentlyViewed)) {
+              recentlyViewed = [];
+            }
           }
+        } catch (parseError) {
+          console.error("Error parsing recently viewed:", parseError);
+          recentlyViewed = [];
         }
-      } catch (parseError) {
-        console.error("Error parsing recently viewed:", parseError);
-        recentlyViewed = [];
-      }
 
-      // Remove vendor if it already exists (to move it to front)
-      recentlyViewed = recentlyViewed.filter((v) => v._id !== vendor._id);
+        // Remove vendor if it already exists (to move it to front)
+        recentlyViewed = recentlyViewed.filter((v) => v._id !== vendor._id);
 
-      // Prepare vendor data (only essential fields to save space)
-      const vendorData = {
-        _id: vendor._id,
-        name: vendor.name,
-        category: vendor.category,
-        rating: vendor.rating,
-        reviewCount: vendor.reviewCount,
-        location: vendor.location,
-        // Normalize images
-        images: vendor.normalizedImages || vendor.images || [vendor.defaultImage || "/placeholder.jpg"],
-        // Add timestamp
-        viewedAt: new Date().toISOString(),
-      };
+        // Prepare vendor data (only essential fields to save space)
+        const vendorData = {
+          _id: vendor._id,
+          name: vendor.name,
+          category: vendor.category,
+          rating: vendor.rating,
+          reviewCount: vendor.reviewCount,
+          location: vendor.location,
+          // Normalize images
+          images: vendor.normalizedImages || vendor.images || [vendor.defaultImage || "/placeholder.jpg"],
+          // Add timestamp
+          viewedAt: new Date().toISOString(),
+        };
 
-      // Add to beginning of array
-      recentlyViewed.unshift(vendorData);
+        // Add to beginning of array
+        recentlyViewed.unshift(vendorData);
 
-      // Keep only last 10 items
-      recentlyViewed = recentlyViewed.slice(0, 10);
+        // Keep only last 10 items
+        recentlyViewed = recentlyViewed.slice(0, 10);
 
-      // Save to localStorage with error handling
-      try {
-        localStorage.setItem("recentlyViewed", JSON.stringify(recentlyViewed));
-        console.log("✅ Vendor added to recently viewed:", vendor.name);
-
-        // Update state
-        setRecentlyViewedVendors(recentlyViewed);
-
-        return true;
-      } catch (storageError) {
-        // Handle localStorage quota exceeded
-        if (storageError.name === "QuotaExceededError") {
-          console.warn("LocalStorage quota exceeded, clearing old data");
-          // Keep only 5 most recent
-          recentlyViewed = recentlyViewed.slice(0, 5);
+        // Save to localStorage with error handling
+        try {
           localStorage.setItem("recentlyViewed", JSON.stringify(recentlyViewed));
-        } else {
-          console.error("Error saving to localStorage:", storageError);
+          console.log("✅ Vendor added to recently viewed:", vendor.name);
+
+          // Update state
+          setRecentlyViewedVendors(recentlyViewed);
+
+          return true;
+        } catch (storageError) {
+          // Handle localStorage quota exceeded
+          if (storageError.name === "QuotaExceededError") {
+            console.warn("LocalStorage quota exceeded, clearing old data");
+            // Keep only 5 most recent
+            recentlyViewed = recentlyViewed.slice(0, 5);
+            localStorage.setItem("recentlyViewed", JSON.stringify(recentlyViewed));
+          } else {
+            console.error("Error saving to localStorage:", storageError);
+          }
+          return false;
         }
+      } catch (error) {
+        console.error("Error in addToRecentlyViewed:", error);
         return false;
       }
-    } catch (error) {
-      console.error("Error in addToRecentlyViewed:", error);
-      return false;
-    }
-  }, [setRecentlyViewedVendors]); // Add dependency
+    },
+    [setRecentlyViewedVendors],
+  ); // Add dependency
 
   const getRecentlyViewed = useCallback(() => {
     try {
@@ -3641,13 +4191,12 @@ export default function DesktopVendorMarketplace() {
       locations: [],
     };
 
-    if (pageCategory) {
+    // PRIORITY 1: Query params categories (from filters/back navigation)
+    const urlCats = params.get("categories");
+    if (urlCats) {
+      initialState.categories = urlCats.split(",").filter((cat) => VENDOR_CATEGORIES.some((c) => c.id === cat));
+    } else if (pageCategory) {
       initialState.categories = [pageCategory];
-    } else {
-      const urlCats = params.get("categories");
-      if (urlCats) {
-        initialState.categories = urlCats.split(",").filter((cat) => VENDOR_CATEGORIES.some((c) => c.id === cat));
-      }
     }
 
     initialState.search = decodeURIComponent(params.get("search") || "");
@@ -3685,13 +4234,20 @@ export default function DesktopVendorMarketplace() {
     });
   }, [pageCategory, setActiveCategory]);
 
-  // Save recent searches
   useEffect(() => {
     if (debouncedSearchQuery && debouncedSearchQuery.trim().length > 2) {
       setRecentSearches((prev) => {
+        const current = Array.isArray(prev) ? prev : [];
         const trimmed = debouncedSearchQuery.trim();
-        const filtered = (prev || []).filter((s) => s && s.trim() && s.trim().toLowerCase() !== trimmed.toLowerCase());
-        return [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+
+        if (current[0]?.toLowerCase() === trimmed.toLowerCase()) {
+          return current;
+        }
+
+        const filtered = current.filter((s) => s && s.trim() && s.trim().toLowerCase() !== trimmed.toLowerCase());
+
+        const newSearches = [trimmed, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+        return newSearches;
       });
     }
   }, [debouncedSearchQuery, setRecentSearches]);
@@ -3705,7 +4261,7 @@ export default function DesktopVendorMarketplace() {
 
       const isOnlyPath = selectedCategories.length === 1 && selectedCategories[0] === pageCategory;
 
-      if (selectedCategories.length > 0 && !isOnlyPath) {
+      if (selectedCategories.length > 0) {
         urlParams.set("categories", selectedCategories.join(","));
       }
       if (debouncedSearchQuery?.trim()) urlParams.set("search", debouncedSearchQuery.trim());
@@ -3881,18 +4437,18 @@ export default function DesktopVendorMarketplace() {
   }, [compareMode, compareList, showToast]);
 
   useEffect(() => {
-  const loadRecentlyViewed = () => {
-    try {
-      const recent = getRecentlyViewed();
-      setRecentlyViewedVendors(recent);
-      console.log("📚 Loaded recently viewed vendors:", recent.length);
-    } catch (error) {
-      console.error("Error loading recently viewed:", error);
-    }
-  };
+    const loadRecentlyViewed = () => {
+      try {
+        const recent = getRecentlyViewed();
+        setRecentlyViewedVendors(recent);
+        console.log("📚 Loaded recently viewed vendors:", recent.length);
+      } catch (error) {
+        console.error("Error loading recently viewed:", error);
+      }
+    };
 
-  loadRecentlyViewed();
-}, []); // Remove getRecentlyViewed from dependencies since it's now memoized with useCallback
+    loadRecentlyViewed();
+  }, []); // Remove getRecentlyViewed from dependencies since it's now memoized with useCallback
 
   const { vendors, pagination: paginationInfo, cities: availableCities, isLoading, error } = vendorData;
 
@@ -3994,10 +4550,37 @@ export default function DesktopVendorMarketplace() {
     showToast("All filters cleared", "info");
   }, [compareMode, showToast]);
 
-  const handleSelectRecentSearch = useCallback((search) => {
-    setSearchQuery(search);
-    setCurrentPage(1);
-  }, []);
+  const prevSearchRef = useRef("");
+
+  useEffect(() => {
+    const wasEmpty = !prevSearchRef.current || prevSearchRef.current.trim() === "";
+    const isNowFilled = searchQuery && searchQuery.trim() !== "";
+
+    if (wasEmpty && isNowFilled) {
+      setSelectedCategories([]);
+    }
+
+    prevSearchRef.current = searchQuery;
+  }, [searchQuery]);
+
+  const handleSelectRecentSearch = useCallback(
+    (search) => {
+      console.log("🔍 Recent search clicked:", search); // Debug log
+      if (!search || !search.trim()) {
+        console.warn("Empty search term");
+        return;
+      }
+
+      startTransition(() => {
+        setSearchQuery(search.trim());
+        setSelectedCategories([]);
+        setCurrentPage(1);
+      });
+
+      showToast(`Applied search: "${search}"`, "info");
+    },
+    [showToast],
+  );
 
   const clearRecentSearches = useCallback(() => {
     setRecentSearches([]);
@@ -4172,9 +4755,9 @@ export default function DesktopVendorMarketplace() {
       <AnimatePresence>
         {toastData.visible && <Toast message={toastData.message} type={toastData.type} onClose={hideToast} />}
       </AnimatePresence>
-    <div className="relative z-10 max-w-[1920px] mx-auto px-4 lg:px-8 py-6 pt-[3px]">
-  {/* Main Two-Column Layout */}
-  <div className="flex gap-8 items-start">
+      <div className="relative z-10 max-w-[1920px] mx-auto px-4 lg:px-8 py-6 pt-[3px]">
+        {/* Main Two-Column Layout */}
+        <div className="flex gap-8 items-start">
           {/* LEFT COLUMN - Filters Sidebar (Fixed Width) */}
           <aside className={`shrink-0 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-80"} relative z-40`}>
             <div className="fixed top-22" style={{ minWidth: !sidebarCollapsed && "325px" }}>
@@ -4210,7 +4793,7 @@ export default function DesktopVendorMarketplace() {
           </aside>
 
           {/* RIGHT COLUMN - Main Content */}
-          <main className="flex-1 min-w-0 space-y-5">
+          <main className="flex-1 min-w-0 space-y-3">
             {/* Category Chips */}
             <CategoryChips selectedCategories={selectedCategories} onSelect={handleCategoryChange} />
 
@@ -4225,15 +4808,47 @@ export default function DesktopVendorMarketplace() {
       )}
     </AnimatePresence> */}
 
-            {/* Active Filters Display - Only when filters applied */}
             <AnimatePresence>
               {activeFiltersDisplay.length > 0 && (
-                <ActiveFiltersDisplay filters={activeFiltersDisplay} onClearAll={clearAllFilters} />
+                <ActiveFiltersDisplay
+                  filters={activeFiltersDisplay}
+                  onClearAll={clearAllFilters}
+                  selectedCategories={selectedCategories}
+                  searchQuery={searchQuery}
+                  selectedSubcategory={selectedSubcategory}
+                  selectedLocations={selectedLocations}
+                  priceRange={priceRange}
+                  ratingFilter={ratingFilter}
+                  showFeaturedOnly={showFeaturedOnly}
+                  totalResults={paginationInfo.totalVendors}
+                  isBreadcrumbOpen={isBreadcrumbOpen}
+                  setIsBreadcrumbOpen={setIsBreadcrumbOpen}
+                  onClearCategories={() => {
+                    setSelectedCategories([]);
+                    setSelectedSubcategory("");
+                    setCurrentPage(1);
+                  }}
+                  onClearSubcategory={() => {
+                    setSelectedSubcategory("");
+                    setCurrentPage(1);
+                  }}
+                  onClearLocations={() => {
+                    setSelectedLocations([]);
+                    setCurrentPage(1);
+                  }}
+                  onClearFilters={() => {
+                    setPriceRange([0, 1000000]);
+                    setRatingFilter(0);
+                    setShowFeaturedOnly(false);
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                />
               )}
             </AnimatePresence>
 
             {/* Content Header Bar */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="sticky top-22 z-40 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 {/* Left: Results Count & Info */}
                 <div className="flex items-center gap-4">
@@ -4269,7 +4884,7 @@ export default function DesktopVendorMarketplace() {
                     />
                   </div>
 
-                        {/* Bulk Selection Mode (when enabled) */}
+                  {/* Bulk Selection Mode (when enabled) */}
                   {compareMode && compareList.length > 0 && (
                     <div className="flex items-center gap-3 pl-4 border-l mr-2 border-gray-200 dark:border-gray-700">
                       <button
@@ -4296,10 +4911,10 @@ export default function DesktopVendorMarketplace() {
                         {isBulkAddToCart ? (
                           <Check size={16} className="animate-pulse" />
                         ) : (
-                         <>
+                          <>
                             <ShoppingCart size={14} />
-                        {`Add (${compareList.length})`}
-                         </>
+                            {`Add (${compareList.length})`}
+                          </>
                         )}
                       </button>
                     </div>
@@ -4492,20 +5107,20 @@ export default function DesktopVendorMarketplace() {
                   </motion.button>
 
                   {/* Map Toggle */}
-                 {!compareMode && (
+                  {!compareMode && (
                     <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsMapView(!isMapView)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                      isMapView
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
-                  >
-                    {isMapView ? <List size={16} /> : <MapIcon size={16} />}
-                    <span className="hidden sm:inline">{isMapView ? "List" : "Map"}</span>
-                  </motion.button>
-                 )}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsMapView(!isMapView)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                        isMapView
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      {isMapView ? <List size={16} /> : <MapIcon size={16} />}
+                      <span className="hidden sm:inline">{isMapView ? "List" : "Map"}</span>
+                    </motion.button>
+                  )}
 
                   {/* View Mode Switcher */}
                   {!isMapView && (
@@ -4863,6 +5478,7 @@ export default function DesktopVendorMarketplace() {
                             onShowToast={showToast}
                             addToRecentlyViewed={addToRecentlyViewed}
                             setShowShareModal={setShowShareModal}
+                            setShareItem={setShareItem}
                           />
                         </motion.div>
                       ))}
@@ -5049,13 +5665,10 @@ export default function DesktopVendorMarketplace() {
       <CompareModal isOpen={showCompare} onClose={() => setShowCompare(false)} vendors={compareList} />
 
       <AnimatePresence>
-              {showShareModal && (
-                <ShareModal
-                  isOpen={showShareModal}
-                  onClose={() => setShowShareModal(false)}
-                />
-              )}
-      </AnimatePresence>  
+        {showShareModal && (
+          <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} shareItem={shareItem} />
+        )}
+      </AnimatePresence>
 
       {/* ========== CUSTOM STYLES FOR COMPARE BAR ========== */}
       <style jsx>{`
@@ -5071,6 +5684,51 @@ export default function DesktopVendorMarketplace() {
         /* Smooth transitions */
         .compare-bar-transition {
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Breadcrumb smooth transitions */
+        .breadcrumb-item {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Breadcrumb hover effects */
+        .breadcrumb-item:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+
+        /* Breadcrumb progress animation */
+        @keyframes breadcrumbProgress {
+          from {
+            transform: scaleX(0);
+          }
+          to {
+            transform: scaleX(1);
+          }
+        }
+
+        /* Breadcrumb separator animation */
+        @keyframes fadeInSeparator {
+          from {
+            opacity: 0;
+            transform: scale(0);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        /* Responsive breadcrumb */
+        @media (max-width: 768px) {
+          .breadcrumb-container {
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+
+          .breadcrumb-container::-webkit-scrollbar {
+            display: none;
+          }
         }
 
         /* Mobile responsive adjustments */
