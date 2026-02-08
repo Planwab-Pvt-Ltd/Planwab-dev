@@ -1491,6 +1491,8 @@ const VendorDetailsPageWrapper = ({
 
   const timerControls = useAnimation();
 
+  const vendorProfileUrl = getHrefWithState(`/vendor/${vendor.category}/${vendor?._id || id}/profile`);
+
   useEffect(() => {
     updateTabScrollState();
     const el = tabContainerRef.current;
@@ -4923,7 +4925,7 @@ const VendorDetailsPageWrapper = ({
               {/* VENDOR INFO CARD */}
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-gray-700">
                 <div className="flex items-start gap-4 mb-5">
-                  <Link href={`/vendor/${vendor.category}/${vendor._id}/profile`} className="relative group shrink-0">
+                  <Link href={vendorProfileUrl || `/vendor/${vendor.category}/${vendor._id}/profile`} className="relative group shrink-0">
                     <div className="w-20 h-20 rounded-2xl overflow-hidden ring-3 ring-blue-500 dark:ring-purple-500 shadow-lg group-hover:ring-blue-600 transition-all">
                       <img
                         src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-profile.jpg"}

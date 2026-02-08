@@ -83,6 +83,7 @@ import { set } from "mongoose";
 import SmartMedia from "../SmartMediaLoader";
 import { toast } from "sonner";
 import Image from "next/image";
+import CompareModal from "../CompareModalMobile";
 
 // =============================================================================
 // CONSTANTS
@@ -2783,7 +2784,7 @@ const CompareBar = memo(({ count, vendors, onClear, onView, colorPrimary }) => {
 });
 CompareBar.displayName = "CompareBar";
 
-const CompareModal = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
+const CompareModalOld = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
   const haptic = useHapticFeedback();
   const [tab, setTab] = useState("overview");
   const vendorCount = vendors.length;
@@ -3259,7 +3260,7 @@ const CompareModal = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
     </AnimatePresence>
   );
 });
-CompareModal.displayName = "CompareModal";
+CompareModalOld.displayName = "CompareModalOld";
 
 // =============================================================================
 // MAIN COMPONENT
@@ -3774,28 +3775,51 @@ export default function MarketplacePageWrapper() {
 
   const handleCompareToggle = useCallback(
     (vendor) => {
-      haptic("medium");
-
-      // 🔥 CRITICAL: Batch all state updates
       startTransition(() => {
         setCompareList((prev) => {
+          // Check if already in list (toggle off)
           const exists = prev.find((v) => v._id === vendor._id);
-          let newList;
 
           if (exists) {
-            newList = prev.filter((v) => v._id !== vendor._id);
-          } else {
-            if (prev.length >= MAX_COMPARE_ITEMS) {
-              showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
-              return prev;
+            // Remove vendor from list
+            const newList = prev.filter((v) => v._id !== vendor._id);
+            if (newList.length === 0) {
+              setCompareMode(false);
             }
-            newList = [...prev, vendor];
+            return newList;
           }
 
-          // 🔥 CRITICAL: Update compare mode in same batch
-          if (newList.length === 0) {
-            setCompareMode(false);
-          } else if (!compareMode) {
+          // Check max limit
+          if (prev.length >= MAX_COMPARE_ITEMS) {
+            showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
+            return prev;
+          }
+
+          // ============================================
+          // CATEGORY VALIDATION - Only same category vendors
+          // ============================================
+          if (prev.length > 0) {
+            const existingCategory = prev[0].category?.toLowerCase().trim();
+            const newCategory = vendor.category?.toLowerCase().trim();
+
+            if (existingCategory && newCategory && existingCategory !== newCategory) {
+              // Get category display name
+              const existingCatName =
+                VENDOR_CATEGORIES.find((c) => c.id === existingCategory)?.label || existingCategory;
+              const newCatName = VENDOR_CATEGORIES.find((c) => c.id === newCategory)?.label || newCategory;
+
+              showToast(
+                `Cannot add "${vendor.name}" (${newCatName}). You can only compare ${existingCatName} vendors.`,
+                "error",
+              );
+              return prev;
+            }
+          }
+
+          // Add vendor to list
+          const newList = [...prev, vendor];
+
+          if (!compareMode) {
             setCompareMode(true);
           }
 
@@ -3803,7 +3827,7 @@ export default function MarketplacePageWrapper() {
         });
       });
     },
-    [haptic, showToast, compareMode],
+    [compareMode, showToast],
   );
 
   const handlePageChange = useCallback(
@@ -3843,6 +3867,13 @@ export default function MarketplacePageWrapper() {
     setSearchQuery(search);
     setIsSearchFocused(false);
     searchInputRef.current?.blur();
+  }, []);
+
+    const handleCategoryMismatch = useCallback((errorMessage, categories) => {
+    console.warn("Category mismatch detected:", errorMessage);
+    showToast(errorMessage, "error");
+    // Optional: You can add additional handling here
+    // For example, auto-clearing the compare list or showing a toast
   }, []);
 
   const clearRecentSearches = useCallback(() => {
@@ -4262,15 +4293,18 @@ export default function MarketplacePageWrapper() {
           setCurrentPage={setCurrentPage}
         />
       </FilterDrawer>
-      <CompareModal
-        isOpen={showCompare}
-        onClose={() => {
+        <CompareModal
+              isOpen={showCompare}
+               onClose={() => {
           setShowCompare(false);
           setIsNavbarVisible(true);
         }}
-        vendors={compareList}
-        colorPrimary={COLORS.primary}
-      />
+              vendors={compareList}
+              onCategoryMismatch={(errorMsg, categories) => {
+                console.warn("Category mismatch in modal:", errorMsg);
+                showToast(errorMsg, "error");
+              }}
+            />
     </div>
   );
 }
