@@ -1,13 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-  memo,
-} from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -134,6 +127,7 @@ import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { Download, QrCode, Linkedin, MessageSquare } from "lucide-react";
 import Image from "next/image";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
 const AUTOPLAY_DELAY = 5000;
 
@@ -233,25 +227,13 @@ const formatPrice = (price) => {
   return `₹${Number(price).toLocaleString("en-IN")}`;
 };
 
-const QuickStatCard = ({
-  icon: Icon,
-  label,
-  value,
-  color = "blue",
-  subtext,
-}) => (
+const QuickStatCard = ({ icon: Icon, label, value, color = "blue", subtext }) => (
   <div
     className={`p-4 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl text-center hover:shadow-md transition-all duration-200`}
   >
     <Icon size={18} className={`text-${color}-500 mx-auto mb-1.5`} />
-    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wide">
-      {label}
-    </p>
-    <p
-      className={`text-lg font-black text-${color}-700 dark:text-${color}-400`}
-    >
-      {value}
-    </p>
+    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wide">{label}</p>
+    <p className={`text-lg font-black text-${color}-700 dark:text-${color}-400`}>{value}</p>
     {subtext && <p className="text-[10px] text-gray-500 mt-0.5">{subtext}</p>}
   </div>
 );
@@ -260,20 +242,12 @@ const InfoChip = ({ icon: Icon, label, value, color = "blue" }) => (
   <div
     className={`p-3 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl flex items-center gap-3 hover:shadow-md transition-all duration-200`}
   >
-    <div
-      className={`w-9 h-9 rounded-lg bg-${color}-100 dark:bg-${color}-800/30 flex items-center justify-center`}
-    >
+    <div className={`w-9 h-9 rounded-lg bg-${color}-100 dark:bg-${color}-800/30 flex items-center justify-center`}>
       <Icon size={16} className={`text-${color}-500`} />
     </div>
     <div>
-      <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wide">
-        {label}
-      </p>
-      <p
-        className={`text-sm font-bold text-${color}-700 dark:text-${color}-400`}
-      >
-        {value}
-      </p>
+      <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wide">{label}</p>
+      <p className={`text-sm font-bold text-${color}-700 dark:text-${color}-400`}>{value}</p>
     </div>
   </div>
 );
@@ -297,9 +271,7 @@ const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
             <Sparkles size={12} /> Most Popular
           </div>
         )}
-        <h4 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-2">
-          {pkg.name}
-        </h4>
+        <h4 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-2">{pkg.name}</h4>
         {pkg.duration && (
           <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
             <Clock size={14} /> {pkg.duration}
@@ -309,19 +281,12 @@ const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
           <div className="space-y-2 mb-4">
             {pkg.features.slice(0, 5).map((feature, idx) => (
               <div key={idx} className="flex items-start gap-2">
-                <CheckCircle
-                  size={14}
-                  className="text-green-500 shrink-0 mt-0.5"
-                />
-                <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                  {feature}
-                </span>
+                <CheckCircle size={14} className="text-green-500 shrink-0 mt-0.5" />
+                <span className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{feature}</span>
               </div>
             ))}
             {pkg.features.length > 5 && (
-              <p className="text-sm text-blue-500 font-semibold pl-5">
-                +{pkg.features.length - 5} more
-              </p>
+              <p className="text-sm text-blue-500 font-semibold pl-5">+{pkg.features.length - 5} more</p>
             )}
           </div>
         )}
@@ -339,9 +304,7 @@ const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
       <div className="w-48 flex flex-col items-end justify-between">
         <div className="text-right mb-4">
           {pkg.originalPrice && (
-            <p className="text-sm text-gray-400 line-through">
-              ₹{Number(pkg.originalPrice).toLocaleString("en-IN")}
-            </p>
+            <p className="text-sm text-gray-400 line-through">₹{Number(pkg.originalPrice).toLocaleString("en-IN")}</p>
           )}
           <p className="text-2xl font-black text-blue-600 dark:text-blue-400">
             ₹{Number(pkg.price).toLocaleString("en-IN")}
@@ -401,22 +364,15 @@ const CollapsibleSection = memo(
               </div>
             )}
             <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                {title}
-              </h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">{title}</h3>
               {badge && (
-                <span
-                  className={`text-[10px] font-semibold text-${badgeColor}-600 dark:text-${badgeColor}-400`}
-                >
+                <span className={`text-[10px] font-semibold text-${badgeColor}-600 dark:text-${badgeColor}-400`}>
                   {badge}
                 </span>
               )}
             </div>
           </div>
-          <motion.div
-            animate={{ rotate: open ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-          >
+          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25 }}>
             <ChevronDown size={20} className="text-gray-400" />
           </motion.div>
         </button>
@@ -465,9 +421,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: MessageCircle,
       color: "bg-green-500",
       action: () => {
-        window.open(
-          `https://wa.me/?text=Check out ${vendorName}! ${currentUrl}`,
-        );
+        window.open(`https://wa.me/?text=Check out ${vendorName}! ${currentUrl}`);
         onClose();
       },
     },
@@ -477,9 +431,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Facebook,
       color: "bg-blue-600",
       action: () => {
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
-        );
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -501,9 +453,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Linkedin,
       color: "bg-blue-700",
       action: () => {
-        window.open(
-          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
-        );
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -520,9 +470,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       icon: Mail,
       color: "bg-gray-600",
       action: () => {
-        window.open(
-          `mailto:?subject=Check out ${vendorName}&body=${encodeURIComponent(currentUrl)}`,
-        );
+        window.open(`mailto:?subject=Check out ${vendorName}&body=${encodeURIComponent(currentUrl)}`);
         onClose();
       },
     },
@@ -571,9 +519,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
       downloadLink.href = pngFile;
       downloadLink.click();
     };
-    img.src =
-      "data:image/svg+xml;base64," +
-      btoa(unescape(encodeURIComponent(svgData)));
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (
@@ -593,9 +539,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
         className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-2xl"
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Share Profile
-          </h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Share Profile</h3>
           <button
             onClick={onClose}
             className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
@@ -617,14 +561,9 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
                   onClick={() => setShowQR(false)}
                   className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
-                  <ArrowLeft
-                    size={18}
-                    className="text-gray-600 dark:text-gray-400"
-                  />
+                  <ArrowLeft size={18} className="text-gray-600 dark:text-gray-400" />
                 </button>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  QR Code
-                </h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">QR Code</h3>
                 <div className="w-10" />
               </div>
               <div className="flex justify-center py-4">
@@ -640,13 +579,9 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
                   />
                 </div>
               </div>
-              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                Scan to visit this profile
-              </p>
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">Scan to visit this profile</p>
               <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-3">
-                <p className="text-xs text-gray-600 dark:text-gray-400 break-all text-center">
-                  {currentUrl}
-                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 break-all text-center">{currentUrl}</p>
               </div>
               <div className="flex gap-3">
                 <button
@@ -669,29 +604,17 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
               </div>
             </motion.div>
           ) : (
-            <motion.div
-              key="share-options"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+            <motion.div key="share-options" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <button
                 onClick={() => setShowQR(true)}
                 className="w-full flex items-center gap-4 p-4 mb-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 hover:from-gray-100 hover:to-gray-150 transition-all cursor-pointer"
               >
                 <div className="w-14 h-14 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
-                  <QrCode
-                    size={28}
-                    className="text-gray-700 dark:text-gray-300"
-                  />
+                  <QrCode size={28} className="text-gray-700 dark:text-gray-300" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    QR Code
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Scan to share instantly
-                  </p>
+                  <p className="font-semibold text-gray-900 dark:text-white">QR Code</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Scan to share instantly</p>
                 </div>
                 <ChevronRight size={20} className="text-gray-400" />
               </button>
@@ -712,9 +635,7 @@ const ShareModal = ({ isOpen, onClose, vendorName }) => {
                       )}
                     </div>
                     <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">
-                      {option.id === "copy" && copiedFeedback
-                        ? "Copied!"
-                        : option.label}
+                      {option.id === "copy" && copiedFeedback ? "Copied!" : option.label}
                     </span>
                   </button>
                 ))}
@@ -787,18 +708,11 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-              <Keyboard
-                size={20}
-                className="text-gray-600 dark:text-gray-400"
-              />
+              <Keyboard size={20} className="text-gray-600 dark:text-gray-400" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                Keyboard Shortcuts
-              </h3>
-              <p className="text-xs text-gray-500">
-                Navigate faster with your keyboard
-              </p>
+              <h3 className="font-bold text-lg text-gray-900 dark:text-white">Keyboard Shortcuts</h3>
+              <p className="text-xs text-gray-500">Navigate faster with your keyboard</p>
             </div>
           </div>
           <button
@@ -820,13 +734,8 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
                 </h4>
                 <div className="space-y-2">
                   {group.shortcuts.map((s) => (
-                    <div
-                      key={s.key}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {s.desc}
-                      </span>
+                    <div key={s.key} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{s.desc}</span>
                       <kbd className="px-2 py-1 bg-white dark:bg-gray-700 rounded-lg text-xs font-mono font-bold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm min-w-[32px] text-center">
                         {s.key}
                       </kbd>
@@ -864,9 +773,7 @@ const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
               <LayoutGrid size={20} className="text-white" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                Portfolio
-              </h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Portfolio</h3>
               <p className="text-xs text-gray-500">{images.length} photos</p>
             </div>
           </div>
@@ -895,9 +802,7 @@ const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
               {idx === 5 && remainingCount > 0 && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">
-                    +{remainingCount}
-                  </span>
+                  <span className="text-white font-bold text-lg">+{remainingCount}</span>
                 </div>
               )}
             </button>
@@ -966,9 +871,7 @@ const SocialLinksSection = memo(({ vendor }) => {
         <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
           <Globe size={18} className="text-indigo-600" />
         </div>
-        <h3 className="text-base font-bold text-gray-900 dark:text-white">
-          Connect With Us
-        </h3>
+        <h3 className="text-base font-bold text-gray-900 dark:text-white">Connect With Us</h3>
       </div>
       <div className="flex flex-wrap gap-3">
         {links.map((link) => (
@@ -980,9 +883,7 @@ const SocialLinksSection = memo(({ vendor }) => {
             className={`p-3 ${link.bg} rounded-xl flex items-center gap-2 transition-all hover:shadow-md hover:scale-105 duration-200`}
           >
             <link.icon size={18} className={`text-${link.color}-600`} />
-            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-              {link.label}
-            </span>
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{link.label}</span>
           </a>
         ))}
       </div>
@@ -1000,10 +901,7 @@ const CategorySpecificSection = memo(({ vendor }) => {
       case "venues":
         return (
           <div className="space-y-5">
-            {(vendor.seating?.min ||
-              vendor.seating?.max ||
-              vendor.floating?.min ||
-              vendor.floating?.max) && (
+            {(vendor.seating?.min || vendor.seating?.max || vendor.floating?.min || vendor.floating?.max) && (
               <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Users size={16} className="text-blue-500" /> Capacity Details
@@ -1011,9 +909,7 @@ const CategorySpecificSection = memo(({ vendor }) => {
                 <div className="grid grid-cols-2 gap-4">
                   {(vendor.seating?.min || vendor.seating?.max) && (
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Seating
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Seating</p>
                       <p className="text-xl font-black text-blue-700 dark:text-blue-400">
                         {vendor.seating?.min || 0} - {vendor.seating?.max || 0}
                       </p>
@@ -1022,12 +918,9 @@ const CategorySpecificSection = memo(({ vendor }) => {
                   )}
                   {(vendor.floating?.min || vendor.floating?.max) && (
                     <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Floating
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Floating</p>
                       <p className="text-xl font-black text-purple-700 dark:text-purple-400">
-                        {vendor.floating?.min || 0} -{" "}
-                        {vendor.floating?.max || 0}
+                        {vendor.floating?.min || 0} - {vendor.floating?.max || 0}
                       </p>
                       <p className="text-[10px] text-gray-500">guests</p>
                     </div>
@@ -1035,29 +928,15 @@ const CategorySpecificSection = memo(({ vendor }) => {
                 </div>
               </div>
             )}
-            {(vendor.halls ||
-              vendor.rooms?.count ||
-              vendor.parking?.capacity) && (
+            {(vendor.halls || vendor.rooms?.count || vendor.parking?.capacity) && (
               <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Building2 size={16} className="text-green-500" /> Facilities
                 </h4>
                 <div className="grid grid-cols-3 gap-3">
-                  {vendor.halls && (
-                    <QuickStatCard
-                      icon={Building2}
-                      label="Halls"
-                      value={vendor.halls}
-                      color="green"
-                    />
-                  )}
+                  {vendor.halls && <QuickStatCard icon={Building2} label="Halls" value={vendor.halls} color="green" />}
                   {vendor.rooms?.count && (
-                    <QuickStatCard
-                      icon={Building}
-                      label="Rooms"
-                      value={vendor.rooms.count}
-                      color="blue"
-                    />
+                    <QuickStatCard icon={Building} label="Rooms" value={vendor.rooms.count} color="blue" />
                   )}
                   {vendor.parking?.capacity && (
                     <QuickStatCard
@@ -1092,12 +971,8 @@ const CategorySpecificSection = memo(({ vendor }) => {
               <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
                 <UtensilsCrossed size={18} className="text-amber-600" />
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase font-bold">
-                    Food Policy
-                  </p>
-                  <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
-                    {vendor.foodPolicy}
-                  </p>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold">Food Policy</p>
+                  <p className="text-sm font-bold text-amber-700 dark:text-amber-400">{vendor.foodPolicy}</p>
                 </div>
               </div>
             )}
@@ -1131,12 +1006,7 @@ const CategorySpecificSection = memo(({ vendor }) => {
               </h4>
               <div className="grid grid-cols-2 gap-3">
                 {vendor.pricePerHand && (
-                  <QuickStatCard
-                    icon={Hand}
-                    label="Per Hand"
-                    value={formatPrice(vendor.pricePerHand)}
-                    color="green"
-                  />
+                  <QuickStatCard icon={Hand} label="Per Hand" value={formatPrice(vendor.pricePerHand)} color="green" />
                 )}
                 {vendor.bridalPackagePrice && (
                   <QuickStatCard
@@ -1154,38 +1024,24 @@ const CategorySpecificSection = memo(({ vendor }) => {
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 {vendor.teamSize && (
-                  <InfoChip
-                    icon={Users}
-                    label="Team Size"
-                    value={`${vendor.teamSize}+ Artists`}
-                    color="blue"
-                  />
+                  <InfoChip icon={Users} label="Team Size" value={`${vendor.teamSize}+ Artists`} color="blue" />
                 )}
                 {vendor.dryingTime && (
-                  <InfoChip
-                    icon={Clock}
-                    label="Drying Time"
-                    value={vendor.dryingTime}
-                    color="purple"
-                  />
+                  <InfoChip icon={Clock} label="Drying Time" value={vendor.dryingTime} color="purple" />
                 )}
               </div>
               <div className="mt-3 space-y-2">
                 {vendor.organic && (
                   <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
                     <Leaf size={14} className="text-green-500" />
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      100% Organic Henna
-                    </span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">100% Organic Henna</span>
                     <CheckCircle size={12} className="text-green-500 ml-auto" />
                   </div>
                 )}
                 {vendor.travelToVenue && (
                   <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                     <MapPin size={14} className="text-blue-500" />
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      Travel to Venue
-                    </span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Travel to Venue</span>
                     <CheckCircle size={12} className="text-green-500 ml-auto" />
                   </div>
                 )}
@@ -1244,28 +1100,11 @@ const CategorySpecificSection = memo(({ vendor }) => {
               </h4>
               <div className="grid grid-cols-3 gap-3">
                 {vendor.deliveryTime && (
-                  <QuickStatCard
-                    icon={Clock}
-                    label="Delivery"
-                    value={`${vendor.deliveryTime} wks`}
-                    color="blue"
-                  />
+                  <QuickStatCard icon={Clock} label="Delivery" value={`${vendor.deliveryTime} wks`} color="blue" />
                 )}
-                {vendor.teamSize && (
-                  <QuickStatCard
-                    icon={Users}
-                    label="Team"
-                    value={vendor.teamSize}
-                    color="purple"
-                  />
-                )}
+                {vendor.teamSize && <QuickStatCard icon={Users} label="Team" value={vendor.teamSize} color="purple" />}
                 {vendor.travelCost && (
-                  <QuickStatCard
-                    icon={MapPin}
-                    label="Travel"
-                    value={vendor.travelCost}
-                    color="green"
-                  />
+                  <QuickStatCard icon={MapPin} label="Travel" value={vendor.travelCost} color="green" />
                 )}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1297,14 +1136,9 @@ const CategorySpecificSection = memo(({ vendor }) => {
                 </h4>
                 <div className="space-y-2">
                   {vendor.specializations.map((s, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl"
-                    >
+                    <div key={i} className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
                       <CheckCircle size={14} className="text-indigo-500" />
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {s}
-                      </span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{s}</span>
                     </div>
                   ))}
                 </div>
@@ -1313,8 +1147,7 @@ const CategorySpecificSection = memo(({ vendor }) => {
             {vendor.eventsManaged?.length > 0 && (
               <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <Calendar size={16} className="text-green-500" /> Events
-                  Managed
+                  <Calendar size={16} className="text-green-500" /> Events Managed
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {vendor.eventsManaged.map((e, i) => (
@@ -1333,51 +1166,29 @@ const CategorySpecificSection = memo(({ vendor }) => {
                 <Users size={16} className="text-blue-500" /> Team & Network
               </h4>
               <div className="grid grid-cols-3 gap-3">
-                {vendor.teamSize && (
-                  <QuickStatCard
-                    icon={Users}
-                    label="Team"
-                    value={vendor.teamSize}
-                    color="blue"
-                  />
-                )}
+                {vendor.teamSize && <QuickStatCard icon={Users} label="Team" value={vendor.teamSize} color="blue" />}
                 {vendor.vendorNetwork && (
-                  <QuickStatCard
-                    icon={Globe}
-                    label="Network"
-                    value={`${vendor.vendorNetwork}+`}
-                    color="purple"
-                  />
+                  <QuickStatCard icon={Globe} label="Network" value={`${vendor.vendorNetwork}+`} color="purple" />
                 )}
                 {vendor.feeStructure && (
-                  <QuickStatCard
-                    icon={DollarSign}
-                    label="Fee"
-                    value={vendor.feeStructure}
-                    color="green"
-                  />
+                  <QuickStatCard icon={DollarSign} label="Fee" value={vendor.feeStructure} color="green" />
                 )}
               </div>
             </div>
             {vendor.budgetRange && (
               <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <DollarSign size={16} className="text-green-500" /> Budget
-                  Range
+                  <DollarSign size={16} className="text-green-500" /> Budget Range
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                    <p className="text-[10px] text-gray-500 uppercase font-bold">
-                      From
-                    </p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold">From</p>
                     <p className="text-xl font-black text-green-700 dark:text-green-400">
                       {formatPrice(vendor.budgetRange.min)}
                     </p>
                   </div>
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
-                    <p className="text-[10px] text-gray-500 uppercase font-bold">
-                      Up To
-                    </p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold">Up To</p>
                     <p className="text-xl font-black text-blue-700 dark:text-blue-400">
                       {formatPrice(vendor.budgetRange.max)}
                     </p>
@@ -1433,16 +1244,10 @@ const CategorySpecificSection = memo(({ vendor }) => {
                   <div className="flex items-center gap-2">
                     <CheckCircle
                       size={16}
-                      className={
-                        vendor.trialPolicy.available
-                          ? "text-green-500"
-                          : "text-gray-400"
-                      }
+                      className={vendor.trialPolicy.available ? "text-green-500" : "text-gray-400"}
                     />
                     <span className="text-sm font-medium">
-                      {vendor.trialPolicy.available
-                        ? "Trial Available"
-                        : "No Trial"}
+                      {vendor.trialPolicy.available ? "Trial Available" : "No Trial"}
                     </span>
                   </div>
                   {vendor.trialPolicy.available && vendor.trialPolicy.paid && (
@@ -1451,9 +1256,7 @@ const CategorySpecificSection = memo(({ vendor }) => {
                     </span>
                   )}
                   {vendor.trialPolicy.available && !vendor.trialPolicy.paid && (
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold">
-                      Free
-                    </span>
+                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Free</span>
                   )}
                 </div>
               </div>
@@ -1466,8 +1269,7 @@ const CategorySpecificSection = memo(({ vendor }) => {
             {vendor.cuisines?.length > 0 && (
               <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <UtensilsCrossed size={16} className="text-orange-500" />{" "}
-                  Cuisines
+                  <UtensilsCrossed size={16} className="text-orange-500" /> Cuisines
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {vendor.cuisines.map((c, i) => (
@@ -1512,34 +1314,21 @@ const CategorySpecificSection = memo(({ vendor }) => {
                   />
                 )}
                 {vendor.liveCounters && (
-                  <QuickStatCard
-                    icon={Flame}
-                    label="Live Counters"
-                    value="Available"
-                    color="red"
-                  />
+                  <QuickStatCard icon={Flame} label="Live Counters" value="Available" color="red" />
                 )}
               </div>
               {vendor.pricePerPlate && (
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   {vendor.pricePerPlate.veg && (
                     <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Veg Plate
-                      </p>
-                      <p className="text-xl font-black text-green-700">
-                        ₹{vendor.pricePerPlate.veg}
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Veg Plate</p>
+                      <p className="text-xl font-black text-green-700">₹{vendor.pricePerPlate.veg}</p>
                     </div>
                   )}
                   {vendor.pricePerPlate.nonVeg && (
                     <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl text-center">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Non-Veg
-                      </p>
-                      <p className="text-xl font-black text-red-700">
-                        ₹{vendor.pricePerPlate.nonVeg}
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Non-Veg</p>
+                      <p className="text-xl font-black text-red-700">₹{vendor.pricePerPlate.nonVeg}</p>
                     </div>
                   )}
                 </div>
@@ -1567,71 +1356,45 @@ const CategorySpecificSection = memo(({ vendor }) => {
                 </div>
               </div>
             )}
-            {(vendor.performanceDuration ||
-              vendor.soundSystemPower ||
-              vendor.setupTime) && (
+            {(vendor.performanceDuration || vendor.soundSystemPower || vendor.setupTime) && (
               <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <Info size={16} className="text-blue-500" /> Performance
-                  Details
+                  <Info size={16} className="text-blue-500" /> Performance Details
                 </h4>
                 <div className="grid grid-cols-3 gap-3">
                   {vendor.performanceDuration && (
-                    <QuickStatCard
-                      icon={Clock}
-                      label="Duration"
-                      value={vendor.performanceDuration}
-                      color="blue"
-                    />
+                    <QuickStatCard icon={Clock} label="Duration" value={vendor.performanceDuration} color="blue" />
                   )}
                   {vendor.soundSystemPower && (
-                    <QuickStatCard
-                      icon={Zap}
-                      label="Sound"
-                      value={vendor.soundSystemPower}
-                      color="orange"
-                    />
+                    <QuickStatCard icon={Zap} label="Sound" value={vendor.soundSystemPower} color="orange" />
                   )}
                   {vendor.setupTime && (
-                    <QuickStatCard
-                      icon={Timer}
-                      label="Setup"
-                      value={vendor.setupTime}
-                      color="green"
-                    />
+                    <QuickStatCard icon={Timer} label="Setup" value={vendor.setupTime} color="green" />
                   )}
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {vendor.equipmentProvided && (
                     <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                       <Mic2 size={14} className="text-blue-500" />
-                      <span className="text-xs font-medium">
-                        Equipment Provided
-                      </span>
+                      <span className="text-xs font-medium">Equipment Provided</span>
                     </div>
                   )}
                   {vendor.lightingIncluded && (
                     <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
                       <Zap size={14} className="text-yellow-500" />
-                      <span className="text-xs font-medium">
-                        Lighting Included
-                      </span>
+                      <span className="text-xs font-medium">Lighting Included</span>
                     </div>
                   )}
                   {vendor.backupAvailable && (
                     <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
                       <Shield size={14} className="text-green-500" />
-                      <span className="text-xs font-medium">
-                        Backup Available
-                      </span>
+                      <span className="text-xs font-medium">Backup Available</span>
                     </div>
                   )}
                   {vendor.emceeServices && (
                     <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                       <Mic2 size={14} className="text-purple-500" />
-                      <span className="text-xs font-medium">
-                        Emcee Services
-                      </span>
+                      <span className="text-xs font-medium">Emcee Services</span>
                     </div>
                   )}
                 </div>
@@ -1648,17 +1411,22 @@ const CategorySpecificSection = memo(({ vendor }) => {
 });
 CategorySpecificSection.displayName = "CategorySpecificSection";
 
-const VendorDetailsPageWrapper = () => {
+const VendorDetailsPageWrapper = ({ 
+  initialVendor, 
+  initialSimilar = [], 
+  initialRecommended = [] 
+}) => {
   const { id } = useParams();
   const { user } = useUser();
   const { addToCart, removeFromCart, isInCart } = useCartStore();
+  const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
 
-  const [vendor, setVendor] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [vendor, setVendor] = useState(initialVendor);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [similarVendors, setSimilarVendors] = useState([]);
-  const [recommendedVendors, setRecommendedVendors] = useState([]);
-  const [listsLoading, setListsLoading] = useState(true);
+  const [similarVendors, setSimilarVendors] = useState(initialSimilar);
+  const [recommendedVendors, setRecommendedVendors] = useState(initialRecommended);
+  const [listsLoading, setListsLoading] = useState(false);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [slideDirection, setSlideDirection] = useState(0);
@@ -1719,52 +1487,9 @@ const VendorDetailsPageWrapper = () => {
     specialOffers: false,
     amenities: true,
   });
-  const toggleSection = (section) =>
-    setExpandedSections((p) => ({ ...p, [section]: !p[section] }));
+  const toggleSection = (section) => setExpandedSections((p) => ({ ...p, [section]: !p[section] }));
 
   const timerControls = useAnimation();
-
-  const fetchVendor = useCallback(async () => {
-    if (!id) {
-      setLoading(false);
-      setError("Vendor ID is missing.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/vendor/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch vendor data.");
-      const data = await response.json();
-      setVendor(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchLists = useCallback(async () => {
-    if (!id) return;
-    setListsLoading(true);
-    try {
-      const response = await fetch(`/api/vendor/lists/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch recommendations.");
-      const data = await response.json();
-      setSimilarVendors(data.similarVendors || []);
-      setRecommendedVendors(data.recommendedVendors || []);
-    } catch {
-    } finally {
-      setListsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchVendor();
-  }, [fetchVendor]);
-  useEffect(() => {
-    if (vendor) fetchLists();
-  }, [vendor, fetchLists]);
 
   useEffect(() => {
     updateTabScrollState();
@@ -1861,9 +1586,7 @@ const VendorDetailsPageWrapper = () => {
   const goToImage = useCallback(
     (index, direction = null) => {
       if (images.length <= 1) return;
-      setSlideDirection(
-        direction !== null ? direction : index > currentImageIndex ? 1 : -1,
-      );
+      setSlideDirection(direction !== null ? direction : index > currentImageIndex ? 1 : -1);
       setCurrentImageIndex(index);
     },
     [images.length, currentImageIndex],
@@ -1930,8 +1653,8 @@ const VendorDetailsPageWrapper = () => {
       if (rafId) return;
       rafId = window.requestAnimationFrame(() => {
         const scrollY = window.scrollY;
-        if (scrollY > 600 && !showHeaderTabs) setShowHeaderTabs(true);
-        else if (scrollY <= 600 && showHeaderTabs) setShowHeaderTabs(false);
+        if (scrollY > 500 && !showHeaderTabs) setShowHeaderTabs(true);
+        else if (scrollY <= 500 && showHeaderTabs) setShowHeaderTabs(false);
         lastScrollY.current = scrollY;
         rafId = null;
       });
@@ -1989,12 +1712,7 @@ const VendorDetailsPageWrapper = () => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (
-        e.target.tagName === "INPUT" ||
-        e.target.tagName === "TEXTAREA" ||
-        e.target.tagName === "SELECT"
-      )
-        return;
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
       switch (e.key) {
         case "ArrowLeft":
           e.preventDefault();
@@ -2130,10 +1848,7 @@ const VendorDetailsPageWrapper = () => {
         id: "services",
         label: "Services & Awards",
         icon: Award,
-        show:
-          vendor?.amenities?.length > 0 ||
-          vendor?.facilities?.length > 0 ||
-          vendor?.awards?.length > 0,
+        show: vendor?.amenities?.length > 0 || vendor?.facilities?.length > 0 || vendor?.awards?.length > 0,
       },
       {
         id: "gallery",
@@ -2197,9 +1912,7 @@ const VendorDetailsPageWrapper = () => {
       {
         icon: Medal,
         label: "Experience",
-        value: vendor?.yearsExperience
-          ? `${vendor.yearsExperience}+ yrs`
-          : "N/A",
+        value: vendor?.yearsExperience ? `${vendor.yearsExperience}+ yrs` : "N/A",
         color: "text-purple-500",
         bg: "bg-purple-50 dark:bg-purple-900/20",
       },
@@ -2212,10 +1925,8 @@ const VendorDetailsPageWrapper = () => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (contentSectionRef.current) {
-          const top =
-            contentSectionRef.current.getBoundingClientRect().top +
-            window.scrollY;
-          window.scrollTo({ top: top - 80, behavior: "smooth" });
+          const top = contentSectionRef.current.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({ top: top - 150, behavior: "smooth" });
         }
       });
     });
@@ -2245,32 +1956,18 @@ const VendorDetailsPageWrapper = () => {
       }
       // scroll content section into view
       if (contentSectionRef.current) {
-        const top =
-          contentSectionRef.current.getBoundingClientRect().top +
-          window.scrollY;
-        window.scrollTo({ top: top - 80, behavior: "smooth" });
+        const top = contentSectionRef.current.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: top - 150, behavior: "smooth" });
       }
     });
   }, []);
 
   if (loading) return <DetailsPageSkeleton />;
-  if (error)
-    return (
-      <div className="flex items-center justify-center h-screen text-red-500">
-        {error}
-      </div>
-    );
-  if (!vendor)
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Vendor not found.
-      </div>
-    );
+  if (error) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>;
+  if (!vendor) return <div className="flex items-center justify-center h-screen">Vendor not found.</div>;
 
   const displayPrice =
-    vendor.perDayPrice?.min?.toLocaleString("en-IN") ||
-    vendor.basePrice?.toLocaleString("en-IN") ||
-    "N/A";
+    vendor.perDayPrice?.min?.toLocaleString("en-IN") || vendor.basePrice?.toLocaleString("en-IN") || "N/A";
   const categoryInfo = CATEGORY_CONFIG[vendor.category] || {
     label: vendor.category,
     icon: FileText,
@@ -2284,16 +1981,13 @@ const VendorDetailsPageWrapper = () => {
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <Link href="/vendors">
+              <Link href={backUrl || "/vendors/marketplace"} className="flex items-center gap-2">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <ArrowLeft
-                    size={20}
-                    className="text-gray-700 dark:text-gray-300"
-                  />
+                  <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
                 </motion.button>
               </Link>
               <nav className="flex items-center gap-2 text-sm">
@@ -2334,10 +2028,7 @@ const VendorDetailsPageWrapper = () => {
                 {statusLoading || bookmarkingLoading ? (
                   <div className="w-[18px] h-[18px] border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Bookmark
-                    size={18}
-                    className={isBookmarked ? "fill-current" : ""}
-                  />
+                  <Bookmark size={18} className={isBookmarked ? "fill-current" : ""} />
                 )}
               </motion.button>
               <motion.button
@@ -2363,13 +2054,13 @@ const VendorDetailsPageWrapper = () => {
           </div>
           <AnimatePresence mode="wait">
             {showHeaderTabs && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden border-t border-gray-100 dark:border-gray-800/50"
-              >
+             <motion.div
+  initial={{ height: 0, opacity: 0 }}
+  animate={{ height: "auto", opacity: 1 }}
+  exit={{ height: 0, opacity: 0 }}
+  transition={{ duration: 0.15, ease: "easeOut" }} 
+  className="overflow-hidden border-t border-gray-100 dark:border-gray-800/50"
+>
                 <div className="flex gap-1 overflow-x-auto no-scrollbar py-2">
                   {TAB_CONFIG.map((tab, index) => (
                     <motion.button
@@ -2402,25 +2093,13 @@ const VendorDetailsPageWrapper = () => {
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
-              <div
-                className="relative h-[480px]"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
-                <AnimatePresence
-                  initial={false}
-                  custom={slideDirection}
-                  mode="wait"
-                >
+              <div className="relative h-[480px]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+                <AnimatePresence initial={false} custom={slideDirection} mode="wait">
                   <motion.div
                     key={currentImageIndex}
                     custom={slideDirection}
                     variants={slideVariants}
-                    initial={
-                      currentImageIndex === 0 && slideDirection === 0
-                        ? false
-                        : "enter"
-                    }
+                    initial={currentImageIndex === 0 && slideDirection === 0 ? false : "enter"}
                     animate="center"
                     exit="exit"
                     transition={{
@@ -2435,11 +2114,7 @@ const VendorDetailsPageWrapper = () => {
                     }}
                     className="absolute inset-0"
                   >
-                    <img
-                      src={images[currentImageIndex]}
-                      alt={vendor.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={images[currentImageIndex]} alt={vendor.name} className="w-full h-full object-cover" />
                   </motion.div>
                 </AnimatePresence>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -2516,8 +2191,8 @@ const VendorDetailsPageWrapper = () => {
               {!showHeaderTabs && (
                 <motion.div
                   initial={{ opacity: 1 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
                   className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl"
                   id="tab-section-top"
                 >
@@ -2532,21 +2207,32 @@ const VendorDetailsPageWrapper = () => {
                         onClick={() => {
                           const el = tabContainerRef.current;
                           if (!el) return;
+
                           const start = el.scrollLeft;
                           const target = Math.max(0, start - 220);
-                          const startTime = performance.now();
-                          const duration = 220;
-                          const ease = (t) =>
-                            t < 0.5
-                              ? 4 * t * t * t
-                              : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                          const step = (now) => {
-                            const p = Math.min((now - startTime) / duration, 1);
-                            el.scrollLeft = start + (target - start) * ease(p);
-                            if (p < 1) requestAnimationFrame(step);
-                            else updateTabScrollState();
+                          const distance = target - start;
+                          const startTime = Date.now();
+                          const duration = 300;
+
+                          const easeInOutCubic = (t) => {
+                            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
                           };
-                          requestAnimationFrame(step);
+
+                          const animateScroll = () => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const eased = easeInOutCubic(progress);
+
+                            el.scrollLeft = start + distance * eased;
+
+                            if (progress < 1) {
+                              requestAnimationFrame(animateScroll);
+                            } else {
+                              updateTabScrollState();
+                            }
+                          };
+
+                          requestAnimationFrame(animateScroll);
                         }}
                         className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1.5 pr-8 bg-gradient-to-r from-white via-white/95 to-transparent dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent rounded-l-2xl"
                       >
@@ -2561,10 +2247,7 @@ const VendorDetailsPageWrapper = () => {
                           }}
                           className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center"
                         >
-                          <ChevronLeft
-                            size={16}
-                            className="text-gray-600 dark:text-gray-300"
-                          />
+                          <ChevronLeft size={16} className="text-gray-600 dark:text-gray-300" />
                         </motion.div>
                       </motion.button>
                     )}
@@ -2572,7 +2255,7 @@ const VendorDetailsPageWrapper = () => {
                     <div
                       ref={tabContainerRef}
                       onScroll={updateTabScrollState}
-                      className="flex gap-1 overflow-x-auto no-scrollbar px-2 py-2 scroll-smooth"
+                      className="flex gap-1 overflow-x-auto no-scrollbar px-2 py-2"
                     >
                       {TAB_CONFIG.map((tab) => (
                         <button
@@ -2602,22 +2285,33 @@ const VendorDetailsPageWrapper = () => {
                         onClick={() => {
                           const el = tabContainerRef.current;
                           if (!el) return;
+
                           const start = el.scrollLeft;
                           const maxScroll = el.scrollWidth - el.clientWidth;
                           const target = Math.min(maxScroll, start + 220);
-                          const startTime = performance.now();
-                          const duration = 220;
-                          const ease = (t) =>
-                            t < 0.5
-                              ? 4 * t * t * t
-                              : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                          const step = (now) => {
-                            const p = Math.min((now - startTime) / duration, 1);
-                            el.scrollLeft = start + (target - start) * ease(p);
-                            if (p < 1) requestAnimationFrame(step);
-                            else updateTabScrollState();
+                          const distance = target - start;
+                          const startTime = Date.now();
+                          const duration = 300;
+
+                          const easeInOutCubic = (t) => {
+                            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
                           };
-                          requestAnimationFrame(step);
+
+                          const animateScroll = () => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const eased = easeInOutCubic(progress);
+
+                            el.scrollLeft = start + distance * eased;
+
+                            if (progress < 1) {
+                              requestAnimationFrame(animateScroll);
+                            } else {
+                              updateTabScrollState();
+                            }
+                          };
+
+                          requestAnimationFrame(animateScroll);
                         }}
                         className="absolute right-0 top-0 bottom-0 z-10 flex items-center pr-1.5 pl-8 bg-gradient-to-l from-white via-white/95 to-transparent dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent rounded-r-2xl"
                       >
@@ -2632,10 +2326,7 @@ const VendorDetailsPageWrapper = () => {
                           }}
                           className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center"
                         >
-                          <ChevronRight
-                            size={16}
-                            className="text-gray-600 dark:text-gray-300"
-                          />
+                          <ChevronRight size={16} className="text-gray-600 dark:text-gray-300" />
                         </motion.div>
                       </motion.button>
                     )}
@@ -2668,10 +2359,7 @@ const VendorDetailsPageWrapper = () => {
                         <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-slate-900/50 px-6 py-4 rounded-3xl shadow-sm border border-indigo-100/50 dark:border-indigo-900/30">
                           <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center shrink-0 ring-1 ring-indigo-200/50 dark:ring-indigo-800/50">
-                              <Sparkles
-                                size={20}
-                                className="text-indigo-600 dark:text-indigo-400"
-                              />
+                              <Sparkles size={20} className="text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <div className="flex-1 pt-2">
                               <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-medium italic text-lg">
@@ -2687,10 +2375,7 @@ const VendorDetailsPageWrapper = () => {
                         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
                           <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/40 dark:to-green-900/40 flex items-center justify-center shadow-inner">
-                              <IndianRupee
-                                size={24}
-                                className="text-emerald-600 dark:text-emerald-400"
-                              />
+                              <IndianRupee size={24} className="text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
                               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
@@ -2709,10 +2394,7 @@ const VendorDetailsPageWrapper = () => {
                                 {/* Icon Header */}
                                 <div className="flex items-center gap-3 p-4 border-b border-emerald-200/30 dark:border-emerald-700/30">
                                   <div className="p-2 bg-white dark:bg-slate-700/50 rounded-lg shadow-sm border border-emerald-200 dark:border-emerald-600">
-                                    <BadgeIndianRupee
-                                      size={18}
-                                      className="text-emerald-600 dark:text-emerald-400"
-                                    />
+                                    <BadgeIndianRupee size={18} className="text-emerald-600 dark:text-emerald-400" />
                                   </div>
                                   <div className="flex-1">
                                     <span className="font-semibold text-sm text-slate-600 dark:text-slate-400 block">
@@ -2738,19 +2420,14 @@ const VendorDetailsPageWrapper = () => {
                                 {/* Icon Header */}
                                 <div className="flex items-center gap-3 p-4 border-b border-blue-200/30 dark:border-blue-700/30">
                                   <div className="p-2 bg-white dark:bg-slate-700/50 rounded-lg shadow-sm border border-blue-200 dark:border-blue-600">
-                                    <Calendar
-                                      size={18}
-                                      className="text-blue-600 dark:text-blue-400"
-                                    />
+                                    <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
                                   </div>
                                   <div className="flex-1">
                                     <span className="font-semibold text-sm text-slate-600 dark:text-slate-400 block">
                                       Per {vendor.priceUnit} Rate
                                     </span>
                                     <span className="font-medium text-xs text-slate-500 dark:text-slate-500">
-                                      {vendor.perDayPrice.max
-                                        ? "Price range"
-                                        : "Starting from"}
+                                      {vendor.perDayPrice.max ? "Price range" : "Starting from"}
                                     </span>
                                   </div>
                                 </div>
@@ -2759,27 +2436,16 @@ const VendorDetailsPageWrapper = () => {
                                   {vendor.perDayPrice.max ? (
                                     <div className="flex items-center justify-center gap-2">
                                       <span className="font-black text-xl text-blue-600 dark:text-blue-400">
-                                        ₹
-                                        {vendor.perDayPrice.min.toLocaleString(
-                                          "en-IN",
-                                        )}
+                                        ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
                                       </span>
-                                      <span className="font-bold text-sm text-slate-400 dark:text-slate-500">
-                                        -
-                                      </span>
+                                      <span className="font-bold text-sm text-slate-400 dark:text-slate-500">-</span>
                                       <span className="font-black text-xl text-blue-600 dark:text-blue-400">
-                                        ₹
-                                        {vendor.perDayPrice.max.toLocaleString(
-                                          "en-IN",
-                                        )}
+                                        ₹{vendor.perDayPrice.max.toLocaleString("en-IN")}
                                       </span>
                                     </div>
                                   ) : (
                                     <span className="font-black text-2xl text-blue-600 dark:text-blue-400">
-                                      ₹
-                                      {vendor.perDayPrice.min.toLocaleString(
-                                        "en-IN",
-                                      )}
+                                      ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
                                     </span>
                                   )}
                                 </div>
@@ -2966,9 +2632,7 @@ const VendorDetailsPageWrapper = () => {
                                 vendor.certifications?.length > 0 && {
                                   icon: Shield,
                                   label: "QUALITY",
-                                  value:
-                                    vendor.certifications.join(", ") ||
-                                    "Certified",
+                                  value: vendor.certifications.join(", ") || "Certified",
                                   color: "rose",
                                   fullWidth: true,
                                   hasCheck: true,
@@ -3004,9 +2668,7 @@ const VendorDetailsPageWrapper = () => {
                                 vendor.equipment && {
                                   icon: Award,
                                   label: "EQUIPMENT",
-                                  value:
-                                    vendor.equipmentType ||
-                                    "Professional Equipment",
+                                  value: vendor.equipmentType || "Professional Equipment",
                                   color: "rose",
                                   fullWidth: true,
                                   hasCheck: true,
@@ -3024,57 +2686,43 @@ const VendorDetailsPageWrapper = () => {
                         const colorConfig = {
                           amber: {
                             bgColor: "from-amber-50 to-orange-50",
-                            darkBgColor:
-                              "dark:from-amber-900/20 dark:to-orange-900/10",
-                            borderColor:
-                              "border-amber-200/60 dark:border-amber-700/60",
+                            darkBgColor: "dark:from-amber-900/20 dark:to-orange-900/10",
+                            borderColor: "border-amber-200/60 dark:border-amber-700/60",
                             labelColor: "text-amber-700 dark:text-amber-300",
                             valueColor: "text-amber-600 dark:text-amber-400",
                           },
                           blue: {
                             bgColor: "from-blue-50 to-indigo-50",
-                            darkBgColor:
-                              "dark:from-blue-900/20 dark:to-indigo-900/10",
-                            borderColor:
-                              "border-blue-200/60 dark:border-blue-700/60",
+                            darkBgColor: "dark:from-blue-900/20 dark:to-indigo-900/10",
+                            borderColor: "border-blue-200/60 dark:border-blue-700/60",
                             labelColor: "text-blue-700 dark:text-blue-300",
                             valueColor: "text-blue-600 dark:text-blue-400",
                           },
                           emerald: {
                             bgColor: "from-emerald-50 to-teal-50",
-                            darkBgColor:
-                              "dark:from-emerald-900/20 dark:to-teal-900/10",
-                            borderColor:
-                              "border-emerald-200/60 dark:border-emerald-700/60",
-                            labelColor:
-                              "text-emerald-700 dark:text-emerald-300",
-                            valueColor:
-                              "text-emerald-600 dark:text-emerald-400",
+                            darkBgColor: "dark:from-emerald-900/20 dark:to-teal-900/10",
+                            borderColor: "border-emerald-200/60 dark:border-emerald-700/60",
+                            labelColor: "text-emerald-700 dark:text-emerald-300",
+                            valueColor: "text-emerald-600 dark:text-emerald-400",
                           },
                           rose: {
                             bgColor: "from-rose-50 to-pink-50",
-                            darkBgColor:
-                              "dark:from-rose-900/20 dark:to-pink-900/10",
-                            borderColor:
-                              "border-rose-200/60 dark:border-rose-700/60",
+                            darkBgColor: "dark:from-rose-900/20 dark:to-pink-900/10",
+                            borderColor: "border-rose-200/60 dark:border-rose-700/60",
                             labelColor: "text-rose-700 dark:text-rose-300",
                             valueColor: "text-rose-600 dark:text-rose-400",
                           },
                           purple: {
                             bgColor: "from-purple-50 to-violet-50",
-                            darkBgColor:
-                              "dark:from-purple-900/20 dark:to-violet-900/10",
-                            borderColor:
-                              "border-purple-200/60 dark:border-purple-700/60",
+                            darkBgColor: "dark:from-purple-900/20 dark:to-violet-900/10",
+                            borderColor: "border-purple-200/60 dark:border-purple-700/60",
                             labelColor: "text-purple-700 dark:text-purple-300",
                             valueColor: "text-purple-600 dark:text-purple-400",
                           },
                           green: {
                             bgColor: "from-green-50 to-emerald-50",
-                            darkBgColor:
-                              "dark:from-green-900/20 dark:to-emerald-900/10",
-                            borderColor:
-                              "border-green-200/60 dark:border-green-700/60",
+                            darkBgColor: "dark:from-green-900/20 dark:to-emerald-900/10",
+                            borderColor: "border-green-200/60 dark:border-green-700/60",
                             labelColor: "text-green-700 dark:text-green-300",
                             valueColor: "text-green-600 dark:text-green-400",
                           },
@@ -3084,31 +2732,21 @@ const VendorDetailsPageWrapper = () => {
                           <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800/80">
                             <div className="flex items-center gap-4 mb-6">
                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shadow-inner">
-                                <Sparkles
-                                  size={24}
-                                  className="text-amber-600 dark:text-amber-400"
-                                />
+                                <Sparkles size={24} className="text-amber-600 dark:text-amber-400" />
                               </div>
                               <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                                  {CATEGORY_CONFIG[vendor.category]?.label ||
-                                    "Service"}{" "}
-                                  Highlights
+                                  {CATEGORY_CONFIG[vendor.category]?.label || "Service"} Highlights
                                 </h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                                  Premium{" "}
-                                  {CATEGORY_CONFIG[
-                                    vendor.category
-                                  ]?.label?.toLowerCase() || "service"}{" "}
-                                  features & specifications
+                                  Premium {CATEGORY_CONFIG[vendor.category]?.label?.toLowerCase() || "service"} features
+                                  & specifications
                                 </p>
                               </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {highlights.map((highlight, index) => {
-                                const config =
-                                  colorConfig[highlight.color] ||
-                                  colorConfig.amber;
+                                const config = colorConfig[highlight.color] || colorConfig.amber;
                                 const Icon = highlight.icon;
 
                                 if (highlight.fullWidth) {
@@ -3120,30 +2758,20 @@ const VendorDetailsPageWrapper = () => {
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                           <div className="p-2 bg-white dark:bg-slate-700/50 rounded-lg shadow-sm">
-                                            <Icon
-                                              size={18}
-                                              className={config.valueColor}
-                                            />
+                                            <Icon size={18} className={config.valueColor} />
                                           </div>
                                           <div>
-                                            <span
-                                              className={`font-bold ${config.labelColor} text-xs block`}
-                                            >
+                                            <span className={`font-bold ${config.labelColor} text-xs block`}>
                                               {highlight.label}
                                             </span>
-                                            <div
-                                              className={`text-sm font-semibold ${config.valueColor} mt-0.5`}
-                                            >
+                                            <div className={`text-sm font-semibold ${config.valueColor} mt-0.5`}>
                                               {highlight.value}
                                             </div>
                                           </div>
                                         </div>
                                         {highlight.hasCheck && (
                                           <div className="p-2 bg-white/50 dark:bg-slate-700/50 rounded-full">
-                                            <Check
-                                              size={20}
-                                              className={config.valueColor}
-                                            />
+                                            <Check size={20} className={config.valueColor} />
                                           </div>
                                         )}
                                       </div>
@@ -3158,22 +2786,13 @@ const VendorDetailsPageWrapper = () => {
                                   >
                                     <div className="flex items-center gap-1 mb-1">
                                       <div className="p-2 bg-white dark:bg-slate-700/50 rounded-lg shadow-sm">
-                                        <Icon
-                                          size={18}
-                                          className={config.valueColor}
-                                        />
+                                        <Icon size={18} className={config.valueColor} />
                                       </div>
-                                      <span
-                                        className={`font-bold ${config.labelColor} text-xs`}
-                                      >
+                                      <span className={`font-bold ${config.labelColor} text-xs`}>
                                         {highlight.label}
                                       </span>
                                     </div>
-                                    <div
-                                      className={`text-lg font-black ${config.valueColor}`}
-                                    >
-                                      {highlight.value}
-                                    </div>
+                                    <div className={`text-lg font-black ${config.valueColor}`}>{highlight.value}</div>
                                   </div>
                                 );
                               })}
@@ -3191,18 +2810,14 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shadow-inner">
-                                <Calendar
-                                  size={24}
-                                  className="text-emerald-600 dark:text-emerald-400"
-                                />
+                                <Calendar size={24} className="text-emerald-600 dark:text-emerald-400" />
                               </div>
                               <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                                   Event Types We Serve
                                 </h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                                  {vendor.eventTypes?.length} specialized
-                                  categories
+                                  {vendor.eventTypes?.length} specialized categories
                                 </p>
                               </div>
                             </div>
@@ -3250,10 +2865,7 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center shadow-inner">
-                                <Clock
-                                  size={24}
-                                  className="text-blue-600 dark:text-blue-400"
-                                />
+                                <Clock size={24} className="text-blue-600 dark:text-blue-400" />
                               </div>
                               <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
@@ -3267,9 +2879,7 @@ const VendorDetailsPageWrapper = () => {
                             <ChevronUp
                               size={20}
                               className={`text-slate-400 transition-transform duration-300 ${
-                                expandedSections.operatingHours
-                                  ? ""
-                                  : "rotate-180"
+                                expandedSections.operatingHours ? "" : "rotate-180"
                               }`}
                             />
                           </button>
@@ -3285,21 +2895,19 @@ const VendorDetailsPageWrapper = () => {
                                 <div className="px-6 pb-6">
                                   <div className="space-y-3">
                                     {vendor?.operatingHours?.length > 0 ? (
-                                      vendor.operatingHours.map(
-                                        (schedule, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex justify-between items-center py-4 px-5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
-                                          >
-                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                              {schedule.day}
-                                            </span>
-                                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
-                                              {schedule.hours}
-                                            </span>
-                                          </div>
-                                        ),
-                                      )
+                                      vendor.operatingHours.map((schedule, i) => (
+                                        <div
+                                          key={i}
+                                          className="flex justify-between items-center py-4 px-5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
+                                        >
+                                          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            {schedule.day}
+                                          </span>
+                                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-700/50 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
+                                            {schedule.hours}
+                                          </span>
+                                        </div>
+                                      ))
                                     ) : (
                                       <div className="py-4 px-5 text-sm text-slate-500 dark:text-slate-400 italic">
                                         Operating hours not available
@@ -3318,10 +2926,7 @@ const VendorDetailsPageWrapper = () => {
                         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
                           <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 flex items-center justify-center shadow-inner">
-                              <Check
-                                size={24}
-                                className="text-violet-600 dark:text-violet-400"
-                              />
+                              <Check size={24} className="text-violet-600 dark:text-violet-400" />
                             </div>
                             <div>
                               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
@@ -3341,10 +2946,7 @@ const VendorDetailsPageWrapper = () => {
                                   className="flex items-center gap-3 p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200"
                                 >
                                   <div className="p-2 bg-white dark:bg-slate-700/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
-                                    <Icon
-                                      size={18}
-                                      className="text-slate-600 dark:text-slate-400"
-                                    />
+                                    <Icon size={18} className="text-slate-600 dark:text-slate-400" />
                                   </div>
                                   <span className="font-medium text-sm text-slate-700 dark:text-slate-300 leading-tight">
                                     {item}
@@ -3365,18 +2967,14 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shadow-inner">
-                                <BadgeCheck
-                                  size={24}
-                                  className="text-amber-600 dark:text-amber-400"
-                                />
+                                <BadgeCheck size={24} className="text-amber-600 dark:text-amber-400" />
                               </div>
                               <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                                   Why Choose Us
                                 </h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                                  {vendor.highlightPoints?.length} unique
-                                  advantages
+                                  {vendor.highlightPoints?.length} unique advantages
                                 </p>
                               </div>
                             </div>
@@ -3404,10 +3002,7 @@ const VendorDetailsPageWrapper = () => {
                                         className="flex items-start gap-4 p-5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border-l-4 border-amber-400 dark:border-amber-500/50 shadow-sm"
                                       >
                                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shrink-0 shadow-sm">
-                                          <Sparkles
-                                            size={16}
-                                            className="text-amber-600 dark:text-amber-400"
-                                          />
+                                          <Sparkles size={16} className="text-amber-600 dark:text-amber-400" />
                                         </div>
                                         <span className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed pt-1">
                                           {point}
@@ -3431,10 +3026,7 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/40 dark:to-pink-900/40 flex items-center justify-center shadow-inner">
-                                <Percent
-                                  size={24}
-                                  className="text-rose-600 dark:text-rose-400"
-                                />
+                                <Percent size={24} className="text-rose-600 dark:text-rose-400" />
                               </div>
                               <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
@@ -3448,9 +3040,7 @@ const VendorDetailsPageWrapper = () => {
                             <ChevronUp
                               size={20}
                               className={`text-slate-400 transition-transform duration-300 ${
-                                expandedSections.specialOffers
-                                  ? ""
-                                  : "rotate-180"
+                                expandedSections.specialOffers ? "" : "rotate-180"
                               }`}
                             />
                           </button>
@@ -3529,9 +3119,7 @@ const VendorDetailsPageWrapper = () => {
                               <div>
                                 <AnimatePresence mode="wait">
                                   <motion.div
-                                    key={
-                                      showFullDescription ? "full" : "collapsed"
-                                    }
+                                    key={showFullDescription ? "full" : "collapsed"}
                                     initial={{
                                       opacity: 0,
                                       scale: 0.98,
@@ -3561,9 +3149,7 @@ const VendorDetailsPageWrapper = () => {
                                   >
                                     <div
                                       className={`text-slate-600 dark:text-slate-300 leading-relaxed transition-all duration-500 ${
-                                        !showFullDescription
-                                          ? "max-h-20 overflow-hidden"
-                                          : ""
+                                        !showFullDescription ? "max-h-20 overflow-hidden" : ""
                                       }`}
                                     >
                                       <motion.p
@@ -3585,9 +3171,7 @@ const VendorDetailsPageWrapper = () => {
                                 </AnimatePresence>
 
                                 {/* Read More/Less button for main description */}
-                                {!(
-                                  vendor.fullStory || vendor.detailedDescription
-                                ) && (
+                                {!(vendor.fullStory || vendor.detailedDescription) && (
                                   <motion.div
                                     className="mt-4 overflow-hidden"
                                     initial={{ height: 0, opacity: 0 }}
@@ -3595,11 +3179,7 @@ const VendorDetailsPageWrapper = () => {
                                     transition={{ delay: 0.2, duration: 0.3 }}
                                   >
                                     <motion.button
-                                      onClick={() =>
-                                        setShowFullDescription(
-                                          !showFullDescription,
-                                        )
-                                      }
+                                      onClick={() => setShowFullDescription(!showFullDescription)}
                                       className="group relative flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] hover:bg-[position:100%_0] text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
                                       whileHover={{ scale: 1.05, y: -2 }}
                                       whileTap={{ scale: 0.95 }}
@@ -3614,9 +3194,7 @@ const VendorDetailsPageWrapper = () => {
                                         }}
                                         className="relative z-10"
                                       >
-                                        {showFullDescription
-                                          ? "Show Less"
-                                          : "Read More"}
+                                        {showFullDescription ? "Show Less" : "Read More"}
                                       </motion.span>
                                       <motion.div
                                         animate={{
@@ -3628,10 +3206,7 @@ const VendorDetailsPageWrapper = () => {
                                         }}
                                         className="relative z-10"
                                       >
-                                        <ChevronDown
-                                          size={16}
-                                          className="text-white"
-                                        />
+                                        <ChevronDown size={16} className="text-white" />
                                       </motion.div>
                                     </motion.button>
                                   </motion.div>
@@ -3640,67 +3215,62 @@ const VendorDetailsPageWrapper = () => {
 
                               {/* Collapsible Full Story Section */}
                               <AnimatePresence>
-                                {showFullDescription &&
-                                  (vendor.fullStory ||
-                                    vendor.detailedDescription) && (
+                                {showFullDescription && (vendor.fullStory || vendor.detailedDescription) && (
+                                  <motion.div
+                                    initial={{
+                                      height: 0,
+                                      opacity: 0,
+                                      scale: 0.95,
+                                    }}
+                                    animate={{
+                                      height: "auto",
+                                      opacity: 1,
+                                      scale: 1,
+                                    }}
+                                    exit={{
+                                      height: 0,
+                                      opacity: 0,
+                                      scale: 0.95,
+                                    }}
+                                    transition={{
+                                      duration: 0.5,
+                                      ease: [0.23, 1, 0.32, 1],
+                                      height: { duration: 0.4 },
+                                      opacity: { duration: 0.3 },
+                                      scale: { duration: 0.4 },
+                                    }}
+                                    className="overflow-hidden origin-top"
+                                  >
                                     <motion.div
-                                      initial={{
-                                        height: 0,
-                                        opacity: 0,
-                                        scale: 0.95,
-                                      }}
-                                      animate={{
-                                        height: "auto",
-                                        opacity: 1,
-                                        scale: 1,
-                                      }}
-                                      exit={{
-                                        height: 0,
-                                        opacity: 0,
-                                        scale: 0.95,
-                                      }}
+                                      className="pt-6 border-t border-slate-200 dark:border-slate-700 bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-transparent dark:from-indigo-950/20 dark:via-purple-950/10 rounded-2xl p-6"
+                                      initial={{ opacity: 0, y: 30 }}
+                                      animate={{ opacity: 1, y: 0 }}
                                       transition={{
+                                        delay: 0.1,
                                         duration: 0.5,
-                                        ease: [0.23, 1, 0.32, 1],
-                                        height: { duration: 0.4 },
-                                        opacity: { duration: 0.3 },
-                                        scale: { duration: 0.4 },
                                       }}
-                                      className="overflow-hidden origin-top"
                                     >
-                                      <motion.div
-                                        className="pt-6 border-t border-slate-200 dark:border-slate-700 bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-transparent dark:from-indigo-950/20 dark:via-purple-950/10 rounded-2xl p-6"
-                                        initial={{ opacity: 0, y: 30 }}
-                                        animate={{ opacity: 1, y: 0 }}
+                                      <motion.p
+                                        className="text-slate-600 dark:text-slate-300 leading-relaxed text-lg"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
                                         transition={{
-                                          delay: 0.1,
-                                          duration: 0.5,
+                                          delay: 0.2,
+                                          duration: 0.4,
                                         }}
                                       >
-                                        <motion.p
-                                          className="text-slate-600 dark:text-slate-300 leading-relaxed text-lg"
-                                          initial={{ opacity: 0, x: -20 }}
-                                          animate={{ opacity: 1, x: 0 }}
-                                          transition={{
-                                            delay: 0.2,
-                                            duration: 0.4,
-                                          }}
-                                        >
-                                          {vendor.fullStory ||
-                                            vendor.detailedDescription}
-                                        </motion.p>
-                                      </motion.div>
+                                        {vendor.fullStory || vendor.detailedDescription}
+                                      </motion.p>
                                     </motion.div>
-                                  )}
+                                  </motion.div>
+                                )}
                               </AnimatePresence>
 
                               {/* Additional vendor details if available */}
                               {vendor.experience && (
                                 <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                                   <Clock size={16} />
-                                  <span>
-                                    {vendor.experience} years of experience
-                                  </span>
+                                  <span>{vendor.experience} years of experience</span>
                                 </div>
                               )}
 
@@ -3711,8 +3281,7 @@ const VendorDetailsPageWrapper = () => {
                                 </div>
                               )}
 
-                              {(vendor.fullStory ||
-                                vendor.detailedDescription) && (
+                              {(vendor.fullStory || vendor.detailedDescription) && (
                                 <motion.div
                                   className="mt-6 overflow-hidden"
                                   initial={{ height: 0, opacity: 0 }}
@@ -3720,9 +3289,7 @@ const VendorDetailsPageWrapper = () => {
                                   transition={{ delay: 0.3, duration: 0.4 }}
                                 >
                                   <motion.button
-                                    onClick={() =>
-                                      setShowFullStory(!showFullStory)
-                                    }
+                                    onClick={() => setShowFullStory(!showFullStory)}
                                     className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_100%] hover:bg-[position:100%_0] text-white font-semibold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-400 overflow-hidden"
                                     whileHover={{ scale: 1.03, y: -3 }}
                                     whileTap={{ scale: 0.97 }}
@@ -3735,9 +3302,7 @@ const VendorDetailsPageWrapper = () => {
                                       animate={{ opacity: 1, x: 0 }}
                                       transition={{ delay: 0.4, duration: 0.4 }}
                                     >
-                                      {showFullDescription
-                                        ? "Show Less"
-                                        : "Read Full Story"}
+                                      {showFullDescription ? "Show Less" : "Read Full Story"}
                                     </motion.span>
                                     <motion.div
                                       animate={{
@@ -3749,10 +3314,7 @@ const VendorDetailsPageWrapper = () => {
                                       }}
                                       className="relative z-10"
                                     >
-                                      <ChevronDown
-                                        size={18}
-                                        className="text-white"
-                                      />
+                                      <ChevronDown size={18} className="text-white" />
                                     </motion.div>
                                   </motion.button>
                                 </motion.div>
@@ -3795,79 +3357,47 @@ const VendorDetailsPageWrapper = () => {
                                   rel="noopener noreferrer"
                                   className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-full border border-blue-200/60 dark:border-blue-800/40 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-950/40 dark:hover:to-blue-900/30 transition-all duration-200 group"
                                 >
-                                  <Globe
-                                    size={16}
-                                    className="text-blue-600 dark:text-blue-400"
-                                  />
-                                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                    Website
-                                  </p>
+                                  <Globe size={16} className="text-blue-600 dark:text-blue-400" />
+                                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Website</p>
                                 </a>
                               )}
 
                               {/* Instagram Link */}
-                              {(vendor.socialLinks?.instagram ||
-                                vendor.instagram) && (
+                              {(vendor.socialLinks?.instagram || vendor.instagram) && (
                                 <a
-                                  href={
-                                    vendor.socialLinks?.instagram ||
-                                    vendor.instagram
-                                  }
+                                  href={vendor.socialLinks?.instagram || vendor.instagram}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-pink-50 to-purple-100 dark:from-pink-950/30 dark:to-purple-900/20 rounded-full border border-pink-200/60 dark:border-pink-800/40 hover:from-pink-100 hover:to-purple-200 dark:hover:from-pink-950/40 dark:hover:to-purple-900/30 transition-all duration-200 group"
                                 >
-                                  <Instagram
-                                    size={16}
-                                    className="text-pink-600 dark:text-pink-400"
-                                  />
-                                  <p className="text-sm font-medium text-pink-600 dark:text-pink-400">
-                                    Instagram
-                                  </p>
+                                  <Instagram size={16} className="text-pink-600 dark:text-pink-400" />
+                                  <p className="text-sm font-medium text-pink-600 dark:text-pink-400">Instagram</p>
                                 </a>
                               )}
 
                               {/* Facebook Link */}
-                              {(vendor.socialLinks?.facebook ||
-                                vendor.facebook) && (
+                              {(vendor.socialLinks?.facebook || vendor.facebook) && (
                                 <a
-                                  href={
-                                    vendor.socialLinks?.facebook ||
-                                    vendor.facebook
-                                  }
+                                  href={vendor.socialLinks?.facebook || vendor.facebook}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950/30 dark:to-indigo-900/20 rounded-full border border-blue-200/60 dark:border-blue-800/40 hover:from-blue-100 hover:to-indigo-200 dark:hover:from-blue-950/40 dark:hover:to-indigo-900/30 transition-all duration-200 group"
                                 >
-                                  <Facebook
-                                    size={16}
-                                    className="text-blue-600 dark:text-blue-400"
-                                  />
-                                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                    Facebook
-                                  </p>
+                                  <Facebook size={16} className="text-blue-600 dark:text-blue-400" />
+                                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Facebook</p>
                                 </a>
                               )}
 
                               {/* YouTube Link */}
-                              {(vendor.socialLinks?.youtube ||
-                                vendor.youtube) && (
+                              {(vendor.socialLinks?.youtube || vendor.youtube) && (
                                 <a
-                                  href={
-                                    vendor.socialLinks?.youtube ||
-                                    vendor.youtube
-                                  }
+                                  href={vendor.socialLinks?.youtube || vendor.youtube}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex flex-row items-center gap-2 px-4 py-2 bg-gradient-to-br from-red-50 to-orange-100 dark:from-red-950/30 dark:to-orange-900/20 rounded-full border border-red-200/60 dark:border-red-800/40 hover:from-red-100 hover:to-orange-200 dark:hover:from-red-950/40 dark:hover:to-orange-900/30 transition-all duration-200 group"
                                 >
-                                  <Youtube
-                                    size={16}
-                                    className="text-red-600 dark:text-red-400"
-                                  />
-                                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                                    YouTube
-                                  </p>
+                                  <Youtube size={16} className="text-red-600 dark:text-red-400" />
+                                  <p className="text-sm font-medium text-red-600 dark:text-red-400">YouTube</p>
                                 </a>
                               )}
                             </div>
@@ -3884,22 +3414,16 @@ const VendorDetailsPageWrapper = () => {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {vendor.amenities?.map((amenity, index) => {
-                            const IconComponent =
-                              AMENITY_ICONS[amenity] || Check;
+                            const IconComponent = AMENITY_ICONS[amenity] || Check;
                             return (
                               <div
                                 key={index}
                                 className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl border border-purple-100 dark:border-purple-800/50"
                               >
                                 <div className="p-2 bg-purple-100 dark:bg-purple-800/50 rounded-lg">
-                                  <IconComponent
-                                    size={20}
-                                    className="text-purple-600 dark:text-purple-400"
-                                  />
+                                  <IconComponent size={20} className="text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <span className="font-medium text-gray-900 dark:text-gray-100">
-                                  {amenity}
-                                </span>
+                                <span className="font-medium text-gray-900 dark:text-gray-100">{amenity}</span>
                               </div>
                             );
                           })}
@@ -3916,14 +3440,9 @@ const VendorDetailsPageWrapper = () => {
                               className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-100 dark:border-green-800/50"
                             >
                               <div className="p-2 bg-green-100 dark:bg-green-800/50 rounded-lg">
-                                <Building2
-                                  size={20}
-                                  className="text-green-600 dark:text-green-400"
-                                />
+                                <Building2 size={20} className="text-green-600 dark:text-green-400" />
                               </div>
-                              <span className="font-medium text-gray-900 dark:text-gray-100">
-                                {facility}
-                              </span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">{facility}</span>
                             </div>
                           ))}
                         </div>
@@ -3933,9 +3452,7 @@ const VendorDetailsPageWrapper = () => {
                   {activeTab === "gallery" && (
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                          Photo Gallery
-                        </h3>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Photo Gallery</h3>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setViewMode("grid")}
@@ -3959,13 +3476,7 @@ const VendorDetailsPageWrapper = () => {
                           </button>
                         </div>
                       </div>
-                      <div
-                        className={
-                          viewMode === "grid"
-                            ? "grid grid-cols-2 md:grid-cols-3 gap-6"
-                            : "space-y-4"
-                        }
-                      >
+                      <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 gap-6" : "space-y-4"}>
                         {vendor.images?.map((image, idx) => (
                           <motion.div
                             key={idx}
@@ -3973,9 +3484,7 @@ const VendorDetailsPageWrapper = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: idx * 0.1 }}
                             className={`relative group cursor-pointer ${
-                              viewMode === "list"
-                                ? "flex gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl"
-                                : ""
+                              viewMode === "list" ? "flex gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl" : ""
                             }`}
                             onClick={() => openImageModal(idx)}
                           >
@@ -3984,9 +3493,7 @@ const VendorDetailsPageWrapper = () => {
                                 src={image}
                                 alt={`${vendor.name} ${idx + 1}`}
                                 className={`object-cover transition-all duration-500 group-hover:scale-110 ${
-                                  viewMode === "list"
-                                    ? "w-24 h-24"
-                                    : "w-full h-48"
+                                  viewMode === "list" ? "w-24 h-24" : "w-full h-48"
                                 }`}
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
@@ -3998,9 +3505,7 @@ const VendorDetailsPageWrapper = () => {
                             </div>
                             {viewMode === "list" && (
                               <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                  Photo {idx + 1}
-                                </h4>
+                                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Photo {idx + 1}</h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                   High resolution venue photograph
                                 </p>
@@ -4035,13 +3540,10 @@ const VendorDetailsPageWrapper = () => {
                               {vendor.address?.street}
                             </p>
                             <p className="text-gray-600 dark:text-gray-400 font-medium">
-                              {vendor.address?.city}, {vendor.address?.state}{" "}
-                              {vendor.address?.postalCode}
+                              {vendor.address?.city}, {vendor.address?.state} {vendor.address?.postalCode}
                             </p>
                             {vendor.address?.country && (
-                              <p className="text-gray-500 dark:text-gray-500 mt-1">
-                                {vendor.address.country}
-                              </p>
+                              <p className="text-gray-500 dark:text-gray-500 mt-1">{vendor.address.country}</p>
                             )}
                           </div>
                         </div>
@@ -4070,10 +3572,7 @@ const VendorDetailsPageWrapper = () => {
                           <div className="p-6 border-b border-slate-200/60 dark:border-slate-800/60">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-xl flex items-center justify-center shadow-sm">
-                                <Compass
-                                  size={20}
-                                  className="text-blue-600 dark:text-blue-400"
-                                />
+                                <Compass size={20} className="text-blue-600 dark:text-blue-400" />
                               </div>
                               <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                                 Nearby Landmarks
@@ -4088,10 +3587,7 @@ const VendorDetailsPageWrapper = () => {
                               >
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/40 flex items-center justify-center shadow-sm">
-                                    <MapPin
-                                      size={15}
-                                      className="text-indigo-600 dark:text-indigo-400"
-                                    />
+                                    <MapPin size={15} className="text-indigo-600 dark:text-indigo-400" />
                                   </div>
                                   <span className="text-gray-700 dark:text-gray-300 font-semibold">
                                     {landmark.name}
@@ -4116,14 +3612,9 @@ const VendorDetailsPageWrapper = () => {
                           <div className="p-6 border-b border-slate-200/60 dark:border-slate-800/60">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 rounded-xl flex items-center justify-center shadow-sm">
-                                <Route
-                                  size={20}
-                                  className="text-emerald-600 dark:text-emerald-400"
-                                />
+                                <Route size={20} className="text-emerald-600 dark:text-emerald-400" />
                               </div>
-                              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                                How to Reach
-                              </h4>
+                              <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">How to Reach</h4>
                             </div>
                           </div>
                           <div className="p-6 space-y-4">
@@ -4135,20 +3626,12 @@ const VendorDetailsPageWrapper = () => {
                                 <div className="flex items-center gap-3.5 mb-3">
                                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shadow-sm">
                                     {dir.type?.includes("Metro") ? (
-                                      <MapIcon
-                                        size={18}
-                                        className="text-emerald-600 dark:text-emerald-400"
-                                      />
+                                      <MapIcon size={18} className="text-emerald-600 dark:text-emerald-400" />
                                     ) : (
-                                      <Car
-                                        size={18}
-                                        className="text-emerald-600 dark:text-emerald-400"
-                                      />
+                                      <Car size={18} className="text-emerald-600 dark:text-emerald-400" />
                                     )}
                                   </div>
-                                  <p className="text-gray-800 dark:text-gray-100 font-semibold">
-                                    {dir.type}
-                                  </p>
+                                  <p className="text-gray-800 dark:text-gray-100 font-semibold">{dir.type}</p>
                                 </div>
                                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed ml-13">
                                   {dir.description}
@@ -4185,9 +3668,7 @@ const VendorDetailsPageWrapper = () => {
                   )}
 
                   {/* REVIEWS TAB */}
-                  {activeTab === "reviews" && (
-                    <ReviewSection vendorId={id} vendorName={vendor.name} />
-                  )}
+                  {activeTab === "reviews" && <ReviewSection vendorId={id} vendorName={vendor.name} />}
 
                   {/* === CATEGORY-SPECIFIC TAB === */}
 
@@ -4195,14 +3676,11 @@ const VendorDetailsPageWrapper = () => {
                     <div className="space-y-8">
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
-                          {CATEGORY_CONFIG[vendor?.category]?.label ||
-                            "Details"}
+                          {CATEGORY_CONFIG[vendor?.category]?.label || "Details"}
                         </h3>
                         <CategorySpecificSection
                           vendor={vendor}
-                          formatPrice={(price) =>
-                            `₹${price?.toLocaleString("en-IN") || "0"}`
-                          }
+                          formatPrice={(price) => `₹${price?.toLocaleString("en-IN") || "0"}`}
                         />
                       </div>
                     </div>
@@ -4221,8 +3699,7 @@ const VendorDetailsPageWrapper = () => {
                                 Premium Facilities
                               </h3>
                               <p className="text-sm text-purple-600 dark:text-purple-400 font-medium mt-1">
-                                {vendor.facilities.length} exclusive features
-                                available
+                                {vendor.facilities.length} exclusive features available
                               </p>
                             </div>
                           </div>
@@ -4353,22 +3830,19 @@ const VendorDetailsPageWrapper = () => {
                       )}
 
                       {/* Empty State */}
-                      {!vendor.facilities?.length &&
-                        !vendor.awards?.length &&
-                        !vendor.amenities?.length && (
-                          <div className="text-center py-16">
-                            <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                              <Info className="w-10 h-10 text-gray-400 dark:text-gray-500" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              No Services Information Available
-                            </h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">
-                              Details about facilities, awards, and amenities
-                              will appear here.
-                            </p>
+                      {!vendor.facilities?.length && !vendor.awards?.length && !vendor.amenities?.length && (
+                        <div className="text-center py-16">
+                          <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                            <Info className="w-10 h-10 text-gray-400 dark:text-gray-500" />
                           </div>
-                        )}
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            No Services Information Available
+                          </h3>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">
+                            Details about facilities, awards, and amenities will appear here.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -4389,9 +3863,7 @@ const VendorDetailsPageWrapper = () => {
                             >
                               <PackageCard
                                 pkg={pkg}
-                                isSelected={
-                                  selectedPackage === (pkg.id || pkg._id)
-                                }
+                                isSelected={selectedPackage === (pkg.id || pkg._id)}
                                 onSelect={setSelectedPackage}
                               />
                             </motion.div>
@@ -4401,18 +3873,15 @@ const VendorDetailsPageWrapper = () => {
                         <div className="text-center py-16">
                           <div className="flex justify-center mb-6">
                             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                              <Gift
-                                size={36}
-                                className="text-gray-400 dark:text-gray-500"
-                              />
+                              <Gift size={36} className="text-gray-400 dark:text-gray-500" />
                             </div>
                           </div>
                           <p className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-3">
                             No packages listed yet
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-md mx-auto">
-                            Contact the vendor directly for customized pricing
-                            and package options tailored to your needs
+                            Contact the vendor directly for customized pricing and package options tailored to your
+                            needs
                           </p>
                           <div className="flex justify-center gap-4 mt-8">
                             <button className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
@@ -4436,10 +3905,7 @@ const VendorDetailsPageWrapper = () => {
                       >
                         <div className="flex items-center gap-3.5 mb-6">
                           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center shadow-inner">
-                            <CreditCard
-                              size={20}
-                              className="text-green-600 dark:text-green-400"
-                            />
+                            <CreditCard size={20} className="text-green-600 dark:text-green-400" />
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -4490,17 +3956,13 @@ const VendorDetailsPageWrapper = () => {
 
                         <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
                           <div className="flex items-center gap-3">
-                            <CheckCircle
-                              size={20}
-                              className="text-green-600 dark:text-green-400"
-                            />
+                            <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
                             <div>
                               <p className="text-sm font-semibold text-green-700 dark:text-green-400">
                                 Secure & Protected Payments
                               </p>
                               <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
-                                All transactions are encrypted and secure. Your
-                                payment information is always protected.
+                                All transactions are encrypted and secure. Your payment information is always protected.
                               </p>
                             </div>
                           </div>
@@ -4522,10 +3984,7 @@ const VendorDetailsPageWrapper = () => {
                         >
                           <div className="flex items-center gap-3.5 mb-5">
                             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center shadow-inner">
-                              <Sparkles
-                                size={20}
-                                className="text-amber-600 dark:text-amber-400"
-                              />
+                              <Sparkles size={20} className="text-amber-600 dark:text-amber-400" />
                             </div>
                             <div>
                               <h3 className="text-[15px] font-bold text-gray-800 dark:text-gray-100 tracking-tight">
@@ -4551,15 +4010,10 @@ const VendorDetailsPageWrapper = () => {
                                 thumbsup: ThumbsUp,
                                 trendingup: TrendingUp,
                               };
-                              const key = highlight?.icon
-                                ?.toLowerCase()
-                                ?.replace(/\s+/g, "")
-                                .replace(/_/g, "-");
+                              const key = highlight?.icon?.toLowerCase()?.replace(/\s+/g, "").replace(/_/g, "-");
                               const IconComponent = ICON_MAP[key] || Star;
 
-                              const colorClass =
-                                highlight.color ||
-                                "text-gray-600 dark:text-gray-400";
+                              const colorClass = highlight.color || "text-gray-600 dark:text-gray-400";
 
                               return (
                                 <motion.div
@@ -4572,24 +4026,18 @@ const VendorDetailsPageWrapper = () => {
                                 >
                                   <div className="flex items-center gap-3 flex-1 min-w-0">
                                     <div className="p-2 bg-white dark:bg-gray-700/50 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600">
-                                      <IconComponent
-                                        size={18}
-                                        className={colorClass}
-                                      />
+                                      <IconComponent size={18} className={colorClass} />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <span className="font-semibold text-[12px] text-gray-700 dark:text-gray-300 block truncate">
                                         {highlight.label ||
-                                          (typeof highlight === "string"
-                                            ? highlight
-                                            : highlight.value || "Highlight")}
+                                          (typeof highlight === "string" ? highlight : highlight.value || "Highlight")}
                                       </span>
-                                      {highlight.value &&
-                                        typeof highlight === "object" && (
-                                          <span className="font-medium text-[11px] text-gray-500 dark:text-gray-400 block truncate">
-                                            {highlight.value}
-                                          </span>
-                                        )}
+                                      {highlight.value && typeof highlight === "object" && (
+                                        <span className="font-medium text-[11px] text-gray-500 dark:text-gray-400 block truncate">
+                                          {highlight.value}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 </motion.div>
@@ -4609,10 +4057,7 @@ const VendorDetailsPageWrapper = () => {
                         >
                           <div className="flex items-center gap-3.5 mb-5">
                             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center shadow-inner">
-                              <BarChart2
-                                size={20}
-                                className="text-blue-600 dark:text-blue-400"
-                              />
+                              <BarChart2 size={20} className="text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
                               <h3 className="text-[15px] font-bold text-gray-800 dark:text-gray-100 tracking-tight">
@@ -4647,15 +4092,9 @@ const VendorDetailsPageWrapper = () => {
                                       }`}
                                     >
                                       {stat.positive ? (
-                                        <TrendingUp
-                                          size={11}
-                                          className="shrink-0"
-                                        />
+                                        <TrendingUp size={11} className="shrink-0" />
                                       ) : (
-                                        <TrendingDown
-                                          size={11}
-                                          className="shrink-0"
-                                        />
+                                        <TrendingDown size={11} className="shrink-0" />
                                       )}
                                       <span>{stat.trend}</span>
                                     </div>
@@ -4663,9 +4102,7 @@ const VendorDetailsPageWrapper = () => {
                                 </div>
                                 <div className="flex items-baseline gap-2">
                                   <span className="font-black text-[24px] text-gray-800 dark:text-gray-100">
-                                    {typeof stat === "string"
-                                      ? stat
-                                      : stat.value || "N/A"}
+                                    {typeof stat === "string" ? stat : stat.value || "N/A"}
                                   </span>
                                   {stat.unit && (
                                     <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
@@ -4705,10 +4142,7 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <div className="flex items-center gap-3 mb-4">
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/40 dark:to-amber-900/40 flex items-center justify-center">
-                                <Star
-                                  size={20}
-                                  className="text-yellow-600 dark:text-yellow-400"
-                                />
+                                <Star size={20} className="text-yellow-600 dark:text-yellow-400" />
                               </div>
                               <div>
                                 <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -4749,54 +4183,37 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <div className="flex items-center gap-3 mb-4">
                               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center">
-                                <Timer
-                                  size={20}
-                                  className="text-green-600 dark:text-green-400"
-                                />
+                                <Timer size={20} className="text-green-600 dark:text-green-400" />
                               </div>
                               <div>
-                                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                  Experience
-                                </h4>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  Years in business
-                                </p>
+                                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Experience</h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Years in business</p>
                               </div>
                             </div>
                             <div className="text-center">
                               <div className="text-4xl font-black text-green-600 dark:text-green-400 mb-2">
                                 {vendor.experience}+
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                Established Expertise
-                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">Established Expertise</div>
                             </div>
                           </motion.div>
                         )}
                       </div>
 
                       {/* Empty State */}
-                      {!vendor.highlights?.length &&
-                        !vendor.stats?.length &&
-                        !vendor.rating &&
-                        !vendor.experience && (
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="bg-white dark:bg-gray-900 p-12 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 text-center"
-                          >
-                            <BarChart2
-                              size={48}
-                              className="text-gray-400 mx-auto mb-4"
-                            />
-                            <p className="text-gray-600 dark:text-gray-400 font-medium">
-                              No insights available
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                              Insights will appear once vendor data is available
-                            </p>
-                          </motion.div>
-                        )}
+                      {!vendor.highlights?.length && !vendor.stats?.length && !vendor.rating && !vendor.experience && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="bg-white dark:bg-gray-900 p-12 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 text-center"
+                        >
+                          <BarChart2 size={48} className="text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600 dark:text-gray-400 font-medium">No insights available</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                            Insights will appear once vendor data is available
+                          </p>
+                        </motion.div>
+                      )}
                     </div>
                   )}
 
@@ -4817,19 +4234,13 @@ const VendorDetailsPageWrapper = () => {
                               className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-800/60"
                             >
                               <motion.button
-                                onClick={() =>
-                                  setExpandedFaq(
-                                    expandedFaq === idx ? null : idx,
-                                  )
-                                }
+                                onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
                                 className="w-full p-5 flex items-start justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors duration-200"
                                 whileTap={{ scale: 0.995 }}
                               >
                                 <div className="flex items-start gap-4 flex-1">
                                   <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center shrink-0">
-                                    <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">
-                                      Q
-                                    </span>
+                                    <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">Q</span>
                                   </div>
                                   <span className="font-semibold text-gray-800 dark:text-gray-100 leading-relaxed pt-1.5">
                                     {faq.question}
@@ -4842,10 +4253,7 @@ const VendorDetailsPageWrapper = () => {
                                   transition={{ duration: 0.2 }}
                                   className="shrink-0"
                                 >
-                                  <ChevronDown
-                                    size={20}
-                                    className="text-gray-400"
-                                  />
+                                  <ChevronDown size={20} className="text-gray-400" />
                                 </motion.div>
                               </motion.button>
                               <AnimatePresence>
@@ -4883,17 +4291,13 @@ const VendorDetailsPageWrapper = () => {
                       ) : (
                         <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
                           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
-                            <FileText
-                              size={36}
-                              className="text-slate-400 dark:text-slate-500"
-                            />
+                            <FileText size={36} className="text-slate-400 dark:text-slate-500" />
                           </div>
                           <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             No FAQs available yet
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-md mx-auto">
-                            Have questions? Feel free to contact the vendor
-                            directly for any inquiries
+                            Have questions? Feel free to contact the vendor directly for any inquiries
                           </p>
                         </div>
                       )}
@@ -4903,9 +4307,7 @@ const VendorDetailsPageWrapper = () => {
                   {/* POLICIES TAB */}
                   {activeTab === "policies" && (
                     <div className="space-y-6">
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
-                        Policies & Terms
-                      </h3>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Policies & Terms</h3>
                       {vendor.policies?.length > 0 ? (
                         <div className="space-y-6">
                           {vendor.policies.map((policy, idx) => (
@@ -4918,10 +4320,7 @@ const VendorDetailsPageWrapper = () => {
                             >
                               <div className="flex items-start gap-4 mb-5">
                                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/40 flex items-center justify-center shrink-0 shadow-sm">
-                                  <Shield
-                                    size={22}
-                                    className="text-indigo-600 dark:text-indigo-400"
-                                  />
+                                  <Shield size={22} className="text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 <div className="flex-1 pt-1">
                                   <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 tracking-tight">
@@ -4940,10 +4339,7 @@ const VendorDetailsPageWrapper = () => {
                                       className="flex items-center gap-3 p-3.5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/30 dark:to-slate-800/10 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm"
                                     >
                                       <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0 shadow-sm">
-                                        <Check
-                                          size={13}
-                                          className="text-emerald-600 dark:text-emerald-400"
-                                        />
+                                        <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
                                       </div>
                                       <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                                         {detail}
@@ -4958,17 +4354,13 @@ const VendorDetailsPageWrapper = () => {
                       ) : (
                         <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
                           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
-                            <Shield
-                              size={36}
-                              className="text-slate-400 dark:text-slate-500"
-                            />
+                            <Shield size={36} className="text-slate-400 dark:text-slate-500" />
                           </div>
                           <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             No policies listed yet
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-md mx-auto">
-                            Contact the vendor directly for detailed terms,
-                            conditions, and policies
+                            Contact the vendor directly for detailed terms, conditions, and policies
                           </p>
                         </div>
                       )}
@@ -4979,83 +4371,71 @@ const VendorDetailsPageWrapper = () => {
             </div>
 
             {/* PRICING OUTSIDE OVERVIEW */}
-            {activeTab !== "overview" &&
-              (vendor.basePrice || vendor.perDayPrice?.min) && (
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                      <IndianRupee size={20} className="text-emerald-600" />
-                    </div>
-                    <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-                      Pricing
-                    </h3>
+            {activeTab !== "overview" && (vendor.basePrice || vendor.perDayPrice?.min) && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <IndianRupee size={20} className="text-emerald-600" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {vendor.basePrice && (
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200/60 dark:border-emerald-700/60 overflow-hidden">
-                        <div className="flex items-center gap-3 p-3 border-b border-emerald-200/30">
-                          <div className="p-1.5 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm border border-emerald-200 dark:border-emerald-600">
-                            <BadgeIndianRupee
-                              size={16}
-                              className="text-emerald-600"
-                            />
-                          </div>
-                          <span className="font-semibold text-xs text-gray-600 dark:text-gray-400">
-                            Base Price
-                          </span>
-                        </div>
-                        <div className="p-3 text-center">
-                          <span className="font-black text-xl text-emerald-600">
-                            ₹{vendor.basePrice.toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {vendor.perDayPrice?.min && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200/60 dark:border-blue-700/60 overflow-hidden">
-                        <div className="flex items-center gap-3 p-3 border-b border-blue-200/30">
-                          <div className="p-1.5 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm border border-blue-200 dark:border-blue-600">
-                            <Calendar size={16} className="text-blue-600" />
-                          </div>
-                          <span className="font-semibold text-xs text-gray-600 dark:text-gray-400">
-                            Per {vendor.priceUnit || "day"}
-                          </span>
-                        </div>
-                        <div className="p-3 text-center">
-                          {vendor.perDayPrice.max ? (
-                            <span className="font-black text-lg text-blue-600">
-                              ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}{" "}
-                              - ₹
-                              {vendor.perDayPrice.max.toLocaleString("en-IN")}
-                            </span>
-                          ) : (
-                            <span className="font-black text-xl text-blue-600">
-                              ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Pricing</h3>
                 </div>
-              )}
+                <div className="grid grid-cols-2 gap-4">
+                  {vendor.basePrice && (
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200/60 dark:border-emerald-700/60 overflow-hidden">
+                      <div className="flex items-center gap-3 p-3 border-b border-emerald-200/30">
+                        <div className="p-1.5 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm border border-emerald-200 dark:border-emerald-600">
+                          <BadgeIndianRupee size={16} className="text-emerald-600" />
+                        </div>
+                        <span className="font-semibold text-xs text-gray-600 dark:text-gray-400">Base Price</span>
+                      </div>
+                      <div className="p-3 text-center">
+                        <span className="font-black text-xl text-emerald-600">
+                          ₹{vendor.basePrice.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {vendor.perDayPrice?.min && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200/60 dark:border-blue-700/60 overflow-hidden">
+                      <div className="flex items-center gap-3 p-3 border-b border-blue-200/30">
+                        <div className="p-1.5 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm border border-blue-200 dark:border-blue-600">
+                          <Calendar size={16} className="text-blue-600" />
+                        </div>
+                        <span className="font-semibold text-xs text-gray-600 dark:text-gray-400">
+                          Per {vendor.priceUnit || "day"}
+                        </span>
+                      </div>
+                      <div className="p-3 text-center">
+                        {vendor.perDayPrice.max ? (
+                          <span className="font-black text-lg text-blue-600">
+                            ₹{vendor.perDayPrice.min.toLocaleString("en-IN")} - ₹
+                            {vendor.perDayPrice.max.toLocaleString("en-IN")}
+                          </span>
+                        ) : (
+                          <span className="font-black text-xl text-blue-600">
+                            ₹{vendor.perDayPrice.min.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* SIMILAR VENDORS */}
             {similarVendors.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Similar Vendors
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      You might also like
-                    </p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Similar Vendors</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">You might also like</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {similarVendors.slice(0, 6).map((item, index) => {
                     const isItemLiked = likedVendors.has(item._id);
+                    const url = getHrefWithState(`/vendor/${item.category}/${item._id}`);
                     return (
                       <motion.div
                         key={item._id}
@@ -5064,7 +4444,7 @@ const VendorDetailsPageWrapper = () => {
                         transition={{ delay: index * 0.08 }}
                       >
                         <div className="group block bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-300 relative">
-                          <Link href={`/vendor/${item.category}/${item._id}`}>
+                          <Link href={url}>
                             <div className="relative h-40 overflow-hidden">
                               <img
                                 src={item.images?.[0] || item.defaultImage}
@@ -5074,11 +4454,7 @@ const VendorDetailsPageWrapper = () => {
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                               <div className="absolute top-2.5 right-2.5 bg-white/95 dark:bg-black/80 px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-lg backdrop-blur-sm">
-                                <Star
-                                  size={11}
-                                  className="fill-yellow-500 text-yellow-500"
-                                />{" "}
-                                {item.rating || 0}
+                                <Star size={11} className="fill-yellow-500 text-yellow-500" /> {item.rating || 0}
                               </div>
                               {item.isVerified && (
                                 <div className="absolute top-2.5 left-2.5 bg-green-500/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-white text-[9px] font-bold flex items-center gap-0.5">
@@ -5104,18 +4480,15 @@ const VendorDetailsPageWrapper = () => {
                               }
                               setLikedVendors(prev);
                               try {
-                                const res = await fetch(
-                                  "/api/user/toggle-like",
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({
-                                      vendorId: item._id,
-                                    }),
+                                const res = await fetch("/api/user/toggle-like", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
                                   },
-                                );
+                                  body: JSON.stringify({
+                                    vendorId: item._id,
+                                  }),
+                                });
                                 if (!res.ok) throw new Error("Failed");
                                 const data = await res.json();
                                 toast.success(data.message);
@@ -5135,11 +4508,7 @@ const VendorDetailsPageWrapper = () => {
                           >
                             <Heart
                               size={14}
-                              className={
-                                isItemLiked
-                                  ? "fill-rose-500 text-rose-500"
-                                  : "text-gray-400"
-                              }
+                              className={isItemLiked ? "fill-rose-500 text-rose-500" : "text-gray-400"}
                             />
                           </button>
                           <Link href={`/vendor/${item.category}/${item._id}`}>
@@ -5153,9 +4522,7 @@ const VendorDetailsPageWrapper = () => {
                               <div className="flex items-center justify-between">
                                 <p className="text-blue-600 dark:text-blue-400 font-black text-base">
                                   ₹
-                                  {item.perDayPrice?.min?.toLocaleString(
-                                    "en-IN",
-                                  ) ||
+                                  {item.perDayPrice?.min?.toLocaleString("en-IN") ||
                                     item.basePrice?.toLocaleString("en-IN") ||
                                     "N/A"}
                                 </p>
@@ -5178,12 +4545,8 @@ const VendorDetailsPageWrapper = () => {
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-3xl p-6 border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Recommended For You
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Based on your preferences
-                    </p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Recommended For You</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Based on your preferences</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -5208,30 +4571,18 @@ const VendorDetailsPageWrapper = () => {
                               loading="lazy"
                             />
                           </Link>
-                          <Link
-                            href={`/vendor/${item.category}/${item._id}`}
-                            className="flex-1 min-w-0"
-                          >
-                            <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">
-                              {item.name}
-                            </h4>
+                          <Link href={`/vendor/${item.category}/${item._id}`} className="flex-1 min-w-0">
+                            <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">{item.name}</h4>
                             <div className="flex items-center gap-1.5 mt-1">
-                              <Star
-                                size={11}
-                                className="fill-yellow-500 text-yellow-500"
-                              />
+                              <Star size={11} className="fill-yellow-500 text-yellow-500" />
                               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                                 {item.rating || 0}
                               </span>
-                              <span className="text-xs text-gray-400">
-                                ({item.reviews || 0})
-                              </span>
+                              <span className="text-xs text-gray-400">({item.reviews || 0})</span>
                             </div>
                             <div className="flex items-center gap-1 mt-1">
                               <MapPin size={11} className="text-gray-400" />
-                              <span className="text-xs text-gray-500 truncate">
-                                {item.address?.city}
-                              </span>
+                              <span className="text-xs text-gray-500 truncate">{item.address?.city}</span>
                             </div>
                             <span className="text-blue-600 font-black text-sm mt-1 block">
                               ₹
@@ -5257,18 +4608,15 @@ const VendorDetailsPageWrapper = () => {
                                 }
                                 setLikedVendors(prev);
                                 try {
-                                  const res = await fetch(
-                                    "/api/user/toggle-like",
-                                    {
-                                      method: "POST",
-                                      headers: {
-                                        "Content-Type": "application/json",
-                                      },
-                                      body: JSON.stringify({
-                                        vendorId: item._id,
-                                      }),
+                                  const res = await fetch("/api/user/toggle-like", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
                                     },
-                                  );
+                                    body: JSON.stringify({
+                                      vendorId: item._id,
+                                    }),
+                                  });
                                   if (!res.ok) throw new Error("Failed");
                                   const data = await res.json();
                                   toast.success(data.message);
@@ -5287,11 +4635,7 @@ const VendorDetailsPageWrapper = () => {
                             >
                               <Heart
                                 size={14}
-                                className={
-                                  isItemLiked
-                                    ? "fill-rose-500 text-rose-500"
-                                    : "text-gray-400"
-                                }
+                                className={isItemLiked ? "fill-rose-500 text-rose-500" : "text-gray-400"}
                               />
                             </button>
                             <ExternalLink
@@ -5314,12 +4658,8 @@ const VendorDetailsPageWrapper = () => {
                   <Send size={22} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    Send Inquiry to {vendor.name}
-                  </h2>
-                  <p className="text-xs text-gray-500">
-                    Get a personalized quote for your event
-                  </p>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Send Inquiry to {vendor.name}</h2>
+                  <p className="text-xs text-gray-500">Get a personalized quote for your event</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -5330,9 +4670,7 @@ const VendorDetailsPageWrapper = () => {
                   <input
                     type="text"
                     value={inquiryForm.name}
-                    onChange={(e) =>
-                      setInquiryForm((p) => ({ ...p, name: e.target.value }))
-                    }
+                    onChange={(e) => setInquiryForm((p) => ({ ...p, name: e.target.value }))}
                     placeholder="Full name"
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
@@ -5344,9 +4682,7 @@ const VendorDetailsPageWrapper = () => {
                   <input
                     type="tel"
                     value={inquiryForm.phone}
-                    onChange={(e) =>
-                      setInquiryForm((p) => ({ ...p, phone: e.target.value }))
-                    }
+                    onChange={(e) => setInquiryForm((p) => ({ ...p, phone: e.target.value }))}
                     placeholder="+91 XXXXX XXXXX"
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
@@ -5358,9 +4694,7 @@ const VendorDetailsPageWrapper = () => {
                   <input
                     type="date"
                     value={inquiryForm.date}
-                    onChange={(e) =>
-                      setInquiryForm((p) => ({ ...p, date: e.target.value }))
-                    }
+                    onChange={(e) => setInquiryForm((p) => ({ ...p, date: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 </div>
@@ -5402,9 +4736,7 @@ const VendorDetailsPageWrapper = () => {
                 </label>
                 <textarea
                   value={inquiryForm.message}
-                  onChange={(e) =>
-                    setInquiryForm((p) => ({ ...p, message: e.target.value }))
-                  }
+                  onChange={(e) => setInquiryForm((p) => ({ ...p, message: e.target.value }))}
                   placeholder={`Hi ${vendor.name}, I'm interested in your services for my upcoming event...`}
                   rows={3}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
@@ -5420,10 +4752,7 @@ const VendorDetailsPageWrapper = () => {
                   const msg = encodeURIComponent(
                     `Hi ${vendor.name}!\n\nName: ${inquiryForm.name}\nPhone: ${inquiryForm.phone}${inquiryForm.date ? `\nEvent Date: ${inquiryForm.date}` : ""}${inquiryForm.eventType ? `\nEvent Type: ${inquiryForm.eventType}` : ""}${inquiryForm.message ? `\n\nMessage: ${inquiryForm.message}` : ""}\n\nSent via WedPlan`,
                   );
-                  window.open(
-                    `https://wa.me/${ph?.replace(/[^0-9]/g, "")}?text=${msg}`,
-                    "_blank",
-                  );
+                  window.open(`https://wa.me/${ph?.replace(/[^0-9]/g, "")}?text=${msg}`, "_blank");
                   toast.success("Inquiry sent via WhatsApp!");
                 }}
                 className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
@@ -5440,12 +4769,8 @@ const VendorDetailsPageWrapper = () => {
                     <Tag size={22} className="text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Tags & Categories
-                    </h2>
-                    <p className="text-xs text-gray-500">
-                      Find related vendors and services
-                    </p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Tags & Categories</h2>
+                    <p className="text-xs text-gray-500">Find related vendors and services</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -5484,12 +4809,8 @@ const VendorDetailsPageWrapper = () => {
                   <BarChart3 size={22} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {vendor.name} at a Glance
-                  </h2>
-                  <p className="text-xs text-gray-500">
-                    Quick summary of key details
-                  </p>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{vendor.name} at a Glance</h2>
+                  <p className="text-xs text-gray-500">Quick summary of key details</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -5499,9 +4820,7 @@ const VendorDetailsPageWrapper = () => {
                       <Star size={18} className="text-yellow-600" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Customer Rating
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Customer Rating</p>
                       <p className="text-xl font-black text-gray-900 dark:text-white">
                         {vendor.rating?.toFixed(1) || "0.0"}/5
                       </p>
@@ -5520,17 +4839,11 @@ const VendorDetailsPageWrapper = () => {
                       <Calendar size={18} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Total Bookings
-                      </p>
-                      <p className="text-xl font-black text-gray-900 dark:text-white">
-                        {vendor.bookings || 0}+
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Total Bookings</p>
+                      <p className="text-xl font-black text-gray-900 dark:text-white">{vendor.bookings || 0}+</p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Events successfully completed
-                  </p>
+                  <p className="text-xs text-gray-500">Events successfully completed</p>
                 </div>
                 <div className="p-5 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200/60 dark:border-gray-700/60">
                   <div className="flex items-center gap-3 mb-3">
@@ -5538,17 +4851,13 @@ const VendorDetailsPageWrapper = () => {
                       <Timer size={18} className="text-green-600" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Avg Response
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Avg Response</p>
                       <p className="text-xl font-black text-gray-900 dark:text-white">
                         {vendor.responseTime || "< 1hr"}
                       </p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Usually responds quickly
-                  </p>
+                  <p className="text-xs text-gray-500">Usually responds quickly</p>
                 </div>
                 <div className="p-5 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200/60 dark:border-gray-700/60">
                   <div className="flex items-center gap-3 mb-3">
@@ -5556,17 +4865,13 @@ const VendorDetailsPageWrapper = () => {
                       <Medal size={18} className="text-purple-600" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Experience
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Experience</p>
                       <p className="text-xl font-black text-gray-900 dark:text-white">
                         {vendor.yearsExperience || "N/A"} yrs
                       </p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    In the wedding industry
-                  </p>
+                  <p className="text-xs text-gray-500">In the wedding industry</p>
                 </div>
               </div>
               {vendor.isVerified && (
@@ -5575,12 +4880,9 @@ const VendorDetailsPageWrapper = () => {
                     <BadgeCheck size={20} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-green-800 dark:text-green-300">
-                      Verified & Trusted Vendor
-                    </p>
+                    <p className="font-bold text-sm text-green-800 dark:text-green-300">Verified & Trusted Vendor</p>
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      This vendor has been verified by our team for quality and
-                      authenticity.
+                      This vendor has been verified by our team for quality and authenticity.
                     </p>
                   </div>
                 </div>
@@ -5614,26 +4916,17 @@ const VendorDetailsPageWrapper = () => {
               ref={rightSidebarRef}
               className="fixed space-y-5 overflow-y-auto transition-all ease-in-out duration-300 w-[calc((min(1400px,100vw-48px))/3-16px)]"
               style={{
-                maxHeight: showHeaderTabs
-                  ? "calc(100vh - 190px)"
-                  : "calc(100vh - 145px)",
+                maxHeight: showHeaderTabs ? "calc(100vh - 190px)" : "calc(100vh - 145px)",
                 top: showHeaderTabs ? "164px" : "136px",
               }}
             >
               {/* VENDOR INFO CARD */}
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-gray-700">
                 <div className="flex items-start gap-4 mb-5">
-                  <Link
-                    href={`/vendor/${vendor.category}/${vendor._id}/profile`}
-                    className="relative group shrink-0"
-                  >
+                  <Link href={`/vendor/${vendor.category}/${vendor._id}/profile`} className="relative group shrink-0">
                     <div className="w-20 h-20 rounded-2xl overflow-hidden ring-3 ring-blue-500 dark:ring-purple-500 shadow-lg group-hover:ring-blue-600 transition-all">
                       <img
-                        src={
-                          vendor.defaultImage ||
-                          vendor.images?.[0] ||
-                          "/placeholder-profile.jpg"
-                        }
+                        src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-profile.jpg"}
                         alt={vendor.name}
                         className="w-full h-full object-cover"
                       />
@@ -5644,28 +4937,16 @@ const VendorDetailsPageWrapper = () => {
                   </Link>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <h1 className="text-xl font-black text-gray-900 dark:text-white truncate">
-                        {vendor.name}
-                      </h1>
-                      {vendor.isVerified && (
-                        <BadgeCheck
-                          size={18}
-                          className="text-blue-500 fill-blue-500 shrink-0"
-                        />
-                      )}
+                      <h1 className="text-xl font-black text-gray-900 dark:text-white truncate">{vendor.name}</h1>
+                      {vendor.isVerified && <BadgeCheck size={18} className="text-blue-500 fill-blue-500 shrink-0" />}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 rounded-full">
-                        <Star
-                          size={12}
-                          className="fill-yellow-500 text-yellow-500"
-                        />
+                        <Star size={12} className="fill-yellow-500 text-yellow-500" />
                         <span className="font-bold text-yellow-700 dark:text-yellow-400 text-xs">
                           {vendor.rating || 0}
                         </span>
-                        <span className="text-yellow-600/70 text-[10px]">
-                          ({vendor.reviews || 0})
-                        </span>
+                        <span className="text-yellow-600/70 text-[10px]">({vendor.reviews || 0})</span>
                       </div>
                       <div className="flex items-center gap-1 text-gray-500 text-xs">
                         <MapPin size={12} />
@@ -5693,17 +4974,11 @@ const VendorDetailsPageWrapper = () => {
                 <div className="grid grid-cols-4 gap-2 py-4 border-t border-b border-gray-100 dark:border-gray-800">
                   {highlights.map((item, idx) => (
                     <div key={idx} className="text-center">
-                      <div
-                        className={`w-8 h-8 mx-auto mb-1 ${item.bg} rounded-lg flex items-center justify-center`}
-                      >
+                      <div className={`w-8 h-8 mx-auto mb-1 ${item.bg} rounded-lg flex items-center justify-center`}>
                         <item.icon className={`w-4 h-4 ${item.color}`} />
                       </div>
-                      <p className="font-bold text-xs text-gray-900 dark:text-white">
-                        {item.value}
-                      </p>
-                      <p className="text-[8px] text-gray-500 uppercase font-bold">
-                        {item.label}
-                      </p>
+                      <p className="font-bold text-xs text-gray-900 dark:text-white">{item.value}</p>
+                      <p className="text-[8px] text-gray-500 uppercase font-bold">{item.label}</p>
                     </div>
                   ))}
                 </div>
@@ -5712,9 +4987,7 @@ const VendorDetailsPageWrapper = () => {
                   <div className="grid grid-cols-2 gap-2 py-3 border-b border-gray-100 dark:border-gray-800">
                     {vendor.repeatCustomerRate && (
                       <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <p className="text-[10px] text-gray-500">
-                          Repeat Customers
-                        </p>
+                        <p className="text-[10px] text-gray-500">Repeat Customers</p>
                         <p className="font-bold text-sm text-green-700 dark:text-green-400">
                           {vendor.repeatCustomerRate}
                         </p>
@@ -5722,12 +4995,8 @@ const VendorDetailsPageWrapper = () => {
                     )}
                     {vendor.responseRate && (
                       <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                        <p className="text-[10px] text-gray-500">
-                          Response Rate
-                        </p>
-                        <p className="font-bold text-sm text-blue-700 dark:text-blue-400">
-                          {vendor.responseRate}
-                        </p>
+                        <p className="text-[10px] text-gray-500">Response Rate</p>
+                        <p className="font-bold text-sm text-blue-700 dark:text-blue-400">{vendor.responseRate}</p>
                       </div>
                     )}
                   </div>
@@ -5735,16 +5004,10 @@ const VendorDetailsPageWrapper = () => {
 
                 {/* Pricing */}
                 <div className="flex justify-between w-[80%] mx-auto items-center h-full text-center py-4 pb-0 border-b border-gray-100 dark:border-gray-800">
-                  <p className="text-sm font-medium text-gray-500 mb-1">
-                    Starting from
-                  </p>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Starting from</p>
                   <div>
-                    <p className="text-3xl font-black text-blue-600 dark:text-blue-400">
-                      ₹{displayPrice}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      per {vendor.priceUnit || "day"}
-                    </p>
+                    <p className="text-3xl font-black text-blue-600 dark:text-blue-400">₹{displayPrice}</p>
+                    <p className="text-xs text-gray-500">per {vendor.priceUnit || "day"}</p>
                   </div>
                 </div>
 
@@ -5758,10 +5021,8 @@ const VendorDetailsPageWrapper = () => {
                           _id: vendor._id,
                           name: vendor.name,
                           category: vendor.category,
-                          price:
-                            vendor.perDayPrice?.min || vendor.basePrice || 0,
-                          image:
-                            vendor.defaultImage || vendor.images?.[0] || "",
+                          price: vendor.perDayPrice?.min || vendor.basePrice || 0,
+                          image: vendor.defaultImage || vendor.images?.[0] || "",
                           quantity: 1,
                           address: vendor.address,
                           rating: vendor.rating || 0,
@@ -5784,13 +5045,8 @@ const VendorDetailsPageWrapper = () => {
                   <button
                     onClick={() => {
                       const ph = vendor.whatsappNo || vendor.phoneNo;
-                      const msg = encodeURIComponent(
-                        `Hi ${vendor.name}! I'm interested in your services.`,
-                      );
-                      window.open(
-                        `https://wa.me/${ph?.replace(/[^0-9]/g, "")}?text=${msg}`,
-                        "_blank",
-                      );
+                      const msg = encodeURIComponent(`Hi ${vendor.name}! I'm interested in your services.`);
+                      window.open(`https://wa.me/${ph?.replace(/[^0-9]/g, "")}?text=${msg}`, "_blank");
                     }}
                     className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-bold text-sm"
                   >
@@ -5798,17 +5054,13 @@ const VendorDetailsPageWrapper = () => {
                   </button>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() =>
-                        window.open(`tel:${vendor.phoneNo}`, "_self")
-                      }
+                      onClick={() => window.open(`tel:${vendor.phoneNo}`, "_self")}
                       className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all font-medium text-sm"
                     >
                       <Phone size={16} /> Call
                     </button>
                     <button
-                      onClick={() =>
-                        window.open(`mailto:${vendor.email}`, "_self")
-                      }
+                      onClick={() => window.open(`mailto:${vendor.email}`, "_self")}
                       className="flex items-center justify-center gap-2 px-3 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/40 transition-all font-medium text-sm"
                     >
                       <Mail size={16} /> Email
@@ -5819,34 +5071,27 @@ const VendorDetailsPageWrapper = () => {
                 {/* Category Quick Info */}
                 {vendor.category && (
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2">
-                      Quick Info
-                    </h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2">Quick Info</h4>
                     {vendor.category === "venues" && (
                       <>
                         {(vendor.seating?.min || vendor.seating?.max) && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Capacity</span>
                             <span className="font-semibold">
-                              {vendor.seating?.min || 0} -{" "}
-                              {vendor.seating?.max || 0}
+                              {vendor.seating?.min || 0} - {vendor.seating?.max || 0}
                             </span>
                           </div>
                         )}
                         {vendor.parking?.capacity && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Parking</span>
-                            <span className="font-semibold">
-                              {vendor.parking.capacity} slots
-                            </span>
+                            <span className="font-semibold">{vendor.parking.capacity} slots</span>
                           </div>
                         )}
                         {vendor.halls && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Halls</span>
-                            <span className="font-semibold">
-                              {vendor.halls}
-                            </span>
+                            <span className="font-semibold">{vendor.halls}</span>
                           </div>
                         )}
                       </>
@@ -5856,17 +5101,13 @@ const VendorDetailsPageWrapper = () => {
                         {vendor.teamSize && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Team</span>
-                            <span className="font-semibold">
-                              {vendor.teamSize} members
-                            </span>
+                            <span className="font-semibold">{vendor.teamSize} members</span>
                           </div>
                         )}
                         {vendor.deliveryTime && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Delivery</span>
-                            <span className="font-semibold">
-                              {vendor.deliveryTime} weeks
-                            </span>
+                            <span className="font-semibold">{vendor.deliveryTime} weeks</span>
                           </div>
                         )}
                       </>
@@ -5876,17 +5117,13 @@ const VendorDetailsPageWrapper = () => {
                         {vendor.services?.length > 0 && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Services</span>
-                            <span className="font-semibold">
-                              {vendor.services.length}+ types
-                            </span>
+                            <span className="font-semibold">{vendor.services.length}+ types</span>
                           </div>
                         )}
                         {vendor.brandsUsed?.length > 0 && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Brands</span>
-                            <span className="font-semibold">
-                              {vendor.brandsUsed.length}+ premium
-                            </span>
+                            <span className="font-semibold">{vendor.brandsUsed.length}+ premium</span>
                           </div>
                         )}
                       </>
@@ -5896,17 +5133,13 @@ const VendorDetailsPageWrapper = () => {
                         {vendor.teamSize && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Team</span>
-                            <span className="font-semibold">
-                              {vendor.teamSize}+ artists
-                            </span>
+                            <span className="font-semibold">{vendor.teamSize}+ artists</span>
                           </div>
                         )}
                         {vendor.pricePerHand && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Per Hand</span>
-                            <span className="font-semibold">
-                              ₹{vendor.pricePerHand}
-                            </span>
+                            <span className="font-semibold">₹{vendor.pricePerHand}</span>
                           </div>
                         )}
                       </>
@@ -5916,17 +5149,13 @@ const VendorDetailsPageWrapper = () => {
                         {vendor.cuisines?.length > 0 && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Cuisines</span>
-                            <span className="font-semibold">
-                              {vendor.cuisines.length}+ types
-                            </span>
+                            <span className="font-semibold">{vendor.cuisines.length}+ types</span>
                           </div>
                         )}
                         {vendor.pricePerPlate?.veg && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Veg Plate</span>
-                            <span className="font-semibold">
-                              ₹{vendor.pricePerPlate.veg}
-                            </span>
+                            <span className="font-semibold">₹{vendor.pricePerPlate.veg}</span>
                           </div>
                         )}
                       </>
@@ -5936,17 +5165,13 @@ const VendorDetailsPageWrapper = () => {
                         {vendor.genres?.length > 0 && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Genres</span>
-                            <span className="font-semibold">
-                              {vendor.genres.length}+ styles
-                            </span>
+                            <span className="font-semibold">{vendor.genres.length}+ styles</span>
                           </div>
                         )}
                         {vendor.performanceDuration && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Duration</span>
-                            <span className="font-semibold">
-                              {vendor.performanceDuration}
-                            </span>
+                            <span className="font-semibold">{vendor.performanceDuration}</span>
                           </div>
                         )}
                       </>
@@ -5956,17 +5181,13 @@ const VendorDetailsPageWrapper = () => {
                         {vendor.teamSize && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Team</span>
-                            <span className="font-semibold">
-                              {vendor.teamSize} members
-                            </span>
+                            <span className="font-semibold">{vendor.teamSize} members</span>
                           </div>
                         )}
                         {vendor.vendorNetwork && (
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span>Network</span>
-                            <span className="font-semibold">
-                              {vendor.vendorNetwork}+ vendors
-                            </span>
+                            <span className="font-semibold">{vendor.vendorNetwork}+ vendors</span>
                           </div>
                         )}
                       </>
@@ -5978,32 +5199,20 @@ const VendorDetailsPageWrapper = () => {
               {/* TRUST & SAFETY */}
               {(vendor.isVerified || vendor.tags?.includes("Premium")) && (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-100 dark:border-gray-700">
-                  <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-3">
-                    Safety & Trust
-                  </h3>
+                  <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-3">Safety & Trust</h3>
                   <div className="space-y-2.5">
                     {vendor.isVerified && (
                       <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
                         <Shield size={18} className="text-green-600" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                          Verified Vendor
-                        </span>
-                        <CheckCircle
-                          size={14}
-                          className="text-green-500 ml-auto"
-                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Verified Vendor</span>
+                        <CheckCircle size={14} className="text-green-500 ml-auto" />
                       </div>
                     )}
                     {vendor.tags?.includes("Premium") && (
                       <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                         <Award size={18} className="text-blue-600" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                          Premium Member
-                        </span>
-                        <CheckCircle
-                          size={14}
-                          className="text-blue-500 ml-auto"
-                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Premium Member</span>
+                        <CheckCircle size={14} className="text-blue-500 ml-auto" />
                       </div>
                     )}
                   </div>
@@ -6019,22 +5228,14 @@ const VendorDetailsPageWrapper = () => {
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-white/30 group-hover:ring-white/60 transition-all shrink-0">
                       <img
-                        src={
-                          vendor.defaultImage ||
-                          vendor.images?.[0] ||
-                          "/placeholder-profile.jpg"
-                        }
+                        src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-profile.jpg"}
                         alt={vendor.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white text-sm">
-                        View Profile
-                      </p>
-                      <p className="text-[11px] text-white/70 truncate">
-                        Bio, social stats & featured work
-                      </p>
+                      <p className="font-semibold text-white text-sm">View Profile</p>
+                      <p className="text-[11px] text-white/70 truncate">Bio, social stats & featured work</p>
                     </div>
                   </div>
                   <ArrowRight
@@ -6046,9 +5247,7 @@ const VendorDetailsPageWrapper = () => {
 
               {/* QUICK CONTACT */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-100 dark:border-gray-700">
-                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-3">
-                  Quick Contact
-                </h3>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-3">Quick Contact</h3>
                 <div className="space-y-2">
                   <a
                     href={`tel:${vendor.phoneNo}`}
@@ -6056,12 +5255,8 @@ const VendorDetailsPageWrapper = () => {
                   >
                     <Phone size={18} className="text-green-600" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Phone
-                      </p>
-                      <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
-                        {vendor.phoneNo}
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Phone</p>
+                      <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{vendor.phoneNo}</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-400" />
                   </a>
@@ -6074,12 +5269,8 @@ const VendorDetailsPageWrapper = () => {
                     >
                       <MessageCircle size={18} className="text-emerald-600" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-gray-500 uppercase font-bold">
-                          WhatsApp
-                        </p>
-                        <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
-                          {vendor.whatsappNo}
-                        </p>
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">WhatsApp</p>
+                        <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{vendor.whatsappNo}</p>
                       </div>
                       <ChevronRight size={16} className="text-gray-400" />
                     </a>
@@ -6090,12 +5281,8 @@ const VendorDetailsPageWrapper = () => {
                   >
                     <Mail size={18} className="text-blue-600" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-gray-500 uppercase font-bold">
-                        Email
-                      </p>
-                      <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
-                        {vendor.email}
-                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Email</p>
+                      <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{vendor.email}</p>
                     </div>
                     <ChevronRight size={16} className="text-gray-400" />
                   </a>
@@ -6103,12 +5290,9 @@ const VendorDetailsPageWrapper = () => {
                     <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                       <User size={18} className="text-purple-600" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-gray-500 uppercase font-bold">
-                          Contact Person
-                        </p>
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Contact Person</p>
                         <p className="font-bold text-sm text-gray-900 dark:text-white">
-                          {vendor.contactPerson.firstName}{" "}
-                          {vendor.contactPerson.lastName}
+                          {vendor.contactPerson.firstName} {vendor.contactPerson.lastName}
                         </p>
                       </div>
                     </div>
@@ -6136,9 +5320,7 @@ const VendorDetailsPageWrapper = () => {
                   <Headphones size={22} className="text-blue-500" />
                 </div>
                 <p className="text-xs text-gray-500 mb-1">Need help?</p>
-                <p className="font-black text-base text-gray-900 dark:text-white">
-                  +91 6267430959
-                </p>
+                <p className="font-black text-base text-gray-900 dark:text-white">+91 6267430959</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">18/7 Support</p>
               </div>
             </div>
@@ -6183,20 +5365,14 @@ const VendorDetailsPageWrapper = () => {
             <div className="flex-1 relative flex items-center justify-center overflow-hidden">
               <button
                 onClick={() => {
-                  setModalImageIndex(
-                    (p) => (p - 1 + images.length) % images.length,
-                  );
+                  setModalImageIndex((p) => (p - 1 + images.length) % images.length);
                   setSlideDirection(-1);
                 }}
                 className="absolute left-4 p-3 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition-colors z-10"
               >
                 <ChevronLeft size={24} />
               </button>
-              <AnimatePresence
-                initial={false}
-                custom={slideDirection}
-                mode="wait"
-              >
+              <AnimatePresence initial={false} custom={slideDirection} mode="wait">
                 <motion.div
                   key={modalImageIndex}
                   custom={slideDirection}
@@ -6239,12 +5415,7 @@ const VendorDetailsPageWrapper = () => {
                   }}
                   className={`relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === modalImageIndex ? "border-white scale-110" : "border-transparent opacity-50 hover:opacity-75"}`}
                 >
-                  <img
-                    src={img}
-                    className="w-full h-full object-cover"
-                    alt="thumbnail"
-                    loading="lazy"
-                  />
+                  <img src={img} className="w-full h-full object-cover" alt="thumbnail" loading="lazy" />
                 </button>
               ))}
             </div>
@@ -6255,21 +5426,14 @@ const VendorDetailsPageWrapper = () => {
       {/* SHARE MODAL */}
       <AnimatePresence>
         {showShareModal && (
-          <ShareModal
-            isOpen={showShareModal}
-            onClose={() => setShowShareModal(false)}
-            vendorName={vendor.name}
-          />
+          <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendor.name} />
         )}
       </AnimatePresence>
 
       {/* KEYBOARD SHORTCUTS MODAL */}
       <AnimatePresence>
         {showKeyboardShortcuts && (
-          <KeyboardShortcutsModal
-            isOpen={showKeyboardShortcuts}
-            onClose={() => setShowKeyboardShortcuts(false)}
-          />
+          <KeyboardShortcutsModal isOpen={showKeyboardShortcuts} onClose={() => setShowKeyboardShortcuts(false)} />
         )}
       </AnimatePresence>
 

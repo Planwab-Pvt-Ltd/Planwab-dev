@@ -1,22 +1,46 @@
+// REPLACE ENTIRE FILE WITH:
 import VendorDetailsPageWrapper from "@/components/desktop/PagesWrapper/VendorDetailsPageWrapper";
+import { notFound } from "next/navigation";
+import { getRelatedVendors, getVendorById } from "../../../../../../database/actions/FetchActions";
 
-// export async function generateMetadata({ params }) {
-//    const resolvedParams = await params;
-//   const { category } = resolvedParams;
-//   const formattedCategory = category
-//     ?.split("-")
-//     ?.map((word) => word?.charAt(0)?.toUpperCase() + word?.slice(1))
-//     ?.join(" ");
-//   return {
-//     title: `${formattedCategory} - Vendors Marketplace | PlanWAB - Events Planning And Vendors Marketplace`,
-//     description: `Discover top ${formattedCategory} vendors on PlanWAB's Marketplace. Find trusted professionals for weddings, parties, and corporate events. Start planning today!`,
-//   };
-// }
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const vendor = await getVendorById(id);
 
-export default function VendorDetailsPage() {
+  if (!vendor) {
+    return { title: "Vendor Details | PlanWAB Marketplace" };
+  }
+
+  return {
+    title: `${vendor.name} | PlanWAB Marketplace`,
+    description: vendor.description 
+      ? `${vendor.description.substring(0, 160)}...` 
+      : `Book ${vendor.name} for your event.`,
+    openGraph: {
+      title: `${vendor.name} - PlanWAB`,
+      description: vendor.description || `Book ${vendor.name}`,
+      images: vendor.images?.[0] ? [{ url: vendor.images[0] }] : [],
+    },
+  };
+}
+
+export default async function VendorDetailsPage({ params }) {
+  const { id } = await params;
+
+  const [vendor, relatedData] = await Promise.all([
+    getVendorById(id),
+    getRelatedVendors(id),
+  ]);
+
+  if (!vendor) {
+    return notFound();
+  }
+
   return (
-    <>
-      <VendorDetailsPageWrapper />
-    </>
+    <VendorDetailsPageWrapper 
+      initialVendor={vendor}
+      initialSimilar={relatedData?.similarVendors || []}
+      initialRecommended={relatedData?.recommendedVendors || []}
+    />
   );
 }
