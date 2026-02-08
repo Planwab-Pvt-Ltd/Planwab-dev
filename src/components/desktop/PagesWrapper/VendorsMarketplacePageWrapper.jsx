@@ -100,6 +100,8 @@ import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useUser } from "@clerk/clerk-react";
 import SmartMedia from "../SmartMediaLoader";
 import { useNavigationState } from "../../../hooks/useNavigationState";
+import CompareModal from "./../CompareModalDesktop";
+// import CompareModal from "../../mobile/CompareModalMobile";
 
 const COLORS = {
   primary: "#2563eb",
@@ -2446,10 +2448,11 @@ const VendorCard = memo(
 
     const handleProfileClick = useCallback(
       (vendorId) => {
+        const url = getHrefWithState(`/vendor/${vendor.category}/${vendorId}/profile`);
         if (isNavigating || isPending) return;
         startTransition(() => {
           setIsNavigating(true);
-          router.push(`/vendor/${vendor.category}/${vendorId}/profile`);
+          router.push(url);
         });
       },
       [isNavigating, isPending, router, vendor.category],
@@ -2865,7 +2868,18 @@ const CompareBar = memo(({ count, vendors, onClear, onView }) => {
               {count} vendor{count > 1 ? "s" : ""} selected
             </p>
             <p className="text-sm text-gray-400">
-              {MAX_COMPARE_ITEMS - count > 0 ? `Add ${MAX_COMPARE_ITEMS - count} more` : "Ready to compare"}
+              {count === 0 && "Select vendors to compare"}
+              {count === 1 &&
+                `Add more ${VENDOR_CATEGORIES.find((c) => c.id === vendors[0]?.category)?.label || "vendors"}`}
+              {count >= 2 && (
+                <>
+                  Comparing{" "}
+                  <span className="font-medium text-blue-400">
+                    {VENDOR_CATEGORIES.find((c) => c.id === vendors[0]?.category)?.label || "vendors"}
+                  </span>
+                  {MAX_COMPARE_ITEMS - count > 0 && ` • Add ${MAX_COMPARE_ITEMS - count} more`}
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -2889,7 +2903,7 @@ const CompareBar = memo(({ count, vendors, onClear, onView }) => {
 });
 CompareBar.displayName = "CompareBar";
 
-const CompareModal = memo(({ isOpen, onClose, vendors }) => {
+const CompareModalOld = memo(({ isOpen, onClose, vendors }) => {
   const [tab, setTab] = useState("overview");
   const vendorCount = vendors.length;
 
@@ -3247,7 +3261,7 @@ const CompareModal = memo(({ isOpen, onClose, vendors }) => {
     </AnimatePresence>
   );
 });
-CompareModal.displayName = "CompareModal";
+CompareModalOld.displayName = "CompareModalOld";
 
 const Pagination = memo(({ currentPage, totalPages, onPageChange, isLoading }) => {
   const getPageNumbers = () => {
@@ -4144,6 +4158,13 @@ export default function DesktopVendorMarketplace() {
     [setRecentlyViewedVendors],
   ); // Add dependency
 
+  const handleCategoryMismatch = useCallback((errorMessage, categories) => {
+    console.warn("Category mismatch detected:", errorMessage);
+    showToast(errorMessage, "error");
+    // Optional: You can add additional handling here
+    // For example, auto-clearing the compare list or showing a toast
+  }, []);
+
   const getRecentlyViewed = useCallback(() => {
     try {
       const stored = localStorage.getItem("recentlyViewed");
@@ -4502,22 +4523,55 @@ export default function DesktopVendorMarketplace() {
     (vendor) => {
       startTransition(() => {
         setCompareList((prev) => {
+          // Check if already in list (toggle off)
           const exists = prev.find((v) => v._id === vendor._id);
-          let newList;
+
           if (exists) {
-            newList = prev.filter((v) => v._id !== vendor._id);
-          } else {
-            if (prev.length >= MAX_COMPARE_ITEMS) {
-              showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
+            // Remove vendor from list
+            const newList = prev.filter((v) => v._id !== vendor._id);
+            if (newList.length === 0) {
+              setCompareMode(false);
+            }
+            return newList;
+          }
+
+          // Check max limit
+          if (prev.length >= MAX_COMPARE_ITEMS) {
+            showToast(`Maximum ${MAX_COMPARE_ITEMS} vendors can be compared`, "warning");
+            return prev;
+          }
+
+          // ============================================
+          // CATEGORY VALIDATION - Only same category vendors
+          // ============================================
+          if (prev.length > 0) {
+            const existingCategory = prev[0].category?.toLowerCase().trim();
+            const newCategory = vendor.category?.toLowerCase().trim();
+
+            if (existingCategory && newCategory && existingCategory !== newCategory) {
+              // Get category display name
+              const existingCatName =
+                VENDOR_CATEGORIES.find((c) => c.id === existingCategory)?.label || existingCategory;
+              const newCatName = VENDOR_CATEGORIES.find((c) => c.id === newCategory)?.label || newCategory;
+
+              showToast(
+                `Cannot add "${vendor.name}" (${newCatName}). You can only compare ${existingCatName} vendors.`,
+                "error",
+              );
               return prev;
             }
-            newList = [...prev, vendor];
           }
-          if (newList.length === 0) {
-            setCompareMode(false);
-          } else if (!compareMode) {
+
+          // Add vendor to list
+          const newList = [...prev, vendor];
+
+          if (!compareMode) {
             setCompareMode(true);
           }
+
+          // Show success feedback
+          showToast(`${vendor.name} added to compare`, "success");
+
           return newList;
         });
       });
@@ -4848,7 +4902,7 @@ export default function DesktopVendorMarketplace() {
             </AnimatePresence>
 
             {/* Content Header Bar */}
-            <div className="sticky top-22 z-40 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="sticky top-22 z-60 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 {/* Left: Results Count & Info */}
                 <div className="flex items-center gap-4">
@@ -5185,14 +5239,46 @@ export default function DesktopVendorMarketplace() {
                               <span className="px-2 py-0.5 bg-white/30 backdrop-blur-sm rounded-full text-xs font-bold">
                                 {compareList.length}/4
                               </span>
+                              {/* Show category badge when vendors selected */}
+                              {compareList.length > 0 && (
+                                <span className="px-2 py-0.5 bg-blue-500/50 backdrop-blur-sm rounded-full text-xs font-bold">
+                                  {VENDOR_CATEGORIES.find((c) => c.id === compareList[0]?.category)?.label ||
+                                    compareList[0]?.category}
+                                </span>
+                              )}
                             </h3>
                             <p className="text-white/80 text-xs">
                               {compareList.length === 0 && "Select up to 4 vendors to compare"}
-                              {compareList.length === 1 && "Select at least one more vendor"}
-                              {compareList.length >= 2 &&
-                                compareList.length < 4 &&
-                                `${4 - compareList.length} more can be added`}
-                              {compareList.length === 4 && "Maximum vendors selected"}
+                              {compareList.length === 1 && (
+                                <>
+                                  Add more{" "}
+                                  <span className="font-semibold text-white">
+                                    {VENDOR_CATEGORIES.find((c) => c.id === compareList[0]?.category)?.label ||
+                                      "vendors"}
+                                  </span>{" "}
+                                  to compare
+                                </>
+                              )}
+                              {compareList.length >= 2 && compareList.length < 4 && (
+                                <>
+                                  Comparing{" "}
+                                  <span className="font-semibold text-white">
+                                    {VENDOR_CATEGORIES.find((c) => c.id === compareList[0]?.category)?.label ||
+                                      "vendors"}
+                                  </span>
+                                  {` • ${4 - compareList.length} more can be added`}
+                                </>
+                              )}
+                              {compareList.length === 4 && (
+                                <>
+                                  Comparing{" "}
+                                  <span className="font-semibold text-white">
+                                    {VENDOR_CATEGORIES.find((c) => c.id === compareList[0]?.category)?.label ||
+                                      "vendors"}
+                                  </span>
+                                  {" • Maximum reached"}
+                                </>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -5389,10 +5475,25 @@ export default function DesktopVendorMarketplace() {
                           )}
 
                           {/* Status Text */}
+                          {/* Status Text */}
                           <p className="text-white/80 text-xs font-medium">
                             {compareList.length === 0 && "Tap vendors to add"}
-                            {compareList.length === 1 && "Add 1 more to compare"}
-                            {compareList.length >= 2 && "Ready to compare!"}
+                            {compareList.length === 1 && (
+                              <>
+                                Add 1 more{" "}
+                                <span className="text-white font-semibold">
+                                  {VENDOR_CATEGORIES.find((c) => c.id === compareList[0]?.category)?.label || ""}
+                                </span>
+                              </>
+                            )}
+                            {compareList.length >= 2 && (
+                              <>
+                                Comparing{" "}
+                                <span className="text-white font-semibold">
+                                  {VENDOR_CATEGORIES.find((c) => c.id === compareList[0]?.category)?.label || "vendors"}
+                                </span>
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -5662,7 +5763,15 @@ export default function DesktopVendorMarketplace() {
       </AnimatePresence>
 
       {/* Compare Modal */}
-      <CompareModal isOpen={showCompare} onClose={() => setShowCompare(false)} vendors={compareList} />
+      <CompareModal
+        isOpen={showCompare}
+        onClose={() => setShowCompare(false)}
+        vendors={compareList}
+        onCategoryMismatch={(errorMsg, categories) => {
+          console.warn("Category mismatch in modal:", errorMsg);
+          showToast(errorMsg, "error");
+        }}
+      />
 
       <AnimatePresence>
         {showShareModal && (

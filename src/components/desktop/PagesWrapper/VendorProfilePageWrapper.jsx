@@ -146,6 +146,7 @@ import { SignInButton, useUser } from "@clerk/clerk-react";
 import { QRCodeSVG } from "qrcode.react";
 import UpdateProfileDrawer from "../UpdateProfileDrawer";
 import SmartMedia from "@/components/mobile/SmartMediaLoader";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -8159,6 +8160,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const { id, category } = useParams();
   const router = useRouter();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
+  const { backUrl, canGoBack } = useNavigationState();
 
   const [vendor, setVendor] = useState(initialVendor);
   const [profile, setProfile] = useState(initialProfile || {});
@@ -8740,6 +8742,11 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
   const handleBack = useCallback(() => {
     if (typeof window === "undefined") return;
+
+    if(canGoBack) {
+      router.push(backUrl);
+      return;
+    }
 
     if (category || id) {
       router.push(`/vendor/${category || "all"}/${id}`);
