@@ -13,9 +13,9 @@ export default function ClientWrapper({ children }) {
     <>
       {!isAdminRoute && <MobileHeader />}
       <main className="min-h-screen">{children}</main>
-      <footer>
-        <Footer />
-      </footer>
+        <footer>
+          <Footer />
+        </footer>
     </>
   );
 }
