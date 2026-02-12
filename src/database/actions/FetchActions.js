@@ -93,6 +93,20 @@ export async function getVendorProfile(id) {
   }
 }
 
+export async function getVendorProfileByUsername(username) {
+  try {
+    logAction("getVendorProfileByUsername", `Start fetching profile for vendor username: ${username}`);
+    await connectToDatabase();
+    // Assuming profile is linked via username, or is part of the Vendor doc
+    const profile = await VendorProfile.findOne({ username }).lean();
+    logAction("getVendorProfileByUsername", `Successfully fetched profile for vendor username: ${username}`);
+    return sanitize(profile);
+  } catch (error) {
+    logError("getVendorProfileByUsername", error);
+    return null;
+  }
+}
+
 export async function getVendorReviews(id) {
   try {
     logAction("getVendorReviews", `Start fetching reviews for vendor ID: ${id}`);

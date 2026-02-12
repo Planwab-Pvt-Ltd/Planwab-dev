@@ -78,7 +78,6 @@ const vendorProfileSchema = new mongoose.Schema(
   {
     vendorId: {
       type: String,
-      required: true,
       unique: true,
     },
     vendorBusinessName: {
