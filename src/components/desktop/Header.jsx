@@ -407,7 +407,7 @@ const SubNavigation = () => {
 
   return (
     <div className="relative w-full">
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between pb-1">
   {/* Left group: All */}
   <div className="flex items-center">
     <div
@@ -1069,7 +1069,7 @@ export default function DesktopHeader() {
         className={`fixed top-0 left-0 right-0 !z-[40] transition-all duration-500 ease-out rounded-b-xl ${
           isScrolled
             ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 shadow-xl"
-            : "bg-white/80 dark:bg-black/80 backdrop-blur-2xl"
+            : `bg-white/50 dark:bg-transparent ${isHomePage ? 'border-b-gray-600 border-[0.5px]' : ''}`
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1217,7 +1217,7 @@ export default function DesktopHeader() {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
-                className="hidden lg:block overflow-visible"
+                className="hidden lg:block overflow-visible pt-0"
               >
                 <SubNavigation />
               </motion.div>

@@ -28,6 +28,7 @@ import {
   Building2,
   Globe,
   Check,
+  View,
 } from "lucide-react";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
@@ -107,22 +108,9 @@ const VendorProfileOnboardingPageWrapper = () => {
     password: "",
     confirmPassword: "",
   });
-
-  const [vendorProfileUrl, setVendorProfileUrl] = useState("");
-
   const filteredCategories = categoryQuery
     ? categories.filter((c) => c.label.toLowerCase().includes(categoryQuery.toLowerCase()))
     : categories;
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && formData.vendorId) {
-      setVendorProfileUrl(`${window.location.origin}/vendor/${formData.vendorId}`);
-    } else if (formData.vendorId) {
-      setVendorProfileUrl(`/vendor/${formData.vendorId}`);
-    } else {
-      setVendorProfileUrl("");
-    }
-  }, [formData.vendorId]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -150,26 +138,52 @@ const VendorProfileOnboardingPageWrapper = () => {
     }
   };
 
-  const uploadImageToCloudinary = async (file) => {
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "planWab_vendors");
+  const uploadImageToBunny = async (file) => {
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      {
-        method: "POST",
-        body: data,
-      },
-    );
+      const storageZone = process.env.NEXT_PUBLIC_BUNNY_STORAGE_ZONE_NAME;
+      const accessKey = process.env.NEXT_PUBLIC_BUNNY_STORAGE_ZONE_PASSWORD;
+      const cdnHostname = process.env.NEXT_PUBLIC_BUNNY_CDN_HOSTNAME; // Full CDN URL e.g., https://yourpullzone.b-cdn.net
 
-    const result = await response.json();
+      if (!storageZone || !accessKey || !cdnHostname) {
+        console.error("Missing config:", { storageZone, accessKey: !!accessKey, cdnHostname });
+        throw new Error("Bunny CDN configuration is missing");
+      }
 
-    if (!result.secure_url) {
-      throw new Error("Upload failed");
+      // Storage API endpoint for upload (PUT request)
+      // Always uses storage.bunnycdn.com for uploads
+      const uploadUrl = `https://storage.bunnycdn.com/${storageZone}/vendor-profiles/${fileName}`;
+
+      console.log("Uploading to:", uploadUrl);
+
+      // Upload the file
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          AccessKey: accessKey,
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Bunny upload failed:", response.status, errorText);
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      console.log("Upload successful");
+
+      // Return the CDN URL for public access (this is what users will access)
+      const publicUrl = `${cdnHostname}/vendor-profiles/${fileName}`;
+      console.log("Public URL:", publicUrl);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Bunny upload error:", error);
+      throw new Error(error.message || "Failed to upload image");
     }
-
-    return result.secure_url;
   };
 
   const handleProfilePictureChange = async (e) => {
@@ -196,7 +210,7 @@ const VendorProfileOnboardingPageWrapper = () => {
     setError("");
 
     try {
-      const url = await uploadImageToCloudinary(file);
+      const url = await uploadImageToBunny(file);
       setProfilePicture(url);
       setFormData((prev) => ({ ...prev, profilePicture: url }));
     } catch (err) {
@@ -231,7 +245,7 @@ const VendorProfileOnboardingPageWrapper = () => {
     setError("");
 
     try {
-      const url = await uploadImageToCloudinary(file);
+      const url = await uploadImageToBunny(file);
       setCoverImage(url);
       setFormData((prev) => ({ ...prev, coverImage: url }));
     } catch (err) {
@@ -298,14 +312,6 @@ const VendorProfileOnboardingPageWrapper = () => {
 
     if (validateStep()) {
       if (currentStep === 2) {
-        if (!formData.vendorId || formData.vendorId.trim() === "") {
-          setError("Vendor ID is required to create a profile");
-          return;
-        }
-        if (formData.vendorId.trim().length < 10) {
-          setError("Please enter a valid Vendor ID");
-          return;
-        }
       }
 
       if (currentStep === 3) {
@@ -361,7 +367,6 @@ const VendorProfileOnboardingPageWrapper = () => {
 
     try {
       const payload = {
-        vendorId: formData.vendorId,
         vendorBusinessName: formData.vendorBusinessName,
         username: formData.username,
         vendorName: formData.vendorName,
@@ -373,16 +378,25 @@ const VendorProfileOnboardingPageWrapper = () => {
         password: formData.password,
       };
 
-      const response = await fetch(`/api/vendor/${formData.vendorId}/profile`, {
+      const response = await fetch(`/api/vendor/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      // Get response as text first to handle empty/invalid JSON
+      const text = await response.text();
+      let data;
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error("Failed to parse response:", text);
+        throw new Error("Invalid response from server. Please try again.");
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to create profile");
+        throw new Error(data.message || `Server error (${response.status}). Please try again.`);
       }
 
       if (data.token) {
@@ -392,7 +406,8 @@ const VendorProfileOnboardingPageWrapper = () => {
       setCreatedProfile(data.data);
       setCurrentStep(4);
     } catch (err) {
-      setError(err.message);
+      console.error("Profile creation error:", err);
+      setError(err.message || "Failed to create profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -562,43 +577,6 @@ const VendorProfileOnboardingPageWrapper = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Vendor Link Preview */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-800 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                    <LinkIcon size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white">Your Vendor Profile Link</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">This will be your public profile URL</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <Globe size={18} className="text-slate-400 shrink-0" />
-                  <span className="flex-1 text-sm font-mono text-slate-700 dark:text-slate-300 truncate">
-                    {vendorProfileUrl || "/vendor/[your-vendor-id]"}
-                  </span>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={copyToClipboard}
-                    disabled={!vendorProfileUrl}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      linkCopied
-                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                        : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                    }`}
-                  >
-                    {linkCopied ? <Check size={16} /> : <Copy size={16} />}
-                    {linkCopied ? "Copied!" : "Copy"}
-                  </motion.button>
-                </div>
-
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                  💡 Enter your Vendor ID in the next step to generate your profile link
-                </p>
-              </div>
             </motion.div>
           )}
 
@@ -622,111 +600,6 @@ const VendorProfileOnboardingPageWrapper = () => {
                   <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                 </motion.div>
               )}
-
-              {/* Vendor ID Card - Most Important */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/20 rounded-2xl shadow-lg border-2 border-amber-300 dark:border-amber-700 p-6 relative overflow-hidden"
-              >
-                {/* Animated Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400 rounded-full blur-3xl" />
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-400 rounded-full blur-3xl" />
-                </div>
-
-                <div className="relative">
-                  <div className="flex items-center gap-3 mb-4">
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.1, 1],
-                        rotate: [0, 5, -5, 0],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatDelay: 3,
-                      }}
-                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/30"
-                    >
-                      <LinkIcon size={24} className="text-white" />
-                    </motion.div>
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        Vendor ID
-                        <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full uppercase">
-                          Required
-                        </span>
-                      </h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
-                        Enter the vendor listing ID to link your profile
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="vendorId"
-                        value={formData.vendorId || ""}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 507f1f77bcf86cd799439011"
-                        className={`w-full px-4 py-4 rounded-xl border-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none transition-all text-sm font-mono pr-12 ${
-                          formData.vendorId
-                            ? "border-green-400 dark:border-green-600 focus:border-green-500"
-                            : "border-amber-300 dark:border-amber-700 focus:border-amber-500 dark:focus:border-amber-400"
-                        }`}
-                      />
-                      <AnimatePresence>
-                        {formData.vendorId && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2"
-                          >
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                              <Check size={16} className="text-green-600 dark:text-green-400" />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Live URL Preview */}
-                    <AnimatePresence>
-                      {formData.vendorId && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="p-3 bg-white/80 dark:bg-slate-800/80 rounded-lg border border-green-200 dark:border-green-800">
-                            <p className="text-[10px] font-semibold text-green-700 dark:text-green-400 uppercase tracking-wider mb-1">
-                              Profile URL Preview
-                            </p>
-                            <p className="text-xs font-mono text-slate-600 dark:text-slate-300 truncate">
-                              {vendorProfileUrl}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <div className="flex items-start gap-2 p-3 bg-amber-100/50 dark:bg-amber-900/20 rounded-lg">
-                      <Sparkles size={14} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                        <strong>Where to find this?</strong> Copy the ID from your vendor listing URL or from the vendor
-                        management dashboard.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
 
               {/* Basic Info Card */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-800 p-6">
@@ -1157,48 +1030,10 @@ const VendorProfileOnboardingPageWrapper = () => {
                 </div>
 
                 <div className="p-8 space-y-6">
-                  {/* Profile Link */}
-                  <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-3 mb-3">
-                      <LinkIcon size={20} className="text-green-600" />
-                      <span className="font-bold text-slate-900 dark:text-white">Your Profile Link</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 px-4 py-3 w-[70%] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <span className="text-sm font-mono text-slate-700 dark:text-slate-300 truncate block w-[80%]">
-                          {vendorProfileUrl}
-                        </span>
-                      </div>
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={copyToClipboard}
-                        className={`px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all ${
-                          linkCopied ? "bg-green-100 text-green-700" : "bg-blue-600 text-white hover:bg-blue-700"
-                        }`}
-                      >
-                        {linkCopied ? <Check size={18} /> : <Copy size={18} />}
-                        {linkCopied ? "Copied!" : "Copy"}
-                      </motion.button>
-                    </div>
-                  </div>
-
                   {/* Quick Actions */}
                   <div className="grid sm:grid-cols-2 gap-4">
                     <Link
-                      href={`/vendor/${formData?.category}/${formData.vendorId}/profile`}
-                      className="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
-                        <ExternalLink size={22} className="text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white">View Profile</h4>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">See your live profile</p>
-                      </div>
-                    </Link>
-
-                    <Link
-                      href={`/vendor/${formData?.category}/${formData.vendorId}/profile?upload=true`}
+                      href={`/vendor/${formData?.category}/profile/${formData?.username}?upload=true`}
                       className="flex items-center gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                     >
                       <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg">
@@ -1207,6 +1042,21 @@ const VendorProfileOnboardingPageWrapper = () => {
                       <div>
                         <h4 className="font-bold text-slate-900 dark:text-white">Add Content</h4>
                         <p className="text-xs text-slate-600 dark:text-slate-400">Upload photos & videos</p>
+                      </div>
+                    </Link>
+                    <Link
+                      href={`/vendor/${formData?.category}/profile/${formData?.username}`}
+                      className="flex items-center gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                    >
+                      {" "}
+                      <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg">
+                        {" "}
+                        <View size={22} className="text-white" />{" "}
+                      </div>{" "}
+                      <div>
+                        {" "}
+                        <h4 className="font-bold text-slate-900 dark:text-white">See Profile</h4>{" "}
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Browse your live profile</p>{" "}
                       </div>
                     </Link>
                   </div>
