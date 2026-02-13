@@ -3,7 +3,7 @@
 import BirthdayPlannerWrapper from '@/components/mobile/PagesWrapper/BirthdayPlannerWrapper';
 
 export const metadata = {
-  title: "Birthday Planner",
+  title: "Birthday Planner | PlanWAB",
   description: "Plan the perfect birthday party.",
 };
 
