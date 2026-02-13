@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SearchSection from "./SearchSection";
 import { carouselImages, heroSideImages } from "../PagesWrapper/HomePageWrapper";
 import CategoriesGridSection from "./CategoriesGrid";
+import SmartMedia from "../SmartMediaLoader";
 
 export default function HeroSection({ activeCategory, theme, categoryData }) {
   const slides = carouselImages[activeCategory] || carouselImages.Wedding;
@@ -106,19 +107,17 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
   };
 
   return (
-    <section className="max-w-7xl mx-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg rounded-4xl shadow-2xl border border-white/40 dark:border-gray-700/50 mb-8">
-      <div className="overflow-hidden rounded-4xl border-1 border-bl-gray-500 mb-8">
+    <section className="max-w-6xl mx-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg rounded-4xl shadow-2xl border border-white/40 dark:border-gray-700/50 mb-8">
+      <div className="overflow-hidden rounded-4xl border-1 border-bl-gray-500 mb-5">
         {/* ═══ Main Split Layout ═══ */}
         <div className="flex h-[440px]">
           {/* ──── LEFT: Carousel + Search ──── */}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Carousel */}
-            <div className="relative flex-1 overflow-hidden group">
+            <div className="relative flex-1 overflow-hidden group z-40">
               <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                <motion.img
+                <motion.div
                   key={`${activeCategory}-${currentSlide}`}
-                  src={slides[currentSlide]}
-                  alt={`${activeCategory} slide`}
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -128,9 +127,16 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
                     x: { type: "spring", stiffness: 260, damping: 30 },
                     opacity: { duration: 0.25 },
                   }}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  draggable={false}
-                />
+                  className="absolute inset-0 w-full h-full"
+                >
+                  <SmartMedia
+                    src={slides[currentSlide]}
+                    alt={`${activeCategory} slide`}
+                    className="w-full h-full object-cover"
+                    priority={currentSlide === 0} // Priority for first slide
+                    useSkeleton={false} // Hero content, no skeleton needed
+                  />
+                </motion.div>
               </AnimatePresence>
 
               {/* Nav arrows */}
@@ -317,7 +323,13 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
   )`,
                 }}
               >
-                <img src={sideImage} alt={`${activeCategory} hero`} className="w-full h-full object-cover" />
+                <SmartMedia
+                  src={sideImage}
+                  alt={`${activeCategory} hero`}
+                  className="w-full h-full object-cover"
+                  priority={true} // Always priority - it's hero content
+                  useSkeleton={false} // Hero content, no skeleton needed
+                />
 
                 {/* Subtle gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/30 pointer-events-none" />
@@ -353,11 +365,11 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
             </motion.div>
 
             {/* Photo credit style label */}
-            <div className="absolute top-4 right-4 z-20">
+            {/* <div className="absolute top-4 right-4 z-20">
               <span className="text-[10px] text-white/60 bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">
                 PlanWAB
               </span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

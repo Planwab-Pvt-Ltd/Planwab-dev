@@ -11,6 +11,9 @@ import Testimonials from "../HomePage/TestimonialsSection";
 import VendorsCatSection from "../HomePage/VendorsSection";
 import FloatingLines from "../ui/FloatingLinesUiEffect";
 import CategoriesGridSection from "../HomePage/CategoriesGrid";
+import WeddingPlanningTools from "../HomePage/PlanningTools";
+import LandingCarousel from "../VendorsCarousel1";
+import { Camera, PersonStanding } from "lucide-react";
 
 // ── Theme Definitions ──
 export const categoryThemes = {
@@ -126,10 +129,10 @@ export const carouselImages = {
 
 // ── Right-side Hero Images ──
 export const heroSideImages = {
-  Events: "https://images.unsplash.com/photo-1478146059778-26028b07395a?w=600&q=80",
-  Wedding: "https://images.unsplash.com/photo-1595407753234-0882f1e77954?w=600&q=80",
-  Anniversary: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&q=80",
-  Birthday: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80",
+  Events:  "/posters/deskHeroCarousel/eventsRight.png",
+  Wedding: "/posters/deskHeroCarousel/weddingRight.png",
+  Anniversary: "/posters/deskHeroCarousel/anniversaryRight.png",
+  Birthday: "/posters/deskHeroCarousel/birthdayRight.png",
 };
 
 const CategoryButton = ({ category, imageSrc, active }) => {
@@ -137,7 +140,7 @@ const CategoryButton = ({ category, imageSrc, active }) => {
     Wedding: "/WeddingHeaderCard.png",
     Anniversary: "/AnniversaryHeaderCard.png",
     Birthday: "/BirthdayHeaderCard.png",
-    Events: "/sample-image.png", // temporary
+    Events: "/EventsHeaderCard.png",
   };
 
   const backgroundImage = active ? imageSrc : inactiveImages[category] || "/sample-image.png";
@@ -192,10 +195,20 @@ const categoryGradients = {
 };
 
 export default function DesktopHomePageWrapper() {
-  const { activeCategory, setActiveCategory } = useCategoryStore();
+  const { activeCategoryDesktop: activeCategory, setActiveCategoryDesktop: setActiveCategory } = useCategoryStore();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [sections, setSections] = useState({
+    featured: { data: [], loading: true },
+    planners: { data: [], loading: true },
+    photographers: { data: [], loading: true },
+    venues: { data: [], loading: true },
+    makeup: { data: [], loading: true },
+    catering: { data: [], loading: true },
+    djs: { data: [], loading: true },
+    mehendi: { data: [], loading: true },
+  });
 
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains("dark"));
@@ -210,6 +223,27 @@ export default function DesktopHomePageWrapper() {
       }
     }
   }, [searchParams, setActiveCategory]);
+
+  const fetchSection = async (key, query) => {
+    try {
+      const res = await fetch(`/api/vendor?${query}&limit=12`);
+      const json = await res.json();
+      setSections((prev) => ({ ...prev, [key]: { data: json.data || [], loading: false } }));
+    } catch (e) {
+      setSections((prev) => ({ ...prev, [key]: { data: [], loading: false } }));
+    }
+  };
+
+  useEffect(() => {
+    // fetchSection('featured', 'featured=true&sortBy=rating');
+    fetchSection("planners", "categories=planners&sortBy=rating");
+    fetchSection("photographers", "categories=photographers&sortBy=rating");
+    // fetchSection('makeup', 'categories=makeup&sortBy=rating');
+    // fetchSection('venues', 'categories=venues&sortBy=rating');
+    // fetchSection('catering', 'categories=catering&sortBy=rating');
+    // fetchSection('djs', 'categories=djs&sortBy=rating');
+    // fetchSection('mehendi', 'categories=mehendi&sortBy=rating');
+  }, []);
 
   const handleCategoryChange = (categoryName) => {
     setActiveCategory(categoryName);
@@ -286,10 +320,27 @@ export default function DesktopHomePageWrapper() {
         </div>
       </motion.div>
       {/* ── Rest of Page ── */}
-      <ServicesBanner />
+      <WeddingPlanningTools />
+      <LandingCarousel
+        title="Featured Planners"
+        subtitle="Plan with the best in the business"
+        items={sections.planners.data}
+        isLoading={sections.planners.loading}
+        icon={PersonStanding}
+        accentColor="#ec4899"
+      />
       <HowItWorksSection />
-      {/* <VendorsCatSection />
-        <Testimonials /> */}
+      <LandingCarousel
+        title="Top Photographers"
+        subtitle="Capture your moments"
+        items={sections.photographers.data}
+        isLoading={sections.photographers.loading}
+        icon={Camera}
+        accentColor="#ec4899"
+      />
+      <ServicesBanner />
+      <VendorsCatSection />
+      <Testimonials />
     </main>
   );
 }
