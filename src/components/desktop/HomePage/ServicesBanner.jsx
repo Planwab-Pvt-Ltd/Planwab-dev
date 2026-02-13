@@ -49,7 +49,7 @@ const itemVariants = {
 export default function ServicesBanner() {
   return (
     <section className="relative bg-white/60 dark:bg-gray-900/60 backdrop-blur-md py-16 sm:py-24">
-      <div
+      {/* <div
         className="absolute inset-0 -z-20 dark:hidden"
         style={{
           background:
@@ -62,7 +62,7 @@ export default function ServicesBanner() {
           background:
             "radial-gradient(125% 125% at 50% 90%, #0d1117 40%, #451a03 100%)",
         }}
-      />
+      /> */}
       <motion.div
         className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         variants={containerVariants}

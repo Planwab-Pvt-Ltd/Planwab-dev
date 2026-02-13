@@ -24,11 +24,14 @@ import {
   Utensils,
   Home,
   Search,
+  Loader2,
 } from "lucide-react";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import Link from "next/link";
 import SmartMedia from "../SmartMediaLoader";
 import { formatPrice } from "../../../lib/utils";
+import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 
 // =============================================================================
 // DATA
@@ -114,11 +117,78 @@ const DesktopHero = memo(() => {
   );
 });
 
-const VendorCard = memo(({ vendor }) => {
+const VendorCard = memo(({ vendor, user }) => {
   const router = useRouter();
   const { addToCart, removeFromCart, cartItems } = useCartStore();
   const vendorId = vendor._id || vendor.id;
   const inCart = useMemo(() => cartItems?.some((item) => (item._id || item.id) === vendorId), [cartItems, vendorId]);
+
+  const [isLiked, setIsLiked] = useState(false);
+  const [likingLoading, setLikingLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id || !vendorId) return;
+    let cancelled = false;
+
+    const fetchStatus = async () => {
+      setStatusLoading(true);
+      try {
+        const res = await fetch("/api/user/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vendorId: vendorId, userId: user.id }),
+        });
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setIsLiked(data.isLiked);
+        }
+      } catch (error) {
+        console.error("Error fetching status:", error);
+      } finally {
+        if (!cancelled) {
+          setStatusLoading(false);
+        }
+      }
+    };
+
+    fetchStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, vendorId]);
+
+  const handleToggleLike = useCallback(
+    async (e) => {
+      e.stopPropagation();
+      if (!user?.id) {
+        toast.error("Please login to like vendors");
+        return;
+      }
+      if (likingLoading) return;
+
+      setLikingLoading(true);
+      const prevLiked = isLiked;
+      setIsLiked(!prevLiked);
+
+      try {
+        const res = await fetch("/api/user/toggle-like", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vendorId: vendorId, userId: user.id }),
+        });
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        toast.success(data.message);
+      } catch (error) {
+        setIsLiked(prevLiked);
+        toast.error("Something went wrong");
+      } finally {
+        setLikingLoading(false);
+      }
+    },
+    [user?.id, vendorId, isLiked, likingLoading],
+  );
 
   const handleCart = (e) => {
     e.stopPropagation();
@@ -141,11 +211,27 @@ const VendorCard = memo(({ vendor }) => {
     >
       <div className="relative h-44 overflow-hidden bg-slate-100">
         <SmartMedia src={vendor?.defaultImage || vendor.images?.[0]} type="image" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-        <div className="absolute top-4 right-4">
-          <button className="p-2.5 rounded-full bg-white/90 backdrop-blur-md text-slate-400 hover:text-rose-500 transition-colors shadow-sm">
-            <Heart size={18} />
-          </button>
-        </div>
+        {/* Wishlist */}
+        <motion.button
+          whileHover={{ scale: likingLoading || statusLoading ? 1 : 1.1 }}
+          whileTap={{ scale: likingLoading || statusLoading ? 1 : 0.9 }}
+          onClick={handleToggleLike}
+          disabled={likingLoading || statusLoading}
+          className={`absolute top-4 right-4 p-2.5 rounded-full bg-white/95 backdrop-blur-md shadow-lg transition-all duration-300 ${
+            likingLoading || statusLoading ? "cursor-not-allowed opacity-70" : ""
+          }`}
+        >
+          {likingLoading || statusLoading ? (
+            <Loader2 size={18} className="animate-spin text-slate-400" />
+          ) : (
+            <Heart
+              size={18}
+              className={`transition-colors ${
+                isLiked ? "fill-rose-500 text-rose-500" : "text-slate-400 hover:text-rose-500"
+              }`}
+            />
+          )}
+        </motion.button>
         {vendor.verified && (
           <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-indigo-600/90 backdrop-blur-md text-white flex items-center gap-1.5 shadow-lg">
             <Check size={10} strokeWidth={4} />
@@ -195,6 +281,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
   const router = useRouter();
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
+  const { user } = useUser();
 
   const checkScroll = useCallback(() => {
     if (scrollRef.current) {
@@ -274,7 +361,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
             [...Array(5)].map((_, i) => <div key={i} className="flex-shrink-0 w-64 h-80 bg-slate-100 animate-pulse rounded-[32px]" />)
           ) : (
             <>
-              {vendors.map((v) => <VendorCard key={v._id || v.id} vendor={v} />)}
+              {vendors.map((v) => <VendorCard key={v._id || v.id} vendor={v} user={user} />)}
               <div className="flex-shrink-0 w-64 h-auto rounded-[32px] border-4 border-dashed border-slate-100 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 transition-colors">
                 <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300">
                   <Plus size={28} />

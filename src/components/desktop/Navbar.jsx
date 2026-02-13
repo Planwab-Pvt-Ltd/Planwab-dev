@@ -1260,6 +1260,8 @@ const DesktopNavbar = () => {
   const [isPending, startTransition] = useTransition();
   const [pendingRoute, setPendingRoute] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [showToggleButton, setShowToggleButton] = useState(false);
+const [isNavbarExpanded, setIsNavbarExpanded] = useState(false);
   const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success", isNavbarVisible: false });
@@ -1285,19 +1287,30 @@ const DesktopNavbar = () => {
   const lastScrollY = useRef(0);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    const diff = latest - lastScrollY.current;
-    if (Math.abs(diff) > 10) {
-      if (diff > 0 && latest > 100) setIsNavbarVisible(false);
-      else if (diff < 0) setIsNavbarVisible(true);
-      lastScrollY.current = latest;
-    }
-  });
+  const diff = latest - lastScrollY.current;
+  
+  // Show toggle button when scrolled down past 200px
+  if (latest > 200) {
+    setShowToggleButton(true);
+  } else {
+    setShowToggleButton(false);
+    setIsNavbarExpanded(false); // Close navbar when at top
+  }
+  
+  // Hide navbar when scrolling up
+  if (diff < 0 && latest > 200) {
+    setIsNavbarExpanded(false);
+  }
+  
+  lastScrollY.current = latest;
+});
 
   useEffect(() => {
-    if (activeDrawer === "cart" || activeDrawer === "explore") {
-      setIsNavbarVisible(false);
-    }
-  }, [isNavbarVisible, activeDrawer]);
+  if (activeDrawer === "cart" || activeDrawer === "explore") {
+    setIsNavbarExpanded(false);
+    setShowToggleButton(false);
+  }
+}, [activeDrawer]);
 
   const navItems = useMemo(
     () => [
@@ -1402,7 +1415,51 @@ const DesktopNavbar = () => {
       {/* Toast Notification */}
       <Toast {...toast} onClose={hideToast} />
 
-      {/* Main Desktop Navbar - Vertical Floating */}
+      {/* Toggle Button - Shows when scrolled */}
+    <AnimatePresence>
+      {showToggleButton && !isNavbarExpanded && (
+        <motion.button
+          initial={{ x: 120, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: 120, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          onClick={() => {
+            haptic("medium");
+            setIsNavbarExpanded(true);
+          }}
+          className="fixed right-6 bottom-6 z-[9999] w-14 h-14 pl-2 bg-white/95 backdrop-blur-xl rounded-full shadow-2xl border border-gray-200/50 flex items-center justify-center group hover:px-6 cursor-pointer transition-all duration-300"
+        >
+          <motion.div
+            className="flex items-center gap-2"
+            initial={{ width: "auto" }}
+          >
+            <ChartBarStacked size={24} className="text-blue-600" strokeWidth={2.5} />
+            <motion.span
+              initial={{ width: 0, opacity: 0 }}
+              whileHover={{ width: "auto", opacity: 1 }}
+              className="text-sm font-bold text-gray-900 whitespace-nowrap overflow-hidden"
+            >
+              Menu
+            </motion.span>
+          </motion.div>
+          
+          {/* Cart Badge */}
+          {cartCount > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white shadow-md"
+            >
+              <span className="text-[10px] font-black text-white">{cartCount}</span>
+            </motion.div>
+          )}
+        </motion.button>
+      )}
+    </AnimatePresence>
+
+    {/* Main Desktop Navbar - Vertical Floating */}
+     <AnimatePresence>
+      {isNavbarExpanded && (
       <motion.div
         animate={{
           x: isNavbarVisible ? 0 : 120,
@@ -1580,6 +1637,8 @@ const DesktopNavbar = () => {
           })}
         </div>
       </motion.div>
+      )}
+      </AnimatePresence>
 
       {/* Drawers */}
       <AnimatePresence>
