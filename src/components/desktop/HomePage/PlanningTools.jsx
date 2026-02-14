@@ -177,7 +177,7 @@ export default function WeddingPlanningTools({ heading, description }) {
 
   return (
     // .home-tools-section mapping: padding: 40px 0 (mobile) -> 60px 0 (tablet+), bg #f8f8f8
-    <section className="py-[40px] pt-0 md:pt-8 md:py-[60px] pb-3 md:pb-3 bg-[#f8f5f0] dark:bg-[#0d1117]">
+    <section className="py-[40px] pt-0 md:pt-8 md:py-[60px] pb-3 md:pb-3">
       
       {/* Container for cards - max-w-4xl mx-auto (from original HTML) + padding mappings */}
       {/* Original CSS .home-tools-section__cards: px-4 (16px), md:px-10 (40px), lg:px-[60px] */}

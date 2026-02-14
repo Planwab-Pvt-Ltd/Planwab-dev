@@ -12,7 +12,7 @@ const Footer = () => {
       style={{ contentVisibility: "auto", containIntrinsicSize: "600px" }}
     >
       {/* Top Curve Decoration */}
-      <div className="w-full relative z-10 pointer-events-none leading-none">
+      {/* <div className="w-full relative z-10 pointer-events-none leading-none">
         <img
           alt=""
           loading="lazy"
@@ -20,7 +20,7 @@ const Footer = () => {
           src="https://www.theweddingcompany.com/images/HomePage/new/pink-curve.svg"
           aria-hidden="true"
         />
-      </div>
+      </div> */}
 
       <div className="bg-[#FFEFF4] pt-12 pb-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">

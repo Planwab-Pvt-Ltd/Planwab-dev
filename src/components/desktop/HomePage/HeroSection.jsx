@@ -18,7 +18,7 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
   const intervalRef = useRef(null);
   const progressRef = useRef(null);
 
-  const SLIDE_DURATION = 7000;
+  const SLIDE_DURATION = 3500;
 
   const startAutoPlay = useCallback(() => {
     clearInterval(intervalRef.current);
@@ -106,11 +106,13 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
     }),
   };
 
+  const sectionBottomImage =`${activeCategory.toLowerCase()}SectionBottom.png`;
+
   return (
-    <section className="max-w-6xl mx-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg rounded-4xl shadow-2xl border border-white/40 dark:border-gray-700/50 mb-8">
+    <section className="relative max-w-6xl mx-auto bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg rounded-4xl shadow-2xl border border-white/40 dark:border-gray-700/50 mb-6">
       <div className="overflow-hidden rounded-4xl border-1 border-bl-gray-500 mb-5">
         {/* ═══ Main Split Layout ═══ */}
-        <div className="flex h-[440px]">
+        <div className="flex h-[410px]">
           {/* ──── LEFT: Carousel + Search ──── */}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Carousel */}
@@ -134,13 +136,13 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
                     alt={`${activeCategory} slide`}
                     className="w-full h-full object-cover"
                     priority={currentSlide === 0} // Priority for first slide
-                    useSkeleton={false} // Hero content, no skeleton needed
+                    useSkeleton={true} // Hero content, no skeleton needed
                   />
                 </motion.div>
               </AnimatePresence>
 
               {/* Nav arrows */}
-              <div className="absolute top-2 left-5 z-30 flex items-center">
+              <div className="absolute bottom-2 left-5 z-30 flex items-center">
                 {/* Previous Button */}
                 <motion.button
                   onClick={goPrev}
@@ -168,7 +170,7 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
                 >
                   {isPlaying ? (
                     <svg
-                      className="w-8 h-8 text-white dark:text-gray-200"
+                      className="w-9 h-9 text-white dark:text-gray-200"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -328,7 +330,7 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
                   alt={`${activeCategory} hero`}
                   className="w-full h-full object-cover"
                   priority={true} // Always priority - it's hero content
-                  useSkeleton={false} // Hero content, no skeleton needed
+                  useSkeleton={true} // Hero content, no skeleton needed
                 />
 
                 {/* Subtle gradient overlay */}
@@ -374,6 +376,15 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
         </div>
       </div>
       <CategoriesGridSection />
+  <img
+  src={sectionBottomImage}
+  alt="BaratsectionBottom"
+  loading="lazy"
+  decoding="async"
+  fetchPriority="low"
+  className="absolute bottom-0 left-1/2 -translate-x-1/2 -z-10 pointer-events-none opacity-80" 
+  style={{height: activeCategory.toLowerCase() !== "events" ? "100px" : "auto",}}
+/>
     </section>
   );
 }

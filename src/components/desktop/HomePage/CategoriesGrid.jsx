@@ -818,7 +818,7 @@ const categoriesBirthday = useMemo(
   };
 
   return (
-    <div className="p-4 py-2 pt-4 bg-transparent rounded-2xl mb-5 mx-auto max-w-5xl">
+    <div className="p-4 py-2 pt-4 bg-transparent rounded-2xl mx-auto max-w-5xl z-30 mb-22">
       {/* <div className="flex items-center justify-between mb-8">
         <h2 className="text-xl md:text-2xl font-semibold text-gray-900 leading-none">What are you looking for?</h2>
 

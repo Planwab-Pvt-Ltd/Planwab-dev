@@ -5,6 +5,7 @@ import ThemeClerkProvider from "../lib/ThemeClerkProvider";
 import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "sonner";
 import ReactQueryProvider from "../components/providers/ReactQueryProvider";
+import ClientModalWrapper from "../components/shared/ClientModalWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -114,6 +115,7 @@ export default function RootLayout({ children }) {
             <NextTopLoader color="#2563eb" height={3} crawl={false} showSpinner={false} easing="linear" speed={300} shadow={false} zIndex={1600} />
             {children}
             <Toaster position="bottom-center" richColors closeButton />
+            <ClientModalWrapper />
           </body>
         </html>
       </ThemeClerkProvider>

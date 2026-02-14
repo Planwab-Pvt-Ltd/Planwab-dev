@@ -159,7 +159,7 @@ const CarouselCard = memo(({ item, index, onAddToCart, isInCart, user }) => {
       transition={{ duration: 0.4, delay: index * 0.05 }}
       whileHover={{ y: -8 }}
       onClick={handleCardClick}
-      className="flex-shrink-0 w-72 bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 group cursor-pointer snap-start min-h-[375px] max-h-[378px]"
+      className="flex-shrink-0 w-64 bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 group cursor-pointer snap-start min-h-[375px] max-h-[378px]"
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-slate-100">
@@ -380,9 +380,9 @@ export const LandingCarousel = memo(
     const isInCart = (itemId) => cartItems.includes(itemId);
 
     return (
-      <section className="py-8 md:py-12 relative group/section max-w-7xl mx-auto px-8">
+      <section className="py-8 md:py-12 md:pt-8 pt-6 relative group/section mx-auto px-8 w-[90%]">
         {/* Header */}
-        <div className="flex items-end justify-between mb-8 px-2">
+        {/* <div className="flex items-end justify-between mb-8 px-2">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -415,7 +415,7 @@ export const LandingCarousel = memo(
             <span>View All</span>
             <ArrowRight size={14} />
           </motion.button>
-        </div>
+        </div> */}
 
         {/* Carousel */}
         <div className="relative">
@@ -425,7 +425,7 @@ export const LandingCarousel = memo(
           <div
             ref={scrollRef}
             onScroll={checkScroll}
-            className="flex gap-6 overflow-x-auto no-scrollbar pb-4 px-2 snap-x snap-mandatory"
+            className="flex gap-6 gap-x-4 overflow-x-auto no-scrollbar pb-4 px-2 snap-x snap-mandatory"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {isLoading ? (
