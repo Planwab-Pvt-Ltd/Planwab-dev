@@ -26,20 +26,20 @@ const LeadCaptureModal = ({ isOpen, onClose, actionType, title, subtitle }) => {
 
   const { setCanContinue, setAllowedAction } = useAppValuesStore();
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-      setFormData({ name: "", phone: "" });
-      setErrors({ name: "", phone: "" });
-      setTouched({ name: false, phone: false });
-      setSubmitStatus(null);
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+useEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = "hidden";  // ✅ This stops scrolling
+  } else {
+    document.body.style.overflow = "unset";   // ✅ This restores scrolling
+    setFormData({ name: "", phone: "" });
+    setErrors({ name: "", phone: "" });
+    setTouched({ name: false, phone: false });
+    setSubmitStatus(null);
+  }
+  return () => {
+    document.body.style.overflow = "unset";   // ✅ Cleanup function
+  };
+}, [isOpen]);
 
   const validateName = (name) => {
     if (!name.trim()) return "Name is required";
@@ -101,6 +101,12 @@ const LeadCaptureModal = ({ isOpen, onClose, actionType, title, subtitle }) => {
           name: formData.name,
           phone: formData.phone,
           actionType: actionType || "general",
+          currentUrl: window.location.href,
+          metadata: {
+          referrer: document.referrer,
+          device: 'desktop',
+          campaign: 'summer-sale'
+        }
         }),
       });
 
@@ -116,7 +122,7 @@ const LeadCaptureModal = ({ isOpen, onClose, actionType, title, subtitle }) => {
 
       setTimeout(() => {
         onClose();
-      }, 1500);
+      }, 500);
     } catch (error) {
       console.error("Submission error:", error);
       setSubmitStatus("error");
@@ -150,7 +156,7 @@ const LeadCaptureModal = ({ isOpen, onClose, actionType, title, subtitle }) => {
               exit={{ scale: 0.8, opacity: 0, y: 50, rotateX: 15 }}
               transition={SPRING_CONFIG}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+              className="relative h-[98vh] w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
               style={{
                 transformStyle: "preserve-3d",
                 perspective: "1000px",
@@ -163,15 +169,6 @@ const LeadCaptureModal = ({ isOpen, onClose, actionType, title, subtitle }) => {
                 className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
                 style={{ transformOrigin: "left" }}
               />
-
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors group"
-              >
-                <X size={20} className="text-gray-600 group-hover:text-gray-900" />
-              </motion.button>
 
               <div className="relative px-6 sm:px-8 pt-12 pb-8">
                 <motion.div

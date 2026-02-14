@@ -13,7 +13,9 @@ import FloatingLines from "../ui/FloatingLinesUiEffect";
 import CategoriesGridSection from "../HomePage/CategoriesGrid";
 import WeddingPlanningTools from "../HomePage/PlanningTools";
 import LandingCarousel from "../VendorsCarousel1";
-import { Camera, PersonStanding } from "lucide-react";
+import { Camera, MapPin, PersonStanding } from "lucide-react";
+import CarouselHeader from "../CarouselHeader";
+import CardsWithBanner from "../HomePage/CardsWithBanner";
 
 // ── Theme Definitions ──
 export const categoryThemes = {
@@ -29,6 +31,7 @@ export const categoryThemes = {
     buttonBg: "bg-violet-600 hover:bg-violet-700",
     buttonGlow: "shadow-violet-500/30",
     dotBg: "bg-violet-500",
+    bgLight: "bg-gradient-to-bl from-[#ffe4e6] to-[#ccfbf1] dark:bg-[#0d1117]",
   },
   Wedding: {
     glow: "bg-rose-500/10 dark:bg-rose-500/20",
@@ -42,6 +45,7 @@ export const categoryThemes = {
     buttonBg: "bg-rose-600 hover:bg-rose-700",
     buttonGlow: "shadow-rose-500/30",
     dotBg: "bg-rose-500",
+    bgLight: "bg-gradient-to-bl from-[#fef3c7] to-[#d1fae5]",
   },
   Anniversary: {
     glow: "bg-amber-500/10 dark:bg-amber-500/20",
@@ -55,6 +59,7 @@ export const categoryThemes = {
     buttonBg: "bg-amber-600 hover:bg-amber-700",
     buttonGlow: "shadow-amber-500/30",
     dotBg: "bg-amber-500",
+    bgLight: "bg-gradient-to-bl from-[#fbcfe8] to-[#a7f3d0]",
   },
   Birthday: {
     glow: "bg-sky-500/10 dark:bg-sky-500/20",
@@ -68,6 +73,7 @@ export const categoryThemes = {
     buttonBg: "bg-sky-600 hover:bg-sky-700",
     buttonGlow: "shadow-sky-500/30",
     dotBg: "bg-sky-500",
+    bgLight: "bg-gradient-to-bl from-[#fff1f2] to-[#ccfbf1]",
   },
 };
 
@@ -129,7 +135,7 @@ export const carouselImages = {
 
 // ── Right-side Hero Images ──
 export const heroSideImages = {
-  Events:  "/posters/deskHeroCarousel/eventsRight.png",
+  Events: "/posters/deskHeroCarousel/eventsRight.png",
   Wedding: "/posters/deskHeroCarousel/weddingRight.png",
   Anniversary: "/posters/deskHeroCarousel/anniversaryRight.png",
   Birthday: "/posters/deskHeroCarousel/birthdayRight.png",
@@ -235,14 +241,14 @@ export default function DesktopHomePageWrapper() {
   };
 
   useEffect(() => {
-    // fetchSection('featured', 'featured=true&sortBy=rating');
+    fetchSection("featured", "featured=true&sortBy=rating");
     fetchSection("planners", "categories=planners&sortBy=rating");
     fetchSection("photographers", "categories=photographers&sortBy=rating");
-    // fetchSection('makeup', 'categories=makeup&sortBy=rating');
-    // fetchSection('venues', 'categories=venues&sortBy=rating');
-    // fetchSection('catering', 'categories=catering&sortBy=rating');
-    // fetchSection('djs', 'categories=djs&sortBy=rating');
-    // fetchSection('mehendi', 'categories=mehendi&sortBy=rating');
+    fetchSection("makeup", "categories=makeup&sortBy=rating");
+    fetchSection("venues", "categories=venues&sortBy=rating");
+    fetchSection("catering", "categories=catering&sortBy=rating");
+    fetchSection("djs", "categories=djs&sortBy=rating");
+    fetchSection("mehendi", "categories=mehendi&sortBy=rating");
   }, []);
 
   const handleCategoryChange = (categoryName) => {
@@ -253,8 +259,51 @@ export default function DesktopHomePageWrapper() {
   const currentTheme = categoryThemes[activeCategory] || categoryThemes.Wedding;
   const activeCategoryData = categoryCards.find((c) => c.name === activeCategory) || categoryCards[1];
 
+  const cardsData1 = [
+    {
+      title: `${activeCategory === "Default" ? "Event" : activeCategory} Planner`,
+      image: "/CardsCatPhotos/PlannerCat.png",
+      link: "/vendors/marketplace/planners",
+    },
+    {
+      title: "Photographer",
+      image: "/CardsCatPhotos/PhotographerCat.png",
+      link: "/vendors/marketplace/photographers",
+    },
+    {
+      title: "mehendi",
+      image: "/CardsCatPhotos/MehndiCat.png",
+      link: "/vendors/marketplace/mehendi",
+    },
+    {
+      title: "MakeUp",
+      image: "/CardsCatPhotos/MakeUpCat.png",
+      link: "/vendors/marketplace/makeup",
+    },
+    {
+      title: `${activeCategory} Venues`,
+      image: "https://cdn.yesmadam.com/images/live/category/Hydra%20Category_Wedding%20Season-18-11-25.gif",
+      link: "/vendors/marketplace/venues",
+    },
+    {
+      title: "DJs & Sound",
+      image: "/CardsCatPhotos/DJCat.png",
+      link: "/vendors/marketplace/djs",
+    },
+    {
+      title: "Dhol",
+      image: "/CardsCatPhotos/DholCat.png",
+      link: "/vendors/marketplace/dhol",
+    },
+    {
+      title: "Caterers",
+      image: "/CardsCatPhotos/CaterorsCat.png",
+      link: "/vendors/marketplace/catering",
+    },
+  ];
+
   return (
-    <main className="relative w-full overflow-x-hidden bg-[#f8f5f0] dark:bg-[#0d1117]">
+    <main className={`relative w-full overflow-x-hidden ${currentTheme?.bgLight} dark:bg-[#0d1117]`}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -291,7 +340,7 @@ export default function DesktopHomePageWrapper() {
         {/* ── Hero with overlapping cards ── */}
         <div className="relative z-50 max-w-7xl mx-auto px-4 pt-34">
           {/* Category Cards — 70% width, centered, overlapping main card */}
-          <div className="relative z-40 flex justify-center mb-[-28px]">
+          <div className="relative z-40 flex justify-center mb-[-44px]">
             <div className="flex items-stretch gap-2 w-[72%] h-[90px]">
               <motion.div
                 key="categories"
@@ -321,6 +370,14 @@ export default function DesktopHomePageWrapper() {
       </motion.div>
       {/* ── Rest of Page ── */}
       <WeddingPlanningTools />
+      <CarouselHeader
+        title={`${activeCategory} Planners`}
+        description={`Find the best ${activeCategory.toLowerCase()} planners that will bring your vision to life and keep things running smoothly.`}
+        buttonText={`Explore ${activeCategory} Planners`}
+        buttonLink={`/vendors/marketplace?categories=${activeCategory.toLowerCase()}`}
+        imageSrc="https://www.weddingwire.in/assets/img/listing-sector-banner/28.webp"
+      />
+
       <LandingCarousel
         title="Featured Planners"
         subtitle="Plan with the best in the business"
@@ -329,7 +386,14 @@ export default function DesktopHomePageWrapper() {
         icon={PersonStanding}
         accentColor="#ec4899"
       />
-      <HowItWorksSection />
+      <CarouselHeader
+        title={`${activeCategory} Photographers`}
+        description={`Find the best ${activeCategory.toLowerCase()} photographers that will bring your vision to life and keep things running smoothly.`}
+        buttonText={`Explore ${activeCategory} Photographers`}
+        buttonLink={`/vendors/marketplace?categories=${activeCategory.toLowerCase()}`}
+        imageSrc="https://www.weddingwire.in/assets/img/listing-sector-banner/28.webp"
+        contentSide="right"
+      />
       <LandingCarousel
         title="Top Photographers"
         subtitle="Capture your moments"
@@ -338,8 +402,63 @@ export default function DesktopHomePageWrapper() {
         icon={Camera}
         accentColor="#ec4899"
       />
-      <ServicesBanner />
+      <CardsWithBanner
+        heading="Top Categories For You ..."
+        contentSide="right"
+        backgroundImage="https://images.jdmagicbox.com/standard/shopfront/8fcf090e6e47722f436205eb7d8eee92.jpg"
+        cards={cardsData1}
+      />
+      <CarouselHeader
+        title={`${activeCategory} Venues`}
+        description={`Find the best ${activeCategory.toLowerCase()} venues that will bring your vision to life and keep things running smoothly.`}
+        buttonText={`Explore ${activeCategory} Venues`}
+        buttonLink={`/vendors/marketplace?categories=${activeCategory.toLowerCase()}`}
+        imageSrc="https://www.weddingwire.in/assets/img/listing-sector-banner/28.webp"
+        contentSide="left"
+      />
+      <LandingCarousel
+        title="Top Venues"
+        subtitle="Find the perfect setting for your event"
+        items={sections.venues.data}
+        isLoading={sections.venues.loading}
+        icon={MapPin}
+        accentColor="#ec4899"
+      />
+      <CarouselHeader
+        title={`${activeCategory} Makeup Artists`}
+        description={`Find the best ${activeCategory.toLowerCase()} makeup artists that will bring your vision to life and keep things running smoothly.`}
+        buttonText={`Explore ${activeCategory} Makeup Artists`}
+        buttonLink={`/vendors/marketplace?categories=${activeCategory.toLowerCase()}`}
+        imageSrc="https://www.weddingwire.in/assets/img/listing-sector-banner/28.webp"
+        contentSide="right"
+      />
+      <LandingCarousel
+        title="Top Makeup Artists"
+        subtitle="Look your best with top makeup artists"
+        items={sections.makeup.data}
+        isLoading={sections.makeup.loading}
+        icon={PersonStanding}
+        accentColor="#ec4899"
+      />
+      <HowItWorksSection />
+      <CarouselHeader
+        title={`${activeCategory} Featured Vendors.`}
+        description={`Find the best ${activeCategory.toLowerCase()} vendors that will bring your vision to life and keep things running smoothly.`}
+        buttonText={`Explore ${activeCategory} Vendors`}
+        buttonLink={`/vendors/marketplace?categories=${activeCategory.toLowerCase()}`}
+        imageSrc="https://www.weddingwire.in/assets/img/listing-sector-banner/28.webp"
+        contentSide="left"
+      />
+      <LandingCarousel
+        title="Featured Vendors"
+        subtitle="Look your best with top vendors in every category"
+        items={sections.featured.data}
+        isLoading={sections.featured.loading}
+        icon={PersonStanding}
+        accentColor="#ec4899"
+      />
       <VendorsCatSection />
+      <ServicesBanner />
       <Testimonials />
     </main>
   );
