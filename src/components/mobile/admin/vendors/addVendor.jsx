@@ -292,7 +292,7 @@ export default function AddVendor() {
         formData.append("expire", authData.expire);
         formData.append("token", authData.token);
         formData.append("fileName", `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split(".").pop()}`);
-        formData.append("folder", "/vendors/images");
+        formData.append("folder", "/vendors");
         return fetch("https://upload.imagekit.io/api/v1/files/upload", {
           method: "POST",
           body: formData,

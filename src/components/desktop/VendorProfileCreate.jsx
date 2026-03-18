@@ -155,7 +155,8 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
     setError("");
 
     try {
-      const url = await uploadImageToImageKit(file, "/profiles/avatars");
+      const vendorName = formData.username || "unknown";
+      const url = await uploadImageToImageKit(file, `/vendor-profiles/${vendorName}/avatars`);
       setProfilePicture(url);
       setFormData((prev) => ({ ...prev, profilePicture: url }));
     } catch (err) {
@@ -195,7 +196,8 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
     setError("");
 
     try {
-      const url = await uploadImageToImageKit(file, "/profiles/covers");
+      const vendorName = formData.username || "unknown";
+      const url = await uploadImageToImageKit(file, `/vendor-profiles/${vendorName}/covers`);
       setCoverImage(url);
       setFormData((prev) => ({ ...prev, coverImage: url }));
     } catch (err) {

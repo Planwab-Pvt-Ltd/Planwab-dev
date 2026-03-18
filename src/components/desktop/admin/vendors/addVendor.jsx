@@ -1710,7 +1710,7 @@ function AddVendorContent({ onNavigate }) {
       data.append("expire", authData.expire);
       data.append("token", authData.token);
       data.append("fileName", `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split(".").pop()}`);
-      data.append("folder", "/vendors/images");
+      data.append("folder", "/vendors");
       return fetch("https://upload.imagekit.io/api/v1/files/upload", {
         method: "POST",
         body: data,
