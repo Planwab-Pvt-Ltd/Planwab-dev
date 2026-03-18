@@ -231,52 +231,24 @@ const VendorProfileOnboardingPageWrapper = () => {
     }
   };
 
-  const uploadImageToBunny = async (file) => {
-    try {
-      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-
-      const storageZone = process.env.NEXT_PUBLIC_BUNNY_STORAGE_ZONE_NAME;
-      const accessKey = process.env.NEXT_PUBLIC_BUNNY_STORAGE_ZONE_PASSWORD;
-      const cdnHostname = process.env.NEXT_PUBLIC_BUNNY_CDN_HOSTNAME; // Full CDN URL e.g., https://yourpullzone.b-cdn.net
-
-      if (!storageZone || !accessKey || !cdnHostname) {
-        console.error("Missing config:", { storageZone, accessKey: !!accessKey, cdnHostname });
-        throw new Error("Bunny CDN configuration is missing");
-      }
-
-      // Storage API endpoint for upload (PUT request)
-      // Always uses storage.bunnycdn.com for uploads
-      const uploadUrl = `https://storage.bunnycdn.com/${storageZone}/vendor-profiles/${fileName}`;
-
-      console.log("Uploading to:", uploadUrl);
-
-      // Upload the file
-      const response = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          AccessKey: accessKey,
-          "Content-Type": file.type,
-        },
-        body: file,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Bunny upload failed:", response.status, errorText);
-        throw new Error(`Upload failed: ${response.status}`);
-      }
-
-      console.log("Upload successful");
-
-      // Return the CDN URL for public access (this is what users will access)
-      const publicUrl = `${cdnHostname}/vendor-profiles/${fileName}`;
-      console.log("Public URL:", publicUrl);
-
-      return publicUrl;
-    } catch (error) {
-      console.error("Bunny upload error:", error);
-      throw new Error(error.message || "Failed to upload image");
-    }
+  const uploadImageToImageKit = async (file, folder = "/profiles") => {
+    const authRes = await fetch("/api/imagekit/auth");
+    const authData = await authRes.json();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY);
+    formData.append("signature", authData.signature);
+    formData.append("expire", authData.expire);
+    formData.append("token", authData.token);
+    formData.append("fileName", `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split(".").pop()}`);
+    formData.append("folder", folder);
+    const res = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Image upload failed");
+    const data = await res.json();
+    return data.url;
   };
 
   const handleProfilePictureChange = async (e) => {
@@ -287,7 +259,7 @@ const VendorProfileOnboardingPageWrapper = () => {
     reader.readAsDataURL(file);
     setUploadingProfile(true);
     try {
-      const url = await uploadImageToBunny(file);
+      const url = await uploadImageToImageKit(file, "/profiles/avatars");
       setProfilePicture(url);
       setFormData((prev) => ({ ...prev, profilePicture: url }));
     } catch (err) {
@@ -306,7 +278,7 @@ const VendorProfileOnboardingPageWrapper = () => {
     reader.readAsDataURL(file);
     setUploadingCover(true);
     try {
-      const url = await uploadImageToBunny(file);
+      const url = await uploadImageToImageKit(file, "/profiles/covers");
       setCoverImage(url);
       setFormData((prev) => ({ ...prev, coverImage: url }));
     } catch (err) {
