@@ -182,7 +182,7 @@ const VendorProfileOnboardingPageWrapper = () => {
     setError("");
 
     try {
-      const vendorName = formData.username || "unknown";
+      const vendorName = formData.username || formData.vendorName || formData.phoneNo || "unknown-add-vendor-profile";
       const url = await uploadImageToImageKit(file, `/vendor-profiles/${vendorName}/avatars`);
       setProfilePicture(url);
       setFormData((prev) => ({ ...prev, profilePicture: url }));
@@ -218,7 +218,7 @@ const VendorProfileOnboardingPageWrapper = () => {
     setError("");
 
     try {
-      const vendorName = formData.username || "unknown";
+      const vendorName = formData.username || formData.vendorName || formData.phoneNo || "unknown-add-vendor-profile";
       const url = await uploadImageToImageKit(file, `/vendor-profiles/${vendorName}/covers`);
       setCoverImage(url);
       setFormData((prev) => ({ ...prev, coverImage: url }));

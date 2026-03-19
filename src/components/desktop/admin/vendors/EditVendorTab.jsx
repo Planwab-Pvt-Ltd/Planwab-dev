@@ -1297,6 +1297,7 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
   const uploadImagesToImageKit = async (files) => {
     const authRes = await fetch("/api/imagekit/auth");
     const authData = await authRes.json();
+    const folderPath = `/vendor/${formData.username || formData.name || formData.phoneNo || "unknown--edit-vendor"}`;
     const uploadPromises = files.map((file) => {
       const data = new FormData();
       data.append("file", file);
@@ -1305,7 +1306,7 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
       data.append("expire", authData.expire);
       data.append("token", authData.token);
       data.append("fileName", `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split(".").pop()}`);
-      data.append("folder", "/vendors");
+      data.append("folder", folderPath);
       return fetch("https://upload.imagekit.io/api/v1/files/upload", {
         method: "POST",
         body: data,
