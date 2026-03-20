@@ -495,13 +495,13 @@ export default function AllReels({
     <div className="space-y-4 md:space-y-6">
       {/* ── Stats Grid ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatsCard
+        {/* <StatsCard
           icon={Film}
           label="Total Reels"
           value={formatCount(stats.total)}
           color="bg-rose-500"
           lightBg="bg-rose-50 dark:bg-rose-900/20"
-        />
+        /> */}
         <StatsCard
           icon={EyeIcon}
           label="Total Views"
@@ -796,7 +796,6 @@ export default function AllReels({
                   </th>
                   {[
                     "Reel",
-                    "Event",
                     "Status",
                     "Type",
                     "Views",
@@ -1110,7 +1109,7 @@ const ReelTableRow = ({
       </td>
 
       {/* Event */}
-      <td className="px-4 py-3">
+      {/* <td className="px-4 py-3">
         <span
           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
             typeColors[reel.type] || typeColors.other
@@ -1118,15 +1117,21 @@ const ReelTableRow = ({
         >
           {reel.type || "other"}
         </span>
-      </td>
+      </td> */}
 
       {/* Status */}
       <td className="px-4 py-3 hidden md:table-cell">
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.color}`}
+          className={`inline-flex mb-2 items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.color}`}
         >
           <StatusIcon size={11} />
           {status.label}
+        </span>
+         <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${reel.similarVendors?.length > 0 ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400"}`}
+        >
+          <Layers size={11} />
+          {reel.similarVendors?.length > 0 ? `${reel.similarVendors.length} Similar` : "No Similar Vendors"}
         </span>
       </td>
 

@@ -21,19 +21,13 @@ const reelSchema = new mongoose.Schema(
       maxlength: [2000, "Description cannot exceed 2000 characters"],
     },
 
-    // ── Vendor ───────────────────────────────────────────────────────────
-    vendorId: {
-      type: String,
-      trim: true,
-      index: true,
-    },
-    vendorName: { type: String, trim: true },
-    vendorUsername: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      index: true,
-    },
+    // ── Similar Vendors ──────────────────────────────────────────────────
+    similarVendors: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
 
     // ── Category ─────────────────────────────────────────────────────────
     category: {
@@ -54,7 +48,7 @@ const reelSchema = new mongoose.Schema(
   trim: true,
   required: [true, "Type is required"],
 },
-subtype: {
+subType: {
   type: String,
   trim: true,
   required: [true, "Subtype is required"],
@@ -146,7 +140,6 @@ nestedValues: [{ type: String, trim: true }],
 // ── Indexes ──────────────────────────────────────────────────────────────
 reelSchema.index({ isActive: 1, category: 1, priority: -1 });
 reelSchema.index({ isActive: 1, isFeatured: 1, priority: -1 });
-reelSchema.index({ vendorId: 1, isActive: 1 });
 reelSchema.index({ tags: 1 });
 reelSchema.index({ hashtags: 1 });
 reelSchema.index({ createdAt: -1 });
