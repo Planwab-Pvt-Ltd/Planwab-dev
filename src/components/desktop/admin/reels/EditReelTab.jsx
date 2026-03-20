@@ -354,10 +354,17 @@ const SECTIONS = [
     id: "basic",
     label: "Basic Info",
     icon: Film,
-    required: ["title", "type", "subtype", "nestedType"],
+    required: ["title", "type", "subType", "nestedType"],
     description: "Core reel identity and vendor association",
   },
   { id: "media", label: "Media", icon: Video, required: [], description: "Video URL, thumbnail and display settings" },
+  {
+    id: "vendors",
+    label: "Similar Vendors",
+    icon: Building2,
+    required: [],
+    description: "Link similar vendor profiles to this reel",
+  },
   {
     id: "details",
     label: "Details",
@@ -407,6 +414,14 @@ function EditReelContent({ reelId, initialReelData, onSuccess }) {
   const [bunnyConfig, setBunnyConfig] = useState(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [configError, setConfigError] = useState(false);
+
+  const [vendorSearchQuery, setVendorSearchQuery] = useState("");
+const [vendorSearchResults, setVendorSearchResults] = useState([]);
+const [isSearchingVendors, setIsSearchingVendors] = useState(false);
+const [vendorSearchTimer, setVendorSearchTimer] = useState(null);
+const [linkedVendorDetails, setLinkedVendorDetails] = useState([]);
+const [isFetchingLinkedVendors, setIsFetchingLinkedVendors] = useState(false);
+
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -443,6 +458,81 @@ function EditReelContent({ reelId, initialReelData, onSuccess }) {
   useEffect(() => {
     fetchBunnyConfig();
   }, [fetchBunnyConfig]);
+
+ // ── Fetch linked vendor details on load ──
+useEffect(() => {
+  if (!formData.similarVendors?.length) {
+    setLinkedVendorDetails([]);
+    return;
+  }
+
+  const fetchLinkedVendors = async () => {
+    setIsFetchingLinkedVendors(true);
+    try {
+      // Fetch each vendor individually by ID using the /api/vendor-profile?id= param
+      const promises = formData.similarVendors.map(async (vendorId) => {
+        try {
+          const res = await fetch(`/api/vendor/profile/lists?id=${vendorId}`);
+          if (res.ok) {
+            const result = await res.json();
+            return result.data || null;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      });
+
+      const results = await Promise.all(promises);
+      setLinkedVendorDetails(results.filter(Boolean));
+    } catch (err) {
+      console.error("Failed to fetch linked vendors:", err);
+    } finally {
+      setIsFetchingLinkedVendors(false);
+    }
+  };
+
+  fetchLinkedVendors();
+}, [formData.similarVendors?.length]);
+
+// ── Vendor search with debounce ──
+const searchVendors = useCallback(
+  async (query) => {
+    if (!query || query.length < 2) {
+      setVendorSearchResults([]);
+      return;
+    }
+    setIsSearchingVendors(true);
+    try {
+      const res = await fetch(
+        `/api/vendor/profile/lists?search=${encodeURIComponent(query)}&limit=10`
+      );
+      if (res.ok) {
+        const result = await res.json();
+        const existing = formData.similarVendors || [];
+        setVendorSearchResults(
+          (result.data || result.vendors || []).filter(
+            (v) => !existing.includes(v._id)
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Vendor search failed:", err);
+    } finally {
+      setIsSearchingVendors(false);
+    }
+  },
+  [formData.similarVendors]
+);
+
+useEffect(() => {
+  if (vendorSearchTimer) clearTimeout(vendorSearchTimer);
+  const timer = setTimeout(() => {
+    searchVendors(vendorSearchQuery);
+  }, 400);
+  setVendorSearchTimer(timer);
+  return () => clearTimeout(timer);
+}, [vendorSearchQuery]);
 
   // ── ADD: Bunny.net direct XHR uploader (mirrors AddReel) ──
   const RETRY_DELAY = 1500;
@@ -586,12 +676,15 @@ function EditReelContent({ reelId, initialReelData, onSuccess }) {
         if (formData.category) filled++;
         if (formData.vendorUsername) filled++;
         if (formData.type) filled++;                        // ADD
-  if (formData.subtype) filled++;                     // ADD
+  if (formData.subType) filled++;                     // ADD
   if (formData.nestedType) filled++;
       } else if (section.id === "media") {
         total = 2;
         if (formData.videoUrl) filled++;
         if (formData.thumbnailUrl || newThumbnailFile) filled++;
+        } else if (section.id === "vendors") {
+      total = 1;
+      if (formData.similarVendors?.length > 0) filled++;
       } else if (section.id === "details") {
         total = 3;
         if (formData.caption) filled++;
@@ -643,14 +736,6 @@ function EditReelContent({ reelId, initialReelData, onSuccess }) {
     setFormData((prev) => ({ ...prev, [field]: updatedList }));
   }, []);
 
-  // Reset subtype whenever type changes
-useEffect(() => {
-  if (!originalData) return;
-  if (formData.type !== originalData.type) {
-    setFormData((prev) => ({ ...prev, subtype: "" }));
-  }
-}, [formData.type]);
-
   const handleDiscardChanges = useCallback(() => {
     if (!originalData) return;
     setFormData(JSON.parse(JSON.stringify(originalData)));
@@ -665,8 +750,9 @@ useEffect(() => {
     (sectionId) => {
       if (!originalData) return;
       const sectionFields = {
-        basic: ["title", "vendorId", "vendorName", "vendorUsername", "category", "subcategory", "type", "subtype", "nestedType", "nestedValues"],
+        basic: ["title", "vendorId", "vendorName", "vendorUsername", "category", "subcategory", "type", "subType", "nestedType", "nestedValues"],
         media: ["videoUrl", "thumbnailUrl", "aspectRatio", "resolution", "duration"],
+        vendors: ["similarVendors"],
         details: ["caption", "description", "tags", "hashtags", "language"],
         engagement: [
           "location",
@@ -747,18 +833,21 @@ useEffect(() => {
     if (!formData.category) newErrors.category = "Category is required";
     setErrors(newErrors);
     if (!formData.type?.trim()) newErrors.type = "Type is required";
-  if (!formData.subtype?.trim()) newErrors.subtype = "Subtype is required";
+  if (!formData.subType?.trim()) newErrors.subType = "Subtype is required";
   if (!formData.nestedType?.trim()) newErrors.nestedType = "Nested type is required";
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
   const getErrorsForSection = useCallback(
-    (sectionId) => {
-      const map = { basic: ["title", "category", "type", "subtype", "nestedType"] };
-      return (map[sectionId] || []).filter((f) => errors[f]);
-    },
-    [errors],
-  );
+  (sectionId) => {
+    const map = {
+      basic: ["title", "category", "type", "subType", "nestedType"],
+      vendors: [],
+    };
+    return (map[sectionId] || []).filter((f) => errors[f]);
+  },
+  [errors],
+);
 
   // -----------------------------------------------------------------------
   // SUBMIT
@@ -1275,6 +1364,20 @@ useEffect(() => {
                     addToast={addToast}
                   />
                 )}
+                {activeSection === "vendors" && (
+  <EditSimilarVendorsSection
+    data={formData}
+    onListChange={handleListChange}
+    vendorSearchQuery={vendorSearchQuery}
+    setVendorSearchQuery={setVendorSearchQuery}
+    vendorSearchResults={vendorSearchResults}
+    isSearchingVendors={isSearchingVendors}
+    linkedVendorDetails={linkedVendorDetails}
+    setLinkedVendorDetails={setLinkedVendorDetails}
+    isFetchingLinkedVendors={isFetchingLinkedVendors}
+    addToast={addToast}
+  />
+)}
                 {activeSection === "details" && (
                   <EditDetailsSection
                     data={formData}
@@ -1821,73 +1924,36 @@ const EditBasicInfoSection = ({ data, onChange, errors, onListChange, categories
           />
         </div>
         <InputField
-          label="Vendor ID"
-          value={data.vendorId || ""}
-          onChange={(e) => onChange("vendorId", e.target.value)}
-          error={errors.vendorId}
-          placeholder="MongoDB Vendor ObjectId"
-          icon={Hash}
-          helperText="Link to the vendor's database ID"
-          copyable
-        />
-        <InputField
-          label="Vendor Name"
-          value={data.vendorName || ""}
-          onChange={(e) => onChange("vendorName", e.target.value)}
-          placeholder="e.g., Royal Palace Banquets"
-          icon={Building2}
-        />
-        <InputField
-          label="Vendor Username"
-          value={data.vendorUsername || ""}
-          onChange={(e) => {
-            const cleaned = e.target.value
-              .toLowerCase()
-              .replace(/[^a-z0-9-]/g, "-")
-              .replace(/-+/g, "-")
-              .replace(/^-|-$/g, "");
-            onChange("vendorUsername", cleaned || "");
-          }}
-          placeholder="e.g., royal-palace-banquets"
-          icon={AtSign}
-          copyable
-        />
-        <InputField
           label="Subcategory"
           value={data.subcategory || ""}
           onChange={(e) => onChange("subcategory", e.target.value)}
           placeholder="e.g., Luxury Venues"
           icon={Layers}
         />
-       {/* Event Type */}
+     {/* Event Type */}
 <CustomDropdown
   label="Event Type"
   placeholder="Select event type"
   options={REEL_TYPES}
   value={data.type}
-  onChange={(val) =>
-    setFormData((prev) => ({ ...prev, type: val, subtype: "" }))
-  }
+  onChange={(val) => {
+    onChange("type", val);
+    onChange("subType", "");
+  }}
   error={errors.type}
   icon={Tag}
-  CustomDropdown={true}
 />
 
 {/* Event Subtype */}
 <CustomDropdown
   label="Event Subtype"
-  placeholder={
-    data.type ? "Select subtype" : "Select a type first"
-  }
+  placeholder={data.type ? "Select subType" : "Select a type first"}
   options={data.type ? REEL_SUBTYPES[data.type] ?? [] : []}
-  value={data.subtype}
-  onChange={(val) =>
-    setFormData((prev) => ({ ...prev, subtype: val }))
-  }
-  error={errors.subtype}
+  value={data.subType}
+  onChange={(val) => onChange("subType", val)}
+  error={errors.subType}
   disabled={!data.type}
   icon={Layers}
-  CustomDropdown={true}
 />
 
 {/* Reel / Film Style */}
@@ -1896,12 +1962,11 @@ const EditBasicInfoSection = ({ data, onChange, errors, onListChange, categories
   placeholder="Select reel style"
   options={REEL_NESTED_TYPES}
   value={data.nestedType}
-  onChange={(val) =>
-    setFormData((prev) => ({ ...prev, nestedType: val }))
-  }
+  onChange={(val) => onChange("nestedType", val)}
   error={errors.nestedType}
   icon={Film}
 />
+
 <div className="md:col-span-2">
   <TagInput
     label="Nested Values"
@@ -2110,6 +2175,346 @@ const EditMediaSection = ({
     </Section>
   </div>
 );
+
+const EditSimilarVendorsSection = ({
+  data,
+  onListChange,
+  vendorSearchQuery,
+  setVendorSearchQuery,
+  vendorSearchResults,
+  isSearchingVendors,
+  linkedVendorDetails,
+  setLinkedVendorDetails,
+  isFetchingLinkedVendors,
+  addToast,
+}) => {
+  const similarVendors = data.similarVendors || [];
+
+  const addVendor = (vendor) => {
+    if (similarVendors.includes(vendor._id)) {
+      addToast("Vendor already added", "warning");
+      return;
+    }
+    onListChange("similarVendors", [...similarVendors, vendor._id]);
+    setLinkedVendorDetails((prev) => [...prev, vendor]);
+    setVendorSearchQuery("");
+    addToast(`${vendor.vendorBusinessName || vendor.vendorName} added`, "success");
+  };
+
+  const removeVendor = (vendorId) => {
+    onListChange(
+      "similarVendors",
+      similarVendors.filter((id) => id !== vendorId)
+    );
+    const removed = linkedVendorDetails.find((v) => v._id === vendorId);
+    setLinkedVendorDetails((prev) => prev.filter((v) => v._id !== vendorId));
+    addToast(
+      `${removed?.vendorBusinessName || removed?.vendorName || "Vendor"} removed`,
+      "info"
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <Section
+        title="Similar Vendors"
+        icon={Building2}
+        description="Link vendor profiles that are similar or related to this reel"
+        badge={`${similarVendors.length} linked`}
+        tip="Search for vendors by name, username, or business name. Linked vendors will appear as recommendations alongside this reel."
+      >
+        {/* Search Input */}
+        <div className="relative">
+          <InputField
+            label="Search Vendors"
+            value={vendorSearchQuery}
+            onChange={(e) => setVendorSearchQuery(e.target.value)}
+            placeholder="Search by vendor name, business name, or username…"
+            icon={Building2}
+          />
+          {isSearchingVendors && (
+            <div className="absolute right-3 top-9">
+              <RefreshCw size={16} className="animate-spin text-violet-500" />
+            </div>
+          )}
+
+          {/* Search Results Dropdown */}
+          <AnimatePresence>
+            {vendorSearchQuery.length >= 2 && vendorSearchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-h-72 overflow-auto z-30"
+              >
+                {vendorSearchResults.map((vendor) => (
+                  <button
+                    key={vendor._id}
+                    type="button"
+                    onClick={() => addVendor(vendor)}
+                    className="w-full px-4 py-3 text-left hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                  >
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                      {vendor.vendorAvatar ? (
+                        <img
+                          src={vendor.vendorAvatar}
+                          alt={vendor.vendorBusinessName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <Building2 size={18} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {vendor.vendorBusinessName || vendor.vendorName}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {vendor.username && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <AtSign size={10} />
+                            {vendor.username}
+                          </span>
+                        )}
+                        {vendor.category && (
+                          <span className="text-xs px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-full capitalize">
+                            {vendor.category}
+                          </span>
+                        )}
+                        {vendor.location?.city && (
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Navigation size={10} />
+                            {vendor.location.city}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Plus size={18} className="text-violet-500 flex-shrink-0" />
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* No results */}
+          {vendorSearchQuery.length >= 2 &&
+            !isSearchingVendors &&
+            vendorSearchResults.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-center"
+              >
+                <p className="text-sm text-gray-500">
+                  No vendors found for &quot;{vendorSearchQuery}&quot;
+                </p>
+              </motion.div>
+            )}
+        </div>
+
+        {/* Linked Vendors List */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Linked Vendors ({similarVendors.length})
+            </h4>
+            {similarVendors.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  onListChange("similarVendors", []);
+                  setLinkedVendorDetails([]);
+                  addToast("All vendors removed", "info");
+                }}
+                className="text-xs text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
+              >
+                <Trash2 size={12} />
+                Remove All
+              </button>
+            )}
+          </div>
+
+          {isFetchingLinkedVendors ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw size={20} className="animate-spin text-violet-500" />
+              <span className="ml-2 text-sm text-gray-500">Loading vendor details…</span>
+            </div>
+          ) : similarVendors.length === 0 ? (
+            <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
+              <Building2
+                size={36}
+                className="mx-auto text-gray-300 dark:text-gray-600 mb-2"
+              />
+              <p className="text-sm text-gray-500">No similar vendors linked yet</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Search above to find and link vendors
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <AnimatePresence>
+                {similarVendors.map((vendorId, index) => {
+                  const vendor = linkedVendorDetails.find(
+                    (v) => v._id === vendorId
+                  );
+                  return (
+                    <motion.div
+                      key={vendorId}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 group hover:border-violet-300 dark:hover:border-violet-700 transition-all"
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-xs font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                        {vendor?.vendorAvatar ? (
+                          <img
+                            src={vendor.vendorAvatar}
+                            alt={vendor.vendorBusinessName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Building2 size={16} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {vendor ? (
+                          <>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              {vendor.vendorBusinessName || vendor.vendorName}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {vendor.username && (
+                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                  <AtSign size={10} />
+                                  {vendor.username}
+                                </span>
+                              )}
+                              {vendor.category && (
+                                <span className="text-xs px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-full capitalize">
+                                  {vendor.category}
+                                </span>
+                              )}
+                              {vendor.location?.city && (
+                                <span className="text-xs text-gray-400 flex items-center gap-1">
+                                  <Navigation size={10} />
+                                  {vendor.location.city}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-mono text-gray-600 dark:text-gray-400 truncate">
+                              {vendorId}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Vendor details unavailable
+                            </p>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeVendor(vendorId)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+
+        {/* Manual ID Input */}
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <ManualVendorIdInput
+            similarVendors={similarVendors}
+            onAdd={(id) => {
+              onListChange("similarVendors", [...similarVendors, id]);
+              addToast("Vendor ID added manually", "success");
+            }}
+            addToast={addToast}
+          />
+        </div>
+      </Section>
+    </div>
+  );
+};
+
+const ManualVendorIdInput = ({ similarVendors, onAdd, addToast }) => {
+  const [manualId, setManualId] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleAdd = () => {
+    const trimmed = manualId.trim();
+    if (!trimmed) {
+      addToast("Please enter a vendor ID", "warning");
+      return;
+    }
+    if (trimmed.length !== 24) {
+      addToast("Vendor ID must be a 24-character ObjectId", "error");
+      return;
+    }
+    if (similarVendors.includes(trimmed)) {
+      addToast("This vendor is already linked", "warning");
+      return;
+    }
+    onAdd(trimmed);
+    setManualId("");
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-sm text-gray-500 hover:text-violet-600 font-medium transition-colors"
+      >
+        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        Add vendor by ID manually
+      </button>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3 flex gap-2 overflow-hidden"
+          >
+            <input
+              type="text"
+              value={manualId}
+              onChange={(e) => setManualId(e.target.value)}
+              placeholder="Paste vendor ObjectId (24 chars)…"
+              maxLength={24}
+              className="flex-1 px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-600 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-gray-100 transition-all"
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!manualId.trim()}
+              className="px-4 py-2.5 bg-violet-600 text-white rounded-xl font-medium text-sm hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Add
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const EditDetailsSection = ({ data, onChange, onListChange, addToast }) => (
   <div className="space-y-8">

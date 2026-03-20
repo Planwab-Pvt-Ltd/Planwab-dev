@@ -1,4 +1,5 @@
 // app/api/reels/search/route.js
+
 import ReelsModel from "../../../../database/models/ReelsModel";
 import connectToDatabase from "../../../../database/mongoose";
 import { ok, badRequest, serverError } from "../../../../lib/apiResponse";
@@ -8,11 +9,14 @@ export async function GET(request) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const q        = searchParams.get("q")?.trim();
-    const page     = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit    = Math.min(50, parseInt(searchParams.get("limit") || "20"));
-    const category = searchParams.get("category");
-    const city     = searchParams.get("city");
+    const q          = searchParams.get("q")?.trim();
+    const page       = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit      = Math.min(50, parseInt(searchParams.get("limit") || "20"));
+    const category   = searchParams.get("category");
+    const city       = searchParams.get("city");
+    const type       = searchParams.get("type");
+    const subtype    = searchParams.get("subtype");
+    const nestedType = searchParams.get("nestedType");
 
     if (!q || q.length < 2)
       return badRequest("Search query must be at least 2 characters");
@@ -27,8 +31,11 @@ export async function GET(request) {
       ],
     };
 
-    if (category) query.category = category;
-    if (city) query.city = new RegExp(city, "i");
+    if (category)   query.category   = category;
+    if (city)       query.city       = new RegExp(city, "i");
+    if (type)       query.type       = type;
+    if (subtype)    query.subtype    = subtype;
+    if (nestedType) query.nestedType = nestedType;
 
     const skip = (page - 1) * limit;
 
@@ -45,7 +52,9 @@ export async function GET(request) {
       reels,
       query: q,
       pagination: {
-        page, limit, total,
+        page,
+        limit,
+        total,
         totalPages: Math.ceil(total / limit),
         hasNextPage: page * limit < total,
         hasPrevPage: page > 1,

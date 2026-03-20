@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Pause,
+  Trash2,
   Volume2,
   VolumeX,
   Maximize2,
@@ -1007,6 +1008,9 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
   const [isLiked, setIsLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(0);
 
+  const [linkedVendorDetails, setLinkedVendorDetails] = useState([]);
+  const [isFetchingLinkedVendors, setIsFetchingLinkedVendors] = useState(false);
+
   // Fetch if not provided
   useEffect(() => {
     if (initialReelData) {
@@ -1037,21 +1041,57 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
     fetchReel();
   }, [reelId, initialReelData]);
 
-  const handleLike = useCallback(() => {
-    setIsLiked((prev) => {
-      const next = !prev;
-      setLocalLikes((l) => (next ? l + 1 : Math.max(0, l - 1)));
-      addToast(next ? "❤️ Reel liked!" : "Like removed", "info");
-      return next;
-    });
-  }, [addToast]);
+ // Fetch linked vendor details (same as formData logic)
+useEffect(() => {
+  if (!reel?.similarVendors?.length) {
+    setLinkedVendorDetails([]);
+    return;
+  }
 
-  const handleBookmark = useCallback(() => {
-    setIsBookmarked((prev) => {
-      addToast(!prev ? "🔖 Reel saved!" : "Bookmark removed", "info");
-      return !prev;
-    });
-  }, [addToast]);
+  const fetchLinkedVendors = async () => {
+    setIsFetchingLinkedVendors(true);
+    try {
+      const promises = reel.similarVendors.map(async (vendorId) => {
+        try {
+          const res = await fetch(`/api/vendor/profile/lists?id=${vendorId}`);
+          if (res.ok) {
+            const result = await res.json();
+            return result.data || null;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      });
+
+      const results = await Promise.all(promises);
+      setLinkedVendorDetails(results.filter(Boolean));
+    } catch (err) {
+      console.error("Failed to fetch linked vendors:", err);
+    } finally {
+      setIsFetchingLinkedVendors(false);
+    }
+  };
+
+  fetchLinkedVendors();
+}, [reel?.similarVendors]);
+
+
+  // const handleLike = useCallback(() => {
+  //   setIsLiked((prev) => {
+  //     const next = !prev;
+  //     setLocalLikes((l) => (next ? l + 1 : Math.max(0, l - 1)));
+  //     addToast(next ? "❤️ Reel liked!" : "Like removed", "info");
+  //     return next;
+  //   });
+  // }, [addToast]);
+
+  // const handleBookmark = useCallback(() => {
+  //   setIsBookmarked((prev) => {
+  //     addToast(!prev ? "🔖 Reel saved!" : "Bookmark removed", "info");
+  //     return !prev;
+  //   });
+  // }, [addToast]);
 
   // -----------------------------------------------------------------------
   // LOADING
@@ -1117,6 +1157,7 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
 
   const tabs = [
     { id: "overview",    label: "Overview",    icon: Info },
+    { id: "vendors",     label: "Similar Vendors", icon: Building2 },
     { id: "analytics",   label: "Analytics",   icon: BarChart3 },
     { id: "details",     label: "Details",     icon: FileText },
     { id: "settings",    label: "Settings",    icon: Settings },
@@ -1186,7 +1227,7 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
   <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/15 text-white text-xs font-medium rounded-full border border-white/25">
     <Layers size={10} />
     {reel.type}
-    {reel.subtype ? ` › ${reel.subtype}` : ""}
+    {reel.subType ? ` › ${reel.subType}` : ""}
     {reel.nestedType ? ` › ${reel.nestedType}` : ""}
   </span>
 )}
@@ -1235,19 +1276,19 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
 
               {/* Right: Action Buttons */}
               <div className="flex items-center gap-2 flex-wrap md:flex-col md:items-end">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleLike}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    isLiked
-                      ? "bg-white text-rose-600 shadow-lg"
-                      : "bg-white/20 text-white border border-white/30 hover:bg-white/30"
-                  }`}
-                >
-                  <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
-                  {isLiked ? "Liked" : "Like"}
-                </motion.button>
+                  {/* <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleLike}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                      isLiked
+                        ? "bg-white text-rose-600 shadow-lg"
+                        : "bg-white/20 text-white border border-white/30 hover:bg-white/30"
+                    }`}
+                  >
+                    <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+                    {isLiked ? "Liked" : "Like"}
+                  </motion.button> */}
 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -1259,7 +1300,7 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                   Share
                 </motion.button>
 
-                <motion.button
+                {/* <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleBookmark}
@@ -1274,7 +1315,7 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                     fill={isBookmarked ? "currentColor" : "none"}
                   />
                   {isBookmarked ? "Saved" : "Save"}
-                </motion.button>
+                </motion.button> */}
 
                 {onEdit && (
                   <motion.button
@@ -1473,7 +1514,7 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                       </div>
 
                       {/* ── ADD: Classification Strip ── */}
-{(reel.type || reel.subtype || reel.nestedType) && (
+{(reel.type || reel.subType || reel.nestedType) && (
   <div className="flex flex-wrap gap-2">
     {reel.type && (
       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
@@ -1482,11 +1523,11 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
         <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">{reel.type}</span>
       </div>
     )}
-    {reel.subtype && (
+    {reel.subType && (
       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-xl">
         <Layers size={12} className="text-violet-500" />
         <span className="text-xs text-violet-500 font-medium">Subtype:</span>
-        <span className="text-xs font-semibold text-violet-700 dark:text-violet-300">{reel.subtype}</span>
+        <span className="text-xs font-semibold text-violet-700 dark:text-violet-300">{reel.subType}</span>
       </div>
     )}
     {reel.nestedType && (
@@ -1572,6 +1613,144 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                       )}
                     </div>
                   )}
+
+                  {/* ---------------------------------------------------- */}
+{/* SIMILAR VENDORS TAB */}
+{/* ---------------------------------------------------- */}
+{activeTab === "vendors" && (
+  <div className="space-y-6">
+    <div>
+      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+        <Building2 size={12} />
+        Similar Vendors ({reel.similarVendors?.length || 0})
+      </h4>
+
+      {isFetchingLinkedVendors ? (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw size={24} className="animate-spin text-rose-500" />
+          <span className="ml-3 text-sm text-gray-500 font-medium">
+            Loading vendor details…
+          </span>
+        </div>
+      ) : !reel.similarVendors?.length ? (
+        <div className="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
+          <Building2
+            size={40}
+            className="mx-auto text-gray-300 dark:text-gray-600 mb-3"
+          />
+          <p className="text-sm font-medium text-gray-500">
+            No similar vendors linked
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Similar vendors can be added in the edit view
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {reel.similarVendors.map((vendorId, index) => {
+            const vendor = linkedVendorDetails.find(
+              (v) => v._id === vendorId
+            );
+            return (
+              <motion.div
+                key={vendorId}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-rose-300 dark:hover:border-rose-700 transition-all group"
+              >
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-xs font-bold flex-shrink-0">
+                  {index + 1}
+                </div>
+                <div className="w-11 h-11 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                  {vendor?.vendorAvatar ? (
+                    <img
+                      src={vendor.vendorAvatar}
+                      alt={vendor.vendorBusinessName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <Building2 size={18} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {vendor ? (
+                    <>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {vendor.vendorBusinessName ||
+                          vendor.vendorName}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {vendor.username && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <AtSign size={10} />
+                            {vendor.username}
+                          </span>
+                        )}
+                        {vendor.category && (
+                          <span className="text-xs px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full capitalize">
+                            {vendor.category}
+                          </span>
+                        )}
+                        {vendor.location?.city && (
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Navigation size={10} />
+                            {vendor.location.city}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-mono text-gray-600 dark:text-gray-400 truncate">
+                        {vendorId}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Vendor details unavailable
+                      </p>
+                    </>
+                  )}
+                </div>
+                {vendor && (
+                  <a
+                    href={`/vendor/${vendor?.category}/${vendor._id}/profile`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                  >
+                    <ExternalLink size={16} />
+                  </a>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+
+    {/* Vendor IDs List */}
+    {reel.similarVendors?.length > 0 && (
+      <div>
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          Vendor IDs
+        </h4>
+        <div className="divide-y divide-gray-100 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {reel.similarVendors.map((id, i) => (
+            <InfoRow
+              key={i}
+              label={`Vendor ${i + 1}`}
+              value={id}
+              icon={Hash}
+              copyable
+            />
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
                   {/* ---------------------------------------------------- */}
                   {/* ANALYTICS TAB */}
@@ -1732,8 +1911,25 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                           <InfoRow label="Vendor Username" value={reel.vendorUsername} icon={AtSign}    copyable />
                           <InfoRow label="Subcategory"     value={reel.subcategory}    icon={Layers} />
                           <InfoRow label="Type"            value={reel.type}           icon={Layers} />
-<InfoRow label="Subtype"         value={reel.subtype}        icon={Layers} />
+<InfoRow label="Subtype"         value={reel.subType}        icon={Layers} />
 <InfoRow label="Nested Type"     value={reel.nestedType}     icon={Layers} />
+{reel.nestedValues?.length > 0 && (
+  <div className="py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">
+      Nested Values
+    </p>
+    <div className="flex flex-wrap gap-1.5">
+      {reel.nestedValues.map((v, i) => (
+        <span
+          key={i}
+          className="px-2 py-0.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 text-[10px] font-medium rounded-md border border-violet-200 dark:border-violet-800"
+        >
+          {v}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
                         </div>
                       </div>
 
@@ -1932,15 +2128,12 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                 {reel.aspectRatio && (
                   <InfoRow label="Ratio" value={reel.aspectRatio} icon={Layers} />
                 )}
-                {reel.aspectRatio && (
-  <InfoRow label="Ratio" value={reel.aspectRatio} icon={Layers} />
-)}
 {/* ── ADD ── */}
 {reel.type && (
   <InfoRow label="Type"        value={reel.type}       icon={Layers} />
 )}
-{reel.subtype && (
-  <InfoRow label="Subtype"     value={reel.subtype}    icon={Layers} />
+{reel.subType && (
+  <InfoRow label="Subtype"     value={reel.subType}    icon={Layers} />
 )}
 {reel.nestedType && (
   <InfoRow label="Nested Type" value={reel.nestedType} icon={Layers} />
@@ -1976,6 +2169,85 @@ function ViewReelContent({ reelId, initialReelData, onEdit, onDelete }) {
                 </SectionCard>
               </motion.div>
             )}
+
+            {/* SIMILAR VENDORS SIDEBAR CARD */}
+{reel.similarVendors?.length > 0 && (
+  <motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.17 }}
+  >
+    <SectionCard
+      title={`Similar Vendors (${reel.similarVendors.length})`}
+      icon={Users}
+      collapsible
+      defaultOpen={false}
+    >
+      {isFetchingLinkedVendors ? (
+        <div className="flex items-center justify-center py-4">
+          <RefreshCw size={16} className="animate-spin text-rose-500" />
+          <span className="ml-2 text-xs text-gray-500">Loading…</span>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {reel.similarVendors.map((vendorId, index) => {
+            const vendor = linkedVendorDetails.find(
+              (v) => v._id === vendorId
+            );
+            return (
+              <div
+                key={vendorId}
+                className="flex items-center gap-2.5 p-2.5 bg-gray-50 dark:bg-gray-900/40 rounded-xl"
+              >
+                <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+                  {vendor?.vendorAvatar ? (
+                    <img
+                      src={vendor.vendorAvatar}
+                      alt={vendor.vendorBusinessName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <Building2 size={14} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                    {vendor?.vendorBusinessName ||
+                      vendor?.vendorName ||
+                      vendorId.slice(0, 12) + "…"}
+                  </p>
+                  {vendor?.category && (
+                    <p className="text-[10px] text-gray-500 capitalize">
+                      {vendor.category}
+                    </p>
+                  )}
+                </div>
+                {vendor && (
+                  <a
+                    href={`/vendor/${vendor?.category}/${vendor._id}/profile`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 text-gray-400 hover:text-rose-500 transition-colors flex-shrink-0"
+                  >
+                    <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <button
+        onClick={() => setActiveTab("vendors")}
+        className="mt-3 w-full text-center text-xs text-rose-600 hover:text-rose-700 font-medium py-2 bg-rose-50 dark:bg-rose-900/20 rounded-lg transition-colors"
+      >
+        View All Details →
+      </button>
+    </SectionCard>
+  </motion.div>
+)}
 
             {/* DATES CARD */}
             <motion.div

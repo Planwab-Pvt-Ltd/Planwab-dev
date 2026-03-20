@@ -33,9 +33,9 @@ export async function POST(request) {
       title: body.title.trim(),
       caption: body.caption?.trim(),
       description: body.description?.trim(),
-      vendorId: body.vendorId?.trim(),
-      vendorName: body.vendorName?.trim(),
-      vendorUsername: body.vendorUsername?.trim()?.toLowerCase(),
+      similarVendors: Array.isArray(body.similarVendors)
+        ? body.similarVendors.filter((id) => typeof id === "string" && id.trim()).map((id) => id.trim())
+        : [],
       category: body.category,
       subcategory: body.subcategory?.trim(),
       tags: (body.tags || []).map((t) => t.trim().toLowerCase()),
@@ -74,8 +74,11 @@ export async function POST(request) {
       },
       addedBy: body.addedBy?.trim(),
       type: body.type,
-      subtype: body.subtype,
+      subType: body.subType,
       nestedType: body.nestedType,
+      nestedValues: Array.isArray(body.nestedValues)
+        ? body.nestedValues.filter((v) => typeof v === "string" && v.trim()).map((v) => v.trim())
+        : [],
     };
 
     const reel = await ReelsModel.create(reelData);

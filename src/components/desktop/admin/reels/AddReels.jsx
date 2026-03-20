@@ -929,12 +929,12 @@ const REEL_CATEGORIES = [
 // SECTIONS CONFIG
 // ============================================================================
 const SECTIONS = [
-  {
+    {
     id: "basic",
     label: "Basic Info",
     icon: Film,
-    required: ["title", "category", "type", "subtype", "nestedType"],
-    description: "Core reel identity and vendor association",
+    required: ["title", "category", "type", "subType", "nestedType"],
+    description: "Core reel identity and classification",
   },
   {
     id: "media",
@@ -942,6 +942,13 @@ const SECTIONS = [
     icon: Video,
     required: ["videoUrl", "thumbnailUrl"],
     description: "Video file, thumbnail and preview settings",
+  },
+  {
+    id: "vendors",
+    label: "Vendors",
+    icon: UserCheck,
+    required: [],
+    description: "Link similar vendor profiles to this reel",
   },
   {
     id: "details",
@@ -1141,9 +1148,7 @@ const initialFormData = {
   title: "",
   caption: "",
   description: "",
-  vendorId: "",
-  vendorName: "",
-  vendorUsername: "",
+  similarVendors: [],
   category: "venues",
   subcategory: "",
   type: "",
@@ -1279,13 +1284,16 @@ function AddReelContent({ onSuccess }) {
         if (formData.category) filled++;
         if (formData.vendorUsername) filled++;
         if (formData.type) filled++;                     
-  if (formData.subtype) filled++;                    
+  if (formData.subType) filled++;                    
   if (formData.nestedType) filled++;
       } else if (section.id === "media") {
         total = 3;
         if (formData.videoUrl || videoFile) filled++;
         if (formData.thumbnailUrl || thumbnailFile) filled++;
         if (formData.aspectRatio) filled++;
+    } else if (section.id === "vendors") {
+        total = 1;
+        if (formData.similarVendors?.length > 0) filled++;
       } else if (section.id === "details") {
         total = 4;
         if (formData.caption) filled++;
@@ -1435,8 +1443,9 @@ function AddReelContent({ onSuccess }) {
   const resetSection = useCallback(
     (sectionId) => {
       const sectionFields = {
-        basic: ["title", "vendorId", "vendorName", "vendorUsername", "category", "subcategory", "type", "subtype", "nestedType", "nestedValues",],
+        basic: ["title", "category", "subcategory", "type", "subType", "nestedType", "nestedValues"],
         media: ["videoUrl", "thumbnailUrl", "aspectRatio", "resolution", "duration"],
+        vendors: ["similarVendors"],
         details: ["caption", "description", "tags", "hashtags", "language"],
         engagement: [
           "location",
@@ -1552,7 +1561,7 @@ function AddReelContent({ onSuccess }) {
     if (!formData.videoUrl?.trim() && !videoFile) newErrors.videoUrl = "Video URL or uploaded file is required";
     if (!formData.thumbnailUrl?.trim() && !thumbnailFile) newErrors.thumbnailUrl = "Thumbnail URL or uploaded file is required";
     if (!formData.type?.trim()) newErrors.type = "Type is required";
-  if (!formData.subtype?.trim()) newErrors.subtype = "Subtype is required";
+  if (!formData.subType?.trim()) newErrors.subType = "Subtype is required";
   if (!formData.nestedType?.trim()) newErrors.nestedType = "Nested type is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -1561,9 +1570,10 @@ function AddReelContent({ onSuccess }) {
   const getErrorsForSection = useCallback(
     (sectionId) => {
       const map = {
-        basic: ["title", "category", "type", "subtype", "nestedType"],
+        basic: ["title", "category", "type", "subType", "nestedType"],
         media: ["videoUrl", "thumbnailUrl"],
-       details: ["caption"],
+        vendors: [],
+        details: ["caption"],
       };
       return (map[sectionId] || []).filter((f) => errors[f]);
     },
@@ -1866,7 +1876,7 @@ function AddReelContent({ onSuccess }) {
     (formData.videoUrl || videoFile) &&
     (formData.thumbnailUrl || thumbnailFile) &&
     formData.type &&
-    formData.subtype &&
+    formData.subType &&
     formData.nestedType;
 
   // -----------------------------------------------------------------------
@@ -2240,6 +2250,15 @@ function AddReelContent({ onSuccess }) {
                     setDragActiveThumbnail={setDragActiveThumbnail}
                     errors={errors}
                     addToast={addToast}
+                  />
+                )}
+                {activeSection === "vendors" && (
+                  <VendorSelectSection
+                    data={formData}
+                    onChange={handleInputChange}
+                    onListChange={handleListChange}
+                    addToast={addToast}
+                    setHasUserInteracted={setHasUserInteracted}
                   />
                 )}
                 {activeSection === "details" && (
@@ -2801,40 +2820,6 @@ const BasicInfoSection = ({ data, onChange, errors, onListChange, categories, ad
           />
         </div>
         <InputField
-          label="Vendor ID"
-          value={data.vendorId || ""}
-          onChange={(e) => onChange("vendorId", e.target.value)}
-          error={errors.vendorId}
-          placeholder="MongoDB Vendor ObjectId"
-          icon={Hash}
-          helperText="Link to the vendor's database ID"
-          copyable
-        />
-        <InputField
-          label="Vendor Name"
-          value={data.vendorName || ""}
-          onChange={(e) => onChange("vendorName", e.target.value)}
-          placeholder="e.g., Royal Palace Banquets"
-          icon={Building2}
-          helperText="Display name for the vendor"
-        />
-        <InputField
-          label="Vendor Username"
-          value={data.vendorUsername || ""}
-          onChange={(e) => {
-            const cleaned = e.target.value
-              .toLowerCase()
-              .replace(/[^a-z0-9-]/g, "-")
-              .replace(/-+/g, "-")
-              .replace(/^-|-$/g, "");
-            onChange("vendorUsername", cleaned || "");
-          }}
-          placeholder="e.g., royal-palace-banquets"
-          icon={AtSign}
-          helperText="Used for linking to vendor profile"
-          copyable
-        />
-        <InputField
           label="Subcategory"
           value={data.subcategory || ""}
           onChange={(e) => onChange("subcategory", e.target.value)}
@@ -2850,7 +2835,7 @@ const BasicInfoSection = ({ data, onChange, errors, onListChange, categories, ad
   value={data.type}
   onChange={(val) => {
     onChange("type", val);
-    onChange("subtype", "");
+    onChange("subType", "");
   }}
   error={errors.type}
   icon={Tag}
@@ -2861,14 +2846,14 @@ const BasicInfoSection = ({ data, onChange, errors, onListChange, categories, ad
 <CustomDropdown
   label="Event Subtype"
   placeholder={
-    data.type ? "Select subtype" : "Select a type first"
+    data.type ? "Select subType" : "Select a type first"
   }
   options={data.type ? REEL_SUBTYPES[data.type] ?? [] : []}
-  value={data.subtype}
+  value={data.subType || ""}
   onChange={(val) =>
-    onChange("subtype", val)
+    onChange("subType", val)
   }
-  error={errors.subtype}
+  error={errors.subType}
   disabled={!data.type}
   icon={Layers}
   CustomDropdown={true}
@@ -3166,6 +3151,371 @@ const MediaSection = ({
     </Section>
   </div>
 );
+
+// ============================================================================
+// VENDOR SELECT SECTION
+// ============================================================================
+const VendorSelectSection = ({ data, onChange, onListChange, addToast, setHasUserInteracted }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [availableCities, setAvailableCities] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const searchTimeoutRef = useRef(null);
+
+  const selectedVendors = data.similarVendors || [];
+
+  // Fetch vendors
+  const fetchVendors = useCallback(
+    async (page = 1) => {
+      setIsLoading(true);
+      setHasSearched(true);
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: "12",
+          sortBy: "trust",
+          sortOrder: "desc",
+        });
+        if (searchQuery.trim()) params.set("search", searchQuery.trim());
+        if (categoryFilter) params.set("category", categoryFilter);
+        if (cityFilter) params.set("city", cityFilter);
+
+        const response = await fetch(`/api/vendor/profile/lists?${params.toString()}`);
+        const result = await response.json();
+
+        if (result.success) {
+          setVendors(result.data || []);
+          setPagination({
+            page: result.pagination?.page || 1,
+            totalPages: result.pagination?.totalPages || 1,
+            total: result.pagination?.total || 0,
+          });
+          if (result.filters?.availableCities?.length > 0) {
+            setAvailableCities(result.filters.availableCities);
+          }
+          if (result.filters?.availableCategories?.length > 0) {
+            setAvailableCategories(result.filters.availableCategories);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch vendor profiles:", error);
+        addToast("Failed to load vendor profiles", "error");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [searchQuery, categoryFilter, cityFilter, addToast],
+  );
+
+  // Initial load
+  useEffect(() => {
+    fetchVendors(1);
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchVendors(1);
+    }, 500);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQuery, categoryFilter, cityFilter]);
+
+  const toggleVendor = useCallback(
+    (vendorId) => {
+      setHasUserInteracted(true);
+      const current = data.similarVendors || [];
+      let updated;
+      if (current.includes(vendorId)) {
+        updated = current.filter((id) => id !== vendorId);
+        addToast("Vendor removed", "info");
+      } else {
+        updated = [...current, vendorId];
+        addToast("Vendor added", "success");
+      }
+      onListChange("similarVendors", updated);
+    },
+    [data.similarVendors, onListChange, addToast, setHasUserInteracted],
+  );
+
+  const removeVendor = useCallback(
+    (vendorId) => {
+      setHasUserInteracted(true);
+      const updated = (data.similarVendors || []).filter((id) => id !== vendorId);
+      onListChange("similarVendors", updated);
+      addToast("Vendor removed", "info");
+    },
+    [data.similarVendors, onListChange, addToast, setHasUserInteracted],
+  );
+
+  return (
+    <div className="space-y-8">
+      {/* Selected Vendors Summary */}
+      <Section
+        title="Selected Vendors"
+        icon={UserCheck}
+        description="Vendor profiles linked to this reel"
+        badge={`${selectedVendors.length} selected`}
+        tip="Search and select vendor profiles that are featured or related to this reel. These will appear as similar/related vendors."
+      >
+        {selectedVendors.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            <AnimatePresence>
+              {selectedVendors.map((id) => {
+                const vendor = vendors.find((v) => v._id === id);
+                return (
+                  <motion.div
+                    key={id}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    className="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700 rounded-xl"
+                  >
+                    {vendor?.vendorAvatar && (
+                      <img
+                        src={vendor.vendorAvatar || vendor.vendorCoverImage}
+                        alt=""
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-rose-700 dark:text-rose-300 max-w-[160px] truncate">
+                      {vendor?.vendorBusinessName || vendor?.username || id.slice(-8)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeVendor(id)}
+                      className="p-0.5 hover:bg-rose-200 dark:hover:bg-rose-800 rounded-md transition-colors"
+                    >
+                      <X size={14} className="text-rose-600 dark:text-rose-400" />
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+            <UserCheck size={32} className="mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No vendors selected yet. Search below to find and add vendors.</p>
+          </div>
+        )}
+      </Section>
+
+      {/* Search & Filter */}
+      <Section
+        title="Find Vendor Profiles"
+        icon={Search}
+        description="Search, filter, and select vendor profiles"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search input */}
+          <div className="md:col-span-3">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, username, city, category..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-600 outline-none focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category filter */}
+          <CustomSelect
+            label="Filter by Category"
+            options={
+              availableCategories.length > 0
+                ? availableCategories.map((c) => ({ key: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))
+                : REEL_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
+            }
+            value={categoryFilter}
+            onChange={(v) => setCategoryFilter(v)}
+            placeholder="All categories"
+            allowCustom={false}
+          />
+
+          {/* City filter */}
+          <CustomSelect
+            label="Filter by City"
+            options={availableCities.map((c) => ({ key: c, label: c }))}
+            value={cityFilter}
+            onChange={(v) => setCityFilter(v)}
+            placeholder="All cities"
+            allowCustom={false}
+          />
+
+          {/* Results info */}
+          <div className="flex items-end pb-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Searching...
+                </span>
+              ) : hasSearched ? (
+                <span>{pagination.total} profile{pagination.total !== 1 ? "s" : ""} found</span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* Vendor Results Grid */}
+        <div className="mt-4">
+          {isLoading && vendors.length === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse bg-gray-100 dark:bg-gray-700 rounded-xl h-28"
+                />
+              ))}
+            </div>
+          ) : vendors.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {vendors.map((vendor) => {
+                  const isSelected = selectedVendors.includes(vendor._id);
+                  return (
+                    <motion.button
+                      key={vendor._id}
+                      type="button"
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => toggleVendor(vendor._id)}
+                      className={`relative text-left p-4 rounded-xl border-2 transition-all ${
+                        isSelected
+                          ? "border-rose-500 bg-rose-50 dark:bg-rose-900/20 shadow-lg shadow-rose-500/15"
+                          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-rose-300 hover:shadow-md"
+                      }`}
+                    >
+                      {/* Selection indicator */}
+                      <div
+                        className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          isSelected
+                            ? "bg-rose-600 border-rose-600"
+                            : "border-gray-300 dark:border-gray-600"
+                        }`}
+                      >
+                        {isSelected && <Check size={14} className="text-white" />}
+                      </div>
+
+                      <div className="flex items-start gap-3 pr-8">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/40 dark:to-pink-900/40 flex-shrink-0 overflow-hidden">
+                          {vendor.vendorAvatar ? (
+                            <img
+                              src={vendor.vendorAvatar}
+                              alt={vendor.vendorBusinessName || ""}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Building2 size={20} className="text-rose-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                            {vendor.vendorBusinessName || vendor.vendorName || "Unnamed Vendor"}
+                          </h4>
+                          {vendor.username && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              @{vendor.username}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {vendor.category && (
+                              <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-medium rounded-full capitalize">
+                                {vendor.category}
+                              </span>
+                            )}
+                            {vendor.location?.city && (
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-0.5">
+                                <Navigation size={9} />
+                                {vendor.location.city}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            {vendor.trust !== undefined && (
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
+                                <Star size={9} />
+                                {vendor.trust}% trust
+                              </span>
+                            )}
+                            {vendor.likesCount > 0 && (
+                              <span className="text-[10px] text-pink-600 dark:text-pink-400 flex items-center gap-0.5">
+                                <Heart size={9} />
+                                {vendor.likesCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => fetchVendors(pagination.page - 1)}
+                    disabled={pagination.page <= 1 || isLoading}
+                    className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 transition-all"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => fetchVendors(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages || isLoading}
+                    className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 transition-all"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : hasSearched ? (
+            <div className="text-center py-10">
+              <Search size={36} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No vendor profiles found</p>
+              <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </Section>
+    </div>
+  );
+};
 
 // ============================================================================
 // DETAILS SECTION

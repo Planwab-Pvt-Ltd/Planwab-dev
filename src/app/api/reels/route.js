@@ -18,29 +18,34 @@ export async function GET(request) {
     // ── Filters ────────────────────────────────────────────────────────
     const query = {};
 
-    const category   = searchParams.get("category");
-    const vendorId   = searchParams.get("vendorId");
-    const city       = searchParams.get("city");
-    const language   = searchParams.get("language");
-    const isFeatured = searchParams.get("isFeatured");
-    const isActive   = searchParams.get("isActive");
+    const category    = searchParams.get("category");
+    const city        = searchParams.get("city");
+    const language    = searchParams.get("language");
+    const isFeatured  = searchParams.get("isFeatured");
+    const isActive    = searchParams.get("isActive");
     const isSponsored = searchParams.get("isSponsored");
-    const isPinned   = searchParams.get("isPinned");
-    const tag        = searchParams.get("tag");
-    const hashtag    = searchParams.get("hashtag");
-    const search     = searchParams.get("search");
+    const isPinned    = searchParams.get("isPinned");
+    const tag         = searchParams.get("tag");
+    const hashtag     = searchParams.get("hashtag");
+    const search      = searchParams.get("search");
     const minPriority = searchParams.get("minPriority");
+    const type        = searchParams.get("type");
+    const subtype     = searchParams.get("subtype");
+    const nestedType  = searchParams.get("nestedType");
 
-    if (category)  query.category   = category;
-    if (vendorId)  query.vendorId   = vendorId;
-    if (city)      query.city       = new RegExp(city, "i");
-    if (language)  query.language   = language;
+    if (category)   query.category   = category;
+    if (city)       query.city       = new RegExp(city, "i");
+    if (language)   query.language   = language;
+    if (type)       query.type       = type;
+    if (subtype)    query.subtype    = subtype;
+    if (nestedType) query.nestedType = nestedType;
+
     if (isFeatured !== null && isFeatured !== undefined)
       query.isFeatured = isFeatured === "true";
     if (isActive !== null && isActive !== undefined)
       query.isActive = isActive === "true";
     else
-      query.isActive = true; // default: only active reels
+      query.isActive = true;
     if (isSponsored !== null && isSponsored !== undefined)
       query.isSponsored = isSponsored === "true";
     if (isPinned !== null && isPinned !== undefined)
