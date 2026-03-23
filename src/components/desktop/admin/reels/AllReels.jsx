@@ -197,7 +197,7 @@ export default function AllReels({
     const featured = allReelsData.filter((r) => r.isFeatured).length;
 
     const totalViews = allReelsData.reduce(
-      (sum, r) => sum + (r.views || 0),
+      (sum, r) => sum + (r.viewCount || 0),
       0
     );
     const totalLikes = allReelsData.reduce(
@@ -485,7 +485,7 @@ export default function AllReels({
 
   const sortOptions = [
     { value: "createdAt", label: "Date Added" },
-    { value: "views", label: "Views" },
+    { value: "viewCount", label: "Views" },
     { value: "likesCount", label: "Likes" },
     { value: "shareCount", label: "Shares" },
     { value: "title", label: "Title" },
@@ -1049,8 +1049,8 @@ const ReelTableRow = ({
   const likes = reel.likedBy?.length || 0;
   const saves = reel.savedBy?.length || 0;
   const engagementRate =
-    reel.views > 0
-      ? (((likes + saves + (reel.shareCount || 0)) / reel.views) * 100).toFixed(1)
+    reel.viewCount > 0
+      ? (((likes + saves + (reel.shareCount || 0)) / reel.viewCount) * 100).toFixed(1)
       : "0.0";
 
   return (
@@ -1182,7 +1182,7 @@ const ReelTableRow = ({
       <td className="px-4 py-3 hidden lg:table-cell">
         <div className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300">
           <EyeIcon size={14} className="text-gray-400" />
-          {formatCount(reel.views)}
+          {formatCount(reel.viewCount)}
         </div>
       </td>
 
