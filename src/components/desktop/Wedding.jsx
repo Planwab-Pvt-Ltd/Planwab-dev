@@ -1,28 +1,87 @@
-import React from "react";
-import { ArrowRight } from "lucide-react";
+"use client";
 
-export const Card = ({ title, description, image, tag, tagColor }) => (
-  <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-transform duration-300 border border-gray-200/50 dark:border-gray-700/50">
-    <div className="relative">
-      <img className="w-full h-56 object-cover transition-transform duration-300 group-hover:scale-105" src={image} alt={title} />
-      <div className="absolute top-4 right-4"><span className={`px-3 py-1 text-xs font-bold text-white rounded-full ${tagColor || "bg-rose-500"}`}>{tag}</span></div>
-    </div>
-    <div className="p-6">
-      <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">{title}</h3>
-      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 h-10">{description}</p>
-      <button className="font-semibold text-rose-600 dark:text-rose-400 group-hover:text-rose-700 dark:group-hover:text-rose-300 flex items-center transition-colors">View Details <ArrowRight size={16} className="ml-1 transition-transform duration-300 group-hover:ml-2" /></button>
+import React from "react";
+import { MapPin, ArrowUpRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export const VenueCard = ({ name, location, image, tag, tagColor, onViewDetails }) => (
+  <div
+    className="relative rounded-3xl overflow-hidden group cursor-pointer select-none"
+    style={{ aspectRatio: "3/4", minWidth: 0 }}
+    onClick={onViewDetails}
+  >
+    <img
+      src={image}
+      alt={name}
+      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+    />
+
+    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent transition-opacity duration-300 group-hover:from-black/85" />
+
+    {tag && (
+      <div className="absolute top-3 right-3">
+        <span className={`px-2.5 py-1 text-[11px] font-bold text-white rounded-full backdrop-blur-sm ${tagColor || "bg-rose-500/90"}`}>
+          {tag}
+        </span>
+      </div>
+    )}
+
+    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+      <div className="flex-1 min-w-0 mr-2">
+        <h3 className="text-white font-bold text-base leading-tight truncate drop-shadow">{name}</h3>
+        {location && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <MapPin size={11} className="text-white/70 flex-shrink-0" />
+            <span className="text-white/70 text-xs truncate">{location}</span>
+          </div>
+        )}
+      </div>
+      <button
+        className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/30 transition-all duration-200 whitespace-nowrap flex-shrink-0 group-hover:border-white/60"
+        onClick={(e) => { e.stopPropagation(); if (onViewDetails) onViewDetails(); }}
+      >
+        <ArrowUpRight size={13} />
+        View
+      </button>
     </div>
   </div>
 );
 
-export default function Wedding() {
-  const weddingVenues = [{ title: "Grand Palace Hall", description: "A luxurious hall for a royal wedding experience.", image: "https://images.unsplash.com/photo-1593106579478-675691c2c36a?w=600&q=80", tag: "Luxury" }, { title: "Lakeside Gardens", description: "A serene outdoor venue with a beautiful lake view.", image: "https://images.unsplash.com/photo-1523554888454-84137e72c3ce?w=600&q=80", tag: "Outdoors" }, { title: "The Vintage Manor", description: "A charming manor with rustic and elegant vibes.", image: "https://images.unsplash.com/photo-1595839842175-3e25d4a4b272?w=600&q=80", tag: "Vintage" }, { title: "Modern City Loft", description: "A chic and stylish loft for a contemporary wedding.", image: "https://images.unsplash.com/photo-1511285560921-4c9A9cf33ad?w=600&q=80", tag: "Modern" }];
+export const VenueGrid = ({ title, venues = [] }) => {
+  if (!venues || venues.length === 0) {
+    return (
+      <div className="w-full">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{title}</h2>
+        <div className="grid grid-cols-5 gap-4">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="rounded-3xl bg-gray-100 dark:bg-gray-800 animate-pulse" style={{ aspectRatio: "3/4" }} />
+          ))}
+        </div>
+        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-6">No venues available yet. Check back soon!</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h2 className="text-3xl sm:text-4xl font-bold font-serif text-gray-800 dark:text-gray-100 mb-8">Dream Wedding Venues</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        {weddingVenues.map((venue) => (<Card key={venue.title} {...venue} />))}
+    <div className="w-full">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{title}</h2>
+      <div className="grid grid-cols-5 gap-4">
+        {venues.map((venue, i) => (
+          <VenueCard
+            key={venue.id || venue.name || i}
+            name={venue.name}
+            location={venue.location}
+            image={venue.image}
+            tag={venue.tag}
+            tagColor={venue.tagColor}
+            onViewDetails={venue.onViewDetails}
+          />
+        ))}
       </div>
     </div>
   );
+};
+
+export default function Wedding({ venues, title = "Dream Wedding Venues" }) {
+  return <VenueGrid title={title} venues={venues} />;
 }

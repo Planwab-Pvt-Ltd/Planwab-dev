@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import SkeletonCard from "@/components/desktop/SkeletonCard";
 import Wedding from "@/components/desktop/Wedding";
@@ -10,10 +11,16 @@ import Banner1 from "@/components/desktop/ui/EventsPage/Banner1";
 import HowItWorksSection from "@/components/desktop/ui/EventsPage/HowItWorks";
 import SearchSection from "@/components/desktop/ui/EventsPage/SearchSection";
 import Anniversary from "@/components/desktop/Anniversary";
+import { FAQSection, CTASection } from "@/components/desktop/ui/EventsPage/FAQAndCTA";
+import PlanningPreviewSection from "@/components/desktop/ui/EventsPage/PlanningPreviewSection";
+
 
 export default function CategoryEventsPageWrapper() {
+  const router = useRouter();
   const activeCategory = useCategoryStore((state) => state.activeCategory);
+  const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useState(null);
 
   const categoryThemes = {
     Wedding: {
@@ -33,33 +40,130 @@ export default function CategoryEventsPageWrapper() {
     },
   };
 
-  useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
+  const [noResults, setNoResults] = useState(false);
+
+  const EVENT_TYPE_TO_CATEGORY = {
+    "venues": "venues",
+    "photographers": "photographers",
+    "makeup": "makeup",
+    "planners": "planners",
+    "catering": "catering",
+    "clothes": "clothes",
+    "mehendi": "mehendi",
+    "djs": "djs",
+  };
+
+  const fetchVenues = useCallback(async (category, params = null) => {
+    try {
+      setLoading(true);
+      setNoResults(false);
+
+      let vendorCategory = "venues";
+      if (params?.eventType) {
+        const normalized = params.eventType.trim().toLowerCase();
+        vendorCategory = EVENT_TYPE_TO_CATEGORY[normalized] || "venues";
+      }
+
+      const queryParams = new URLSearchParams({
+        categories: vendorCategory,
+        page: "1",
+        limit: "10",
+        sortBy: "rating",
+        sortOrder: "desc",
+      });
+      
+      if (params?.location && params.location.trim()) {
+        queryParams.set("cities", params.location.trim());
+      }
+
+      if (params?.date && params.date.trim()) {
+        queryParams.set("eventDate", params.date.trim());
+      }
+      
+      const response = await fetch(`/api/vendor?${queryParams.toString()}`);
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        const mapped = result.data.map((v) => ({
+          id: v._id,
+          name: v.name,
+          location: v.address?.city || v.location?.city || "",
+          image: v.defaultImage || v.images?.[0] || "",
+          tag: v.subcategory || v.category || "",
+          onViewDetails: () => {
+            if (v.category && v._id) {
+              router.push(`/vendor/${v.category}/${v._id}/profile?tab=posts`);
+            } else if (v._id) {
+              router.push(`/vendor/${v._id}`);
+            }
+          },
+        }));
+        setVenues(mapped);
+        setNoResults(mapped.length === 0);
+      } else {
+        setVenues([]);
+        setNoResults(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch venues:", err);
+      setVenues([]);
+      setNoResults(true);
+    } finally {
       setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [activeCategory]);
+    }
+  }, [router]);
+
+  const handleSearch = (data) => {
+    setSearchParams(data);
+  };
+
+  useEffect(() => {
+    fetchVenues(activeCategory, searchParams);
+  }, [activeCategory, searchParams, fetchVenues]);
 
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {[...Array(8)].map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
       );
     }
+
+    if (noResults && searchParams) {
+      return (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="text-6xl mb-6">🔍</div>
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">No results found</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
+            We couldn&apos;t find any vendors matching your search. Try adjusting your filters or exploring a different category.
+          </p>
+          <button
+            onClick={() => setSearchParams(null)}
+            className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-semibold hover:opacity-80 transition-opacity"
+          >
+            Clear filters
+          </button>
+        </div>
+      );
+    }
+
+    const getDynamicTitle = (defaultTitle) => {
+      const isSearchActive = searchParams && (searchParams.location || searchParams.eventType || searchParams.date);
+      if (!isSearchActive) return defaultTitle;
+      return `Search Results (${venues.length})`;
+    };
+
     switch (activeCategory) {
       case "Wedding":
-        return <Wedding />;
+        return <Wedding venues={venues} title={getDynamicTitle("Dream Wedding Venues")} />;
       case "Anniversary":
-        return <Anniversary />;
+        return <Anniversary venues={venues} title={getDynamicTitle("Unforgettable Anniversary Venues")} />;
       case "Birthday":
-        return <Birthday />;
+        return <Birthday venues={venues} title={getDynamicTitle("Amazing Birthday Party Venues")} />;
       default:
-        return <Wedding />;
+        return <Wedding venues={venues} title={getDynamicTitle("Dream Wedding Venues")} />;
     }
   };
 
@@ -67,7 +171,7 @@ export default function CategoryEventsPageWrapper() {
 
   return (
     <>
-      <div className="relative overflow-x-hidden transition-all duration-1000 ease-out">
+      <div className="relative overflow-x-clip transition-all duration-1000 ease-out">
         <div
           className={`fixed inset-0 bg-gradient-to-br ${currentTheme?.primary} transition-all duration-1000 ease-out`}
         />
@@ -90,8 +194,11 @@ export default function CategoryEventsPageWrapper() {
           <Banner1 />
           <HowItWorksSection />
           <div className="px-4 md:px-8 lg:px-12">
-            <SearchSection />
+            <SearchSection onSearch={handleSearch} />
             <div className="py-12">{renderContent()}</div>
+            <PlanningPreviewSection category={activeCategory} />
+            <FAQSection theme={currentTheme} category={activeCategory} />
+            <CTASection theme={currentTheme} category={activeCategory} />
           </div>
         </div>
       </div>
