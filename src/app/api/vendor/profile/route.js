@@ -154,7 +154,8 @@ export async function PUT(request, { params }) {
   try {
     await connectToDatabase();
 
-    const { id } = await params; // id here represents username
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
     const body = await request.json();
 
     const {
@@ -170,7 +171,7 @@ export async function PUT(request, { params }) {
     } = body;
 
     // Find existing profile by username (id parameter)
-    const existingProfile = await VendorProfile.findOne({ username: id });
+    const existingProfile = await VendorProfile.findOne({ _id: id });
 
     if (!existingProfile) {
       return NextResponse.json(
