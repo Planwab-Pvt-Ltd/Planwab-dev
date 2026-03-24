@@ -81,6 +81,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
+import { cos } from "three/src/nodes/math/MathNode.js";
 
 const EVENT_CONFIGS = {
   wedding: {
@@ -813,87 +814,193 @@ const MiniCard = ({ item, idx, onClick }) => (
   </motion.div>
 );
 
-const SingleRowCarousel = ({ section, onItemClick }) => {
+const useCarouselScroll = (sectionId) => {
   const containerRef = useRef(null);
   const trackRef = useRef(null);
-  const [xOffset, setXOffset] = useState(0);
+  const xOffsetRef = useRef(0);
   const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
+  const [showRight, setShowRight] = useState(false);
+
+  // Touch tracking
+  const touchStartX = useRef(null);
+  const touchStartOffset = useRef(0);
+  const lastTouchX = useRef(null);
+  const lastTouchTime = useRef(null);
+  const velocityRef = useRef(0);
+
+  const getMax = useCallback(() => {
+    if (!containerRef.current || !trackRef.current) return 0;
+    // Add 16px (px-4 right padding equivalent) so last card fully shows
+    return -(trackRef.current.scrollWidth - containerRef.current.offsetWidth + 16);
+  }, []);
+
+  const applyOffset = useCallback(
+    (val) => {
+      const max = getMax();
+      const clamped = Math.min(0, Math.max(max, val));
+      xOffsetRef.current = clamped;
+      if (trackRef.current) {
+        trackRef.current.style.transform = `translateX(${clamped}px)`;
+      }
+      setShowLeft(clamped < -2);
+      setShowRight(clamped > max + 2);
+    },
+    [getMax],
+  );
 
   const checkScroll = useCallback(() => {
-    if (!containerRef.current || !trackRef.current) return;
-    const cW = containerRef.current.offsetWidth;
-    const tW = trackRef.current.scrollWidth;
-    const max = -(tW - cW);
-    setShowLeft(xOffset < -10);
-    setShowRight(xOffset > max + 10);
-  }, [xOffset]);
+    applyOffset(xOffsetRef.current);
+  }, [applyOffset]);
 
   useEffect(() => {
-    checkScroll();
+    const t = setTimeout(checkScroll, 50);
     window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", checkScroll);
+    };
   }, [checkScroll]);
+
   useEffect(() => {
-    setXOffset(0);
-  }, [section.id]);
+    xOffsetRef.current = 0;
+    setTimeout(checkScroll, 50);
+  }, [sectionId, checkScroll]);
 
   const scroll = useCallback(
     (dir) => {
-      if (!containerRef.current || !trackRef.current) return;
-      const cW = containerRef.current.offsetWidth;
-      const tW = trackRef.current.scrollWidth;
-      const max = -(tW - cW);
       const amount = 112 * 2;
-      setXOffset(dir === "left" ? Math.min(0, xOffset + amount) : Math.max(max, xOffset - amount));
+      applyOffset(xOffsetRef.current + (dir === "left" ? amount : -amount));
     },
-    [xOffset],
+    [applyOffset],
   );
+
+  // ── Touch handlers ──────────────────────────────────────────
+  const onTouchStart = useCallback((e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartOffset.current = xOffsetRef.current;
+    lastTouchX.current = e.touches[0].clientX;
+    lastTouchTime.current = Date.now();
+    velocityRef.current = 0;
+    // kill any running momentum
+    if (trackRef.current) {
+      trackRef.current.style.transition = "none";
+    }
+  }, []);
+
+  const onTouchMove = useCallback(
+    (e) => {
+      if (touchStartX.current === null) return;
+      e.preventDefault(); // prevent page scroll while swiping carousel
+
+      const now = Date.now();
+      const x = e.touches[0].clientX;
+      const dt = now - lastTouchTime.current;
+
+      if (dt > 0) {
+        // px per ms — rolling velocity
+        velocityRef.current = (x - lastTouchX.current) / dt;
+      }
+
+      lastTouchX.current = x;
+      lastTouchTime.current = now;
+
+      const delta = x - touchStartX.current;
+      // 1.4x multiplier so finger movement feels snappier
+      applyOffset(touchStartOffset.current + delta * 1.4);
+    },
+    [applyOffset],
+  );
+
+  const onTouchEnd = useCallback(() => {
+    if (touchStartX.current === null) return;
+    touchStartX.current = null;
+
+    // Momentum flick — project velocity forward
+    const FRICTION = 0.92; // how fast it decelerates
+    const MIN_VELOCITY = 0.05; // px/ms below which we stop
+    const FRAME_MS = 16; // ~60fps
+
+    if (Math.abs(velocityRef.current) > MIN_VELOCITY) {
+      if (trackRef.current) {
+        trackRef.current.style.transition = "none";
+      }
+
+      let vel = velocityRef.current * 18; // scale up to px/frame
+
+      const momentum = () => {
+        vel *= FRICTION;
+        if (Math.abs(vel) < 0.5) {
+          // snap back to smooth transition for button scrolls
+          if (trackRef.current) {
+            trackRef.current.style.transition = "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+          }
+          return;
+        }
+        applyOffset(xOffsetRef.current + vel);
+        requestAnimationFrame(momentum);
+      };
+
+      requestAnimationFrame(momentum);
+    }
+  }, [applyOffset]);
+
+  return {
+    containerRef,
+    trackRef,
+    showLeft,
+    showRight,
+    scroll,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+  };
+};
+
+const SingleRowCarousel = ({ section, onItemClick }) => {
+  const { containerRef, trackRef, showLeft, showRight, scroll, onTouchStart, onTouchMove, onTouchEnd } =
+    useCarouselScroll(section.id);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    // passive: false required so preventDefault() works to block page scroll
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, [containerRef, onTouchMove]);
+
+  const canScrollLeft = showLeft;
+  const canScrollRight = showRight && section.items.length > 3;
 
   return (
     <div className="mb-5">
       <div className="flex items-center justify-between px-4 mb-2">
         <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
         <div className="flex gap-1.5 items-center">
-          <AnimatePresence>
-            {showLeft && (
-              <motion.button
-                key="left"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                whileTap={{ scale: 0.85 }}
-                onClick={() => scroll("left")}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300"
-              >
-                <ChevronLeft size={13} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {showRight && section.items.length > 3 && (
-              <motion.button
-                key="right"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                whileTap={{ scale: 0.85 }}
-                onClick={() => scroll("right")}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300"
-              >
-                <ChevronRight size={13} />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          <button
+            disabled={!canScrollLeft}
+            onClick={() => scroll("left")}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <button
+            disabled={!canScrollRight}
+            onClick={() => scroll("right")}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
+          >
+            <ChevronRight size={13} />
+          </button>
         </div>
       </div>
-      <div ref={containerRef} className="overflow-hidden px-4">
-        <motion.div
+      <div ref={containerRef} className="overflow-hidden px-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div
           ref={trackRef}
-          animate={{ x: xOffset }}
-          transition={{ type: "spring", stiffness: 110, damping: 22, mass: 0.85 }}
           className="flex gap-2 pb-1"
-          style={{ width: "max-content" }}
+          style={{
+            width: "max-content",
+            willChange: "transform",
+            transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          }}
         >
           {section.items.length > 0 ? (
             section.items.map((item, idx) => (
@@ -902,51 +1009,26 @@ const SingleRowCarousel = ({ section, onItemClick }) => {
           ) : (
             <div className="flex items-center justify-center w-full py-6 text-gray-400 text-xs">No reels found</div>
           )}
-        </motion.div>
+        </div>
       </div>
     </div>
   );
 };
 
 const TwoRowGridCarousel = ({ section, onItemClick }) => {
-  const containerRef = useRef(null);
-  const trackRef = useRef(null);
-  const [xOffset, setXOffset] = useState(0);
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
+  const { containerRef, trackRef, showLeft, showRight, scroll, onTouchStart, onTouchMove, onTouchEnd } =
+    useCarouselScroll(section.id);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    // passive: false required so preventDefault() works to block page scroll
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, [containerRef, onTouchMove]);
 
   const topItems = section.items.filter((_, i) => i % 2 === 0);
   const bottomItems = section.items.filter((_, i) => i % 2 === 1);
-
-  const checkScroll = useCallback(() => {
-    if (!containerRef.current || !trackRef.current) return;
-    const cW = containerRef.current.offsetWidth;
-    const tW = trackRef.current.scrollWidth;
-    const max = -(tW - cW);
-    setShowLeft(xOffset < -10);
-    setShowRight(xOffset > max + 10);
-  }, [xOffset]);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [checkScroll]);
-  useEffect(() => {
-    setXOffset(0);
-  }, [section.id]);
-
-  const scroll = useCallback(
-    (dir) => {
-      if (!containerRef.current || !trackRef.current) return;
-      const cW = containerRef.current.offsetWidth;
-      const tW = trackRef.current.scrollWidth;
-      const max = -(tW - cW);
-      const amount = 112 * 2;
-      setXOffset(dir === "left" ? Math.min(0, xOffset + amount) : Math.max(max, xOffset - amount));
-    },
-    [xOffset],
-  );
 
   return (
     <div className="relative mx-3 rounded-3xl overflow-hidden bg-white/[0.04] backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_24px_rgba(0,0,0,0.20),0_2px_6px_rgba(0,0,0,0.10)] pt-[14px] pb-3 pr-3 mb-5">
@@ -958,44 +1040,30 @@ const TwoRowGridCarousel = ({ section, onItemClick }) => {
           <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
         </div>
         <div className="flex gap-1.5 items-center">
-          <AnimatePresence>
-            {showLeft && (
-              <motion.button
-                key="left"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                whileTap={{ scale: 0.85 }}
-                onClick={() => scroll("left")}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300"
-              >
-                <ChevronLeft size={13} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {showRight && section.items.length > 4 && (
-              <motion.button
-                key="right"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                whileTap={{ scale: 0.85 }}
-                onClick={() => scroll("right")}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300"
-              >
-                <ChevronRight size={13} />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          <button
+            disabled={!showLeft}
+            onClick={() => scroll("left")}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <button
+            disabled={!showRight}
+            onClick={() => scroll("right")}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
+          >
+            <ChevronRight size={13} />
+          </button>
         </div>
       </div>
-      <div ref={containerRef} className="overflow-hidden px-4">
-        <motion.div
+      <div ref={containerRef} className="overflow-auto px-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div
           ref={trackRef}
-          animate={{ x: xOffset }}
-          transition={{ type: "spring", stiffness: 110, damping: 22, mass: 0.85 }}
-          style={{ width: "max-content" }}
+          style={{
+            width: "max-content",
+            willChange: "transform",
+            transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          }}
         >
           <div className="flex gap-2">
             {topItems.map((item, idx) => (
@@ -1012,7 +1080,7 @@ const TwoRowGridCarousel = ({ section, onItemClick }) => {
               />
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -1210,10 +1278,16 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
     async (vendorId) => {
       setIsProfileLoading(true);
       try {
+        console.log("Fetching vendor profile for ID:", vendorId);
         const profile = await fetchVendorProfile(vendorId);
-        if (profile && profile._id && profile.category) {
+        console.log("Fetched vendor profile for navigation:", profile);
+        if (profile && profile.category) {
           const backTo = encodeURIComponent(window.location.href);
-          closeAndNavigate(`/vendor/${profile.category}/${profile.vendorId}/profile?backTo=${backTo}`);
+          const path = profile.vendorId
+            ? `/vendor/${profile.category}/${profile.vendorId}/profile`
+            : `/vendor/${profile.category}/profile/${profile.username}`;
+            console.log("Navigating to:", `${path}?backTo=${backTo}`);
+          closeAndNavigate(`${path}?backTo=${backTo}`);
         }
       } catch (err) {
         console.error("Failed to fetch vendor profile:", err);
@@ -1221,7 +1295,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
         setIsProfileLoading(false);
       }
     },
-    [fetchVendorProfile, closeAndNavigate],
+    [closeAndNavigate],
   );
 
   // ── Tap handler (original) ──
@@ -1277,18 +1351,18 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
 
   // ── See profile (original) ──
   const handleSeeProfile = async () => {
-    const vendorIds = currentReel.similarVendors || [];
-    if (vendorIds.length === 0) return;
-    if (vendorIds.length === 1) {
-      await navigateToVendorProfile(vendorIds[0]);
+    const allVendorIds = similarVendors || [];
+    if (allVendorIds.length === 0) return;
+    if (allVendorIds.length === 1) {
+      await navigateToVendorProfile(allVendorIds[0]._id);
       return;
     }
-    setLoadingSimilarProfiles(true);
     setShowSimilarVendorsDrawer(true);
+    setLoadingSimilarProfiles(true);
     try {
-      const profiles = await Promise.all(vendorIds.map((id) => fetchVendorProfile(id)));
+      const profiles = await Promise.all(allVendorIds.map((id) => fetchVendorProfile(id._id)));
       setSimilarVendorProfiles(profiles.filter(Boolean));
-    } catch (err) {
+    } catch {
       setSimilarVendorProfiles([]);
     } finally {
       setLoadingSimilarProfiles(false);
@@ -1624,7 +1698,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
             className="flex-1 py-3 bg-white rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-white/10"
           >
             <Calendar size={14} className="text-gray-900" />
-            <span className="text-[12px] font-bold text-gray-900">{currentReel.ctaText || "Book Now"}</span>
+            <span className="text-[12px] font-bold text-gray-900">{"Book Now"}</span>
           </motion.button>
         </div>
       </div>
@@ -1695,10 +1769,14 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                       return (
                         <motion.div
                           key={profile._id}
-                          whileTap={{ scale: 0.98 }}
+                          whileTap={{ scale: 0.98 }} 
                           onClick={() => {
                             setShowSimilarVendorsDrawer(false);
-                            navigateToVendorProfile(profile._id);
+                            const backTo = encodeURIComponent(window.location.href);
+                            const path = profile.vendorId
+                              ? `/vendor/${profile.category}/${profile.vendorId}/profile`
+                              : `/vendor/${profile.category}/profile/${profile.username}`;
+                            closeAndNavigate(`${path}?backTo=${backTo}`);
                           }}
                           className="flex items-center gap-3 p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-2xl border border-gray-100 dark:border-gray-700/50 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 transition-colors"
                         >
