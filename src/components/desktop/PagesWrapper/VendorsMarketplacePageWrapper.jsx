@@ -4194,17 +4194,14 @@ const TopProfilesCarousel = memo(
       showFeaturedOnly,
     ]);
 
-    const handleVendorClick = useCallback(
-      (vendor) => {
-        const targetId = vendor?.vendorId || vendor?._id;
-        if (targetId && vendor?.category) {
-          router.push(`/vendor/${vendor.category}/${targetId}/profile?tab=posts`);
-        } else if (targetId) {
-          router.push(`/vendor/${targetId}`);
+    const handleVendorClick = useCallback((vendor) => {
+        haptic("medium");
+       if (vendor?.vendorId) {
+          router.push(`/vendor/${vendor.category}/${vendor.vendorId}/profile`);
+        } else {
+          router.push(`/vendor/${vendor.category}/profile/${vendor.username}`);
         }
-      },
-      [router],
-    );
+    }, [router]);
 
     const getTrustBadgeColor = (trust) => {
       if (trust >= 80) return "bg-green-500";

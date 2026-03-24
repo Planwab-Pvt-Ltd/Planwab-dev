@@ -8529,7 +8529,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
         <h3 className="text-lg font-bold text-center mb-6 text-gray-900 dark:text-white">Contact Options</h3>
         <div className="space-y-3">
           <motion.a
-            href={`tel:${vendor?.phoneNo || "+919876543210"}`}
+            href={`tel:${vendor?.phoneNo || "Not Available"}`}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25"
           >
@@ -8538,12 +8538,12 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
             </div>
             <div>
               <p className="font-bold">Call Now</p>
-              <p className="text-sm opacity-80">{vendor?.phoneNo || "+91 98765 43210"}</p>
+              <p className="text-sm opacity-80">{vendor?.phoneNo || "Not Available"}</p>
             </div>
             <ChevronRight size={20} className="ml-auto opacity-60" />
           </motion.a>
           <motion.a
-            href={`https://wa.me/${vendor?.whatsappNo || vendor?.phoneNo || "919876543210"}`}
+            href={`https://wa.me/${vendor?.whatsappNo || vendor?.phoneNo || "Not Available"}`}
             target="_blank"
             rel="noopener noreferrer"
             whileTap={{ scale: 0.98 }}
@@ -8559,7 +8559,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
             <ChevronRight size={20} className="ml-auto opacity-60" />
           </motion.a>
           <motion.a
-            href={`mailto:${vendor?.email || "contact@vendor.com"}`}
+            href={`mailto:${vendor?.email || "Not Available"}`}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25"
           >
@@ -8568,7 +8568,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
             </div>
             <div>
               <p className="font-bold">Email</p>
-              <p className="text-sm opacity-80">{vendor?.email || "contact@vendor.com"}</p>
+              <p className="text-sm opacity-80">{vendor?.email || "Not Available"}</p>
             </div>
             <ChevronRight size={20} className="ml-auto opacity-60" />
           </motion.a>

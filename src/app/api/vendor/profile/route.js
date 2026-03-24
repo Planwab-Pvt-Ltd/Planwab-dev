@@ -180,26 +180,15 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // If username is being changed, check if new username is available
-    if (username && username !== id) {
-      const usernameExists = await VendorProfile.findOne({ username });
-      if (usernameExists) {
-        return NextResponse.json(
-          { success: false, error: "Username already taken" },
-          { status: 409 }
-        );
-      }
-    }
-
     // Build update object
     const updateData = {
       vendorBusinessName: vendorBusinessName || existingProfile.vendorBusinessName,
       username: username || existingProfile.username,
       vendorName: vendorName || existingProfile.vendorName,
       category: category || existingProfile.category,
-      bio: bio !== undefined ? bio : existingProfile.bio,
+      bio: bio ? bio : existingProfile.bio,
       vendorAvatar: vendorAvatar || existingProfile.vendorAvatar,
-      vendorCoverImage: vendorCoverImage !== undefined ? vendorCoverImage : existingProfile.vendorCoverImage,
+      vendorCoverImage: vendorCoverImage ? vendorCoverImage : existingProfile.vendorCoverImage,
       location: location || existingProfile.location,
       updatedAt: new Date(),
     };
@@ -222,7 +211,7 @@ export async function PUT(request, { params }) {
 
     // Update profile
     const updatedProfile = await VendorProfile.findOneAndUpdate(
-      { username: id },
+      { _id: id },
       { $set: updateData },
       { new: true, runValidators: true }
     ).select("-password");
