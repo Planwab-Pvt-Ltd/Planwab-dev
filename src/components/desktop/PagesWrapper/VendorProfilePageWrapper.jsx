@@ -8760,7 +8760,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
 
         <div className="space-y-3">
           <motion.a
-            href={`tel:${vendor?.phoneNo || "+919876543210"}`}
+            href={`tel:${vendor?.phoneNo || "Not Available"}`}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30 transition-shadow cursor-pointer"
           >
@@ -8775,7 +8775,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
           </motion.a>
 
           <motion.a
-            href={`https://wa.me/${vendor?.whatsappNo || vendor?.phoneNo || "919876543210"}`}
+            href={`https://wa.me/${vendor?.whatsappNo || vendor?.phoneNo}`}
             target="_blank"
             rel="noopener noreferrer"
             whileTap={{ scale: 0.98 }}
@@ -8792,7 +8792,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
           </motion.a>
 
           <motion.a
-            href={`mailto:${vendor?.email || "contact@vendor.com"}`}
+            href={`mailto:${vendor?.email || "Not Available"}`}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-shadow cursor-pointer"
           >
@@ -8801,7 +8801,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
             </div>
             <div>
               <p className="font-bold">Email</p>
-              <p className="text-sm opacity-80">{vendor?.email || "contact@vendor.com"}</p>
+              <p className="text-sm opacity-80">{vendor?.email || "Not Available"}</p>
             </div>
             <ChevronRight size={20} className="ml-auto opacity-60" />
           </motion.a>

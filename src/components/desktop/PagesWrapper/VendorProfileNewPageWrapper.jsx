@@ -148,6 +148,7 @@ import VendorProfileOnboarding from "../VendorProfileCreate";
 import DOMPurify from "dompurify";
 import { SignInButton, useUser } from "@clerk/clerk-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useVideoThumbnail, generateVideoThumbnail } from "../../../lib/video-thumbnail";
 
 const POST_CONFIGS = {
   1: {
@@ -3327,29 +3328,6 @@ const PostDetailModal = ({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {highlightMediaViewer && (
-          <HighlightMediaFullscreen media={highlightMediaViewer} onClose={() => setHighlightMediaViewer(null)} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showAddHighlightModal && (
-          <AddHighlightModal
-            isOpen={showAddHighlightModal}
-            onClose={() => {
-              setShowAddHighlightModal(false);
-              setEditingHighlight(null);
-            }}
-            vendorId={id}
-            editingHighlight={editingHighlight}
-            onHighlightAdded={handleAddHighlight}
-            onHighlightUpdated={handleUpdateHighlight}
-            categoryColor={categoryColor}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Comments Drawer */}
       <CommentsDrawer
         isOpen={showCommentsDrawer}
@@ -4350,29 +4328,6 @@ const ReelsViewer = ({
           <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendorName} />
         )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {highlightMediaViewer && (
-          <HighlightMediaFullscreen media={highlightMediaViewer} onClose={() => setHighlightMediaViewer(null)} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showAddHighlightModal && (
-          <AddHighlightModal
-            isOpen={showAddHighlightModal}
-            onClose={() => {
-              setShowAddHighlightModal(false);
-              setEditingHighlight(null);
-            }}
-            vendorId={id}
-            editingHighlight={editingHighlight}
-            onHighlightAdded={handleAddHighlight}
-            onHighlightUpdated={handleUpdateHighlight}
-            categoryColor={categoryColor}
-          />
-        )}
-      </AnimatePresence>
     </>
   );
 };
@@ -4837,7 +4792,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
       const filename = generateUniqueFilename(selectedFileRaw.name);
 
       if (uploadType === "post") {
-        storagePath = `posts/${vendor?.username}/${filename}`;
+        storagePath = `posts/${uploadVendorId}/${filename}`;
         safeSetState(setUploadStatus, "Uploading...");
 
         mediaUrl = await uploadToBunnyDirect(selectedFileRaw, storagePath, (progress) => {
@@ -4894,7 +4849,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
         }
       } else {
         // Reel upload
-        storagePath = `reels/${vendor?.username}/${filename}`;
+        storagePath = `reels/${uploadVendorId}/${filename}`;
         safeSetState(setUploadStatus, "Uploading video...");
 
         const hasThumbnail = !!thumbnailFile;
@@ -8729,13 +8684,13 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
             </div>
             <div>
               <p className="font-bold">Call Now</p>
-              <p className="text-sm opacity-80">{vendor?.phoneNo || "+91 98765 43210"}</p>
+              <p className="text-sm opacity-80">{vendor?.phoneNo || "Not Available"}</p>
             </div>
             <ChevronRight size={20} className="ml-auto opacity-60" />
           </motion.a>
 
           <motion.a
-            href={`https://wa.me/${vendor?.whatsappNo || vendor?.phoneNo || "919876543210"}`}
+            href={`https://wa.me/${vendor?.whatsappNo || vendor?.phoneNo}`}
             target="_blank"
             rel="noopener noreferrer"
             whileTap={{ scale: 0.98 }}
@@ -8752,7 +8707,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
           </motion.a>
 
           <motion.a
-            href={`mailto:${vendor?.email || "contact@vendor.com"}`}
+            href={`mailto:${vendor?.email || "Not Available"}`}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-shadow cursor-pointer"
           >
@@ -8761,7 +8716,7 @@ const ContactDrawer = ({ isOpen, onClose, vendor }) => {
             </div>
             <div>
               <p className="font-bold">Email</p>
-              <p className="text-sm opacity-80">{vendor?.email || "contact@vendor.com"}</p>
+              <p className="text-sm opacity-80">{vendor?.email || "Not Available"}</p>
             </div>
             <ChevronRight size={20} className="ml-auto opacity-60" />
           </motion.a>
@@ -11947,28 +11902,39 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
     }
   }, [showSignInPrompt]);
 
-  useEffect(() => {
-    if (!posts.length) return;
-
-    const generate = async () => {
-      // Only target videos that don't have a thumbnail in cache or state
-      const targetVideos = posts.filter((p) => p.mediaType === "video" && !p.thumbnailUrl && !videoThumbnails[p._id]);
-
-      for (const post of targetVideos) {
-        try {
-          const thumb = await getBulletproofThumbnail(post.mediaUrl);
-          setVideoThumbnails((prev) => ({ ...prev, [post._id]: thumb }));
-        } catch (error) {
-          console.warn(`Thumb failed for ${post._id}, using video fallback.`);
-          // Mark as "failed" so we don't keep retrying
-          setVideoThumbnails((prev) => ({ ...prev, [post._id]: "FALLBACK" }));
-        }
-      }
-    };
-
-    const timer = setTimeout(generate, 300); // Small delay to let UI settle
-    return () => clearTimeout(timer);
-  }, [posts]);
+   useEffect(() => {
+     if (!posts.length) return;
+ 
+     let cancelled = false;
+ 
+     const generate = async () => {
+       const targetVideos = posts.filter((p) => p.mediaType === "video" && !p.thumbnailUrl && !videoThumbnails[p._id]);
+ 
+       for (const post of targetVideos) {
+         if (cancelled) break;
+         try {
+           const thumb = await generateVideoThumbnail(post.mediaUrl);
+           if (!cancelled) {
+             setVideoThumbnails((prev) => ({
+               ...prev,
+               [post._id]: thumb || "FALLBACK",
+             }));
+           }
+         } catch (error) {
+           console.warn(`Thumb failed for ${post._id}, using video fallback.`);
+           if (!cancelled) {
+             setVideoThumbnails((prev) => ({ ...prev, [post._id]: "FALLBACK" }));
+           }
+         }
+       }
+     };
+ 
+     const timer = setTimeout(generate, 300);
+     return () => {
+       cancelled = true;
+       clearTimeout(timer);
+     };
+   }, [posts]);
 
   // Add cleanup for video refs when component unmounts or posts change
   useEffect(() => {
@@ -14280,7 +14246,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
               />
             </motion.button>
 
-            {profile.username && isScrolledHeader && (
+            {profile?.username && isScrolledHeader && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
