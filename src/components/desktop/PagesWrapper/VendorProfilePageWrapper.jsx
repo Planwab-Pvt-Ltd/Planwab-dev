@@ -7573,7 +7573,7 @@ const MoreOptionsDrawer = ({
   );
 };
 
-const ShareModal = ({ isOpen, onClose, vendorName }) => {
+export const ShareModal = ({ isOpen, onClose, vendorName }) => {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
