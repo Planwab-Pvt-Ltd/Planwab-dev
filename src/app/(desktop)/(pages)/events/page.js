@@ -7,9 +7,10 @@ import Wedding from "@/components/desktop/Wedding";
 import Anniversary from "@/components/desktop/Anniversary";
 import Birthday from "@/components/desktop/Birthday";
 import HeroSection from "@/components/desktop/ui/EventsPage/HeroSection";
-import Banner1 from "@/components/desktop/ui/EventsPage/Banner1";
 import HowItWorksSection from "@/components/desktop/ui/EventsPage/HowItWorks";
 import SearchSection from "@/components/desktop/ui/EventsPage/SearchSection";
+import { FAQSection, CTASection } from "@/components/desktop/ui/EventsPage/FAQAndCTA";
+import PlanningPreviewSection from "@/components/desktop/ui/EventsPage/PlanningPreviewSection";
 
 export default function Home() {
   const activeCategory = useCategoryStore((state) => state.activeCategory);
@@ -127,11 +128,13 @@ export default function Home() {
 
         <div className="relative z-10">
           <HeroSection />
-          {/* <Banner1 /> */}
           <HowItWorksSection />
           <div className="px-4 md:px-8 lg:px-12">
             <SearchSection />
             <div className="py-12">{renderContent()}</div>
+            <PlanningPreviewSection category={activeCategory} />
+            <FAQSection theme={currentTheme} category={activeCategory} />
+            <CTASection theme={currentTheme} category={activeCategory} />
           </div>
         </div>
       </div>
