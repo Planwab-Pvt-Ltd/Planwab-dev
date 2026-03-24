@@ -2989,4 +2989,4 @@ export default function IdeasDesktopPage() {
       </AnimatePresence>
     </div>
   );
-}
+} 
