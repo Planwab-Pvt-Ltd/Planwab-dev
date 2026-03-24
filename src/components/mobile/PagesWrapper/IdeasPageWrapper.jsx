@@ -1602,7 +1602,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
 
         {/* Two bottom buttons */}
         <div className="flex gap-2.5">
-           <motion.button
+          <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleSeeProfile}
             disabled={isProfileLoading}
@@ -1735,9 +1735,9 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                                 </span>
                               )}
                             </div>
-                            {profile.bio && (
+                            {/* {profile.bio && (
                               <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{profile.bio}</p>
-                            )}
+                            )} */}
                           </div>
                           <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
                         </motion.div>

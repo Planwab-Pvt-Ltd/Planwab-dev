@@ -44,7 +44,7 @@ const quillFormats = [
   "link",
 ];
 
-const UpdateProfileDrawer = ({ vendor, profile, id, onProfileUpdated, isOpen, onClose }) => {
+const UpdateProfileDrawer = ({ vendor, profile, id, profileId, onProfileUpdated, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -266,7 +266,6 @@ const UpdateProfileDrawer = ({ vendor, profile, id, onProfileUpdated, isOpen, on
 
     try {
       const payload = {
-        vendorId: id,
         vendorBusinessName: formData.vendorBusinessName,
         username: formData.username,
         vendorName: formData.vendorName,
@@ -276,6 +275,11 @@ const UpdateProfileDrawer = ({ vendor, profile, id, onProfileUpdated, isOpen, on
         vendorCoverImage: coverImage || "",
         location: formData.location,
       };
+      if(id){
+        payload.vendorId = id;
+      }else if(profileId){
+        payload.id = profileId;
+      }
 
       // Include password change if requested
       if (showPasswordSection && formData.newPassword) {
@@ -283,7 +287,9 @@ const UpdateProfileDrawer = ({ vendor, profile, id, onProfileUpdated, isOpen, on
         payload.newPassword = formData.newPassword;
       }
 
-      const response = await fetch(`/api/vendor/${id}/profile`, {
+      const endpoint = id ? `/api/vendor/${id}/profile` : `/api/vendor/profile?id=${profileId}`;
+
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
