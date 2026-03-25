@@ -466,7 +466,7 @@ const ReplyModal = ({ isOpen, onClose, onSubmit, submitting, review }) => {
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
-export default function ReviewSection({ vendorId, vendorName }) {
+export default function ReviewSection({ vendorId, vendorName, onReviewUpdate }) {
   const { user, isLoaded: isAuthLoaded } = useUser();
 
   // State
@@ -519,6 +519,9 @@ export default function ReviewSection({ vendorId, vendorName }) {
           }
           setStats(data.data.stats);
           setHasMore(data.data.pagination.hasNext);
+          if (isReset && onReviewUpdate) {
+            onReviewUpdate(data.data.reviews);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch reviews:", error);
@@ -570,7 +573,7 @@ export default function ReviewSection({ vendorId, vendorName }) {
         toast.success(result.message);
         setShowWriteModal(false);
         // Refresh reviews to show new one
-        fetchReviews(true);
+        fetchReviews(1, true);
       } else {
         toast.error(result.message);
       }
@@ -676,7 +679,7 @@ export default function ReviewSection({ vendorId, vendorName }) {
         toast.success("Review deleted");
         setReviews((prev) => prev.filter((r) => r._id !== reviewId));
         // Update stats roughly or refetch
-        fetchReviews(true);
+        fetchReviews(1, true);
       }
     } catch (error) {
       toast.error("Failed to delete");
