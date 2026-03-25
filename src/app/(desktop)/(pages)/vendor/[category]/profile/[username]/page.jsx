@@ -1,5 +1,5 @@
 import VendorProfileNewPageWrapper from "@/components/desktop/PagesWrapper/VendorProfileNewPageWrapper";
-import { getVendorProfileByUsername } from "../../../../../../../database/actions/FetchActions";
+import { getVendorProfileByUsername, getVendorReviews } from "../../../../../../../database/actions/FetchActions";
 
 export async function generateMetadata({ params }) {
   const { username } = await params;
@@ -25,10 +25,13 @@ export default async function VendorProfilePage({ params }) {
   const { username } = await params;
 
   const profileData = await getVendorProfileByUsername(username);
+  const vendorId = profileData?.vendorId;
+  const reviewsData = vendorId ? await getVendorReviews(vendorId) : { reviews: [] };
 
   return (
     <VendorProfileNewPageWrapper 
       initialProfile={profileData}
+      initialReviews={reviewsData?.reviews || []}
     />
   );
 }

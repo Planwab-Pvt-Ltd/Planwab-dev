@@ -1896,6 +1896,7 @@ const PostDetailModal = ({
   allInteractions = {},
   isVerified = false,
   profileId,
+  onInteractionUpdate,
 }) => {
   const { user, isSignedIn } = useUser();
 
@@ -2439,6 +2440,12 @@ const PostDetailModal = ({
         setLikes(previousLikes);
       } else {
         setLikes(data.data.likesCount);
+        if (onInteractionUpdate) {
+          onInteractionUpdate(currentPost._id, { 
+            likesCount: data.data.likesCount, 
+            isLiked: newLikedState 
+          });
+        }
       }
     } catch (error) {
       setIsLiked(previousLiked);
@@ -2509,6 +2516,10 @@ const PostDetailModal = ({
 
       if (!data.success) {
         setIsSaved(previousSaved);
+      } else {
+        if (onInteractionUpdate) {
+          onInteractionUpdate(currentPost._id, { isSaved: newSavedState });
+        }
       }
     } catch (error) {
       setIsSaved(previousSaved);
@@ -2548,9 +2559,14 @@ const PostDetailModal = ({
         }),
       });
 
-      const data = await res.json();
       if (data.success) {
-        setReviews((prev) => prev.map((r) => (r._id === tempId ? data.data.review : r)));
+        const updatedReview = data.data.review;
+        setReviews((prev) => prev.map((r) => (r._id === tempId ? updatedReview : r)));
+        if (onInteractionUpdate) {
+          onInteractionUpdate(currentPost._id, { 
+            reviews: [...reviews.filter(r => r._id !== tempId), updatedReview] 
+          });
+        }
       } else {
         setReviews((prev) => prev.filter((r) => r._id !== tempId));
       }
@@ -2577,6 +2593,11 @@ const PostDetailModal = ({
           reviewId,
         }),
       });
+      if (onInteractionUpdate) {
+        onInteractionUpdate(currentPost._id, { 
+          reviews: reviews.filter((r) => (r._id || r.id) !== reviewId) 
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -3428,12 +3449,6 @@ const ReelsViewer = ({
       setIsLoadingInteractions(true);
 
       try {
-        const vendorUsername = vendor?.username;
-        if (!vendorUsername) {
-          setIsLoadingInteractions(false);
-          return;
-        }
-
         const params = new URLSearchParams({
           id: reelsVendorId,
           reelId,
@@ -3475,9 +3490,6 @@ const ReelsViewer = ({
       if (viewTracked.has(reelId)) return;
 
       try {
-        const vendorUsername = vendor?.username;
-        if (!vendorUsername) return;
-
         const res = await fetch(`/api/vendor/profile/reels/interactions?id=${reelsVendorId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -3629,8 +3641,6 @@ const ReelsViewer = ({
     const isCurrentlyLiked = likedReels.has(reelId);
     const newLikedState = !isCurrentlyLiked;
 
-    console.log(currentReel._id, reelId, currentReel);
-
     // Optimistic update
     const newLiked = new Set(likedReels);
     if (newLikedState) {
@@ -3650,8 +3660,6 @@ const ReelsViewer = ({
     setIsInteracting(true);
 
     try {
-      const vendorUsername = vendor?.username;
-
       const res = await fetch(`/api/vendor/profile/reels/interactions?id=${reelsVendorId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3709,8 +3717,6 @@ const ReelsViewer = ({
     setIsInteracting(true);
 
     try {
-      const vendorUsername = vendor?.username;
-
       const res = await fetch(`/api/vendor/profile/reels/interactions?id=${reelsVendorId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3817,7 +3823,6 @@ const ReelsViewer = ({
 
   const handleEditReel = async (newCaption, newTitle) => {
     try {
-      const vendorUsername = vendor?.username;
       const reelId = currentReel._id;
 
       const formData = new FormData();
@@ -11363,7 +11368,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
     };
   });
   const [profile, setProfile] = useState(initialProfile || {});
-  const [reviews, setReviews] = useState();
+  const [reviews, setReviews] = useState(initialReviews || []);
   const [vendorLoading, setVendorLoading] = useState(false);
   const [highlights, setHighlights] = useState(initialProfile?.highlights || []);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
@@ -11595,19 +11600,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   }, [posts, reels, user?.id, id, profileLoading]);
 
   useEffect(() => {
-    if (!initialProfile) {
-      setLikesCount(0);
-      return;
-    }
-    const totalPostLikes = initialProfile.posts?.reduce(
-      (total, post) => total + (post.likes?.length || 0),
-      0
-    ) || 0;
-    const totalReelLikes = initialProfile.reels?.reduce(
-      (total, reel) => total + (reel.likes?.length || 0),
-      0
-    ) || 0;
-    setLikesCount(totalPostLikes + totalReelLikes);
+    setLikesCount(initialProfile?.likes?.length || 0);
   }, [initialProfile]);
 
   useEffect(() => {
@@ -11737,6 +11730,19 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
     setHasLiked(liked);
     setHasTrusted(trusted);
     setUserStateReady(true);
+
+    // Fetch live like/trust counts from server to ensure sync across pages
+    fetch(`/api/vendor/profile/interactions?id=${initialProfile._id}&userId=${user.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setLikesCount(Math.max(0, data.data.likesCount));
+          setTrustCount(Math.max(0, data.data.trust));
+          setHasLiked(data.data.userHasLiked);
+          setHasTrusted(data.data.userHasTrusted);
+        }
+      })
+      .catch(() => {});
   }, [isUserLoaded, isSignedIn, user?.id, profile]);
 
   useEffect(() => {
@@ -13034,7 +13040,6 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
                       onClickCapture={(e) => {
                         // Using Capture ensures this fires before any bubble-cancellation
                         e.preventDefault();
-                        console.log("Gallery Toggle Clicked"); // Debug check
                         setIsGalleryExpanded((prev) => !prev);
                       }}
                       aria-label="Toggle Gallery"
@@ -13122,12 +13127,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
                     onClick={() => setSelectedReelIndex(index)}
                     className="aspect-[9/16] bg-gray-100 dark:bg-gray-800 overflow-hidden relative cursor-pointer rounded-[10px]"
                   >
-                    <SmartMedia
-                      src={reel.thumbnail}
-                      type="image"
-                      className="w-full h-full object-cover"
-                      loaderImage="/GlowLoadingGif.gif"
-                    />
+                    <ReelThumbnailRenderer reel={reel} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                     <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-bold">
                       <Play size={12} className="fill-white" />
@@ -13189,8 +13189,8 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
                   ))}
                 </div>
                 <div>
-                  {vendor?.username ? (
-                    <ReviewSection vendorId={vendor?.username} vendorName={profile?.vendorName} />
+                  {id ? (
+                    <ReviewSection vendorId={id} vendorName={vendor?.name || profile?.vendorName} onReviewUpdate={setReviews} />
                   ) : (
                     <ReviewsEmptyState />
                   )}
@@ -15176,6 +15176,15 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
             allInteractions={postsInteractionsData}
             isVerified={isVerified}
             profileId={profile?._id}
+            onInteractionUpdate={(postId, updates) => {
+              setPostsInteractionsData(prev => ({
+                ...prev,
+                [postId]: {
+                  ...(prev[postId] || {}),
+                  ...updates
+                }
+              }));
+            }}
           />
         )}
       </AnimatePresence>
@@ -15247,8 +15256,8 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
             isOpen={showReviewsDrawer}
             onClose={() => setShowReviewsDrawer(false)}
             reviewsData={reviews}
-            vendorId={vendor?.username}
-            vendorName={vendor?.name}
+            vendorId={id}
+            vendorName={vendor?.name || profile?.vendorName}
           />
         )}
       </AnimatePresence>
