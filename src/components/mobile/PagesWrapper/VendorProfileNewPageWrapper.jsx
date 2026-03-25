@@ -14858,6 +14858,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
             onEdit={(newCaption) => handleEditPost(selectedPost._id, newCaption)}
             onArchive={() => handleArchivePost(selectedPost._id)}
             vendorId={initialProfile?._id}
+            profileId={initialProfile?._id}
             allInteractions={postsInteractionsData}
             onInteractionUpdate={(postId, updates) => {
               setPostsInteractionsData(prev => ({
