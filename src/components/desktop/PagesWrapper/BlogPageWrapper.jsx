@@ -11,6 +11,18 @@ import {
   Loader2, BookOpen, Pen, AlertTriangle, Check, Upload, ImageIcon, Link,
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+import { BookOpen as BookOpenIcon } from "lucide-react";
+
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
 
 const ITEMS_PER_PAGE = 9;
 
@@ -75,7 +87,7 @@ const GridCard = ({ post, currentUserId, onEdit, onDelete }) => {
     >
       <div className="relative w-full aspect-square md:aspect-[4/3] rounded-[32px] overflow-hidden bg-gray-100 mb-6">
         {post.coverImage ? (
-          <SmartMedia
+          <MediaRenderer
             src={post.coverImage}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
             alt={post.title}
@@ -144,7 +156,7 @@ const PopularArticles = ({ blogs, selectedCategory = "all", onShowMore }) => {
           >
             <div className="relative w-full aspect-[1.15/1] rounded-[32px] overflow-hidden bg-gray-100 mb-6 shadow-sm border border-gray-50">
               {post.coverImage ? (
-                <SmartMedia
+                <MediaRenderer
                   src={post.coverImage}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
                   alt={post.title}
@@ -249,7 +261,7 @@ const CategoryCarousel = ({ onCategorySelect, selectedCategory }) => {
               onClick={() => onCategorySelect(cat.id)}
               className={`flex-shrink-0 w-[280px] h-[380px] rounded-[40px] overflow-hidden cursor-pointer relative snap-start shadow-sm hover:shadow-2xl transition-all duration-500 ${selectedCategory === cat.id ? "ring-4 ring-pink-500 ring-offset-4" : "border border-gray-100"}`}
             >
-              <SmartMedia
+              <MediaRenderer
                 src={cat.image}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 alt={cat.name}
@@ -318,7 +330,7 @@ const YourArticlesAccordion = ({ blogs, onEdit, onDelete }) => {
               transition={{ type: "spring", stiffness: 350, damping: 35 }}
               className="relative rounded-[32px] overflow-hidden cursor-pointer group shadow-sm bg-gray-900"
             >
-              <SmartMedia
+              <MediaRenderer
                 src={post.coverImage || ""}
                 alt={post.title}
                 className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity duration-500"

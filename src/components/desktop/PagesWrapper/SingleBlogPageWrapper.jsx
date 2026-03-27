@@ -9,6 +9,17 @@ import {
   Calendar, Clock, User, Loader2, Star, Trash2 
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
 import { ShareModal } from "./VendorProfilePageWrapper";
 
 export default function SingleBlogPageWrapper() {
@@ -171,7 +182,7 @@ export default function SingleBlogPageWrapper() {
             {/* Cover Image */}
             {blog.coverImage && (
               <div className="w-full h-[300px] sm:h-[500px] relative rounded-[40px] overflow-hidden shadow-xl mb-12 group">
-                <SmartMedia 
+                <MediaRenderer 
                   src={blog.coverImage} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                   alt={blog.title} 
@@ -260,7 +271,7 @@ export default function SingleBlogPageWrapper() {
                       className="group cursor-pointer flex gap-4"
                     >
                       <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0">
-                        <SmartMedia src={rel.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <MediaRenderer src={rel.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
                       <div className="flex flex-col justify-center">
                         <h5 className="font-bold text-[#111827] text-sm leading-snug group-hover:text-[#FF2D7A] transition-colors line-clamp-2">

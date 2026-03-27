@@ -13,6 +13,17 @@ import {
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
 
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
+
 const CATEGORIES = [
   { id: "all", name: "All", emoji: "✨" },
   { id: "wedding", name: "Wedding", emoji: "💍" },
@@ -44,7 +55,7 @@ const MobileBlogCard = ({ post, currentUserId, onEdit, onDelete }) => {
       className="bg-white rounded-[24px] overflow-hidden border border-gray-100 shadow-sm mb-5 active:scale-[0.98] transition-transform"
     >
       <div className="relative aspect-[16/10] bg-gray-100">
-        <SmartMedia 
+        <MediaRenderer 
           src={post.coverImage} 
           className="w-full h-full object-cover" 
           alt={post.title} 
@@ -189,7 +200,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
             <div className={`relative aspect-[16/10] bg-gray-50 rounded-[40px] overflow-hidden border-2 border-dashed transition-all duration-300 ${imagePreview ? "border-transparent" : "border-gray-200"}`}>
               {imagePreview ? (
                 <>
-                  <SmartMedia src={imagePreview} className="w-full h-full object-cover" />
+                  <MediaRenderer src={imagePreview} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/20" />
                   <button 
                     type="button"

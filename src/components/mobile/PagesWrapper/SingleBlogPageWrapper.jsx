@@ -10,6 +10,17 @@ import {
   MessageCircle, ChevronLeft
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
 import { ShareModal } from "../../desktop/PagesWrapper/VendorProfilePageWrapper";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
@@ -133,7 +144,7 @@ export default function MobileSingleBlogPageWrapper() {
       <div className="pb-32">
         {blog.coverImage && (
           <div className="w-full aspect-[4/3] relative">
-            <SmartMedia src={blog.coverImage} className="w-full h-full object-cover" alt={blog.title} />
+            <MediaRenderer src={blog.coverImage} className="w-full h-full object-cover" alt={blog.title} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6 right-6">
               <span className="bg-[#FF2D7A] text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-3 inline-block">
@@ -220,7 +231,7 @@ export default function MobileSingleBlogPageWrapper() {
                     className="flex gap-4 active:scale-95 transition-transform"
                   >
                     <div className="w-24 h-24 rounded-3xl overflow-hidden shrink-0 shadow-sm">
-                      <SmartMedia src={rel.coverImage} className="w-full h-full object-cover" />
+                      <MediaRenderer src={rel.coverImage} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex flex-col justify-center">
                       <h5 className="font-bold text-[#111827] text-sm leading-snug line-clamp-2">
