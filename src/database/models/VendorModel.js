@@ -298,9 +298,9 @@ const VendorBaseSchema = new Schema(
 
     // --- Social Interactions ---
     likesCount: { type: Number, default: 0 },
-    likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    likedBy: { type: [String], default: [] },
     bookmarksCount: { type: Number, default: 0 },
-    bookmarkedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    bookmarkedBy: { type: [String], default: [] },
 
     // --- Social Links ---
     socialLinks: {

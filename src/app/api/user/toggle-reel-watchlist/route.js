@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import connectToDatabase from "../../../../database/mongoose";
 import User from "../../../../database/models/userModel";
-import Vendor from "../../../../database/models/VendorModel";
+import ReelsModel from "../../../../database/models/ReelsModel";
 
 export async function POST(req) {
   try {
@@ -13,10 +13,10 @@ export async function POST(req) {
 
     await connectToDatabase();
 
-    const { vendorId } = await req.json();
+    const { reelId } = await req.json();
 
-    if (!vendorId) {
-      return NextResponse.json({ error: "Vendor ID required" }, { status: 400 });
+    if (!reelId) {
+      return NextResponse.json({ error: "Reel ID required" }, { status: 400 });
     }
 
     let dbUser = await User.findOne({ clerkId: user.id });
@@ -29,37 +29,35 @@ export async function POST(req) {
         photo: user.imageUrl,
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        likedVendors: [],
+        watchlistReels: [],
       });
     }
 
-    const isLiked = dbUser.likedVendors.includes(vendorId);
+    const isWatchlisted = dbUser.watchlistReels.includes(reelId);
 
-    if (isLiked) {
+    if (isWatchlisted) {
       await User.findByIdAndUpdate(dbUser._id, {
-        $pull: { likedVendors: vendorId },
+        $pull: { watchlistReels: reelId },
       });
 
-      await Vendor.findByIdAndUpdate(vendorId, {
-        $inc: { likesCount: -1 },
-        $pull: { likedBy: user.id },
+      await ReelsModel.findByIdAndUpdate(reelId, {
+        $pull: { bookmarkedBy: user.id },
       });
 
-      return NextResponse.json({ isLiked: false, message: "Unliked" });
+      return NextResponse.json({ isWatchlisted: false, message: "Removed from watchlist" });
     } else {
       await User.findByIdAndUpdate(dbUser._id, {
-        $addToSet: { likedVendors: vendorId },
+        $addToSet: { watchlistReels: reelId },
       });
 
-      await Vendor.findByIdAndUpdate(vendorId, {
-        $inc: { likesCount: 1 },
-        $addToSet: { likedBy: user.id },
+      await ReelsModel.findByIdAndUpdate(reelId, {
+        $addToSet: { bookmarkedBy: user.id },
       });
 
-      return NextResponse.json({ isLiked: true, message: "Liked" });
+      return NextResponse.json({ isWatchlisted: true, message: "Added to watchlist" });
     }
   } catch (error) {
-    console.error("Toggle Like Error:", error);
+    console.error("Toggle Watchlist Error:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

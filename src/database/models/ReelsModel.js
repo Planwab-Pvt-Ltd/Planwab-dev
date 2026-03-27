@@ -98,6 +98,9 @@ nestedValues: [{ type: String, trim: true }],
     commentCount: { type: Number, default: 0, min: 0 },
     saveCount: { type: Number, default: 0, min: 0 },
 
+    likedBy: [{ type: String, trim: true }], // array of user IDs who liked
+    bookmarkedBy: [{ type: String, trim: true }], // array of user IDs who bookmarked
+
     // ── Priority ─────────────────────────────────────────────────────────
     priority: { type: Number, default: 0, min: 0, max: 100, index: true },
 

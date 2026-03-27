@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import ReactDOM from "react-dom/client";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useTransform, LayoutGroup } from "framer-motion";
 import {
   ArrowLeft,
@@ -11349,6 +11349,9 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   const router = useRouter();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const { backUrl, canGoBack } = useNavigationState();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
 
   const [vendor, setVendor] = useState(() => {
     const baseVendor = initialVendor || {};
@@ -12740,7 +12743,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
           >
             <X size={18} />
           </motion.button>
-          <SignInButton mode="modal">
+          <SignInButton mode="modal" forceRedirectUrl={fullAuthRedirectUrl}>
             <motion.button
               whileTap={{ scale: 0.95 }}
               className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25"

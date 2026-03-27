@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import connectToDatabase from "../../../../database/mongoose";
 import User from "../../../../database/models/userModel";
-import Vendor from "../../../../database/models/VendorModel";
+import ReelsModel from "../../../../database/models/ReelsModel";
 
 export async function POST(req) {
   try {
@@ -13,10 +13,10 @@ export async function POST(req) {
 
     await connectToDatabase();
 
-    const { vendorId } = await req.json();
+    const { reelId } = await req.json();
 
-    if (!vendorId) {
-      return NextResponse.json({ error: "Vendor ID required" }, { status: 400 });
+    if (!reelId) {
+      return NextResponse.json({ error: "Reel ID required" }, { status: 400 });
     }
 
     let dbUser = await User.findOne({ clerkId: user.id });
@@ -29,30 +29,28 @@ export async function POST(req) {
         photo: user.imageUrl,
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        likedVendors: [],
+        likedReels: [],
       });
     }
 
-    const isLiked = dbUser.likedVendors.includes(vendorId);
+    const isLiked = dbUser.likedReels.includes(reelId);
 
     if (isLiked) {
       await User.findByIdAndUpdate(dbUser._id, {
-        $pull: { likedVendors: vendorId },
+        $pull: { likedReels: reelId },
       });
 
-      await Vendor.findByIdAndUpdate(vendorId, {
-        $inc: { likesCount: -1 },
+      await ReelsModel.findByIdAndUpdate(reelId, {
         $pull: { likedBy: user.id },
       });
 
       return NextResponse.json({ isLiked: false, message: "Unliked" });
     } else {
       await User.findByIdAndUpdate(dbUser._id, {
-        $addToSet: { likedVendors: vendorId },
+        $addToSet: { likedReels: reelId },
       });
 
-      await Vendor.findByIdAndUpdate(vendorId, {
-        $inc: { likesCount: 1 },
+      await ReelsModel.findByIdAndUpdate(reelId, {
         $addToSet: { likedBy: user.id },
       });
 

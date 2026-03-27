@@ -29,6 +29,7 @@ import {
   LogIn,
   PackageOpen
 } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 // =============================================================================
 // SUB-COMPONENTS & SKELETONS
@@ -79,6 +80,9 @@ export default function UserBookingsPageWrapper() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [fetching, setFetching] = useState(false);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
 
   useEffect(() => {
     if (isSignedIn && user?.id) {
@@ -125,7 +129,7 @@ export default function UserBookingsPageWrapper() {
           <div className="w-20 h-20 bg-violet-50 rounded-3xl flex items-center justify-center mx-auto mb-6"><LogIn className="text-violet-600" size={32} /></div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Sign in Required</h2>
           <p className="text-slate-500 font-medium mb-8">Please log in to your PlanWAB account to view and manage your wedding bookings.</p>
-          <Link href="/sign-in" className="block w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-violet-600 transition-all shadow-xl shadow-slate-200">Go to Login</Link>
+          <Link href={`/sign-in?redirect_url=${encodeURIComponent(fullAuthRedirectUrl)}`} className="block w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-violet-600 transition-all shadow-xl shadow-slate-200">Go to Login</Link>
         </motion.div>
       </div>
     );

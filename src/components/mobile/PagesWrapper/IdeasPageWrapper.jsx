@@ -82,6 +82,7 @@ import {
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
 import { cos } from "three/src/nodes/math/MathNode.js";
+import { useUser } from '@clerk/nextjs';
 
 const EVENT_CONFIGS = {
   wedding: {
@@ -469,26 +470,54 @@ const recordView = async (reelId) => {
 
 const toggleLike = async (reelId, action) => {
   try {
-    const res = await fetch(`/api/reels/${reelId}/like`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    if (res.ok) return res.json();
-  } catch {}
-  return null;
+    const [res, res2] = await Promise.all([
+      fetch(`/api/reels/${reelId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      }),
+      fetch(`/api/user/toggle-reel-like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reelId }),
+      }),
+    ]);
+
+    console.log({ res, res2 });
+
+    if (!res.ok) throw new Error("Like API failed");
+
+    return await res.json();
+  } catch (err) {
+    console.error("toggleLike error:", err);
+    return null;
+  }
 };
 
 const toggleSave = async (reelId, action) => {
   try {
-    const res = await fetch(`/api/reels/${reelId}/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    if (res.ok) return res.json();
-  } catch {}
-  return null;
+    const [res, res2] = await Promise.all([
+      fetch(`/api/reels/${reelId}/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      }),
+      fetch(`/api/user/toggle-reel-watchlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reelId }),
+      }),
+    ]);
+
+    console.log({ res, res2 });
+
+    if (!res.ok) throw new Error("Save API failed");
+
+    return await res.json();
+  } catch (err) {
+    console.error("toggleSave error:", err);
+    return null;
+  }
 };
 
 const recordShare = async (reelId) => {
@@ -1086,7 +1115,7 @@ const TwoRowGridCarousel = ({ section, onItemClick }) => {
   );
 };
 
-const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow }) => {
+const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
   const router = useRouter();
 
   // ── All original states (unchanged) ──
@@ -1186,8 +1215,10 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
   // ── Reset state + fetch data on reel change (original) ──
   useEffect(() => {
     if (!currentReel?._id) return;
-    setIsLiked(false);
-    setIsSaved(false);
+    const initiallyLiked = userInteractions?.liked?.has(currentReel._id) || false;
+    const initiallySaved = userInteractions?.saved?.has(currentReel._id) || false;
+    setIsLiked(initiallyLiked); 
+    setIsSaved(initiallySaved);
     setExpanded(false);
     setIsPlaying(true);
     setVideoLoading(true);
@@ -2417,6 +2448,30 @@ export default function IdeasPageWrapper() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  const { user, isLoaded } = useUser();
+  const [userInteractions, setUserInteractions] = useState({ liked: new Set(), saved: new Set() });
+
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    const fetchInteractions = async () => {
+      try {
+        const res = await fetch(`/api/user/interactionsLists?userId=${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          // Store IDs in Sets for fast O(1) lookups inside the modal
+          const likedIds = new Set(data.reels?.liked?.map(r => r._id) || []);
+          const savedIds = new Set(data.reels?.watchlist?.map(r => r._id) || []);
+          setUserInteractions({ liked: likedIds, saved: savedIds });
+        }
+      } catch (err) {
+        console.error("Failed to fetch user interactions:", err);
+      }
+    };
+
+    fetchInteractions();
+  }, [isLoaded, user]);
+
   const urlType = searchParams.get("type") || null;
   const urlSubtype = searchParams.get("subtype") || null;
   const urlNested = searchParams.get("nested") || null;
@@ -3160,7 +3215,8 @@ export default function IdeasPageWrapper() {
             reels={reelsViewerData.reels}
             initialIndex={reelsViewerData.initialIndex}
             onClose={handleCloseReels}
-            onBookNow={handleBookNow}
+            onBookNow={handleBookNow} 
+            userInteractions={userInteractions}
           />
         )}
       </AnimatePresence>

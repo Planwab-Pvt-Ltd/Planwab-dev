@@ -26,6 +26,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
+import { usePathname, useSearchParams } from "next/navigation";
 
 // --- MOCK DATA ---
 
@@ -210,6 +211,9 @@ export default function UserBookingsPageWrapper() {
   const scrollRef = useRef(null);
   const [bookings, setBookings] = useState([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
 
   // Scroll Handler
   const scroll = (direction) => {
@@ -331,7 +335,7 @@ export default function UserBookingsPageWrapper() {
           </p>
 
           <Link
-            href="/sign-in"
+            href={`/sign-in?redirect_url=${encodeURIComponent(fullAuthRedirectUrl)}`} 
             className="w-full max-w-xs py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-lg text-center shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all active:scale-95"
           >
             Log In to Continue

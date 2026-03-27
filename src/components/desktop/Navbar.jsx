@@ -1262,8 +1262,8 @@ const DesktopNavbar = () => {
   const [isPending, startTransition] = useTransition();
   const [pendingRoute, setPendingRoute] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
-  const [showToggleButton, setShowToggleButton] = useState(false);
-const [isNavbarExpanded, setIsNavbarExpanded] = useState(false);
+  const [showToggleButton, setShowToggleButton] = useState(true);
+  const [isNavbarExpanded, setIsNavbarExpanded] = useState(false);
   const { setIsNavbarVisible, isNavbarVisible } = useNavbarVisibilityStore();
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success", isNavbarVisible: false });
@@ -1284,29 +1284,12 @@ const [isNavbarExpanded, setIsNavbarExpanded] = useState(false);
     setToast((prev) => ({ ...prev, isNavbarVisible: false }));
   }, []);
 
-  // --- OPTIMIZATION: Throttled Scroll ---
-  const { scrollY } = useScroll();
-  const lastScrollY = useRef(0);
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-  const diff = latest - lastScrollY.current;
-  
-  // Show toggle button when scrolled down past 200px
-  if (latest > 200) {
-    setShowToggleButton(true);
-  } else {
-    setShowToggleButton(false);
-  }
-  
-  lastScrollY.current = latest;
-});
-
   useEffect(() => {
-  if (activeDrawer === "cart" || activeDrawer === "explore") {
-    setIsNavbarExpanded(false);
-    setShowToggleButton(false);
-  }
-}, [activeDrawer]);
+    if (activeDrawer === "cart" || activeDrawer === "explore") {
+      setIsNavbarExpanded(false);
+      setShowToggleButton(false);
+    }
+  }, [activeDrawer]);
 
   const navItems = useMemo(
     () => [
@@ -1412,236 +1395,237 @@ const [isNavbarExpanded, setIsNavbarExpanded] = useState(false);
       <Toast {...toast} onClose={hideToast} />
 
       {/* Toggle Button - Shows when scrolled */}
-    <AnimatePresence>
-      {showToggleButton && !isNavbarExpanded && (
-        <motion.button
-          initial={{ x: 120, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 120, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          onClick={() => {
-            haptic("medium");
-            setIsNavbarExpanded(true);
-          }}
-          onMouseEnter={()=>setIsNavbarExpanded(true)}
-          className="fixed right-6 bottom-6 z-[9999] w-14 h-14 pl-2 bg-white/95 backdrop-blur-xl rounded-full shadow-2xl border border-gray-200/50 flex items-center justify-center group hover:px-6 cursor-pointer transition-all duration-300"
-        >
-          <motion.div
-            className="flex items-center gap-2"
-            initial={{ width: "auto" }}
+      <AnimatePresence>
+        {showToggleButton && !isNavbarExpanded && (
+          <motion.button
+            initial={{ x: 120, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 120, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            onClick={() => {
+              haptic("medium");
+              setIsNavbarExpanded(true);
+            }}
+            onMouseEnter={() => setIsNavbarExpanded(true)}
+            className="fixed right-6 bottom-6 z-[9999] w-14 h-14 pl-2 bg-white/95 backdrop-blur-xl rounded-full shadow-2xl border border-gray-200/50 flex items-center justify-center group hover:px-6 cursor-pointer transition-all duration-300"
           >
-            <ChartBarStacked size={24} className="text-blue-600" strokeWidth={2.5} />
-            <motion.span
-              initial={{ width: 0, opacity: 0 }}
-              whileHover={{ width: "auto", opacity: 1 }}
-              className="text-sm font-bold text-gray-900 whitespace-nowrap overflow-hidden"
-            >
-              Menu
-            </motion.span>
-          </motion.div>
-          
-          {/* Cart Badge */}
-          {cartCount > 0 && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white shadow-md"
-            >
-              <span className="text-[10px] font-black text-white">{cartCount}</span>
+            <motion.div className="flex items-center gap-2" initial={{ width: "auto" }}>
+              <ChartBarStacked size={24} className="text-blue-600" strokeWidth={2.5} />
+              <motion.span
+                initial={{ width: 0, opacity: 0 }}
+                whileHover={{ width: "auto", opacity: 1 }}
+                className="text-sm font-bold text-gray-900 whitespace-nowrap overflow-hidden"
+              >
+                Menu
+              </motion.span>
             </motion.div>
-          )}
-        </motion.button>
-      )}
-    </AnimatePresence>
 
-    {/* Main Desktop Navbar - Vertical Floating */}
-     <AnimatePresence>
-      {isNavbarExpanded && (
-      <motion.div
-        animate={{
-          x: isNavbarVisible ? 0 : 120,
-          opacity: isNavbarVisible ? 1 : 0,
-        }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="fixed right-1 bottom-2 z-[9999] will-change-transform group"
-      >
-        <div
-          className={cn(
-            "bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-2 py-1 flex flex-col gap-1",
-            "opacity-60 group-hover:opacity-100 transition-opacity duration-300",
-          )}
-        >
-          {navItems.map((item) => {
-            if (item.type === "center") {
-              const hasItems = cartCount > 0;
-              return (
-                <div key={item.id} className="relative flex justify-center py-1 px-0">
-                  <motion.button
-                    onClick={() => handleTabChange(item)}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    className="relative focus:outline-none group cursor-pointer"
-                  >
-                    <motion.div
-                      className="flex justify-center items-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow"
-                      animate={{
-                        background: hasItems
-                          ? "linear-gradient(to bottom right, #E5B80B, #d4a909)"
-                          : "linear-gradient(to bottom right, #3b82f6, #2563eb)",
-                      }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ShoppingBag size={26} className="text-white" strokeWidth={2.5} />
-                    </motion.div>
+            {/* Cart Badge */}
+            {cartCount > 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white shadow-md"
+              >
+                <span className="text-[10px] font-black text-white">{cartCount}</span>
+              </motion.div>
+            )}
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-                    <AnimatePresence>
-                      {hasItems && (
+      {/* Main Desktop Navbar - Vertical Floating */}
+      <AnimatePresence>
+        {isNavbarExpanded && (
+          <motion.div
+            animate={{
+              x: isNavbarVisible ? 0 : 120,
+              opacity: isNavbarVisible ? 1 : 0,
+            }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="fixed right-1 bottom-2 z-[9999] will-change-transform group"
+          >
+            <div
+              className={cn(
+                "bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-2 py-1 flex flex-col gap-1",
+                "opacity-60 group-hover:opacity-100 transition-opacity duration-300",
+              )}
+            >
+              {navItems.map((item) => {
+                if (item.type === "center") {
+                  const hasItems = cartCount > 0;
+                  return (
+                    <div key={item.id} className="relative flex justify-center py-1 px-0">
+                      <motion.button
+                        onClick={() => handleTabChange(item)}
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.92 }}
+                        className="relative focus:outline-none group cursor-pointer"
+                      >
                         <motion.div
-                          key="badge"
-                          initial={{ scale: 0, rotate: -180 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          exit={{ scale: 0, rotate: 180 }}
-                          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white shadow-md"
+                          className="flex justify-center items-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg group-hover:shadow-xl transition-shadow"
+                          animate={{
+                            background: hasItems
+                              ? "linear-gradient(to bottom right, #E5B80B, #d4a909)"
+                              : "linear-gradient(to bottom right, #3b82f6, #2563eb)",
+                          }}
+                          transition={{ duration: 0.3 }}
                         >
-                          <span className="text-[10px] font-black text-white">{cartCount}</span>
+                          <ShoppingBag size={26} className="text-white" strokeWidth={2.5} />
+                        </motion.div>
+
+                        <AnimatePresence>
+                          {hasItems && (
+                            <motion.div
+                              key="badge"
+                              initial={{ scale: 0, rotate: -180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              exit={{ scale: 0, rotate: 180 }}
+                              className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white shadow-md"
+                            >
+                              <span className="text-[10px] font-black text-white">{cartCount}</span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {!hasItems && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-white shadow-md"
+                          >
+                            <Plus size={12} strokeWidth={4} className="text-white" />
+                          </motion.div>
+                        )}
+
+                        {/* Tooltip on hover */}
+                        <motion.div
+                          initial={{ opacity: 0, x: 10 }}
+                          whileHover={{ opacity: 1, x: 0 }}
+                          className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none shadow-lg"
+                        >
+                          {hasItems ? `Cart (${cartCount})` : "Explore Vendors"}
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-4 border-l-gray-900" />
+                        </motion.div>
+                      </motion.button>
+                    </div>
+                  );
+                }
+
+                const isActive = isTabActive(item.route);
+                const isLoading = isPending && pendingRoute === item.route;
+                const isCenter = item.isCenter;
+
+                return (
+                  <motion.button
+                    key={item.id}
+                    onClick={() => handleTabChange(item)}
+                    onMouseEnter={() => setHoveredItem(item.id)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    whileHover={{ scale: 1.05, x: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative flex items-center justify-center w-14 h-14 rounded-xl group focus:outline-none transition-all cursor-pointer"
+                  >
+                    <AnimatePresence>
+                      {hoveredItem === item.id && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 10, scale: 0.9 }}
+                          animate={{ opacity: 1, x: 0, scale: 1 }}
+                          exit={{ opacity: 0, x: 10, scale: 0.9 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                          className={`absolute right-full mr-3 px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none font-semibold shadow-xl ${
+                            isActive ? "bg-blue-600 text-white text-sm" : "bg-gray-900 text-white text-sm"
+                          }`}
+                        >
+                          {item.label}
+                          {/* Arrow pointer */}
+                          <div
+                            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] ${
+                              isActive ? "border-l-blue-600" : "border-l-gray-900"
+                            }`}
+                          />
                         </motion.div>
                       )}
                     </AnimatePresence>
-
-                    {!hasItems && (
+                    {/* Active Background */}
+                    {isActive && (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-white shadow-md"
-                      >
-                        <Plus size={12} strokeWidth={4} className="text-white" />
-                      </motion.div>
+                        layoutId="desktop-nav-active-bg"
+                        className="absolute inset-0 bg-blue-50 rounded-xl border-2 border-blue-200"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
                     )}
 
-                    {/* Tooltip on hover */}
+                    {/* Icon Container */}
+                    <div className="relative z-10">
+                      {isLoading ? (
+                        <Loader2 size={24} className="text-blue-600 animate-spin" />
+                      ) : (
+                        <motion.div
+                          animate={isActive ? { scale: 1.15 } : { scale: 1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        >
+                          <item.icon
+                            size={24}
+                            strokeWidth={isActive ? 2.5 : 2}
+                            className={`transition-colors duration-300 ${
+                              isActive ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600"
+                            }`}
+                          />
+                        </motion.div>
+                      )}
+
+                      {/* Active Indicator Dot */}
+                      {isActive && !isLoading && (
+                        <motion.div
+                          layoutId="desktop-active-dot"
+                          className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full ring-2 ring-white shadow-sm"
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Hover Tooltip */}
                     <motion.div
                       initial={{ opacity: 0, x: 10 }}
                       whileHover={{ opacity: 1, x: 0 }}
-                      className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none shadow-lg"
-                    >
-                      {hasItems ? `Cart (${cartCount})` : "Explore Vendors"}
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-4 border-l-gray-900" />
-                    </motion.div>
-                  </motion.button>
-                </div>
-              );
-            }
-
-            const isActive = isTabActive(item.route);
-            const isLoading = isPending && pendingRoute === item.route;
-            const isCenter = item.isCenter;
-
-            return (
-              <motion.button
-                key={item.id}
-                onClick={() => handleTabChange(item)}
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-                whileHover={{ scale: 1.05, x: -5 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative flex items-center justify-center w-14 h-14 rounded-xl group focus:outline-none transition-all cursor-pointer"
-              >
-                <AnimatePresence>
-                  {hoveredItem === item.id && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 10, scale: 0.9 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: 10, scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      className={`absolute right-full mr-3 px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none font-semibold shadow-xl ${
-                        isActive ? "bg-blue-600 text-white text-sm" : "bg-gray-900 text-white text-sm"
+                      className={`absolute right-full mr-3 px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none text-xs font-semibold shadow-lg ${
+                        isActive ? "bg-blue-600 text-white" : "bg-gray-900 text-white"
                       }`}
                     >
                       {item.label}
-                      {/* Arrow pointer */}
                       <div
-                        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] ${
+                        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-4 ${
                           isActive ? "border-l-blue-600" : "border-l-gray-900"
                         }`}
                       />
                     </motion.div>
-                  )}
-                </AnimatePresence>
-                {/* Active Background */}
-                {isActive && (
-                  <motion.div
-                    layoutId="desktop-nav-active-bg"
-                    className="absolute inset-0 bg-blue-50 rounded-xl border-2 border-blue-200"
-                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                  />
-                )}
 
-                {/* Icon Container */}
-                <div className="relative z-10">
-                  {isLoading ? (
-                    <Loader2 size={24} className="text-blue-600 animate-spin" />
-                  ) : (
-                    <motion.div
-                      animate={isActive ? { scale: 1.15 } : { scale: 1 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    >
-                      <item.icon
-                        size={24}
-                        strokeWidth={isActive ? 2.5 : 2}
-                        className={`transition-colors duration-300 ${
-                          isActive ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600"
-                        }`}
+                    {/* Hover Effect Background */}
+                    {!isActive && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        className="absolute inset-0 bg-gray-100 rounded-xl -z-10"
                       />
-                    </motion.div>
-                  )}
-
-                  {/* Active Indicator Dot */}
-                  {isActive && !isLoading && (
-                    <motion.div
-                      layoutId="desktop-active-dot"
-                      className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full ring-2 ring-white shadow-sm"
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </div>
-
-                {/* Hover Tooltip */}
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  whileHover={{ opacity: 1, x: 0 }}
-                  className={`absolute right-full mr-3 px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none text-xs font-semibold shadow-lg ${
-                    isActive ? "bg-blue-600 text-white" : "bg-gray-900 text-white"
-                  }`}
-                >
-                  {item.label}
-                  <div
-                    className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-4 ${
-                      isActive ? "border-l-blue-600" : "border-l-gray-900"
-                    }`}
-                  />
-                </motion.div>
-
-                {/* Hover Effect Background */}
-                {!isActive && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    className="absolute inset-0 bg-gray-100 rounded-xl -z-10"
-                  />
-                )}
-              </motion.button>
-            );
-          })}
+                    )}
+                  </motion.button>
+                );
+              })}
               <button
-                  onClick={() => setIsNavbarExpanded(!isNavbarExpanded)}
-                  className="absolute right-[50px] bottom-[-1px] p-2 rounded-full shadow-md bg-white hover:bg-gray-50 transition-colors cursor-pointer" 
-                  aria-label="toggle navbar"
-                >
-                  {isNavbarExpanded ? (<ChevronRight size={20} className="text-gray-700" />) : (<ChevronDown size={20} className="text-gray-700" />)}
-                </button>
-        </div>
-      </motion.div>
-      )}
+                onClick={() => setIsNavbarExpanded(!isNavbarExpanded)}
+                className="absolute right-[50px] bottom-[-1px] p-2 rounded-full shadow-md bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                aria-label="toggle navbar"
+              >
+                {isNavbarExpanded ? (
+                  <ChevronRight size={20} className="text-gray-700" />
+                ) : (
+                  <ChevronDown size={20} className="text-gray-700" />
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Drawers */}
