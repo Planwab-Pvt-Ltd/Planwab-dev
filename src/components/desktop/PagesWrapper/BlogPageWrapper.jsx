@@ -1143,6 +1143,19 @@ const BlogPageWrapper = () => {
             )}
           </div>
         )}
+        {!loading && !error && blogs.length > 0 && (currentPage > 1 || debouncedSearch) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12 mb-20">
+            {blogs.map((post) => (
+              <GridCard
+                key={post._id}
+                post={post}
+                currentUserId={user?.id}
+                onEdit={openEdit}
+                onDelete={setDeletingBlog}
+              />
+            ))}
+          </div>
+        )}
 
         {!loading && !error && blogs.length > 0 && (
           <div className="w-full">

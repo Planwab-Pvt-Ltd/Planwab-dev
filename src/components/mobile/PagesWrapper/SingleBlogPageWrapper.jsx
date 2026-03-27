@@ -11,10 +11,13 @@ import {
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
 import { ShareModal } from "../../desktop/PagesWrapper/VendorProfilePageWrapper";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 export default function MobileSingleBlogPageWrapper() {
   const { id } = useParams();
   const router = useRouter();
+  const {setIsNavbarVisible}=useNavbarVisibilityStore();
+
   const { user, isLoaded: userLoaded } = useUser();
   const currentUserId = user?.id;
 
@@ -78,6 +81,7 @@ export default function MobileSingleBlogPageWrapper() {
     } else if (action === "save") {
       setLocalMetrics(p => ({ ...p, isSaved: !p.isSaved, saveCount: p.isSaved ? Math.max(0, p.saveCount - 1) : p.saveCount + 1 }));
     } else if (action === "share") {
+      setIsNavbarVisible(false);
       setIsShareModalOpen(true);
       setLocalMetrics(p => ({ ...p, shareCount: p.shareCount + 1 }));
     }
@@ -90,7 +94,7 @@ export default function MobileSingleBlogPageWrapper() {
       });
     } catch (err) {
       console.error("Interaction failed", err);
-      // Simple revert
+     
       if (action === "like") setLocalMetrics(p => ({ ...p, isLiked: !p.isLiked, likeCount: p.isLiked ? Math.max(0, p.likeCount - 1) : p.likeCount + 1 }));
       if (action === "save") setLocalMetrics(p => ({ ...p, isSaved: !p.isSaved, saveCount: p.isSaved ? Math.max(0, p.saveCount - 1) : p.saveCount + 1 }));
     }
@@ -195,6 +199,7 @@ export default function MobileSingleBlogPageWrapper() {
 
               <div className="h-8 w-px bg-gray-200/50" />
 
+            
               <button 
                 onClick={() => handleInteract("share")}
                 className="flex items-center gap-2 px-6 py-4 text-gray-600 active:scale-90 transition-transform rounded-[26px] hover:bg-gray-100/50"
@@ -233,7 +238,7 @@ export default function MobileSingleBlogPageWrapper() {
       
       <ShareModal 
         isOpen={isShareModalOpen} 
-        onClose={() => setIsShareModalOpen(false)} 
+        onClose={() => { setIsShareModalOpen(false); setIsNavbarVisible(true); }} 
         vendorName={blog.title} 
       />
     </div>
