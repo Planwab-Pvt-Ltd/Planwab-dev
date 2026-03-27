@@ -61,6 +61,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
+import { useUser } from '@clerk/nextjs';
 
 const DESKTOP_TOP_OFFSET = 77;
 
@@ -443,18 +444,54 @@ const recordView = async (reelId) => {
 
 const toggleLike = async (reelId, action) => {
   try {
-    const res = await fetch(`/api/reels/${reelId}/like`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
-    if (res.ok) return res.json();
-  } catch {}
-  return null;
+    const [res, res2] = await Promise.all([
+      fetch(`/api/reels/${reelId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      }),
+      fetch(`/api/user/toggle-reel-like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reelId }),
+      }),
+    ]);
+
+    console.log({ res, res2 });
+
+    if (!res.ok) throw new Error("Like API failed");
+
+    return await res.json();
+  } catch (err) {
+    console.error("toggleLike error:", err);
+    return null;
+  }
 };
 
 const toggleSave = async (reelId, action) => {
   try {
-    const res = await fetch(`/api/reels/${reelId}/save`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
-    if (res.ok) return res.json();
-  } catch {}
-  return null;
+    const [res, res2] = await Promise.all([
+      fetch(`/api/reels/${reelId}/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      }),
+      fetch(`/api/user/toggle-reel-watchlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reelId }),
+      }),
+    ]);
+
+    console.log({ res, res2 });
+
+    if (!res.ok) throw new Error("Save API failed");
+
+    return await res.json();
+  } catch (err) {
+    console.error("toggleSave error:", err);
+    return null;
+  }
 };
 
 const recordShare = async (reelId) => {
@@ -981,7 +1018,7 @@ const BookingDrawer = ({ item, onClose }) => {
   );
 };
 
-const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow }) => {
+const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
   const router = useRouter();
   const [reels, setReels] = useState(initialReels);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -1038,7 +1075,11 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
 
   useEffect(() => {
     if (!currentReel?._id) return;
-    setIsLiked(false); setIsSaved(false); setIsPlaying(true); setVideoLoading(true); setVideoProgress(0);
+    const initiallyLiked = userInteractions?.liked?.has(currentReel._id) || false;
+    const initiallySaved = userInteractions?.saved?.has(currentReel._id) || false;
+
+    setIsLiked(initiallyLiked);
+    setIsSaved(initiallySaved);
     setLocalLikeCount(currentReel.likeCount || 0); setLocalSaveCount(currentReel.saveCount || 0); setLocalViewCount(currentReel.viewCount || 0);
     setVendorProfile(null);
     if (!viewRecordedRef.current.has(currentReel._id)) {
@@ -1342,6 +1383,29 @@ export default function IdeasDesktopPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+
+  const { user, isLoaded } = useUser();
+  const [userInteractions, setUserInteractions] = useState({ liked: new Set(), saved: new Set() });
+
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    const fetchInteractions = async () => {
+      try {
+        const res = await fetch(`/api/user/interactionsLists?userId=${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          const likedIds = new Set(data.reels?.liked?.map(r => r._id) || []);
+          const savedIds = new Set(data.reels?.watchlist?.map(r => r._id) || []);
+          setUserInteractions({ liked: likedIds, saved: savedIds });
+        }
+      } catch (err) {
+        console.error("Failed to fetch user interactions:", err);
+      }
+    };
+
+    fetchInteractions();
+  }, [isLoaded, user]);
 
   const urlType = searchParams.get("type") || null;
   const urlSubtype = searchParams.get("subtype") || null;
@@ -1653,7 +1717,7 @@ export default function IdeasDesktopPage() {
         </main>
       </div>
 
-      <AnimatePresence>{reelsViewerData && <ReelsViewerModal reels={reelsViewerData.reels} initialIndex={reelsViewerData.initialIndex} onClose={handleCloseReels} onBookNow={handleBookNow} />}</AnimatePresence>
+      <AnimatePresence>{reelsViewerData && <ReelsViewerModal reels={reelsViewerData.reels} initialIndex={reelsViewerData.initialIndex} onClose={handleCloseReels} onBookNow={handleBookNow} userInteractions={userInteractions} />}</AnimatePresence>
       <AnimatePresence>{drawerItem && <BookingDrawer item={drawerItem} onClose={() => setDrawerItem(null)} />}</AnimatePresence>
       <AnimatePresence>{isSearchOpen && <SearchModalComponent searchInputRef={searchInputRef} handleSearchResultClick={handleSearchResultClick} searchResults={searchResults} setSearchQuery={setSearchQuery} searchQuery={searchQuery} setIsSearchOpen={setIsSearchOpen} isSearching={isSearching} />}</AnimatePresence>
       <AnimatePresence>{showFilter && <FilterDrawer initialFilter={filterState} onApply={(f) => { setFilterState(f); setShowFilter(false); setInitialLoadDone(false); }} onClose={() => setShowFilter(false)} />}</AnimatePresence>

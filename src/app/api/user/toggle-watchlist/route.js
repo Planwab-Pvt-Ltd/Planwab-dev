@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import User from "../../../../database/models/userModel";
 import connectToDatabase from "../../../../database/mongoose";
+import Vendor from "../../../../database/models/VendorModel";
 
 export async function POST(req) {
   try {
@@ -34,10 +35,18 @@ export async function POST(req) {
       await User.findByIdAndUpdate(dbUser._id, {
         $pull: { watchlist: vendorId },
       });
+      await Vendor.findByIdAndUpdate(vendorId, {
+            $inc: { bookmarksCount: -1 },
+            $pull: { bookmarkedBy: user.id },
+      });
       return NextResponse.json({ isBookmarked: false, message: "Removed from Watchlist" });
     } else {
       await User.findByIdAndUpdate(dbUser._id, {
         $addToSet: { watchlist: vendorId },
+      });
+      await Vendor.findByIdAndUpdate(vendorId, {
+            $inc: { bookmarksCount: 1 },
+            $addToSet: { bookmarkedBy: user.id },
       });
       return NextResponse.json({ isBookmarked: true, message: "Added to Watchlist" });
     }

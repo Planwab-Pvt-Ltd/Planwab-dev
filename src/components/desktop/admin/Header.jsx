@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { SignedIn, SignedOut, UserButton, UserProfile, useUser } from "@clerk/clerk-react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const textVariants = {
   hidden: { opacity: 0, x: -10, transition: { duration: 0.2 } },
@@ -14,6 +15,9 @@ const textVariants = {
 export default function Header({ toggleSidebar, isSidebarOpen }) {
   const { theme, setTheme } = useTheme();
   const { user } = useUser();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -65,7 +69,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
             </SignedIn>
             <SignedOut>
               <Link
-                href="/sign-in"
+                href={`/sign-in?redirect_url=${encodeURIComponent(fullAuthRedirectUrl)}`} 
                 className="font-semibold text-white dark:text-gray-100 bg-gradient-to-b from-indigo-500 to-purple-500 px-3 py-2 rounded-md hover:opacity-90 transition"
               >
                 Sign In

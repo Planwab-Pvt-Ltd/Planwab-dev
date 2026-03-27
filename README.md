@@ -35,10 +35,10 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-
 ```
 Planwab-dev
 ├─ .dockerignore
+├─ .npmrc
 ├─ components.json
 ├─ Dockerfile
 ├─ eslint.config.mjs
@@ -77,6 +77,10 @@ Planwab-dev
 │  │  │  │     │  └─ page.jsx
 │  │  │  │     ├─ layout.js
 │  │  │  │     ├─ loading.js
+│  │  │  │     ├─ orders
+│  │  │  │     │  └─ page.jsx
+│  │  │  │     ├─ reels
+│  │  │  │     │  └─ page.jsx
 │  │  │  │     ├─ settings
 │  │  │  │     │  └─ page.jsx
 │  │  │  │     ├─ users
@@ -84,7 +88,9 @@ Planwab-dev
 │  │  │  │     ├─ vendor-requests
 │  │  │  │     │  └─ page.jsx
 │  │  │  │     └─ vendors
-│  │  │  │        └─ page.jsx
+│  │  │  │        ├─ page.jsx
+│  │  │  │        └─ profile
+│  │  │  │           └─ page.jsx
 │  │  │  ├─ (pages)
 │  │  │  │  ├─ about
 │  │  │  │  │  ├─ blogs
@@ -103,6 +109,9 @@ Planwab-dev
 │  │  │  │  │     ├─ page.js
 │  │  │  │  │     └─ planning-tools
 │  │  │  │  │        └─ page.js
+│  │  │  │  ├─ ideas
+│  │  │  │  │  ├─ loading.js
+│  │  │  │  │  └─ page.jsx
 │  │  │  │  ├─ plan-my-event
 │  │  │  │  │  └─ [category]
 │  │  │  │  │     └─ page.js
@@ -185,6 +194,9 @@ Planwab-dev
 │  │  │     │  │     ├─ birthday-planner
 │  │  │     │  │     │  └─ page.js
 │  │  │     │  │     └─ page.js
+│  │  │     │  ├─ ideas
+│  │  │     │  │  ├─ loading.js
+│  │  │     │  │  └─ page.jsx
 │  │  │     │  ├─ plan-my-event
 │  │  │     │  │  └─ [category]
 │  │  │     │  │     ├─ loading.js
@@ -242,6 +254,15 @@ Planwab-dev
 │  │  ├─ api
 │  │  │  ├─ admin
 │  │  │  │  └─ dashboard
+│  │  │  │     ├─ charts
+│  │  │  │     │  └─ route.js
+│  │  │  │     └─ route.js
+│  │  │  ├─ contact
+│  │  │  │  ├─ route.js
+│  │  │  │  └─ [id]
+│  │  │  │     └─ route.js
+│  │  │  ├─ imagekit
+│  │  │  │  └─ auth
 │  │  │  │     └─ route.js
 │  │  │  ├─ leads
 │  │  │  │  └─ route.js
@@ -259,13 +280,52 @@ Planwab-dev
 │  │  │  │  ├─ add
 │  │  │  │  │  └─ route.js
 │  │  │  │  └─ route.js
+│  │  │  ├─ reels
+│  │  │  │  ├─ add
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ bulk
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ featured
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ related
+│  │  │  │  │  └─ [id]
+│  │  │  │  │     └─ route.js
+│  │  │  │  ├─ route.js
+│  │  │  │  ├─ search
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ stats
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ trending
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ upload-config
+│  │  │  │  │  └─ route.js
+│  │  │  │  └─ [id]
+│  │  │  │     ├─ like
+│  │  │  │     │  └─ route.js
+│  │  │  │     ├─ route.js
+│  │  │  │     ├─ save
+│  │  │  │     │  └─ route.js
+│  │  │  │     ├─ share
+│  │  │  │     │  └─ route.js
+│  │  │  │     ├─ status
+│  │  │  │     │  └─ route.js
+│  │  │  │     └─ view
+│  │  │  │        └─ route.js
 │  │  │  ├─ user
+│  │  │  │  ├─ interactionsLists
+│  │  │  │  │  └─ route.js
 │  │  │  │  ├─ me
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ route.js
 │  │  │  │  ├─ status
 │  │  │  │  │  └─ route.js
+│  │  │  │  ├─ subscription
+│  │  │  │  │  └─ route.js
 │  │  │  │  ├─ toggle-like
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ toggle-reel-like
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ toggle-reel-watchlist
 │  │  │  │  │  └─ route.js
 │  │  │  │  └─ toggle-watchlist
 │  │  │  │     └─ route.js
@@ -278,7 +338,29 @@ Planwab-dev
 │  │  │  │  │  └─ [id]
 │  │  │  │  │     └─ route.js
 │  │  │  │  ├─ profile
-│  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ highlights
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ interactions
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ lists
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ post-content
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ posts
+│  │  │  │  │  │  ├─ interactions
+│  │  │  │  │  │  │  └─ route.js
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ reels
+│  │  │  │  │  │  ├─ interactions
+│  │  │  │  │  │  │  └─ route.js
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ route.js
+│  │  │  │  │  ├─ similar
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ upload-config
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  └─ verify-password
+│  │  │  │  │     └─ route.js
 │  │  │  │  ├─ requests
 │  │  │  │  │  ├─ birthday-routes
 │  │  │  │  │  │  └─ route.js
@@ -290,6 +372,8 @@ Planwab-dev
 │  │  │  │  ├─ route.js
 │  │  │  │  └─ [id]
 │  │  │  │     ├─ profile
+│  │  │  │     │  ├─ highlights
+│  │  │  │     │  │  └─ route.js
 │  │  │  │     │  ├─ interactions
 │  │  │  │     │  │  └─ route.js
 │  │  │  │     │  ├─ posts
@@ -348,9 +432,20 @@ Planwab-dev
 │  │  │  │  │     ├─ DeleteVendorModal.jsx
 │  │  │  │  │     ├─ EditVendorModal.jsx
 │  │  │  │  │     └─ ViewVendorModal.jsx
+│  │  │  │  ├─ orders
+│  │  │  │  │  ├─ AllOrders.jsx
+│  │  │  │  │  └─ ViewOrderTab.jsx
+│  │  │  │  ├─ reels
+│  │  │  │  │  ├─ AddReels.jsx
+│  │  │  │  │  ├─ AllReels.jsx
+│  │  │  │  │  ├─ EditReelTab.jsx
+│  │  │  │  │  └─ ViewReelTab.jsx
 │  │  │  │  ├─ Sidebar.jsx
 │  │  │  │  ├─ users
 │  │  │  │  │  └─ AllUsers.jsx
+│  │  │  │  ├─ vendor-profiles
+│  │  │  │  │  ├─ AllVendorProfiles.jsx
+│  │  │  │  │  └─ ViewVendorProfileTab.jsx
 │  │  │  │  ├─ vendor-requests
 │  │  │  │  │  ├─ AllVendorRequests.jsx
 │  │  │  │  │  └─ viewVendorRequestTab.jsx
@@ -390,6 +485,7 @@ Planwab-dev
 │  │  │  │  ├─ ContactUsPageWrapper.jsx
 │  │  │  │  ├─ FindAVendorPageWrapper.jsx
 │  │  │  │  ├─ HomePageWrapper.jsx
+│  │  │  │  ├─ IdeasPageWrapper.jsx
 │  │  │  │  ├─ PlanMyEventPageWrapper.jsx
 │  │  │  │  ├─ PlanningToolsPageWrapper.jsx
 │  │  │  │  ├─ PricingPageWrapper.jsx
@@ -409,10 +505,20 @@ Planwab-dev
 │  │  │  ├─ SkeletonCard.jsx
 │  │  │  ├─ SmartMediaLoader.jsx
 │  │  │  ├─ ui
+│  │  │  │  ├─ Charts
+│  │  │  │  │  ├─ BirthdayBookingChart.jsx
+│  │  │  │  │  ├─ card.jsx
+│  │  │  │  │  ├─ chart.jsx
+│  │  │  │  │  ├─ LeadsChart.jsx
+│  │  │  │  │  ├─ OrdersEventsChart.jsx
+│  │  │  │  │  ├─ VendorCategoriesChart.jsx
+│  │  │  │  │  └─ VendorContactRequestsChart.jsx
 │  │  │  │  ├─ EventsPage
 │  │  │  │  │  ├─ Banner1.jsx
+│  │  │  │  │  ├─ FAQAndCTA.jsx
 │  │  │  │  │  ├─ HeroSection.jsx
 │  │  │  │  │  ├─ HowItWorks.jsx
+│  │  │  │  │  ├─ PlanningPreviewSection.jsx
 │  │  │  │  │  └─ SearchSection.jsx
 │  │  │  │  ├─ FloatingLinesUiEffect.jsx
 │  │  │  │  ├─ landingPage
@@ -502,6 +608,7 @@ Planwab-dev
 │  │  │  │  ├─ ContactUsPageWrapper.jsx
 │  │  │  │  ├─ FindAVendorPageWrapper.jsx
 │  │  │  │  ├─ HomePageWrapper.jsx
+│  │  │  │  ├─ IdeasPageWrapper.jsx
 │  │  │  │  ├─ PlanMyEventPageWrapper.jsx
 │  │  │  │  ├─ PricingPageWrapper.jsx
 │  │  │  │  ├─ SignInPageWrapper.jsx
@@ -556,11 +663,13 @@ Planwab-dev
 │  │  │  └─ UserActions.js
 │  │  ├─ models
 │  │  │  ├─ BirthdayBooking.js
+│  │  │  ├─ ContactUsModel.js
 │  │  │  ├─ DetailsBookingRequestModel.js
 │  │  │  ├─ LeadsModel.js
 │  │  │  ├─ Orders.js
 │  │  │  ├─ PlannedEvent.js
 │  │  │  ├─ PlannedToolEvent.js
+│  │  │  ├─ ReelsModel.js
 │  │  │  ├─ userModel.js
 │  │  │  ├─ VendorModel.js
 │  │  │  ├─ VendorProfileModel.js
@@ -577,6 +686,7 @@ Planwab-dev
 │  │  ├─ useNavigationWithReturn.js
 │  │  └─ useReviews.js
 │  ├─ lib
+│  │  ├─ apiResponse.js
 │  │  ├─ AppUtils.js
 │  │  ├─ constants
 │  │  │  └─ index.ts
@@ -584,7 +694,8 @@ Planwab-dev
 │  │  ├─ navigationUtils.js
 │  │  ├─ reviewUtils.js
 │  │  ├─ ThemeClerkProvider.jsx
-│  │  └─ utils.js
+│  │  ├─ utils.js
+│  │  └─ video-thumbnail.js
 │  └─ middleware.ts
 ├─ tailwind.config.js
 └─ tsconfig.json

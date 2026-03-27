@@ -1,443 +1,515 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Check,
   X,
-  Crown,
-  Star,
-  Zap,
   Shield,
-  Users,
-  Camera,
-  Calendar,
-  TrendingUp,
-  MessageCircle,
-  Phone,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
+  Info,
+  CheckCircle,
+  Crown,
   Sparkles,
-  Gift,
-  Target,
 } from "lucide-react";
 
-const PricingPageWrapper = () => {
-  const [selectedPlan, setSelectedPlan] = useState("basic");
-  const [billingCycle, setBillingCycle] = useState("monthly");
-  const [expandedFAQ, setExpandedFAQ] = useState(null);
+const PLANS = [
+  {
+    id: "free",
+    name: "Free",
+    description: "For getting started",
+    monthly: 0,
+    yearly: 0,
+    features: [
+      { text: "Browse all vendors", included: true },
+      { text: "Basic search", included: true },
+      { text: "Save up to 5 vendors", included: true },
+      { text: "Email support", included: true },
+      { text: "Priority support", included: false },
+      { text: "Advanced filters", included: false },
+      { text: "Direct vendor chat", included: false },
+      { text: "Analytics", included: false },
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    description: "For serious planners",
+    monthly: 499,
+    yearly: 4990,
+    popular: true,
+    features: [
+      { text: "Everything in Free", included: true },
+      { text: "Unlimited vendor saves", included: true },
+      { text: "Advanced search filters", included: true },
+      { text: "Priority support", included: true },
+      { text: "Direct vendor chat", included: true },
+      { text: "Early access to deals", included: true },
+      { text: "Dedicated planner", included: false },
+      { text: "Analytics dashboard", included: false },
+    ],
+  },
+  {
+    id: "max",
+    name: "Max",
+    description: "The complete package",
+    monthly: 999,
+    yearly: 9990,
+    features: [
+      { text: "Everything in Pro", included: true },
+      { text: "Dedicated event planner", included: true },
+      { text: "Premium vendor access", included: true },
+      { text: "Analytics dashboard", included: true },
+      { text: "Priority booking", included: true },
+      { text: "Exclusive discounts", included: true },
+      { text: "Custom recommendations", included: true },
+      { text: "White-glove support", included: true },
+    ],
+  },
+];
 
-  const plans = [
-    {
-      id: "free",
-      name: "Free Starter",
-      description: "Perfect for new vendors getting started",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
-      originalMonthlyPrice: 0,
-      badge: null,
-      color: "border-gray-300",
-      buttonColor: "bg-gray-100 text-gray-700",
-      features: [
-        { text: "Basic vendor profile", included: true },
-        { text: "Up to 3 service listings", included: true },
-        { text: "5 portfolio images", included: true },
-        { text: "Basic customer inquiries", included: true },
-        { text: "Community support", included: true },
-        { text: "Advanced analytics", included: false },
-        { text: "Priority support", included: false },
-        { text: "Featured listings", included: false },
-        { text: "Social media integration", included: false },
-        { text: "Custom branding", included: false },
-      ],
-    },
-    {
-      id: "basic",
-      name: "Growth Plan",
-      description: "Best for growing businesses",
-      monthlyPrice: 499,
-      yearlyPrice: 4990,
-      originalMonthlyPrice: 599,
-      badge: "Most Popular",
-      color: "border-pink-500 ring-2 ring-pink-200",
-      buttonColor: "bg-gradient-to-r from-pink-500 to-rose-500 text-white",
-      features: [
-        { text: "Complete vendor profile", included: true },
-        { text: "Unlimited service listings", included: true },
-        { text: "50 portfolio images", included: true },
-        { text: "Lead management system", included: true },
-        { text: "Basic analytics dashboard", included: true },
-        { text: "Email support", included: true },
-        { text: "Social media integration", included: true },
-        { text: "Featured in search results", included: true },
-        { text: "Custom branding", included: false },
-        { text: "Advanced analytics", included: false },
-      ],
-    },
-    {
-      id: "premium",
-      name: "Premium Pro",
-      description: "For established vendors who want more",
-      monthlyPrice: 999,
-      yearlyPrice: 9990,
-      originalMonthlyPrice: 1199,
-      badge: "Best Value",
-      color: "border-purple-500",
-      buttonColor: "bg-gradient-to-r from-purple-500 to-violet-500 text-white",
-      features: [
-        { text: "Premium vendor profile", included: true },
-        { text: "Unlimited everything", included: true },
-        { text: "Unlimited portfolio images", included: true },
-        { text: "Advanced lead management", included: true },
-        { text: "Detailed analytics & insights", included: true },
-        { text: "Priority customer support", included: true },
-        { text: "Full social media integration", included: true },
-        { text: "Top featured listings", included: true },
-        { text: "Custom branding & themes", included: true },
-        { text: "Performance marketing tools", included: true },
-      ],
-    },
-  ];
-
-  const features = [
-    {
-      icon: Users,
-      title: "Customer Reach",
-      description: "Connect with thousands of customers actively looking for your services",
-    },
-    {
-      icon: Calendar,
-      title: "Booking Management",
-      description: "Streamlined booking system to manage your appointments efficiently",
-    },
-    {
-      icon: TrendingUp,
-      title: "Business Growth",
-      description: "Analytics and insights to help grow your business faster",
-    },
-    {
-      icon: Shield,
-      title: "Secure Payments",
-      description: "Safe and secure payment processing with instant settlements",
-    },
-  ];
-
-  const faqs = [
-    {
-      question: "How does PlanWAB pricing work?",
-      answer:
-        "PlanWAB offers subscription-based pricing for vendors. Choose a plan that fits your business needs and pay monthly or yearly. All plans include different levels of features and support.",
-    },
-    {
-      question: "Can I change my plan anytime?",
-      answer:
-        "Yes! You can upgrade or downgrade your plan anytime from your dashboard. Changes take effect immediately, and billing is prorated accordingly.",
-    },
-    {
-      question: "Is there a commission on bookings?",
-      answer:
-        "Our plans include most features with the subscription fee. Some plans may have a small transaction fee on successful bookings, which is clearly mentioned in the plan details.",
-    },
-    {
-      question: "What payment methods do you accept?",
-      answer:
-        "We accept all major credit cards, debit cards, UPI, net banking, and digital wallets. All payments are processed securely through our certified payment partners.",
-    },
-    {
-      question: "Can I cancel my subscription?",
-      answer:
-        "Yes, you can cancel your subscription anytime. Your account will remain active until the end of your current billing period, after which it will revert to the free plan.",
-    },
-  ];
-
-  const testimonials = [
-    {
-      name: "Priya Sharma",
-      business: "Wedding Photographer",
-      text: "PlanWAB has doubled my bookings in just 3 months. The platform is amazing!",
-      rating: 5,
-    },
-    {
-      name: "Rajesh Caterers",
-      business: "Catering Service",
-      text: "Best investment for my business. The lead quality is excellent.",
-      rating: 5,
-    },
-    {
-      name: "Mehndi by Kavya",
-      business: "Mehendi Artist",
-      text: "Love how easy it is to manage bookings and showcase my work.",
-      rating: 5,
-    },
-  ];
-
-  const getCurrentPrice = (plan) => {
-    return billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
-  };
-
-  const getSavings = (plan) => {
-    if (billingCycle === "yearly" && plan.monthlyPrice > 0) {
-      const yearlyTotal = plan.monthlyPrice * 12;
-      const savings = yearlyTotal - plan.yearlyPrice;
-      return Math.round((savings / yearlyTotal) * 100);
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (
+      document.querySelector(
+        'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
+      )
+    ) {
+      return resolve(true);
     }
-    return 0;
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+
+export default function PricingPageWrapper() {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
+
+  const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [processing, setProcessing] = useState(false);
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3500);
+  }, []);
+
+  const fetchSubscription = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/user/subscription?userId=${user.id}`);
+      if (res.ok) setSubscription(await res.json());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isLoaded) fetchSubscription();
+  }, [isLoaded, fetchSubscription]);
+
+  const handleSelectPlan = async (planId) => {
+    if (!user) {
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(fullAuthRedirectUrl)}`);
+      return;
+    }
+
+    const current = subscription?.plan || "free";
+    if (planId === current) return;
+
+    if (planId === "free") {
+      setProcessing(true);
+      try {
+        const res = await fetch("/api/user/subscription", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, plan: "free" }),
+        });
+        if (res.ok) {
+          await fetchSubscription();
+          showToast("Switched to Free plan");
+        } else {
+          showToast("Failed to switch plan", "error");
+        }
+      } catch {
+        showToast("Something went wrong", "error");
+      } finally {
+        setProcessing(false);
+      }
+      return;
+    }
+
+    setProcessing(true);
+    const scriptOk = await loadRazorpayScript();
+    if (!scriptOk) {
+      setProcessing(false);
+      return showToast("Payment system unavailable", "error");
+    }
+
+    try {
+      const res = await fetch("/api/user/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, plan: planId, billingCycle }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error("Order failed");
+
+      const label =
+        planId.charAt(0).toUpperCase() + planId.slice(1);
+
+      const options = {
+        key: data.key,
+        amount: data.amount,
+        currency: data.currency,
+        name: "PlanWAB",
+        description: `${label} Plan — ${billingCycle}`,
+        order_id: data.razorpayOrderId,
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+            showToast("Payment cancelled", "info");
+          },
+        },
+        handler: async (response) => {
+          try {
+            const v = await fetch("/api/user/subscription", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: user.id,
+                plan: planId,
+                billingCycle,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
+            const vd = await v.json();
+            if (vd.success) {
+              await fetchSubscription();
+              showToast(`Upgraded to ${label}!`);
+            } else {
+              showToast("Verification failed", "error");
+            }
+          } catch {
+            showToast("Verification error", "error");
+          }
+          setProcessing(false);
+        },
+        prefill: {
+          name: user.fullName,
+          email: user.primaryEmailAddress?.emailAddress,
+        },
+        theme: { color: "#111827" },
+      };
+
+      const rp = new window.Razorpay(options);
+      rp.open();
+      rp.on("payment.failed", (r) => {
+        showToast(r.error.description || "Payment failed", "error");
+        setProcessing(false);
+      });
+    } catch (err) {
+      console.error(err);
+      showToast("Something went wrong", "error");
+      setProcessing(false);
+    }
   };
 
-  const toggleFAQ = (index) => {
-    setExpandedFAQ(expandedFAQ === index ? null : index);
+  const current = subscription?.plan || "free";
+
+  const btnConfig = (id) => {
+    if (id === current)
+      return {
+        text: "Current Plan",
+        disabled: true,
+        cls: "bg-gray-100 dark:bg-gray-800 text-gray-400",
+      };
+    if (id === "free")
+      return {
+        text: "Switch to Free",
+        disabled: false,
+        cls: "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200",
+      };
+    return {
+      text: `Get ${id === "pro" ? "Pro" : "Max"}`,
+      disabled: false,
+      cls: "bg-gray-900 dark:bg-white text-white dark:text-black",
+    };
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-black pb-16">
+      {/* Toast */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            className={`fixed top-4 left-4 right-4 z-[200] px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-white text-sm font-medium ${
+              toast.type === "error"
+                ? "bg-red-500"
+                : toast.type === "info"
+                ? "bg-gray-700"
+                : "bg-emerald-500"
+            }`}
+          >
+            <Info size={16} />
+            <span className="flex-1">{toast.message}</span>
+            <button onClick={() => setToast((t) => ({ ...t, visible: false }))}>
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
-          <button onClick={() => window.history.back()} className="p-2 rounded-full hover:bg-gray-100">
-            <ArrowLeft size={24} />
+      <div className="sticky top-0 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 -ml-2 rounded-full active:bg-gray-100 dark:active:bg-gray-800"
+          >
+            <ArrowLeft size={20} className="text-gray-900 dark:text-white" />
           </button>
-          <h1 className="text-lg font-semibold">Pricing Plans</h1>
-          <div className="w-10" />
+          <h1 className="text-[15px] font-semibold text-gray-900 dark:text-white">
+            Plans
+          </h1>
         </div>
       </div>
 
-      <div className="p-4 space-y-6 pb-8">
-        {/* Hero Section */}
-        <div className="text-center py-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Growth Plan</h2>
-          <p className="text-gray-600 mb-6">Start free, upgrade when you're ready to grow faster</p>
+      <div className="px-5 pt-6 space-y-6">
+        {/* Title */}
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+            Choose your plan
+          </h2>
+          <p className="text-[13px] text-gray-400">
+            Start free, upgrade anytime
+          </p>
+        </div>
 
-          {/* Billing Toggle */}
-          <div className="inline-flex bg-gray-100 rounded-xl p-1">
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                billingCycle === "monthly" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle("yearly")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-                billingCycle === "yearly" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"
-              }`}
-            >
-              Yearly
-              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                Save 20%
-              </span>
-            </button>
+        {/* Active Plan Banner */}
+        {!loading && user && current !== "free" && subscription?.isActive && (
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-100 dark:border-gray-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+              <Crown size={16} className="text-violet-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-gray-900 dark:text-white">
+                {current.charAt(0).toUpperCase() + current.slice(1)} Plan Active
+              </p>
+              {subscription.planExpiresAt && (
+                <p className="text-[11px] text-gray-400">
+                  Renews{" "}
+                  {new Date(subscription.planExpiresAt).toLocaleDateString(
+                    "en-IN",
+                    { day: "numeric", month: "short", year: "numeric" }
+                  )}
+                </p>
+              )}
+              {subscription.planPurchasedAt && (
+                <p className="text-[11px] text-gray-400">
+                  Purchased On{" "}
+                  {new Date(subscription.planPurchasedAt).toLocaleDateString(
+                    "en-IN",
+                    { day: "numeric", month: "short", year: "numeric" }
+                  )}
+                </p>
+              )}
+            </div>
+            <CheckCircle size={18} className="text-emerald-500 shrink-0" />
+          </div>
+        )}
+
+        {/* Billing Toggle */}
+        <div className="flex justify-center">
+          <div className="inline-flex bg-white dark:bg-gray-900 rounded-lg p-1 border border-gray-100 dark:border-gray-800">
+            {["monthly", "yearly"].map((c) => (
+              <button
+                key={c}
+                onClick={() => setBillingCycle(c)}
+                className={`px-4 py-2 rounded-md text-[13px] font-medium transition-all relative ${
+                  billingCycle === c
+                    ? "bg-gray-900 dark:bg-white text-white dark:text-black shadow-sm"
+                    : "text-gray-400"
+                }`}
+              >
+                {c === "monthly" ? "Monthly" : "Yearly"}
+                {c === "yearly" && (
+                  <span className="absolute -top-1.5 -right-2 bg-emerald-500 text-white text-[8px] font-bold px-1 py-px rounded leading-none">
+                    -17%
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="space-y-4">
-          {plans.map((plan) => (
-            <motion.div
-              key={plan.id}
-              whileTap={{ scale: 0.98 }}
-              className={`bg-white rounded-2xl p-5 border-2 ${
-                selectedPlan === plan.id ? plan.color : "border-gray-200"
-              } relative overflow-hidden`}
-              onClick={() => setSelectedPlan(plan.id)}
-            >
-              {plan.badge && (
-                <div className="absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                  {plan.badge}
-                </div>
-              )}
+        {/* Cards */}
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {PLANS.map((plan) => {
+              const b = btnConfig(plan.id);
+              const price =
+                billingCycle === "monthly" ? plan.monthly : plan.yearly;
+              const isCurrent = plan.id === current;
 
-              <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
-                <p className="text-sm text-gray-600">{plan.description}</p>
-              </div>
+              return (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`bg-white dark:bg-gray-900 rounded-2xl border-2 p-5 relative transition-colors ${
+                    isCurrent
+                      ? "border-violet-200 dark:border-violet-800"
+                      : plan.popular
+                      ? "border-gray-900 dark:border-white"
+                      : "border-gray-100 dark:border-gray-800"
+                  }`}
+                >
+                  {/* Badges */}
+                  {isCurrent && (
+                    <span className="absolute -top-2.5 left-4 bg-violet-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                      Current
+                    </span>
+                  )}
+                  {plan.popular && !isCurrent && (
+                    <span className="absolute -top-2.5 left-4 bg-gray-900 dark:bg-white text-white dark:text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles size={9} /> Popular
+                    </span>
+                  )}
 
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-3xl font-bold text-gray-900">₹{getCurrentPrice(plan)}</span>
-                {plan.monthlyPrice > 0 && (
-                  <>
-                    <span className="text-gray-600">/{billingCycle === "monthly" ? "month" : "year"}</span>
-                    {billingCycle === "yearly" && (
-                      <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-                        Save {getSavings(plan)}%
+                  <div className="mb-3 pt-1">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      {plan.name}
+                    </h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {plan.description}
+                    </p>
+                  </div>
+
+                  <div className="flex items-baseline gap-1 mb-5">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                      ₹{price.toLocaleString("en-IN")}
+                    </span>
+                    {plan.monthly > 0 && (
+                      <span className="text-[13px] text-gray-400">
+                        /{billingCycle === "monthly" ? "mo" : "yr"}
                       </span>
                     )}
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-2 mb-6">
-                {plan.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    {feature.included ? (
-                      <Check size={16} className="text-green-500 flex-shrink-0" />
-                    ) : (
-                      <X size={16} className="text-gray-300 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${feature.included ? "text-gray-700" : "text-gray-400"}`}>
-                      {feature.text}
-                    </span>
                   </div>
-                ))}
-              </div>
 
-              <button className={`w-full py-3 rounded-xl font-semibold text-sm ${plan.buttonColor} transition-all`}>
-                {plan.id === "free" ? "Get Started Free" : "Choose Plan"}
-              </button>
-            </motion.div>
-          ))}
-        </div>
+                  <div className="space-y-2 mb-5">
+                    {plan.features.map((f, i) => (
+                      <div key={i} className="flex items-center gap-2.5">
+                        {f.included ? (
+                          <Check
+                            size={14}
+                            className="text-emerald-500 shrink-0"
+                            strokeWidth={3}
+                          />
+                        ) : (
+                          <X
+                            size={14}
+                            className="text-gray-200 dark:text-gray-700 shrink-0"
+                          />
+                        )}
+                        <span
+                          className={`text-[13px] ${
+                            f.included
+                              ? "text-gray-700 dark:text-gray-200"
+                              : "text-gray-300 dark:text-gray-600"
+                          }`}
+                        >
+                          {f.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
-        {/* Features Section */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Why Choose PlanWAB?</h3>
-          <div className="space-y-4">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start gap-4">
-                <div className="p-3 bg-pink-100 rounded-xl">
-                  <feature.icon size={20} className="text-pink-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
-                  <p className="text-sm text-gray-600">{feature.description}</p>
-                </div>
-              </div>
-            ))}
+                  <button
+                    onClick={() => handleSelectPlan(plan.id)}
+                    disabled={b.disabled || processing}
+                    className={`w-full py-3 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100 ${b.cls}`}
+                  >
+                    {b.text}
+                  </button>
+                </motion.div>
+              );
+            })}
           </div>
-        </div>
+        )}
 
-        {/* Success Stories */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">What Our Vendors Say</h3>
-          <div className="space-y-4">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-1 mb-2">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} size={14} className="text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-sm text-gray-700 mb-2">"{testimonial.text}"</p>
-                <div className="text-xs text-gray-500">
-                  <span className="font-medium">{testimonial.name}</span>
-                  <span> • </span>
-                  <span>{testimonial.business}</span>
-                </div>
-              </div>
-            ))}
+        {/* Guarantee */}
+        {/* <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-100 dark:border-gray-800 flex items-start gap-3">
+          <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center shrink-0">
+            <Shield size={15} className="text-emerald-500" />
           </div>
-        </div>
-
-        {/* Enterprise Section */}
-        <div className="bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl p-5 text-white">
-          <div className="text-center">
-            <Crown size={32} className="mx-auto mb-3" />
-            <h3 className="text-lg font-bold mb-2">Need Something Custom?</h3>
-            <p className="text-sm text-purple-100 mb-4">
-              Large business or have specific requirements? We've got you covered.
+          <div>
+            <p className="text-[13px] font-semibold text-gray-900 dark:text-white">
+              7-day money-back guarantee
             </p>
-            <div className="space-y-2">
-              <button className="w-full bg-white text-purple-600 py-3 rounded-xl font-semibold text-sm">
-                Contact Sales Team
-              </button>
-              <p className="text-xs text-purple-200">Custom pricing • Dedicated support • Advanced features</p>
-            </div>
+            <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
+              Not satisfied? Get a full refund within 7 days. No questions asked.
+            </p>
           </div>
-        </div>
+        </div> */}
 
-        {/* FAQ Section */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
-          <div className="space-y-3">
-            {faqs.map((faq, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleFAQ(index)}
-                  className="w-full p-4 text-left flex items-center justify-between"
-                >
-                  <span className="font-medium text-gray-900 text-sm">{faq.question}</span>
-                  {expandedFAQ === index ? (
-                    <ChevronUp size={18} className="text-gray-500 flex-shrink-0" />
-                  ) : (
-                    <ChevronDown size={18} className="text-gray-500 flex-shrink-0" />
-                  )}
-                </button>
-                <AnimatePresence>
-                  {expandedFAQ === index && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <div className="px-4 pb-4 text-gray-600 text-sm">{faq.answer}</div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Money Back Guarantee */}
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Shield size={20} className="text-green-600" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-green-900 mb-1">30-Day Money-Back Guarantee</h4>
-              <p className="text-sm text-green-700">
-                Try any paid plan risk-free for 30 days. If you're not satisfied, we'll refund your money, no questions
-                asked.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Support */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Need Help Choosing?</h3>
-          <p className="text-sm text-gray-600 text-center mb-4">
-            Our team is here to help you find the perfect plan for your business.
-          </p>
-          <div className="space-y-3">
-            <a
-              href="tel:+916267430959"
-              className="flex items-center justify-center gap-3 w-full py-3 bg-green-100 text-green-700 rounded-xl font-medium text-sm"
-            >
-              <Phone size={16} />
-              Call us: +91 6267430959
-            </a>
-            <a
-              href="https://wa.me/916267430959"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-3 bg-green-100 text-green-700 rounded-xl font-medium text-sm"
-            >
-              <MessageCircle size={16} />
-              WhatsApp Support
-            </a>
-          </div>
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center py-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Ready to Grow Your Business?</h3>
-          <p className="text-gray-600 mb-6">Join thousands of successful vendors on PlanWAB</p>
-          <div className="space-y-3">
-            <button className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-bold text-lg">
-              Start Your Free Trial
-            </button>
-            <p className="text-xs text-gray-500">No credit card required • Setup in 2 minutes • Cancel anytime</p>
-          </div>
-        </div>
+        <p className="text-center text-[10px] text-gray-200 dark:text-gray-700 pb-4 select-none">
+          Prices in INR · Inclusive of applicable taxes
+        </p>
       </div>
+
+      {/* Processing Overlay */}
+      <AnimatePresence>
+        {processing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-white/90 dark:bg-black/90 z-50 flex flex-col items-center justify-center"
+          >
+            <div className="w-12 h-12 border-[3px] border-gray-200 border-t-gray-900 dark:border-gray-700 dark:border-t-white rounded-full animate-spin mb-4" />
+            <p className="font-semibold text-gray-900 dark:text-white">
+              Processing…
+            </p>
+            <p className="text-[13px] text-gray-400 mt-1">
+              Do not close this page
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-};
-
-export default PricingPageWrapper;
+}
