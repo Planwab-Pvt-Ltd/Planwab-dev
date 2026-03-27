@@ -16,6 +16,12 @@ export const badRequest = (message = "Bad request", errors = null) =>
 export const notFound = (message = "Not found") =>
   NextResponse.json({ success: false, message }, { status: 404 });
 
+export const unauthorized = (message = "Unauthorized") =>
+  NextResponse.json({ success: false, message }, { status: 401 });
+
+export const forbidden = (message = "Forbidden - you do not own this resource") =>
+  NextResponse.json({ success: false, message }, { status: 403 });
+
 export const serverError = (message = "Internal server error", err = null) => {
   if (err) console.error("[API Error]", err);
   return NextResponse.json({ success: false, message }, { status: 500 });

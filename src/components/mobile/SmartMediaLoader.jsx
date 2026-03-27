@@ -31,7 +31,7 @@ const SmartMedia = memo(
     const [hasError, setHasError] = useState(false);
     const videoRef = useRef(null);
 
-    const safeSrc = src?.startsWith("/") || src?.startsWith("http") ? src : `/${src}`;
+    const safeSrc = src?.startsWith("/") || src?.startsWith("http") || src?.startsWith("data:") ? src : `/${src}`;
     const detectedObjectFit = extractObjectFit(className);
     const finalObjectFit = detectedObjectFit || objectFit;
     const cleanClassName = className.replace(/object-(cover|contain|fill|none|scale-down)\s?/g, "").trim();
