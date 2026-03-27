@@ -4,6 +4,7 @@ import User from "../../../../database/models/userModel";
 import Vendor from "../../../../database/models/VendorModel";
 import ReelsModel from "../../../../database/models/ReelsModel";
 import VendorProfile from "../../../../database/models/VendorProfileModel";
+import Blog from "../../../../database/models/BlogModel";
 
 export async function GET(req) {
   try {
@@ -36,11 +37,13 @@ export async function GET(req) {
       savedVPReels,
       likedVPPosts,
       savedVPPosts,
+      likedBlogs,
+      savedBlogs,
     ] = await Promise.all([
       // 1. Vendors from user.likedVendors + user.watchlist
       allVendorIds.length > 0
         ? Vendor.find({ _id: { $in: allVendorIds } })
-            .select("name defaultImage rating address category perDayPrice slug")
+            .select("name defaultImage rating address category perDayPrice slug shortDescription reviews bookings yearsExperience isVerified isFeatured tags category basePrice")
             .lean()
             .catch(() => [])
         : Promise.resolve([]),
@@ -48,21 +51,21 @@ export async function GET(req) {
       // 2. Reels from user.likedReels + user.watchlistReels (ReelsModel)
       allReelIds.length > 0
         ? ReelsModel.find({ _id: { $in: allReelIds } })
-            .select("_id type thumbnailUrl videoUrl caption vendorName likesCount viewsCount createdAt")
+            .select("_id type thumbnailUrl videoUrl caption vendorName likesCount viewsCount createdAt duration shareCount saveCount category hashtags publishedAt type subtype")
             .lean()
             .catch(() => [])
         : Promise.resolve([]),
 
       // 3. VendorProfiles liked by user
       VendorProfile.find({ likes: userId })
-        .select("vendorBusinessName username category vendorCoverImage vendorAvatar trust vendorId")
+        .select("vendorBusinessName username category vendorCoverImage vendorAvatar trust vendorId location likesCount trustCount postsCount reelsCount")
         .limit(30)
         .lean()
         .catch(() => []),
 
       // 4. VendorProfiles trusted by user
       VendorProfile.find({ trustedBy: userId })
-        .select("vendorBusinessName username category vendorCoverImage vendorAvatar trust vendorId")
+        .select("vendorBusinessName username category vendorCoverImage vendorAvatar trust vendorId location likesCount trustCount postsCount reelsCount")
         .limit(30)
         .lean()
         .catch(() => []),
@@ -121,8 +124,6 @@ export async function GET(req) {
       mediaUrl: "$reelsWithIndex.mediaUrl",
       category: "$category",
       vendorId: "$vendorId",
-
-      // ✅ Correct reel index
       reelIndex: "$reelsWithIndex.reelIndex"
     }
   }
@@ -213,6 +214,7 @@ export async function GET(req) {
             source: { $literal: "vendorProfile" },
             mediaUrl: "$posts.mediaUrl",
             category: "$category",
+            content : "$posts.content",
             vendorId: "$vendorId",
           },
         },
@@ -243,9 +245,24 @@ export async function GET(req) {
             mediaUrl: "$posts.mediaUrl",
             category: "$category",
             vendorId: "$vendorId",
+             content : "$posts.content",
           },
         },
       ]).catch(() => []),
+
+      // 9. Blogs liked by user
+      Blog.find({ likedBy: userId })
+        .select("title slug thumbnail coverImage author category readTime createdAt")
+        .limit(30)
+        .lean()
+        .catch(() => []),
+
+      // 10. Blogs saved by user
+      Blog.find({ savedBy: userId })
+        .select("title slug thumbnail coverImage author category readTime createdAt excerpt viewCount likeCount authorPhoto createdAt tags shareCount")
+        .limit(30)
+        .lean()
+        .catch(() => []),
     ]);
 
     const vendorMap = new Map();
@@ -273,6 +290,10 @@ export async function GET(req) {
           liked: likedVPPosts,
           watchlist: savedVPPosts,
         },
+      },
+      blogs: {
+        liked: likedBlogs,
+        watchlist: savedBlogs,
       },
     });
   } catch (error) {
