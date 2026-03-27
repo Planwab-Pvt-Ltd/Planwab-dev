@@ -1,428 +1,682 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser, SignInButton } from "@clerk/clerk-react";
 import {
-  ArrowLeft,
-  Search,
-  Calendar,
-  User,
-  Clock,
-  Tag,
-  Heart,
-  Share2,
-  Bookmark,
-  TrendingUp,
-  Filter,
-  ChevronDown,
-  Eye,
-  MessageCircle,
-  ArrowRight,
-  Star,
+  ArrowLeft, Search, Calendar, User, Clock, Tag, Heart, Share2,
+  Bookmark, TrendingUp, Filter, Eye, ArrowRight,
+  Star, Mail, Plus, Edit2, Trash2, X, ChevronLeft, ChevronRight,
+  Loader2, BookOpen, Pen, AlertTriangle, Check, Upload, ImageIcon, Link,
+  ImagePlus, Send,
 } from "lucide-react";
+import SmartMedia from "../SmartMediaLoader";
 
-const BlogPageWrapper = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [likedPosts, setLikedPosts] = useState(new Set());
-  const [bookmarkedPosts, setBookmarkedPosts] = useState(new Set());
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
 
-  const categories = [
-    { id: "all", name: "All", count: 24 },
-    { id: "wedding", name: "Wedding", count: 12 },
-    { id: "birthday", name: "Birthday", count: 6 },
-    { id: "corporate", name: "Corporate", count: 4 },
-    { id: "tips", name: "Planning Tips", count: 8 },
-  ];
+const CATEGORIES = [
+  { id: "all", name: "All", emoji: "✨" },
+  { id: "wedding", name: "Wedding", emoji: "💍" },
+  { id: "birthday", name: "Birthday", emoji: "🎂" },
+  { id: "corporate", name: "Corporate", emoji: "💼" },
+  { id: "anniversary", name: "Anniversary", emoji: "🌹" },
+  { id: "tips", name: "Planning Tips", emoji: "💡" },
+  { id: "other", name: "Other", emoji: "📝" },
+];
 
-  const featuredPost = {
-    id: "featured-1",
-    title: "10 Wedding Planning Mistakes to Avoid in 2026",
-    excerpt:
-      "Planning a wedding can be overwhelming. Here are the most common mistakes couples make and how to avoid them for your perfect day.",
-    image: "/blog/wedding-planning.jpg", // Placeholder
-    author: "Priya Sharma",
-    authorRole: "Senior Wedding Planner",
-    date: "January 5, 2026",
-    readTime: "8 min read",
-    category: "Wedding",
-    tags: ["Wedding Planning", "Tips", "Budget"],
-    views: 2840,
-    likes: 156,
-    comments: 24,
-    featured: true,
-  };
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
-  const blogPosts = [
-    {
-      id: "1",
-      title: "Budget-Friendly Birthday Party Ideas That Kids Will Love",
-      excerpt:
-        "Create magical birthday memories without breaking the bank. 15 creative ideas for unforgettable celebrations.",
-      image: "/blog/birthday-party.jpg",
-      author: "Rajesh Kumar",
-      date: "January 4, 2026",
-      readTime: "6 min read",
-      category: "Birthday",
-      tags: ["Budget", "Kids", "DIY"],
-      views: 1520,
-      likes: 89,
-      comments: 12,
-    },
-    {
-      id: "2",
-      title: "Corporate Event Trends 2026: What's Hot This Year",
-      excerpt:
-        "Stay ahead of the curve with the latest corporate event trends that will impress your team and clients.",
-      image: "/blog/corporate-event.jpg",
-      author: "Anita Gupta",
-      date: "January 3, 2026",
-      readTime: "5 min read",
-      category: "Corporate",
-      tags: ["Corporate", "Trends", "2026"],
-      views: 980,
-      likes: 67,
-      comments: 8,
-    },
-    {
-      id: "3",
-      title: "How to Choose the Perfect Wedding Photographer",
-      excerpt:
-        "Your wedding photos will last forever. Here's your complete guide to finding the photographer of your dreams.",
-      image: "/blog/wedding-photo.jpg",
-      author: "Kavya Reddy",
-      date: "January 2, 2026",
-      readTime: "7 min read",
-      category: "Wedding",
-      tags: ["Photography", "Wedding", "Vendors"],
-      views: 2100,
-      likes: 134,
-      comments: 19,
-    },
-    {
-      id: "4",
-      title: "Seasonal Decoration Ideas for Every Celebration",
-      excerpt: "Transform any space with seasonal decorations that match the mood and theme of your special event.",
-      image: "/blog/decorations.jpg",
-      author: "Meera Joshi",
-      date: "December 30, 2025",
-      readTime: "4 min read",
-      category: "Tips",
-      tags: ["Decoration", "Seasonal", "DIY"],
-      views: 1350,
-      likes: 92,
-      comments: 15,
-    },
-    {
-      id: "5",
-      title: "Catering Menu Planning: A Complete Guide",
-      excerpt: "From guest dietary preferences to budget considerations, plan the perfect menu for your event.",
-      image: "/blog/catering.jpg",
-      author: "Chef Arjun Singh",
-      date: "December 28, 2025",
-      readTime: "9 min read",
-      category: "Tips",
-      tags: ["Catering", "Menu", "Food"],
-      views: 1750,
-      likes: 110,
-      comments: 22,
-    },
-    {
-      id: "6",
-      title: "Vendor Spotlight: Success Stories from PlanWAB",
-      excerpt:
-        "Meet the vendors who transformed their businesses and created countless magical moments through our platform.",
-      image: "/blog/vendor-success.jpg",
-      author: "PlanWAB Team",
-      date: "December 26, 2025",
-      readTime: "6 min read",
-      category: "Success Stories",
-      tags: ["Vendors", "Success", "Stories"],
-      views: 890,
-      likes: 78,
-      comments: 11,
-    },
-  ];
+const MobileBlogCard = ({ post, currentUserId, onEdit, onDelete }) => {
+  const router = useRouter();
+  const isOwner = currentUserId && post.authorClerkId === currentUserId;
 
-  const trendingTopics = [
-    { name: "Wedding Planning 2026", posts: 15 },
-    { name: "Budget Events", posts: 12 },
-    { name: "Vendor Tips", posts: 9 },
-    { name: "DIY Decorations", posts: 8 },
-    { name: "Photography Guide", posts: 7 },
-  ];
-
-  const toggleLike = (postId) => {
-    const newLikedPosts = new Set(likedPosts);
-    if (newLikedPosts.has(postId)) {
-      newLikedPosts.delete(postId);
-    } else {
-      newLikedPosts.add(postId);
-    }
-    setLikedPosts(newLikedPosts);
-  };
-
-  const toggleBookmark = (postId) => {
-    const newBookmarkedPosts = new Set(bookmarkedPosts);
-    if (newBookmarkedPosts.has(postId)) {
-      newBookmarkedPosts.delete(postId);
-    } else {
-      newBookmarkedPosts.add(postId);
-    }
-    setBookmarkedPosts(newBookmarkedPosts);
-  };
-
-  const filteredPosts = blogPosts.filter((post) => {
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || post.category.toLowerCase() === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const BlogCard = ({ post, isLarge = false }) => (
+  return (
     <motion.div
-      whileTap={{ scale: 0.98 }}
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${isLarge ? "mb-6" : ""}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      onClick={() => router.push(`/about/blogs/${post._id}`)}
+      className="bg-white rounded-[24px] overflow-hidden border border-gray-100 shadow-sm mb-5 active:scale-[0.98] transition-transform"
     >
-      {/* Image */}
-      <div className={`relative ${isLarge ? "h-48" : "h-32"} bg-gray-200`}>
-        {post.featured && (
-          <div className="absolute top-3 left-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-            Featured
-          </div>
-        )}
-        <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-          {post.readTime}
+      <div className="relative aspect-[16/10] bg-gray-100">
+        <MediaRenderer 
+          src={post.coverImage} 
+          className="w-full h-full object-cover" 
+          alt={post.title} 
+        />
+        <div className="absolute top-3 right-3 flex gap-2">
+          {isOwner && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); onEdit(post); }} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-sm"><Edit2 size={14} className="text-gray-700"/></button>
+              <button onClick={(e) => { e.stopPropagation(); onDelete(post); }} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-sm"><Trash2 size={14} className="text-red-500"/></button>
+            </>
+          )}
         </div>
-        {/* Placeholder for image */}
-        <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
-          <span className="text-gray-600 text-sm">Blog Image</span>
+        <div className="absolute bottom-3 left-3">
+          <span className="bg-black/50 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            {post.category}
+          </span>
         </div>
       </div>
-
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full">{post.category}</span>
-          {post.featured && <Star size={12} className="text-yellow-400 fill-current" />}
-        </div>
-
-        <h3 className={`font-bold text-gray-900 mb-2 line-clamp-2 ${isLarge ? "text-lg" : "text-sm"}`}>{post.title}</h3>
-
-        <p className={`text-gray-600 mb-3 line-clamp-2 ${isLarge ? "text-sm" : "text-xs"}`}>{post.excerpt}</p>
-
-        {/* Author & Date */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
-              <User size={12} className="text-white" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-900">{post.author}</p>
-              {post.authorRole && <p className="text-xs text-gray-500">{post.authorRole}</p>}
-            </div>
+      
+      <div className="p-5">
+        <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
+          {post.title}
+        </h3>
+        <div className="flex items-center justify-between text-gray-400 text-[11px] font-medium">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1"><Heart size={12} className={post.likeCount > 0 ? "text-pink-500 fill-current" : ""}/> {post.likeCount || 0}</span>
+            <span className="flex items-center gap-1"><Eye size={12}/> {post.viewCount || 0}</span>
           </div>
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            <Calendar size={10} />
-            {post.date}
-          </div>
-        </div>
-
-        {/* Stats & Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <div className="flex items-center gap-1">
-              <Eye size={12} />
-              {post.views.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1">
-              <MessageCircle size={12} />
-              {post.comments}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleLike(post.id);
-              }}
-              className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <Heart
-                size={14}
-                className={`${likedPosts.has(post.id) ? "text-red-500 fill-current" : "text-gray-500"}`}
-              />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleBookmark(post.id);
-              }}
-              className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <Bookmark
-                size={14}
-                className={`${bookmarkedPosts.has(post.id) ? "text-blue-500 fill-current" : "text-gray-500"}`}
-              />
-            </button>
-            <button className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-              <Share2 size={14} className="text-gray-500" />
-            </button>
-          </div>
+          <span className="flex items-center gap-1">
+            <Calendar size={12}/> {new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </span>
         </div>
       </div>
     </motion.div>
   );
+};
+
+const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
+  const [form, setForm] = useState({ title: "", category: "wedding", excerpt: "", content: "", coverImage: "", tags: "" });
+  const [imagePreview, setImagePreview] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  useEffect(() => {
+    if (editingBlog) {
+      setForm({
+        title: editingBlog.title || "",
+        category: editingBlog.category || "wedding",
+        excerpt: editingBlog.excerpt || "",
+        content: editingBlog.content || "",
+        coverImage: editingBlog.coverImage || "",
+        tags: editingBlog.tags?.join(", ") || "",
+      });
+      setImagePreview(editingBlog.coverImage || "");
+    } else {
+      setForm({ title: "", category: "wedding", excerpt: "", content: "", coverImage: "", tags: "" });
+      setImagePreview("");
+    }
+  }, [editingBlog, isOpen]);
+
+  const uploadToImageKit = async (file) => {
+    setImageUploading(true);
+    setUploadError("");
+    try {
+      const authRes = await fetch("/api/imagekit/auth");
+      const auth = await authRes.json();
+      if (!auth.signature) throw new Error("Auth failed");
+
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("fileName", `blog_cover_${Date.now()}`);
+      fd.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY);
+      fd.append("signature", auth.signature);
+      fd.append("expire", auth.expire);
+      fd.append("token", auth.token);
+      fd.append("folder", "/planwab/blogs");
+
+      const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+        method: "POST",
+        body: fd,
+      });
+
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadJson.message || "Upload failed");
+
+      setForm((f) => ({ ...f, coverImage: uploadJson.url }));
+      setImagePreview(uploadJson.url);
+    } catch (err) {
+      setUploadError(err.message || "Upload failed.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) return setUploadError("Please select an image.");
+      uploadToImageKit(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.content.trim()) return;
+    onSubmit({
+      ...form,
+      tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+    });
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
-          <button onClick={() => window.history.back()} className="p-2 rounded-full hover:bg-gray-100">
-            <ArrowLeft size={24} />
+    <AnimatePresence>
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 250 }}
+        className="fixed inset-0 z-[100] bg-white flex flex-col"
+      >
+        <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-5 h-16 flex items-center justify-between shrink-0">
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 active:scale-90 transition-transform">
+            <X size={24} className="text-gray-900" />
           </button>
-          <h1 className="text-lg font-semibold">PlanWAB Blog</h1>
-          <button onClick={() => setShowFilters(!showFilters)} className="p-2 rounded-full hover:bg-gray-100">
-            <Filter size={20} />
+          <span className="font-extrabold text-[13px] uppercase tracking-[0.2em] text-gray-500">
+            {editingBlog ? "Edit Story" : "New Story"}
+          </span>
+          <button 
+            onClick={handleSubmit}
+            disabled={loading || imageUploading || !form.title.trim()}
+            className="h-10 px-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-lg shadow-pink-200 active:scale-95 disabled:opacity-30 disabled:shadow-none transition-all flex items-center gap-2"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {editingBlog ? "Save" : "Publish"}
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="px-4 pb-4">
+        <form className="flex-1 overflow-y-auto px-6 py-8 space-y-10 pb-32">
+          <div className="relative group">
+            <div className={`relative aspect-[16/10] bg-gray-50 rounded-[40px] overflow-hidden border-2 border-dashed transition-all duration-300 ${imagePreview ? "border-transparent" : "border-gray-200"}`}>
+              {imagePreview ? (
+                <>
+                  <MediaRenderer src={imagePreview} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/20" />
+                  <button 
+                    type="button"
+                    onClick={() => { setImagePreview(""); setForm(f => ({ ...f, coverImage: "" })); }}
+                    className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white border border-white/30 active:scale-90 transition-transform"
+                  >
+                    <X size={24} />
+                  </button>
+                </>
+              ) : (
+                <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
+                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-5 shadow-xl shadow-gray-200/50 group-active:scale-95 transition-transform border border-gray-50">
+                    {imageUploading ? <Loader2 size={28} className="animate-spin text-pink-500" /> : <ImagePlus size={28} className="text-pink-500" />}
+                  </div>
+                  <span className="text-[11px] font-black text-gray-500 uppercase tracking-[0.15em]">
+                    {imageUploading ? "Processing..." : "Add Featured Media"}
+                  </span>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                </label>
+              )}
+            </div>
+            {uploadError && <p className="mt-3 text-center text-red-500 text-[10px] font-black uppercase tracking-widest">{uploadError}</p>}
+          </div>
+
+          <div className="space-y-6">
+            <textarea
+              placeholder="Title your story..."
+              rows={2}
+              value={form.title}
+              onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
+              className="w-full text-4xl font-black placeholder:text-gray-300 border-none focus:ring-0 p-0 resize-none leading-[1.1] text-black"
+            />
+
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
+              {CATEGORIES.filter(c => c.id !== 'all').map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, category: cat.id }))}
+                  className={`flex-shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${form.category === cat.id ? 'bg-gray-900 text-white shadow-xl shadow-gray-200' : 'bg-gray-100 text-gray-500'}`}
+                >
+                  {cat.emoji} {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-gray-50 w-full" />
+
+          <textarea
+            placeholder="Tell your story..."
+            rows={15}
+            value={form.content}
+            onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))}
+            className="w-full text-xl placeholder:text-gray-300 border-none focus:ring-0 p-0 resize-none leading-relaxed text-gray-800 font-medium"
+          />
+
+          <div className="bg-gray-50 rounded-[40px] p-8 space-y-8">
+            <div>
+               <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4">
+                 <Tag size={14} className="text-pink-500" /> Tags
+               </label>
+               <input 
+                type="text" 
+                placeholder="Ex. travel, wedding, lifestyle"
+                value={form.tags}
+                onChange={(e) => setForm(f => ({ ...f, tags: e.target.value }))}
+                className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm font-bold text-gray-900 outline-none shadow-sm placeholder:text-gray-400"
+               />
+            </div>
+            
+            <div className="pt-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-500">
+                <AlertTriangle size={20} />
+              </div>
+                <p className="text-[11px] font-bold text-gray-500 leading-relaxed uppercase tracking-wide">
+                  Please ensure your content follows our community guidelines before publishing.
+                </p>
+            </div>
+          </div>
+        </form>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const DeleteConfirmModal = ({ blog, onConfirm, onClose, loading }) => {
+  if (!blog) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end justify-center"
+    >
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white w-full rounded-t-[40px] p-10 pb-12 shadow-2xl"
+      >
+        <div className="w-20 h-1.5 bg-gray-100 rounded-full mx-auto mb-8" />
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5">
+          <AlertTriangle size={32} className="text-red-500" />
+        </div>
+        <h3 className="text-xl font-black text-gray-900 text-center mb-2 leading-tight">Delete Story?</h3>
+        <p className="text-gray-500 text-center mb-10 text-sm font-medium px-4">
+          Are you sure you want to delete <span className="text-gray-900">"{blog.title}"</span>? This cannot be undone.
+        </p>
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={() => onConfirm(blog._id)}
+            className="w-full py-5 bg-red-500 text-white rounded-[24px] font-black uppercase tracking-widest text-sm shadow-xl shadow-red-100 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : "Yes, Delete"}
+          </button>
+          <button 
+            onClick={onClose} 
+            className="w-full py-5 bg-gray-50 text-gray-500 rounded-[24px] font-black uppercase tracking-widest text-sm active:scale-[0.98] transition-all"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const BlogPageWrapper = () => {
+  const router = useRouter();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Newsletter State
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState("idle"); // idle, loading, success, error
+  const [newsletterMsg, setNewsletterMsg] = useState("");
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const [pagination, setPagination] = useState({ totalPages: 1, hasNextPage: false, hasPrevPage: false });
+  const [categoryCounts, setCategoryCounts] = useState({});
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingBlog, setEditingBlog] = useState(null);
+  const [deletingBlog, setDeletingBlog] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const fetchBlogs = useCallback(async (page = 1) => {
+    setLoading(true);
+    try {
+      let url = `/api/blogs?page=${page}&limit=10`;
+      if (selectedCategory !== "all") url += `&category=${selectedCategory}`;
+      if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+
+      const res = await fetch(url);
+      const result = await res.json();
+
+      if (result.success) {
+        setBlogs(result.data);
+        setPagination(result.pagination);
+        setCategoryCounts(result.categoryCounts || {});
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError("Failed to fetch blogs");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCategory, debouncedSearch]);
+
+  useEffect(() => {
+    fetchBlogs(currentPage);
+  }, [fetchBlogs, currentPage]);
+
+  const handleFormSubmit = async (formData) => {
+    if (!user) return;
+    setActionLoading(true);
+    try {
+      const isEditing = !!editingBlog;
+      const url = isEditing ? `/api/blogs/${editingBlog._id}` : "/api/blogs";
+      const res = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json", "x-clerk-user-id": user.id },
+        body: JSON.stringify({
+          ...formData,
+          authorName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Anonymous",
+          authorPhoto: user.imageUrl || null,
+          authorClerkId: user.id,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+
+      showToast(isEditing ? "Updated! 🎉" : "Published! 🎉");
+      setShowCreateModal(false);
+      setEditingBlog(null);
+      fetchBlogs(currentPage);
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/blogs/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setBlogs(p => p.filter(b => b._id !== id));
+        setDeletingBlog(null);
+        showToast("Deleted post");
+      } else {
+        const json = await res.json();
+        throw new Error(json.message);
+      }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleNewsletterSubscribe = async (e) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    
+    setNewsletterStatus("loading");
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: newsletterEmail,
+          visitedUrl: window.location.href,
+          clerkId: user?.id,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setNewsletterStatus("success");
+        setNewsletterMsg(data.message);
+        setNewsletterEmail("");
+        // Show success for 5 seconds then reset to idle
+        setTimeout(() => setNewsletterStatus("idle"), 5000);
+      } else {
+        setNewsletterStatus("error");
+        setNewsletterMsg(data.message);
+        setTimeout(() => setNewsletterStatus("idle"), 5000);
+      }
+    } catch (err) {
+      setNewsletterStatus("error");
+      setNewsletterMsg("Failed to subscribe. Please try again.");
+      setTimeout(() => setNewsletterStatus("idle"), 5000);
+    }
+  };
+
+  const openEdit = (post) => {
+    setEditingBlog(post);
+    setShowCreateModal(true);
+  };
+
+  const categories = [
+    { id: "wedding", name: "Wedding", image: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/wedding_cat_eQikY7JCR.png" },
+    { id: "birthday", name: "Birthday", image: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/birthday_cat_ZFWlGHwqe.png" },
+    { id: "anniversary", name: "Anniversary", image: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/anniversary_cat_eFoyx_1cB.png" },
+    { id: "corporate", name: "Corporate", image: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/corporate_cat_ig5vMcWDn.png" },
+    { id: "other", name: "Others", image: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/others_cat_2tkC8vg-0.png" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white pb-24">
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -60, x: "-50%" }}
+            animate={{ opacity: 1, y: 20, x: "-50%" }}
+            exit={{ opacity: 0, y: -60, x: "-50%" }}
+            className={`fixed top-6 left-1/2 z-[200] px-6 py-3 rounded-full shadow-2xl text-sm font-black flex items-center gap-2.5 whitespace-nowrap ${toast.type === "error" ? "bg-red-500 text-white" : "bg-gray-900 text-white"}`}
+          >
+            {toast.type === "error" ? <AlertTriangle size={18} /> : <Check size={18} className="text-green-400" />}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 h-16">
+          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 active:scale-90 transition-transform">
+            <ChevronLeft size={24} className="text-gray-900" />
+          </button>
+          <span className="font-black text-lg tracking-tight">PlanWAB Blog</span>
+          <div className="w-10 flex justify-end">
+            {isSignedIn && (
+              <button 
+                onClick={() => { setEditingBlog(null); setShowCreateModal(true); }}
+                className="w-10 h-10 bg-[#FF1A75] text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+              >
+                <Plus size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <div className="px-5 pb-4">
           <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search stories..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search articles..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="w-full bg-gray-100 border-none rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-pink-500 transition-all font-medium"
             />
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-white border-b border-gray-200 px-4 py-3"
-          >
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === category.id
-                      ? "bg-pink-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {category.name} ({category.count})
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="p-4 space-y-6">
-        {/* Featured Post */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={18} className="text-pink-600" />
-            <h2 className="text-lg font-bold text-gray-900">Featured Article</h2>
-          </div>
-          <BlogCard post={featuredPost} isLarge={true} />
-        </div>
-
-        {/* Trending Topics */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-3">Trending Topics</h3>
-          <div className="space-y-2">
-            {trendingTopics.map((topic, index) => (
-              <div key={index} className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2">
-                  <Tag size={14} className="text-pink-600" />
-                  <span className="text-sm font-medium text-gray-900">{topic.name}</span>
+      <div className="px-5 pt-8">
+        <div className="mb-10">
+          <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-5">Explore Categories</h2>
+          <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 pb-4">
+            {categories.map((cat) => (
+              <div 
+                key={cat.id}
+                onClick={() => { setSelectedCategory(cat.id); setCurrentPage(1); }}
+                className={`flex-shrink-0 w-32 h-44 rounded-[28px] overflow-hidden relative shadow-sm active:scale-[0.95] transition-all duration-300 ${selectedCategory === cat.id ? "ring-2 ring-pink-500 ring-offset-2" : ""}`}
+              >
+                <SmartMedia src={cat.image} className="absolute inset-0 w-full h-full object-cover" alt={cat.name} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 text-white">
+                  <h3 className="text-sm font-black leading-tight text-center">{cat.name}</h3>
                 </div>
-                <span className="text-xs text-gray-500">{topic.posts} posts</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent Articles */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">
-              {selectedCategory === "all"
-                ? "Recent Articles"
-                : `${categories.find((c) => c.id === selectedCategory)?.name} Articles`}
-            </h2>
-            <span className="text-sm text-gray-500">
-              {filteredPosts.length} article{filteredPosts.length !== 1 ? "s" : ""}
-            </span>
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <h2 className="text-4xl font-black tracking-tight text-gray-900 leading-none mb-2">Popular Articles</h2>
+            <div className="w-12 h-1.5 bg-[#FF1A75] rounded-full" />
           </div>
-
-          {filteredPosts.length > 0 ? (
-            <div className="space-y-4">
-              {filteredPosts.map((post) => (
-                <BlogCard key={post.id} post={post} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Search size={48} className="text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No articles found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                }}
-                className="bg-pink-500 text-white px-4 py-2 rounded-lg text-sm font-medium"
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
+          <TrendingUp className="text-pink-500 mb-2" size={24} />
         </div>
 
-        {/* Load More */}
-        {filteredPosts.length > 0 && (
-          <div className="text-center pt-6">
-            <button className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-medium text-sm flex items-center gap-2 mx-auto">
-              Load More Articles
-              <ArrowRight size={16} />
-            </button>
+        {loading && (
+          <div className="space-y-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="animate-pulse bg-gray-50 rounded-[24px] h-[300px] w-full" />
+            ))}
           </div>
         )}
 
-        {/* Newsletter Signup */}
-        <div className="bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl p-5 text-white text-center">
-          <h3 className="text-lg font-bold mb-2">Stay Updated</h3>
-          <p className="text-pink-100 text-sm mb-4">
-            Get the latest event planning tips and trends delivered to your inbox
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-2 rounded-lg text-gray-900 text-sm"
-            />
-            <button className="bg-pink-400 text-white px-4 py-2 rounded-lg font-medium text-sm">Subscribe</button>
+        {error && (
+          <div className="text-center py-20 bg-gray-50 rounded-[32px]">
+            <p className="text-gray-500 mb-5">{error}</p>
+            <button onClick={() => fetchBlogs(currentPage)} className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold">Try Again</button>
+          </div>
+        )}
+
+        {!loading && !error && blogs.length === 0 && (
+          <div className="text-center py-24 bg-gray-50 rounded-[32px]">
+            <BookOpen size={48} className="text-gray-300 mx-auto mb-5" />
+            <h3 className="text-xl font-bold text-gray-900">No articles found</h3>
+            <p className="text-gray-500 text-sm px-10">Try a different category or search term.</p>
+          </div>
+        )}
+
+        {!loading && !error && blogs.length > 0 && (
+          <div className="space-y-2">
+            {blogs.map(post => (
+              <MobileBlogCard 
+                key={post._id} 
+                post={post} 
+                currentUserId={user?.id}
+                onEdit={openEdit}
+                onDelete={setDeletingBlog}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && pagination.totalPages > 1 && (
+          <div className="mt-12 flex justify-center gap-4">
+            <button 
+              disabled={!pagination.hasPrevPage}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="w-12 h-12 flex items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm disabled:opacity-30"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex items-center px-4 font-bold text-gray-900">
+              {currentPage} / {pagination.totalPages}
+            </div>
+            <button 
+              disabled={!pagination.hasNextPage}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="w-12 h-12 flex items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm disabled:opacity-30"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {!loading && (
+        <div className="mx-5 mt-16 p-8 bg-gradient-to-br from-[#FF1A75] to-[#D81B60] rounded-[40px] text-white relative overflow-hidden shadow-2xl shadow-pink-200">
+          <div className="relative z-10 text-center">
+             <Mail size={32} className="mx-auto mb-4 opacity-50" />
+             <h3 className="text-2xl font-black mb-3 leading-tight">Stay Inspired</h3>
+             <p className="text-white/80 text-sm mb-8 leading-relaxed">Join 50k+ readers getting weekly event planning tips.</p>
+              <div className="space-y-4">
+                <form onSubmit={handleNewsletterSubscribe} className="space-y-4">
+                  <input 
+                    type="email" 
+                    required
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="Your email address" 
+                    className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-6 py-4 text-sm placeholder:text-white/60 text-white outline-none focus:border-white/40 transition-colors" 
+                  />
+                  <button 
+                    type="submit"
+                    disabled={newsletterStatus === "loading"}
+                    className="w-full bg-white text-[#FF1A75] font-black py-4 rounded-2xl shadow-xl shadow-black/10 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
+                  >
+                    {newsletterStatus === "loading" ? "Subscribing..." : "Subscribe Now"}
+                  </button>
+                </form>
+                {newsletterStatus !== "idle" && (
+                  <motion.p 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`text-xs font-bold mt-4 ${newsletterStatus === "success" ? "text-green-300" : "text-yellow-200"}`}
+                  >
+                    {newsletterMsg}
+                  </motion.p>
+                )}
+              </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <AnimatePresence>
+        {showCreateModal && (
+          <BlogFormModal
+            isOpen={showCreateModal}
+            onClose={() => { setShowCreateModal(false); setEditingBlog(null); }}
+            onSubmit={handleFormSubmit}
+            editingBlog={editingBlog}
+            loading={actionLoading}
+          />
+        )}
+        {deletingBlog && (
+          <DeleteConfirmModal
+            blog={deletingBlog}
+            onConfirm={handleDelete}
+            onClose={() => setDeletingBlog(null)}
+            loading={actionLoading}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
