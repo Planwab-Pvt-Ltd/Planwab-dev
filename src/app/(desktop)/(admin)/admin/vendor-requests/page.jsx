@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, Eye, ArrowLeft, TrendingUp, RefreshCw, ChevronRight, Home, UserCheck, Cake, CalendarDays, Rocket, MessageSquare } from "lucide-react";
+import { List, Eye, ArrowLeft, TrendingUp, RefreshCw, ChevronRight, Home, UserCheck, Cake, CalendarDays, Rocket, MessageSquare, Mail } from "lucide-react";
 import ViewVendorRequestTab from "@/components/desktop/admin/vendor-requests/viewVendorRequestTab";
 import AllVendorRequests from "@/components/desktop/admin/vendor-requests/AllVendorRequests";
 
@@ -36,7 +36,7 @@ export default function RequestsPage() {
     }
 
     if (requestId && tab === "view") {
-      // Optimization: If we already have the request in state, don't re-fetch
+
       if (selectedRequest && selectedRequest._id === requestId) {
         setIsEditMode(editMode);
       } else {
@@ -48,7 +48,7 @@ export default function RequestsPage() {
 
   const fetchRequestById = useCallback(async (id) => {
     try {
-      // Contact requests have their own direct endpoint
+
       if (requestType === "contact") {
         const res = await fetch(`/api/contact/${id}`);
         const resData = await res.json();
@@ -106,7 +106,6 @@ export default function RequestsPage() {
       const params = new URLSearchParams(searchParams);
       params.set("tab", tab);
 
-      // Preserve type
       if (requestType) params.set("type", requestType);
 
       if (requestId) {
@@ -240,6 +239,8 @@ export default function RequestsPage() {
         return { label: "Leads Requests", icon: Rocket, description: "Manage lead generation requests" };
       case "planning":
         return { label: "Planning Tools", icon: CalendarDays, description: "Manage planned events and tools" };
+      case "newsletter":
+        return { label: "Newsletter Subscribers", icon: Mail, description: "Manage newsletter subscriptions" };
       default:
         return { label: "Vendor Requests", icon: UserCheck, description: "Manage vendor registration requests" };
     }

@@ -48,9 +48,8 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
-// ============================================================================
-// TOAST CONTEXT & PROVIDER
-// ============================================================================
+
+
 const ToastContext = createContext(null);
 
 const ToastProvider = ({ children }) => {
@@ -129,9 +128,8 @@ const useToast = () => {
   return context;
 };
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
+
+
 const categoryIcons = {
   "Event Planner": Sparkles,
   Venue: Building2,
@@ -166,9 +164,8 @@ const statusConfig = {
   FAILED: { color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300", icon: XCircle },
 };
 
-// ============================================================================
-// DELETE CONFIRMATION MODAL
-// ============================================================================
+
+
 const DeleteConfirmModal = ({ request, requestType = "vendor", onClose, onConfirm }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -196,6 +193,8 @@ const DeleteConfirmModal = ({ request, requestType = "vendor", onClose, onConfir
         endpoint = `/api/leads?id=${request._id}&password=${encodeURIComponent(password)}`;
       } else if (requestType === "contact") {
         endpoint = `/api/contact/${request._id}?password=${encodeURIComponent(password)}`;
+      } else if (requestType === "newsletter") {
+        endpoint = `/api/admin/newsletter?id=${request._id}&adminPassword=${encodeURIComponent(password)}`;
       }
 
       const res = await fetch(endpoint, {
@@ -300,6 +299,13 @@ const DeleteConfirmModal = ({ request, requestType = "vendor", onClose, onConfir
                   </p>
                 </>
               )}
+              {requestType === "newsletter" && (
+                <>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    <strong>Email:</strong> {request.email}
+                  </p>
+                </>
+              )}
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 <strong>ID:</strong> {request._id?.slice(-8).toUpperCase()}
               </p>
@@ -386,9 +392,8 @@ const DeleteConfirmModal = ({ request, requestType = "vendor", onClose, onConfir
   );
 };
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
+
+
 export default function ViewVendorRequestTab({ request, requestType = "vendor", onBack, onEdit, onDelete }) {
   return (
     <ToastProvider>
@@ -403,9 +408,8 @@ export default function ViewVendorRequestTab({ request, requestType = "vendor", 
   );
 }
 
-// ============================================================================
-// MAIN CONTENT COMPONENT
-// ============================================================================
+
+
 function ViewVendorRequestContent({
   request,
   requestType,
@@ -476,6 +480,14 @@ function ViewVendorRequestContent({
         subtitle: request.email || "",
         category: request.subject || "Contact Form",
         icon: MessageCircle,
+      };
+    }
+    if (requestType === "newsletter") {
+      return {
+        title: request.email || "Newsletter Subscriber",
+        subtitle: `Via ${request.visitedUrl || "Website"}`,
+        category: "Subscription",
+        icon: Mail,
       };
     }
     return {
@@ -582,6 +594,14 @@ function ViewVendorRequestContent({
                           </span>
                         </>
                       )}
+                      {requestType === "newsletter" && (
+                        <>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar size={15} />
+                            {formatDate(request.createdAt)}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -621,7 +641,7 @@ function ViewVendorRequestContent({
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
-                          // Add save logic here
+
                           onEditSuccess();
                         }}
                         className="px-4 py-2.5 bg-green-500 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-green-600 transition-all shadow-lg"
@@ -794,6 +814,15 @@ function ViewVendorRequestContent({
                     {request.respondedAt && (
                       <InfoCard icon={Calendar} label="Responded At" value={formatDate(request.respondedAt)} />
                     )}
+                  </>
+                )}
+
+                {requestType === "newsletter" && (
+                  <>
+                    <InfoCard icon={Mail} label="Email" value={request.email} copyable onCopy={copyToClipboard} copied={copiedField} highlight />
+                    <InfoCard icon={Link} label="Subscribed From URL" value={request.visitedUrl} copyable onCopy={copyToClipboard} copied={copiedField} className="lg:col-span-2" />
+                    <InfoCard icon={User} label="Clerk ID" value={request.clerkId || "Not Registered"} copyable={!!request.clerkId} onCopy={copyToClipboard} copied={copiedField} />
+                    <InfoCard icon={Calendar} label="Subscribed At" value={formatDate(request.createdAt)} />
                   </>
                 )}
               </div>
@@ -1093,7 +1122,7 @@ function ViewVendorRequestContent({
                         subject = `Regarding your vendor registration request - ${request.businessName}`;
                         body = `Hello ${request.ownerName},\n\nThank you for your interest in partnering with us through PlanWAB.\n\nBusiness Details:\n- Business Name: ${request.businessName}\n- Category: ${request.category}\n- Location: ${request.city}\n- Experience: ${request.experience} years\n\nWe'll review your application and get back to you soon.\n\nBest regards,\nPlanWAB Partnership Team`;
                       } else {
-                        // Generic fallback for other types
+
                         const name = request.userDetails?.name || request.fullName || request.name || "Customer";
                         const eventType = request.eventType || request.venueName || "Event";
                         subject = `Regarding your request - ${name}`;
@@ -1148,9 +1177,8 @@ function ViewVendorRequestContent({
   );
 }
 
-// ============================================================================
-// SECTION COMPONENT
-// ============================================================================
+
+
 const Section = ({ title, icon: Icon, children, badge, tip }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -1182,9 +1210,8 @@ const Section = ({ title, icon: Icon, children, badge, tip }) => (
   </motion.div>
 );
 
-// ============================================================================
-// INFO CARD COMPONENT
-// ============================================================================
+
+
 const InfoCard = ({ icon: Icon, label, value, className = "", copyable, onCopy, copied, highlight = false }) => (
   <motion.div
     whileHover={copyable ? { scale: 1.02, y: -2 } : { y: -1 }}
@@ -1229,9 +1256,8 @@ const InfoCard = ({ icon: Icon, label, value, className = "", copyable, onCopy, 
   </motion.div>
 );
 
-// ============================================================================
-// GLOBAL STYLES
-// ============================================================================
+
+
 const GlobalStyles = () => (
   <style jsx global>{`
     * {

@@ -5,6 +5,8 @@ import BirthdayBooking from "@/database/models/BirthdayBooking";
 import DetailsBookingRequest from "@/database/models/DetailsBookingRequestModel";
 import VendorRequest from "@/database/models/VendorRequestsModel";
 import LeadsModel from "@/database/models/LeadsModel";
+import BlogModel from "@/database/models/BlogModel";
+import NewsletterModel from "@/database/models/NewsletterModel";
 import connectToDatabase from "@/database/mongoose";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
@@ -63,6 +65,16 @@ export async function GET() {
             { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
         ]);
 
+        const blogDataPromise = BlogModel.aggregate([
+            { $match: { createdAt: { $gte: ninetyDaysAgo } } },
+            { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
+        ]);
+
+        const newsletterDataPromise = NewsletterModel.aggregate([
+            { $match: { createdAt: { $gte: ninetyDaysAgo } } },
+            { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
+        ]);
+
         let ContactUs;
         try {
             ContactUs = mongoose.models.ContactForm || require("@/database/models/ContactUsModel").default;
@@ -83,7 +95,9 @@ export async function GET() {
             bookingData,
             leadsData,
             vendorRequestsData,
-            contactData
+            contactData,
+            blogData,
+            newsletterData
         ] = await Promise.all([
             ordersDataPromise,
             eventsDataPromise,
@@ -91,12 +105,15 @@ export async function GET() {
             bookingDataPromise,
             leadsDataPromise,
             vendorRequestsDataPromise,
-            contactDataPromise
+            contactDataPromise,
+            blogDataPromise,
+            newsletterDataPromise
         ]);
 
         const barDateMap = {};
         const requestsDateMap = {};
         const vendorRequestsDateMap = {};
+        const contentDateMap = {};
 
         for (let i = 0; i < 90; i++) {
             const d = new Date();
@@ -105,6 +122,7 @@ export async function GET() {
             barDateMap[dateStr] = { date: dateStr, orders: 0, events: 0 };
             requestsDateMap[dateStr] = { date: dateStr, birthday: 0, booking: 0, leads: 0, contact: 0 };
             vendorRequestsDateMap[dateStr] = { date: dateStr, requests: 0 };
+            contentDateMap[dateStr] = { date: dateStr, blogs: 0, newsletter: 0 };
         }
 
         ordersData.forEach(item => { if (barDateMap[item._id]) barDateMap[item._id].orders = item.count; });
@@ -117,9 +135,13 @@ export async function GET() {
 
         vendorRequestsData.forEach(item => { if (vendorRequestsDateMap[item._id]) vendorRequestsDateMap[item._id].requests = item.count; });
 
+        blogData.forEach(item => { if (contentDateMap[item._id]) contentDateMap[item._id].blogs = item.count; });
+        newsletterData.forEach(item => { if (contentDateMap[item._id]) contentDateMap[item._id].newsletter = item.count; });
+
         const barData = Object.values(barDateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
         const requestsBarData = Object.values(requestsDateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
         const vendorRequestsBarData = Object.values(vendorRequestsDateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
+        const contentBarData = Object.values(contentDateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         return NextResponse.json({
             success: true,
@@ -127,7 +149,8 @@ export async function GET() {
                 pieData,
                 barData,
                 requestsBarData,
-                vendorRequestsBarData
+                vendorRequestsBarData,
+                contentBarData
             }
         });
     } catch (error) {
