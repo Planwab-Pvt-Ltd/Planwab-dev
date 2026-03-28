@@ -26,7 +26,7 @@ const SECTIONS = [
           Pricing
         </Link>
         <Link href="/about/blogs" className="hover:text-[#C33765] transition-colors">
-          Blog
+          Blogs / Stories
         </Link>
         <Link href="/about/contact" className="hover:text-[#C33765] transition-colors">
           Contact Us

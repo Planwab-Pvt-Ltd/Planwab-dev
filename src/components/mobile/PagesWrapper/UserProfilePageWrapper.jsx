@@ -579,7 +579,7 @@ const HList = memo(({ label, icon: Icon, items, renderItem, onRemove }) => {
           const id = item?._id || item?.reelId || item?.postId || `${label}-${i}`;
           return (
             <div key={id} className="relative">
-              {/* {onRemove && (
+              {onRemove && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -590,7 +590,7 @@ const HList = memo(({ label, icon: Icon, items, renderItem, onRemove }) => {
                 >
                   <X size={8} className="text-white" strokeWidth={3} />
                 </button>
-              )} */}
+              )}
               {renderItem(item, i)}
             </div>
           );
@@ -950,24 +950,46 @@ export default function UserProfilePageWrapper() {
     }
   }, [user?.id, refreshing, showToast]);
 
-  const removeFromList = useCallback(
-    (listPath, itemId) => {
-      setLists((prev) => {
-        const next = JSON.parse(JSON.stringify(prev));
-        const parts = listPath.split(".");
-        let target = next;
-        for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
-        const key = parts[parts.length - 1];
-        target[key] = target[key].filter((item) => {
-          const id = item._id || item.reelId || item.postId;
-          return id !== itemId;
-        });
-        return next;
-      });
-      showToast("Removed from collection");
-    },
-    [showToast],
-  );
+  const removeFromList = useCallback(async (listPath, item) => {
+  const itemId = String(item._id || item.reelId || item.postId);
+  const vpId = item.vendorProfileId ? String(item.vendorProfileId) : undefined;
+
+  setLists(prev => {
+    const next = JSON.parse(JSON.stringify(prev));
+    const parts = listPath.split(".");
+    let target = next;
+    for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
+    const key = parts[parts.length - 1];
+    target[key] = target[key].filter(i => {
+      const id = String(i._id || i.reelId || i.postId);
+      return id !== itemId;
+    });
+    return next;
+  });
+
+  try {
+    const res = await fetch("/api/user/removeFromList", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.id,
+        listType: listPath,
+        itemId,
+        vendorProfileId: vpId,
+      }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || "Removed");
+    } else {
+      refreshLists();
+      showToast(data.error || "Failed to remove", "error");
+    }
+  } catch {
+    refreshLists();
+    showToast("Something went wrong", "error");
+  }
+}, [user?.id, showToast, refreshLists]);
 
   const handleSaveProfile = async () => {
     if (!user?.id) return;
@@ -1473,14 +1495,14 @@ export default function UserProfilePageWrapper() {
                       icon={Heart}
                       items={filterBySearch(lists.vendors.liked, ["name", "address.city", "category"])}
                       renderItem={(v) => <VendorCard vendor={v} />}
-                      onRemove={(v) => removeFromList("vendors.liked", v._id)}
+                      onRemove={(v) => removeFromList("vendors.liked", v)}
                     />
                     <HList
                       label="Watchlist"
                       icon={Bookmark}
                       items={filterBySearch(lists.vendors.watchlist, ["name", "address.city", "category"])}
                       renderItem={(v) => <VendorCard vendor={v} />}
-                      onRemove={(v) => removeFromList("vendors.watchlist", v._id)}
+                      onRemove={(v) => removeFromList("vendors.watchlist", v)}
                     />
                   </div>
                 ))}
@@ -1513,7 +1535,7 @@ export default function UserProfilePageWrapper() {
                               "category",
                             ])}
                             renderItem={(p) => <VProfileCard profile={p} />}
-                            onRemove={(p) => removeFromList("vendorProfiles.liked", p._id)}
+                            onRemove={(p) => removeFromList("vendorProfiles.liked", p)}
                           />
                           <HList
                             label="Trusted"
@@ -1524,7 +1546,7 @@ export default function UserProfilePageWrapper() {
                               "category",
                             ])}
                             renderItem={(p) => <VProfileCard profile={p} />}
-                            onRemove={(p) => removeFromList("vendorProfiles.trusted", p._id)}
+                            onRemove={(p) => removeFromList("vendorProfiles.trusted", p)}
                           />
                         </motion.div>
                       )}
@@ -1545,7 +1567,7 @@ export default function UserProfilePageWrapper() {
                               "description",
                             ])}
                             renderItem={(p) => <PostCard post={p} />}
-                            onRemove={(p) => removeFromList("vendorProfiles.posts.liked", p._id || p.postId)}
+                            onRemove={(p) => removeFromList("vendorProfiles.posts.liked", p)}
                           />
                           <HList
                             label="Saved Posts"
@@ -1556,7 +1578,7 @@ export default function UserProfilePageWrapper() {
                               "description",
                             ])}
                             renderItem={(p) => <PostCard post={p} />}
-                            onRemove={(p) => removeFromList("vendorProfiles.posts.watchlist", p._id || p.postId)}
+                            onRemove={(p) => removeFromList("vendorProfiles.posts.watchlist", p)}
                           />
                         </motion.div>
                       )}
@@ -1578,7 +1600,7 @@ export default function UserProfilePageWrapper() {
                               "vendorBusinessName",
                             ])}
                             renderItem={(r) => <ReelCardVP reel={r} />}
-                            onRemove={(r) => removeFromList("reels.likedVendorProfileReels", r._id || r.reelId)}
+                            onRemove={(r) => removeFromList("reels.likedVendorProfileReels", r)}
                           />
                           <HList
                             label="Saved Vendor Reels"
@@ -1590,7 +1612,7 @@ export default function UserProfilePageWrapper() {
                               "vendorBusinessName",
                             ])}
                             renderItem={(r) => <ReelCardVP reel={r} />}
-                            onRemove={(r) => removeFromList("reels.watchlistVendorProfileReels", r._id || r.reelId)}
+                            onRemove={(r) => removeFromList("reels.watchlistVendorProfileReels", r)}
                           />
                         </motion.div>
                       )}
@@ -1608,14 +1630,14 @@ export default function UserProfilePageWrapper() {
                       icon={Heart}
                       items={filterBySearch(lists.reels.liked, ["title", "caption", "vendorName", "category"])}
                       renderItem={(r) => <ReelCard reel={r} />}
-                      onRemove={(r) => removeFromList("reels.liked", r._id)}
+                      onRemove={(r) => removeFromList("reels.liked", r)}
                     />
                     <HList
                       label="Watchlist"
                       icon={Bookmark}
                       items={filterBySearch(lists.reels.watchlist, ["title", "caption", "vendorName", "category"])}
                       renderItem={(r) => <ReelCard reel={r} />}
-                      onRemove={(r) => removeFromList("reels.watchlist", r._id)}
+                      onRemove={(r) => removeFromList("reels.watchlist", r)}
                     />
                   </div>
                 ))}
@@ -1630,14 +1652,14 @@ export default function UserProfilePageWrapper() {
                       icon={Heart}
                       items={filterBySearch(lists.blogs.liked, ["title", "category", "authorName"])}
                       renderItem={(b) => <BlogCard blog={b} />}
-                      onRemove={(b) => removeFromList("blogs.liked", b._id)}
+                      onRemove={(b) => removeFromList("blogs.liked", b)}
                     />
                     <HList
                       label="Saved Blogs"
                       icon={Bookmark}
                       items={filterBySearch(lists.blogs.watchlist, ["title", "category", "authorName"])}
                       renderItem={(b) => <BlogCard blog={b} />}
-                      onRemove={(b) => removeFromList("blogs.watchlist", b._id)}
+                      onRemove={(b) => removeFromList("blogs.watchlist", b)}
                     />
                   </div>
                 ))}

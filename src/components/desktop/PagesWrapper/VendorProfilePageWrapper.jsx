@@ -7573,7 +7573,7 @@ const MoreOptionsDrawer = ({
   );
 };
 
-export const ShareModal = ({ isOpen, onClose, vendorName }) => {
+export const ShareModal = ({ isOpen, title, onClose, vendorName }) => {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -7729,7 +7729,7 @@ export const ShareModal = ({ isOpen, onClose, vendorName }) => {
 
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-5">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Share Profile</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Share {title ? title : "Profile"}</h3>
           <button
             onClick={onClose}
             className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
