@@ -55,6 +55,18 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useVideoThumbnail } from "../../../lib/video-thumbnail";
+import SmartMedia from "../SmartMediaLoader";
+
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
 
 const Shimmer = memo(({ className = "" }) => (
   <div className={`relative overflow-hidden bg-gray-200/60 dark:bg-gray-800 rounded-xl ${className}`}>
@@ -250,12 +262,13 @@ const VendorCard = memo(({ vendor }) => {
     <Link href={`/vendor/${cat}/${vendor._id}`} className="group block w-full h-full">
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 hover:border-gray-200 dark:hover:border-gray-700 transition-all duration-300 h-full flex flex-col">
         <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
-          <img
+          {/* <img
             src={img}
             alt={vendor.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-          />
+          /> */}
+          <SmartMedia src={img} alt={vendor.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between">
             {vendor.isVerified && (
@@ -324,12 +337,13 @@ const ReelCard = memo(({ reel }) => {
     <Link href={`/ideas?type=${reel.type}&reel=${reel._id}`} className="group block w-full h-full">
       <div className="rounded-2xl overflow-hidden bg-gray-900 relative h-full shadow-md hover:shadow-xl transition-shadow duration-300">
         <div className="aspect-[9/16] relative">
-          <img
+          {/* <img
             src={thumb}
             alt={title}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-          />
+          /> */}
+          <SmartMedia src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             {category && (
@@ -398,12 +412,13 @@ const ReelCardVP = memo(({ reel }) => {
     <Link href={url} className="group block w-full h-full">
       <div className="rounded-2xl overflow-hidden bg-gray-900 relative h-full shadow-md hover:shadow-xl transition-shadow duration-300">
         <div className="aspect-[9/16] relative">
-          <img
+          {/* <img
             src={thumb}
             alt={title}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-          />
+          /> */}
+          <SmartMedia src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-14 h-14 bg-white/15 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
@@ -413,7 +428,7 @@ const ReelCardVP = memo(({ reel }) => {
           <div className="absolute bottom-0 left-0 right-0 p-3.5">
             {avatar && vendor && (
               <div className="flex items-center gap-2 mb-2">
-                <img src={avatar} alt="" className="w-5 h-5 rounded-full object-cover border border-white/30" />
+                <SmartMedia src={avatar} alt="" className="w-5 h-5 rounded-full object-cover border border-white/30" />
                 <span className="text-[11px] text-white/80 font-medium truncate">{vendor}</span>
               </div>
             )}
@@ -468,12 +483,13 @@ const VProfileCard = memo(({ profile }) => {
           <div className="absolute inset-0 bg-black/10" />
         </div>
         <div className="px-4 pb-4 -mt-7 relative flex-1 flex flex-col">
-          <img
+          {/* <img
             src={img}
             alt={name}
             className="w-14 h-14 rounded-xl border-[3px] border-white dark:border-gray-900 object-cover shadow-lg"
             loading="lazy"
-          />
+          /> */}
+          <SmartMedia src={img} alt={name} className="w-14 h-14 rounded-xl border-[3px] border-white dark:border-gray-900 object-cover shadow-lg" />
           <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate mt-2.5 group-hover:text-violet-600 transition-colors">
             {name}
           </h3>
@@ -524,12 +540,27 @@ const PostCard = memo(({ post }) => {
     <Link href={url} className="group block w-full h-full">
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300 h-full flex flex-col">
         <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
-          <img
+          {/* <img
             src={thumb || "/placeholder.jpg"}
             alt=""
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-          />
+          /> */}
+          <div className="relative w-full h-full">
+            {videoThumb?.loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-300 dark:bg-gray-600">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-700 dark:text-gray-200" />
+              </div>
+            )}
+
+            <MediaRenderer
+              src={videoThumb?.thumbnail || "/placeholder.jpg"}
+              alt={vendor || videoThumb?.error}
+              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                videoThumb?.loading ? "opacity-0" : "opacity-100"
+              }`}
+            />
+          </div>
           {isVideo && (
             <>
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -555,7 +586,7 @@ const PostCard = memo(({ post }) => {
         <div className="p-3 flex-1 flex flex-col">
           {(avatar || vendor) && (
             <div className="flex items-center gap-2 mb-1.5">
-              {avatar && <img src={avatar} alt="" className="w-5 h-5 rounded-full object-cover" />}
+              {avatar && <SmartMedia src={avatar} alt={vendor} className="w-5 h-5 rounded-full object-cover" />}
               {vendor && <p className="text-[11px] text-gray-500 truncate font-medium">{vendor}</p>}
             </div>
           )}
@@ -584,12 +615,13 @@ const BlogCard = memo(({ blog }) => {
     <Link href={`/blog/${blog.slug || blog._id}`} className="group block w-full h-full">
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-300 h-full flex flex-col">
         <div className="h-[140px] bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
-          <img
+          {/* <img
             src={img}
             alt={blog.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
-          />
+          /> */}
+          <SmartMedia src={img} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           {blog.category && (
             <span className="absolute top-2.5 left-2.5 text-[10px] bg-violet-600/90 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full font-bold">
               {blog.category}
@@ -603,7 +635,7 @@ const BlogCard = memo(({ blog }) => {
           {excerpt && <p className="text-xs text-gray-500 line-clamp-2 mt-1.5 leading-relaxed">{excerpt}</p>}
           <div className="mt-auto pt-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {authorPhoto && <img src={authorPhoto} alt="" className="w-5 h-5 rounded-full object-cover" />}
+              {authorPhoto && <SmartMedia src={authorPhoto} alt="" className="w-5 h-5 rounded-full object-cover" />}
               <div>
                 {authorName && <p className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">{authorName}</p>}
                 {blog.readTime && <p className="text-[10px] text-gray-400">{blog.readTime}</p>}
@@ -1282,11 +1314,12 @@ export default function UserProfilePageWrapper() {
         <aside className="w-72 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 h-[calc(100vh-80px)] sticky top-20 flex flex-col">
           <div className="p-6 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-4">
-              <img
+              {/* <img
                 src={user.imageUrl}
                 alt={displayName}
                 className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 dark:ring-gray-800"
-              />
+              /> */}
+              <SmartMedia src={user.imageUrl} alt={displayName} className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 dark:ring-gray-800" />
               <div className="flex-1 min-w-0">
                 <h2 className="font-semibold text-gray-900 dark:text-white truncate">{displayName}</h2>
                 <PlanBadge plan={currentPlan} />
@@ -1407,7 +1440,12 @@ export default function UserProfilePageWrapper() {
                                 className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-all duration-200 group"
                               >
                                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 shrink-0">
-                                  <img
+                                  {/* <img
+                                    src={o.items?.[0]?.image || "/placeholder.jpg"}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  /> */}
+                                  <SmartMedia
                                     src={o.items?.[0]?.image || "/placeholder.jpg"}
                                     alt=""
                                     className="w-full h-full object-cover"
@@ -1616,9 +1654,14 @@ export default function UserProfilePageWrapper() {
                             className="flex items-center gap-5 p-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors group"
                           >
                             <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
-                              <img
+                              {/* <img
                                 src={o.items?.[0]?.image || "/placeholder.jpg"}
                                 alt=""
+                                className="w-full h-full object-cover"
+                              /> */}
+                              <SmartMedia
+                                src={o.items?.[0]?.image || "/placeholder.jpg"}
+                                alt={"order item"}
                                 className="w-full h-full object-cover"
                               />
                             </div>
@@ -2157,11 +2200,16 @@ export default function UserProfilePageWrapper() {
                     </div>
                     <div className="space-y-6">
                       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex flex-col items-center">
-                        <img
-                          src={user.imageUrl}
-                          alt={displayName}
-                          className="w-24 h-24 rounded-2xl object-cover mb-4 ring-4 ring-gray-100 dark:ring-gray-800"
-                        />
+                          {/* <img
+                            src={user.imageUrl}
+                            alt={displayName}
+                            className="w-24 h-24 rounded-2xl object-cover mb-4 ring-4 ring-gray-100 dark:ring-gray-800"
+                          /> */}
+                          <SmartMedia
+                            src={user.imageUrl}
+                            alt={displayName}
+                            className="w-24 h-24 rounded-2xl object-cover mb-4 ring-4 ring-gray-100 dark:ring-gray-800"
+                          />
                         <p className="font-semibold text-gray-900 dark:text-white">{displayName}</p>
                         <p className="text-sm text-gray-500 text-center mt-1">Manage your photo in Clerk settings</p>
                       </div>
@@ -2381,7 +2429,7 @@ export default function UserProfilePageWrapper() {
                       <div key={i} className="flex gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-2 last:mb-0">
                         {it.image && (
                           <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
-                            <img src={it.image} alt={it.name} className="w-full h-full object-cover" />
+                            <SmartMedia src={it.image} alt={it.name} className="w-full h-full object-cover" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">

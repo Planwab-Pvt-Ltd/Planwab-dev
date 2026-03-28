@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 import { useVideoThumbnail } from "../../../lib/video-thumbnail";
+import SmartMedia from "../SmartMediaLoader";
 
 const SHIMMER_CSS = `@keyframes profileShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`;
 
@@ -99,6 +100,17 @@ const PlanBadge = memo(({ plan }) => {
 });
 PlanBadge.displayName = "PlanBadge";
 
+const MediaRenderer = ({ src, alt, className, ...props }) => {
+  if (src?.startsWith("data:") || src?.startsWith("blob:")) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img src={src} alt={alt} className="w-full h-full object-cover" {...props} />
+      </div>
+    );
+  }
+  return <SmartMedia src={src} alt={alt} className={className} {...props} />;
+};
+
 const VendorCard = memo(({ vendor }) => {
   const img = vendor.defaultImage || vendor.images?.[0] || "/placeholder.jpg";
   const city = vendor.address?.city || "";
@@ -115,7 +127,14 @@ const VendorCard = memo(({ vendor }) => {
         className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden h-full shadow-sm shadow-black/[0.03]"
       >
         <div className="h-[100px] bg-gray-50 dark:bg-gray-800 relative overflow-hidden">
-          <img src={img} alt={vendor.name} className="w-full h-full object-cover" loading="lazy" />
+          {/* <img src={img} alt={vendor.name} className="w-full h-full object-cover" loading="lazy" /> */}
+          <SmartMedia
+            src={img}
+            alt={vendor.name}
+            width={160}
+            height={100}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
             {vendor.isVerified && (
               <span className="flex items-center gap-0.5 text-[8px] bg-emerald-500/90 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-bold">
@@ -187,7 +206,14 @@ const ReelCard = memo(({ reel }) => {
         className="rounded-2xl overflow-hidden bg-gray-900 relative h-full shadow-md"
       >
         <div className="aspect-[9/16] relative">
-          <img src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          {/* <img src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" /> */}
+          <SmartMedia
+            src={thumb}
+            alt={title}
+            width={130}
+            height={220}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-black/25" />
           <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
             {category && (
@@ -261,7 +287,14 @@ const ReelCardVP = memo(({ reel }) => {
         className="rounded-2xl overflow-hidden bg-gray-900 relative h-full shadow-md"
       >
         <div className="aspect-[9/16] relative">
-          <img src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          {/* <img src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" /> */}
+          <SmartMedia
+            src={thumb}
+            alt={title}
+            width={130}
+            height={220}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-black/25" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-10 h-10 bg-white/15 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
@@ -271,7 +304,14 @@ const ReelCardVP = memo(({ reel }) => {
           <div className="absolute bottom-0 left-0 right-0 p-2.5">
             {avatar && vendor && (
               <div className="flex items-center gap-1.5 mb-1">
-                <img src={avatar} alt="" className="w-4 h-4 rounded-full object-cover border border-white/30" />
+                {/* <img src={avatar} alt="" className="w-4 h-4 rounded-full object-cover border border-white/30" /> */}
+                <SmartMedia
+                  src={avatar}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="w-4 h-4 rounded-full object-cover border border-white/30"
+                />
                 <span className="text-[8px] text-white/70 font-medium truncate">{vendor}</span>
               </div>
             )}
@@ -327,12 +367,19 @@ const VProfileCard = memo(({ profile }) => {
           <div className="absolute inset-0 bg-black/10" />
         </div>
         <div className="px-3 pb-3 -mt-5 relative">
-          <img
-            src={img}
-            alt={name}
-            className="w-11 h-11 rounded-xl border-[2.5px] border-white dark:border-gray-900 object-cover shadow-md"
-            loading="lazy"
-          />
+            {/* <img
+              src={img}
+              alt={name}
+              className="w-11 h-11 rounded-xl border-[2.5px] border-white dark:border-gray-900 object-cover shadow-md"
+              loading="lazy"
+            /> */}
+            <SmartMedia
+              src={img}
+              alt={name}
+              width={44}
+              height={44}
+              className="w-11 h-11 rounded-xl border-[2.5px] border-white dark:border-gray-900 object-cover shadow-md"
+              />
           <p className="font-bold text-[11px] text-gray-900 dark:text-white truncate mt-1.5">{name}</p>
           <div className="flex items-center gap-1 mt-0.5">
             {cat && <p className="text-[9px] text-gray-400 capitalize">{cat}</p>}
@@ -386,7 +433,22 @@ const PostCard = memo(({ post }) => {
         className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden h-full shadow-sm shadow-black/[0.03]"
       >
         <div className="aspect-square bg-gray-50 dark:bg-gray-800 relative overflow-hidden">
-          <img src={thumb || "/placeholder.jpg"} alt="" className="w-full h-full object-cover" loading="lazy" />
+          {/* <img src={thumb || "/placeholder.jpg"} alt="" className="w-full h-full object-cover" loading="lazy" /> */}
+           <div className="relative w-full h-full">
+            {videoThumb?.loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-300 dark:bg-gray-600">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-700 dark:text-gray-200" />
+              </div>
+            )}
+          
+            <MediaRenderer
+              src={videoThumb?.thumbnail || "/placeholder.jpg"}
+              alt={vendor || videoThumb?.error}
+              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                videoThumb?.loading ? "opacity-0" : "opacity-100"
+              }`}
+            />
+          </div>
           {isVideo && (
             <>
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
@@ -412,7 +474,7 @@ const PostCard = memo(({ post }) => {
         <div className="p-2.5">
           {(avatar || vendor) && (
             <div className="flex items-center gap-1.5 mb-1">
-              {avatar && <img src={avatar} alt="" className="w-4 h-4 rounded-full object-cover" />}
+              {avatar && <SmartMedia src={avatar} alt={vendor} className="w-4 h-4 rounded-full object-cover" />}
               {vendor && <p className="text-[8px] text-gray-400 truncate font-medium">{vendor}</p>}
             </div>
           )}
@@ -446,7 +508,13 @@ const BlogCard = memo(({ blog }) => {
         className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden h-full shadow-sm shadow-black/[0.03]"
       >
         <div className="h-[100px] bg-gray-50 dark:bg-gray-800 relative overflow-hidden">
-          <img src={img} alt={blog.title} className="w-full h-full object-cover" loading="lazy" />
+          {/* <img src={img} alt={blog.title} className="w-full h-full object-cover" loading="lazy" /> */}
+          <SmartMedia
+            src={img}
+            alt={blog.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
           {blog.category && (
             <span className="absolute top-2 left-2 text-[7px] bg-violet-600/90 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-bold">
               {blog.category}
@@ -460,7 +528,7 @@ const BlogCard = memo(({ blog }) => {
           {excerpt && <p className="text-[9px] text-gray-400 line-clamp-1 mt-1">{excerpt}</p>}
           <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-1.5">
-              {authorPhoto && <img src={authorPhoto} alt="" className="w-4 h-4 rounded-full object-cover" />}
+              {authorPhoto && <SmartMedia src={authorPhoto} alt={authorName} className="w-4 h-4 rounded-full object-cover" />}
               <div>
                 {authorName && <p className="text-[8px] text-gray-500 font-medium">{authorName}</p>}
                 {blog.readTime && <p className="text-[7px] text-gray-300">{blog.readTime}</p>}
@@ -1173,10 +1241,18 @@ export default function UserProfilePageWrapper() {
         </div>
         <div className="flex items-center gap-3.5">
           <div className="relative shrink-0">
-            <img
+            {/* <img
               src={user.imageUrl}
               alt={displayName}
               className="w-[58px] h-[58px] rounded-full object-cover ring-[3px] ring-gray-100 dark:ring-gray-800"
+            /> */}
+            <SmartMedia 
+              src={user.imageUrl}
+              alt={displayName}
+              type="image"
+              width={58}
+              height={58}
+              className="rounded-full object-cover ring-[3px] ring-gray-100 dark:ring-gray-800"
             />
             {currentPlan !== "free" && (
               <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
@@ -1291,7 +1367,7 @@ export default function UserProfilePageWrapper() {
                 ic: "text-violet-600",
               },
               { label: "Reels", icon: Film, href: "/ideas", bg: "bg-pink-50 dark:bg-pink-900/20", ic: "text-pink-600" },
-              { label: "Blogs", icon: BookOpen, href: "/blog", bg: "bg-sky-50 dark:bg-sky-900/20", ic: "text-sky-600" },
+              { label: "Blogs", icon: BookOpen, href: "/about/blogs", bg: "bg-sky-50 dark:bg-sky-900/20", ic: "text-sky-600" },
             ].map((a) => (
               <Link key={a.label} href={a.href}>
                 <motion.div whileTap={{ scale: 0.95 }} className={`flex items-center gap-2 p-3 rounded-xl ${a.bg}`}>
@@ -1351,9 +1427,16 @@ export default function UserProfilePageWrapper() {
                 >
                   <div className="flex gap-3">
                     <div className="w-[74px] h-[74px] rounded-xl overflow-hidden shrink-0 bg-gray-50 dark:bg-gray-800">
-                      <img
+                      {/* <img
                         src={order.items?.[0]?.image || "/placeholder.jpg"}
                         alt=""
+                        className="w-full h-full object-cover"
+                      /> */}
+                      <SmartMedia
+                        src={order?.items?.[0]?.image || user.imageUrl}
+                        alt={order?.items?.[0]?.name || displayName}
+                        width={74}
+                        height={74}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -1953,7 +2036,14 @@ export default function UserProfilePageWrapper() {
                         >
                           {item.image && (
                             <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
-                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              {/* <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> */}
+                              <SmartMedia
+                                src={item.image}
+                                alt={item.name}
+                                width={48}
+                                height={48}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">

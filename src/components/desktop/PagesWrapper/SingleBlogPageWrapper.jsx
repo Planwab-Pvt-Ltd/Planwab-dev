@@ -385,11 +385,12 @@ export default function SingleBlogPageWrapper() {
                 <div className="flex flex-wrap items-center gap-5 text-sm text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-2">
                     {blog.authorPhoto ? (
-                      <img
-                        src={blog.authorPhoto}
-                        className="w-8 h-8 rounded-full border border-slate-200"
-                        alt={blog.authorName}
-                      />
+                      // <img
+                      //   src={blog.authorPhoto}
+                      //   className="w-8 h-8 rounded-full border border-slate-200"
+                      //   alt={blog.authorName}
+                      // />
+                      <SmartMedia src={blog.authorPhoto} alt={blog.authorName} className="w-8 h-8 rounded-full border border-slate-200" />
                     ) : (
                       <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-700">
                         <User size={14} className="text-slate-400 dark:text-slate-500" />
@@ -500,11 +501,12 @@ export default function SingleBlogPageWrapper() {
                   </h4>
                   <div className="flex items-center gap-3 mb-4">
                     {blog.authorPhoto ? (
-                      <img
-                        src={blog.authorPhoto}
-                        className="w-12 h-12 rounded-xl border border-slate-200 object-cover"
-                        alt={blog.authorName}
-                      />
+                      // <img
+                      //   src={blog.authorPhoto}
+                      //   className="w-12 h-12 rounded-xl border border-slate-200 object-cover"
+                      //   alt={blog.authorName}
+                      // />
+                      <SmartMedia src={blog.authorPhoto} alt={blog.authorName} className="w-12 h-12 rounded-xl border border-slate-200 object-cover" />
                     ) : (
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-700">
                         <User size={20} className="text-slate-400 dark:text-slate-500" />

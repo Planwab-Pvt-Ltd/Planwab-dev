@@ -34,6 +34,7 @@ import {
   Star,
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
 const MediaRenderer = ({ src, alt, className, ...props }) => {
   if (src?.startsWith("data:") || src?.startsWith("blob:")) {
@@ -560,6 +561,7 @@ const BlogPageWrapper = () => {
   const [blogs, setBlogs] = useState([]);
   const [trendingBlogs, setTrendingBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { setIsNavbarVisible } = useNavbarVisibilityStore();
   const [actionLoading, setActionLoading] = useState(false);
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -662,6 +664,7 @@ const BlogPageWrapper = () => {
 
       showToast(isEditing ? "Article updated!" : "Article published!");
       setShowCreateModal(false);
+      setIsNavbarVisible(true);
       setEditingBlog(null);
       fetchBlogs(currentPage);
       fetchTrendingBlogs();
@@ -679,6 +682,7 @@ const BlogPageWrapper = () => {
       if (res.ok) {
         setBlogs((p) => p.filter((b) => b._id !== id));
         setDeletingBlog(null);
+        setIsNavbarVisible(true);
         showToast("Article deleted");
         fetchTrendingBlogs();
       } else {
@@ -728,6 +732,7 @@ const BlogPageWrapper = () => {
   const openEdit = (post) => {
     setEditingBlog(post);
     setShowCreateModal(true);
+    setIsNavbarVisible(false);
   };
 
   const categoryImages = [
@@ -769,6 +774,7 @@ const BlogPageWrapper = () => {
                 onClick={() => {
                   setEditingBlog(null);
                   setShowCreateModal(true);
+                  setIsNavbarVisible(false);
                 }}
                 className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
               >
@@ -995,6 +1001,7 @@ const BlogPageWrapper = () => {
             onClose={() => {
               setShowCreateModal(false);
               setEditingBlog(null);
+              setIsNavbarVisible(true);
             }}
             onSubmit={handleFormSubmit}
             editingBlog={editingBlog}
@@ -1005,7 +1012,10 @@ const BlogPageWrapper = () => {
           <DeleteConfirmModal
             blog={deletingBlog}
             onConfirm={handleDelete}
-            onClose={() => setDeletingBlog(null)}
+            onClose={() => {
+              setDeletingBlog(null);
+              setIsNavbarVisible(true);
+            }}
             loading={actionLoading}
           />
         )}
