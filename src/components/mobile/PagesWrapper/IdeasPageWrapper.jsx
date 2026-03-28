@@ -82,7 +82,7 @@ import {
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
 import { cos } from "three/src/nodes/math/MathNode.js";
-import { useUser } from '@clerk/nextjs';
+import { useUser } from "@clerk/nextjs";
 import SmartMedia from "../SmartMediaLoader";
 
 const EVENT_CONFIGS = {
@@ -811,7 +811,7 @@ const MiniCard = ({ item, idx, onClick }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: idx * 0.025, type: "spring", stiffness: 300, damping: 26 }}
     onClick={onClick}
-    className="w-[104px] shrink-0 cursor-pointer group"
+    className="w-[104px] shrink-0 snap-start cursor-pointer group"
   >
     <div className="relative h-[140px] w-[104px] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
       {/* <img
@@ -820,7 +820,11 @@ const MiniCard = ({ item, idx, onClick }) => (
         className="w-full h-full object-cover transition-transform duration-500 group-active:scale-105"
         loading="lazy"
       /> */}
-      <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-active:scale-105" />
+      <SmartMedia
+        src={item.thumbnail}
+        alt={item.title}
+        className="w-full h-full object-cover transition-transform duration-500 group-active:scale-105"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       {item.tags?.[0] && (
         <div className="absolute top-1.5 left-1.5 px-1.5 py-[1px] bg-white/90 dark:bg-black/70 backdrop-blur-sm rounded text-[7px] font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-0.5">
@@ -845,274 +849,119 @@ const MiniCard = ({ item, idx, onClick }) => (
   </motion.div>
 );
 
-const useCarouselScroll = (sectionId) => {
-  const containerRef = useRef(null);
-  const trackRef = useRef(null);
-  const xOffsetRef = useRef(0);
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(false);
-
-  // Touch tracking
-  const touchStartX = useRef(null);
-  const touchStartOffset = useRef(0);
-  const lastTouchX = useRef(null);
-  const lastTouchTime = useRef(null);
-  const velocityRef = useRef(0);
-
-  const getMax = useCallback(() => {
-    if (!containerRef.current || !trackRef.current) return 0;
-    // Add 16px (px-4 right padding equivalent) so last card fully shows
-    return -(trackRef.current.scrollWidth - containerRef.current.offsetWidth + 16);
-  }, []);
-
-  const applyOffset = useCallback(
-    (val) => {
-      const max = getMax();
-      const clamped = Math.min(0, Math.max(max, val));
-      xOffsetRef.current = clamped;
-      if (trackRef.current) {
-        trackRef.current.style.transform = `translateX(${clamped}px)`;
-      }
-      setShowLeft(clamped < -2);
-      setShowRight(clamped > max + 2);
-    },
-    [getMax],
-  );
-
-  const checkScroll = useCallback(() => {
-    applyOffset(xOffsetRef.current);
-  }, [applyOffset]);
-
-  useEffect(() => {
-    const t = setTimeout(checkScroll, 50);
-    window.addEventListener("resize", checkScroll);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", checkScroll);
-    };
-  }, [checkScroll]);
-
-  useEffect(() => {
-    xOffsetRef.current = 0;
-    setTimeout(checkScroll, 50);
-  }, [sectionId, checkScroll]);
-
-  const scroll = useCallback(
-    (dir) => {
-      const amount = 112 * 2;
-      applyOffset(xOffsetRef.current + (dir === "left" ? amount : -amount));
-    },
-    [applyOffset],
-  );
-
-  // ── Touch handlers ──────────────────────────────────────────
-  const onTouchStart = useCallback((e) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartOffset.current = xOffsetRef.current;
-    lastTouchX.current = e.touches[0].clientX;
-    lastTouchTime.current = Date.now();
-    velocityRef.current = 0;
-    // kill any running momentum
-    if (trackRef.current) {
-      trackRef.current.style.transition = "none";
-    }
-  }, []);
-
-  const onTouchMove = useCallback(
-    (e) => {
-      if (touchStartX.current === null) return;
-      e.preventDefault(); // prevent page scroll while swiping carousel
-
-      const now = Date.now();
-      const x = e.touches[0].clientX;
-      const dt = now - lastTouchTime.current;
-
-      if (dt > 0) {
-        // px per ms — rolling velocity
-        velocityRef.current = (x - lastTouchX.current) / dt;
-      }
-
-      lastTouchX.current = x;
-      lastTouchTime.current = now;
-
-      const delta = x - touchStartX.current;
-      // 1.4x multiplier so finger movement feels snappier
-      applyOffset(touchStartOffset.current + delta * 1.4);
-    },
-    [applyOffset],
-  );
-
-  const onTouchEnd = useCallback(() => {
-    if (touchStartX.current === null) return;
-    touchStartX.current = null;
-
-    // Momentum flick — project velocity forward
-    const FRICTION = 0.92; // how fast it decelerates
-    const MIN_VELOCITY = 0.05; // px/ms below which we stop
-    const FRAME_MS = 16; // ~60fps
-
-    if (Math.abs(velocityRef.current) > MIN_VELOCITY) {
-      if (trackRef.current) {
-        trackRef.current.style.transition = "none";
-      }
-
-      let vel = velocityRef.current * 18; // scale up to px/frame
-
-      const momentum = () => {
-        vel *= FRICTION;
-        if (Math.abs(vel) < 0.5) {
-          // snap back to smooth transition for button scrolls
-          if (trackRef.current) {
-            trackRef.current.style.transition = "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
-          }
-          return;
-        }
-        applyOffset(xOffsetRef.current + vel);
-        requestAnimationFrame(momentum);
-      };
-
-      requestAnimationFrame(momentum);
-    }
-  }, [applyOffset]);
-
-  return {
-    containerRef,
-    trackRef,
-    showLeft,
-    showRight,
-    scroll,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-  };
-};
-
-const SingleRowCarousel = ({ section, onItemClick }) => {
-  const { containerRef, trackRef, showLeft, showRight, scroll, onTouchStart, onTouchMove, onTouchEnd } =
-    useCarouselScroll(section.id);
-
-  useEffect(() => {
-    const el = containerRef.current;
+const ScrollCarousel = memo(({ children, className = "" }) => {
+  const ref = useRef(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+  const check = useCallback(() => {
+    const el = ref.current;
     if (!el) return;
-    // passive: false required so preventDefault() works to block page scroll
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    return () => el.removeEventListener("touchmove", onTouchMove);
-  }, [containerRef, onTouchMove]);
-
-  const canScrollLeft = showLeft;
-  const canScrollRight = showRight && section.items.length > 3;
-
+    setCanLeft(el.scrollLeft > 8);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+  }, []);
+  useEffect(() => {
+    check();
+    const el = ref.current;
+    if (!el) return;
+    el.addEventListener("scroll", check, { passive: true });
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", check);
+      ro.disconnect();
+    };
+  }, [check, children]);
+  const scroll = useCallback((dir) => {
+    ref.current?.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  }, []);
   return (
-    <div className="mb-5">
-      <div className="flex items-center justify-between px-4 mb-2">
-        <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
-        <div className="flex gap-1.5 items-center">
-          <button
-            disabled={!canScrollLeft}
+    <div className={`relative ${className}`}>
+      <AnimatePresence>
+        {canLeft && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
             onClick={() => scroll("left")}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
           >
-            <ChevronLeft size={13} />
-          </button>
-          <button
-            disabled={!canScrollRight}
+            <ChevronLeft size={13} className="text-gray-600 dark:text-gray-300" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+      {canLeft && (
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#f8f8fa] dark:from-black to-transparent z-10 pointer-events-none" />
+      )}
+      <div
+        ref={ref}
+        className="flex gap-2.5 overflow-x-auto px-5 pb-2 snap-x snap-mandatory"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+      >
+        {children}
+      </div>
+      {canRight && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#f8f8fa] dark:from-black to-transparent z-10 pointer-events-none" />
+      )}
+      <AnimatePresence>
+        {canRight && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
             onClick={() => scroll("right")}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
           >
-            <ChevronRight size={13} />
-          </button>
-        </div>
-      </div>
-      <div ref={containerRef} className="overflow-hidden px-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div
-          ref={trackRef}
-          className="flex gap-2 pb-1"
-          style={{
-            width: "max-content",
-            willChange: "transform",
-            transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-          }}
-        >
-          {section.items.length > 0 ? (
-            section.items.map((item, idx) => (
-              <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
-            ))
-          ) : (
-            <div className="flex items-center justify-center w-full py-6 text-gray-400 text-xs">No reels found</div>
-          )}
-        </div>
-      </div>
+            <ChevronRight size={13} className="text-gray-600 dark:text-gray-300" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
-};
+});
+ScrollCarousel.displayName = "ScrollCarousel";
+
+const SingleRowCarousel = ({ section, onItemClick }) => (
+  <div className="mb-5">
+    <div className="flex items-center justify-between px-4 mb-2">
+      <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
+    </div>
+    <ScrollCarousel>
+      {section.items.length > 0 ? (
+        section.items.map((item, idx) => (
+          <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
+        ))
+      ) : (
+        <div className="flex items-center justify-center w-full py-6 text-gray-400 text-xs px-4">No reels found</div>
+      )}
+    </ScrollCarousel>
+  </div>
+);
 
 const TwoRowGridCarousel = ({ section, onItemClick }) => {
-  const { containerRef, trackRef, showLeft, showRight, scroll, onTouchStart, onTouchMove, onTouchEnd } =
-    useCarouselScroll(section.id);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    // passive: false required so preventDefault() works to block page scroll
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    return () => el.removeEventListener("touchmove", onTouchMove);
-  }, [containerRef, onTouchMove]);
-
   const topItems = section.items.filter((_, i) => i % 2 === 0);
   const bottomItems = section.items.filter((_, i) => i % 2 === 1);
-
   return (
-    <div className="relative mx-3 rounded-3xl overflow-hidden bg-white/[0.04] backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_24px_rgba(0,0,0,0.20),0_2px_6px_rgba(0,0,0,0.10)] pt-[14px] pb-3 pr-3 mb-5">
+    <div className="relative mx-3 rounded-3xl overflow-hidden bg-white/[0.04] backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_24px_rgba(0,0,0,0.20),0_2px_6px_rgba(0,0,0,0.10)] pt-[14px] pb-3 mb-5">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
-      <div className="flex items-center justify-between px-4 mb-3">
+      <div className="flex items-center px-4 mb-3">
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
           <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
         </div>
-        <div className="flex gap-1.5 items-center">
-          <button
-            disabled={!showLeft}
-            onClick={() => scroll("left")}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
-          >
-            <ChevronLeft size={13} />
-          </button>
-          <button
-            disabled={!showRight}
-            onClick={() => scroll("right")}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition-transform"
-          >
-            <ChevronRight size={13} />
-          </button>
-        </div>
       </div>
-      <div ref={containerRef} className="overflow-auto px-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div
-          ref={trackRef}
-          style={{
-            width: "max-content",
-            willChange: "transform",
-            transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-          }}
-        >
-          <div className="flex gap-2">
-            {topItems.map((item, idx) => (
-              <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx * 2)} />
-            ))}
-          </div>
-          <div className="flex gap-2 mt-2">
-            {bottomItems.map((item, idx) => (
-              <MiniCard
-                key={item.id}
-                item={item}
-                idx={idx}
-                onClick={() => onItemClick(item, section.items, idx * 2 + 1)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+      <ScrollCarousel>
+        {topItems.map((item, idx) => (
+          <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx * 2)} />
+        ))}
+      </ScrollCarousel>
+      <ScrollCarousel className="mt-2">
+        {bottomItems.map((item, idx) => (
+          <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx * 2 + 1)} />
+        ))}
+      </ScrollCarousel>
     </div>
   );
 };
@@ -1219,7 +1068,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
     if (!currentReel?._id) return;
     const initiallyLiked = userInteractions?.liked?.has(currentReel._id) || false;
     const initiallySaved = userInteractions?.saved?.has(currentReel._id) || false;
-    setIsLiked(initiallyLiked); 
+    setIsLiked(initiallyLiked);
     setIsSaved(initiallySaved);
     setExpanded(false);
     setIsPlaying(true);
@@ -1319,7 +1168,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
           const path = profile.vendorId
             ? `/vendor/${profile.category}/${profile.vendorId}/profile`
             : `/vendor/${profile.category}/profile/${profile.username}`;
-            console.log("Navigating to:", `${path}?backTo=${backTo}`);
+          console.log("Navigating to:", `${path}?backTo=${backTo}`);
           closeAndNavigate(`${path}?backTo=${backTo}`);
         }
       } catch (err) {
@@ -1802,7 +1651,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                       return (
                         <motion.div
                           key={profile._id}
-                          whileTap={{ scale: 0.98 }} 
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => {
                             setShowSimilarVendorsDrawer(false);
                             const backTo = encodeURIComponent(window.location.href);
@@ -2462,8 +2311,8 @@ export default function IdeasPageWrapper() {
         const data = await res.json();
         if (data.success) {
           // Store IDs in Sets for fast O(1) lookups inside the modal
-          const likedIds = new Set(data.reels?.liked?.map(r => r._id) || []);
-          const savedIds = new Set(data.reels?.watchlist?.map(r => r._id) || []);
+          const likedIds = new Set(data.reels?.liked?.map((r) => r._id) || []);
+          const savedIds = new Set(data.reels?.watchlist?.map((r) => r._id) || []);
           setUserInteractions({ liked: likedIds, saved: savedIds });
         }
       } catch (err) {
@@ -3217,7 +3066,7 @@ export default function IdeasPageWrapper() {
             reels={reelsViewerData.reels}
             initialIndex={reelsViewerData.initialIndex}
             onClose={handleCloseReels}
-            onBookNow={handleBookNow} 
+            onBookNow={handleBookNow}
             userInteractions={userInteractions}
           />
         )}

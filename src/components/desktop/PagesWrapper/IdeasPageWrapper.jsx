@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavbarVisibilityStore } from "./../../../GlobalState/navbarVisibilityStore";
 import {
@@ -867,158 +867,130 @@ const FeaturedReelCard = ({ item, idx, onClick }) => (
   </motion.div>
 );
 
-const useCarouselScroll = (deps) => {
-  const scrollRef = useRef(null);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(true);
-  const rafRef = useRef(null);
-
-  const updateNav = useCallback(() => {
-    const el = scrollRef.current;
+const ScrollCarousel = memo(({ children, className = "" }) => {
+  const ref = useRef(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+  const check = useCallback(() => {
+    const el = ref.current;
     if (!el) return;
-    setCanPrev(el.scrollLeft > 2);
-    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    setCanLeft(el.scrollLeft > 8);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
   }, []);
-
   useEffect(() => {
-    const el = scrollRef.current;
+    check();
+    const el = ref.current;
     if (!el) return;
-    updateNav();
-    const handleScroll = () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(updateNav);
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    const ro = new ResizeObserver(() => requestAnimationFrame(updateNav));
+    el.addEventListener("scroll", check, { passive: true });
+    const ro = new ResizeObserver(check);
     ro.observe(el);
     return () => {
-      el.removeEventListener("scroll", handleScroll);
+      el.removeEventListener("scroll", check);
       ro.disconnect();
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [updateNav, ...deps]);
-
-  const scroll = useCallback(
-    (dir) => {
-      const el = scrollRef.current;
-      if (!el) return;
-      const firstChild = el.querySelector(":scope > div > div");
-      const cardW = firstChild ? firstChild.offsetWidth : 200;
-      const gap = 14;
-      const visible = Math.max(1, Math.floor(el.clientWidth / (cardW + gap)));
-      const amount = visible * (cardW + gap);
-      el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-      setTimeout(updateNav, 150);
-      setTimeout(updateNav, 400);
-      setTimeout(updateNav, 650);
-    },
-    [updateNav],
+  }, [check, children]);
+  const scroll = useCallback((dir) => {
+    ref.current?.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  }, []);
+  return (
+    <div className={`relative ${className}`}>
+      <AnimatePresence>
+        {canLeft && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => scroll("left")}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
+          >
+            <ChevronLeft size={15} className="text-gray-600 dark:text-gray-300" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+      {canLeft && (
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#faf8f5] dark:from-stone-950 to-transparent z-10 pointer-events-none" />
+      )}
+      <div
+        ref={ref}
+        className="flex gap-3.5 overflow-x-auto px-5 pb-2 snap-x snap-mandatory"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+      >
+        {children}
+      </div>
+      {canRight && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#faf8f5] dark:from-stone-950 to-transparent z-10 pointer-events-none" />
+      )}
+      <AnimatePresence>
+        {canRight && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => scroll("right")}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
+          >
+            <ChevronRight size={15} className="text-gray-600 dark:text-gray-300" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </div>
   );
-
-  return { scrollRef, canPrev, canNext, scroll };
-};
+});
+ScrollCarousel.displayName = "ScrollCarousel";
 
 const DesktopCarouselSection = ({ section, onItemClick }) => {
-  const { scrollRef, canPrev, canNext, scroll } = useCarouselScroll([section.items.length]);
   if (!section.items || section.items.length === 0) return null;
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-4">
+      <div className="px-5 flex items-center justify-between gap-4">
         <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">
           {section.title}
         </h3>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            disabled={!canPrev}
-            onClick={() => scroll("left")}
-            className="w-8 h-8 rounded-lg flex items-center justify-center border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-stone-800 transition-all active:scale-95"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <button
-            disabled={!canNext}
-            onClick={() => scroll("right")}
-            className="w-8 h-8 rounded-lg flex items-center justify-center border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-stone-800 transition-all active:scale-95"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
       </div>
-      <div
-        ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden no-scrollbar"
-        style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
-      >
-        <div className="flex gap-3.5 min-w-max pb-1">
-          {section.items.map((item, idx) => (
-            <div
-              key={item.id || item._id}
-              className="w-[165px] lg:w-[178px] xl:w-[190px] 2xl:w-[205px] shrink-0"
-              style={{ scrollSnapAlign: "start" }}
-            >
-              <ReelCard item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
-            </div>
-          ))}
-        </div>
-      </div>
+      <ScrollCarousel>
+        {section.items.map((item, idx) => (
+          <div
+            key={item.id || item._id}
+            className="w-[165px] lg:w-[178px] xl:w-[190px] 2xl:w-[205px] shrink-0 snap-start"
+          >
+            <ReelCard item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
+          </div>
+        ))}
+      </ScrollCarousel>
     </section>
   );
 };
 
 const FeaturedCarouselSection = ({ section, onItemClick }) => {
-  const { scrollRef, canPrev, canNext, scroll } = useCarouselScroll([section.items.length]);
   if (!section.items || section.items.length === 0) return null;
   return (
-    <section className="rounded-2xl bg-gradient-to-r from-rose-50/50 via-pink-50/30 to-amber-50/40 dark:from-stone-900 dark:via-stone-900 dark:to-stone-900 border border-rose-100/40 dark:border-stone-800 p-5 space-y-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm">
-            {section.id === "trending" ? (
-              <TrendingUp size={13} className="text-white" />
-            ) : section.id === "sponsored" ? (
-              <Zap size={13} className="text-white" />
-            ) : (
-              <Star size={13} className="text-white" />
-            )}
+    <section className="rounded-2xl bg-gradient-to-r from-rose-50/50 via-pink-50/30 to-amber-50/40 dark:from-stone-900 dark:via-stone-900 dark:to-stone-900 border border-rose-100/40 dark:border-stone-800 pt-5 pb-3 space-y-3">
+      <div className="px-5 flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm shrink-0">
+          {section.id === "trending" ? (
+            <TrendingUp size={13} className="text-white" />
+          ) : section.id === "sponsored" ? (
+            <Zap size={13} className="text-white" />
+          ) : (
+            <Star size={13} className="text-white" />
+          )}
+        </div>
+        <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">
+          {section.title}
+        </h3>
+      </div>
+      <ScrollCarousel>
+        {section.items.map((item, idx) => (
+          <div
+            key={item.id || item._id}
+            className="w-[175px] lg:w-[190px] xl:w-[205px] 2xl:w-[218px] shrink-0 snap-start"
+          >
+            <FeaturedReelCard item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
           </div>
-          <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">
-            {section.title}
-          </h3>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            disabled={!canPrev}
-            onClick={() => scroll("left")}
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60 dark:bg-stone-800 border border-rose-200/50 dark:border-stone-700 text-stone-500 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-stone-700 transition-all active:scale-95"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <button
-            disabled={!canNext}
-            onClick={() => scroll("right")}
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60 dark:bg-stone-800 border border-rose-200/50 dark:border-stone-700 text-stone-500 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-stone-700 transition-all active:scale-95"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
-      </div>
-      <div
-        ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden no-scrollbar"
-        style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
-      >
-        <div className="flex gap-3.5 min-w-max pb-1">
-          {section.items.map((item, idx) => (
-            <div
-              key={item.id || item._id}
-              className="w-[175px] lg:w-[190px] xl:w-[205px] 2xl:w-[218px] shrink-0"
-              style={{ scrollSnapAlign: "start" }}
-            >
-              <FeaturedReelCard item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
-            </div>
-          ))}
-        </div>
-      </div>
+        ))}
+      </ScrollCarousel>
     </section>
   );
 };
