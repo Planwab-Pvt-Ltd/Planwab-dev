@@ -217,7 +217,7 @@ const HCarousel = memo(({ label, icon: Icon, count, items, renderItem, itemClass
               key={item?._id?.toString?.() || item?.reelId || item?.postId || i}
               className={`shrink-0 ${itemClass} relative group/card`}
             >
-              {/* {onRemove && (
+              {onRemove && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -229,7 +229,7 @@ const HCarousel = memo(({ label, icon: Icon, count, items, renderItem, itemClass
                 >
                   <X size={11} className="text-white" strokeWidth={3} />
                 </button>
-              )} */}
+              )}
               {renderItem(item)}
             </div>
           ))}
@@ -1078,24 +1078,46 @@ export default function UserProfilePageWrapper() {
     }
   }, [user?.id, refreshing, showToast]);
 
-  const removeFromList = useCallback(
-    (listPath, itemId) => {
-      setLists((prev) => {
-        const next = JSON.parse(JSON.stringify(prev));
-        const parts = listPath.split(".");
-        let target = next;
-        for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
-        const key = parts[parts.length - 1];
-        target[key] = target[key].filter((item) => {
-          const id = item._id || item.reelId || item.postId;
-          return id !== itemId;
-        });
-        return next;
-      });
-      showToast("Removed from collection");
-    },
-    [showToast],
-  );
+  const removeFromList = useCallback(async (listPath, item) => {
+  const itemId = String(item._id || item.reelId || item.postId);
+  const vpId = item.vendorProfileId ? String(item.vendorProfileId) : undefined;
+
+  setLists(prev => {
+    const next = JSON.parse(JSON.stringify(prev));
+    const parts = listPath.split(".");
+    let target = next;
+    for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
+    const key = parts[parts.length - 1];
+    target[key] = target[key].filter(i => {
+      const id = String(i._id || i.reelId || i.postId);
+      return id !== itemId;
+    });
+    return next;
+  });
+
+  try {
+    const res = await fetch("/api/user/removeFromList", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.id,
+        listType: listPath,
+        itemId,
+        vendorProfileId: vpId,
+      }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || "Removed");
+    } else {
+      refreshLists();
+      showToast(data.error || "Failed to remove", "error");
+    }
+  } catch {
+    refreshLists();
+    showToast("Something went wrong", "error");
+  }
+}, [user?.id, showToast, refreshLists]);
 
   const handleSaveProfile = async () => {
     if (!user?.id) return;
@@ -1434,7 +1456,7 @@ export default function UserProfilePageWrapper() {
                             {
                               label: "Read Blogs",
                               icon: BookOpen,
-                              href: "/blog",
+                              href: "/about/blogs",
                               color: "bg-sky-50 dark:bg-sky-900/20 text-sky-600",
                             },
                           ].map((a) => (
@@ -1736,7 +1758,7 @@ export default function UserProfilePageWrapper() {
                                   items={filterBySearch(lists.vendors.liked, ["name", "address.city", "category"])}
                                   itemClass="w-[230px]"
                                   renderItem={(v) => <VendorCard vendor={v} />}
-                                  onRemove={(v) => removeFromList("vendors.liked", v._id)}
+                                  onRemove={(v) => removeFromList("vendors.liked", v)}
                                 />
                                 <HCarousel
                                   label="Watchlist"
@@ -1745,7 +1767,7 @@ export default function UserProfilePageWrapper() {
                                   items={filterBySearch(lists.vendors.watchlist, ["name", "address.city", "category"])}
                                   itemClass="w-[230px]"
                                   renderItem={(v) => <VendorCard vendor={v} />}
-                                  onRemove={(v) => removeFromList("vendors.watchlist", v._id)}
+                                  onRemove={(v) => removeFromList("vendors.watchlist", v)}
                                 />
                               </>
                             )}
@@ -1790,7 +1812,7 @@ export default function UserProfilePageWrapper() {
                                         ])}
                                         itemClass="w-[210px]"
                                         renderItem={(p) => <VProfileCard profile={p} />}
-                                        onRemove={(p) => removeFromList("vendorProfiles.liked", p._id)}
+                                        onRemove={(p) => removeFromList("vendorProfiles.liked", p)}
                                       />
                                       <HCarousel
                                         label="Trusted Profiles"
@@ -1803,7 +1825,7 @@ export default function UserProfilePageWrapper() {
                                         ])}
                                         itemClass="w-[210px]"
                                         renderItem={(p) => <VProfileCard profile={p} />}
-                                        onRemove={(p) => removeFromList("vendorProfiles.trusted", p._id)}
+                                        onRemove={(p) => removeFromList("vendorProfiles.trusted", p)}
                                       />
                                     </motion.div>
                                   )}
@@ -1827,7 +1849,7 @@ export default function UserProfilePageWrapper() {
                                         itemClass="w-[200px]"
                                         renderItem={(p) => <PostCard post={p} />}
                                         onRemove={(p) =>
-                                          removeFromList("vendorProfiles.posts.liked", p._id || p.postId)
+                                          removeFromList("vendorProfiles.posts.liked", p)
                                         }
                                       />
                                       <HCarousel
@@ -1842,7 +1864,7 @@ export default function UserProfilePageWrapper() {
                                         itemClass="w-[200px]"
                                         renderItem={(p) => <PostCard post={p} />}
                                         onRemove={(p) =>
-                                          removeFromList("vendorProfiles.posts.watchlist", p._id || p.postId)
+                                          removeFromList("vendorProfiles.posts.watchlist", p)
                                         }
                                       />
                                     </motion.div>
@@ -1868,7 +1890,7 @@ export default function UserProfilePageWrapper() {
                                         itemClass="w-[170px]"
                                         renderItem={(r) => <ReelCardVP reel={r} />}
                                         onRemove={(r) =>
-                                          removeFromList("reels.likedVendorProfileReels", r._id || r.reelId)
+                                          removeFromList("reels.likedVendorProfileReels", r)
                                         }
                                       />
                                       <HCarousel
@@ -1884,7 +1906,7 @@ export default function UserProfilePageWrapper() {
                                         itemClass="w-[170px]"
                                         renderItem={(r) => <ReelCardVP reel={r} />}
                                         onRemove={(r) =>
-                                          removeFromList("reels.watchlistVendorProfileReels", r._id || r.reelId)
+                                          removeFromList("reels.watchlistVendorProfileReels", r)
                                         }
                                       />
                                     </motion.div>
@@ -1924,7 +1946,7 @@ export default function UserProfilePageWrapper() {
                                   ])}
                                   itemClass="w-[170px]"
                                   renderItem={(r) => <ReelCard reel={r} />}
-                                  onRemove={(r) => removeFromList("reels.liked", r._id)}
+                                  onRemove={(r) => removeFromList("reels.liked", r)}
                                 />
                                 <HCarousel
                                   label="Watchlist"
@@ -1938,7 +1960,7 @@ export default function UserProfilePageWrapper() {
                                   ])}
                                   itemClass="w-[170px]"
                                   renderItem={(r) => <ReelCard reel={r} />}
-                                  onRemove={(r) => removeFromList("reels.watchlist", r._id)}
+                                  onRemove={(r) => removeFromList("reels.watchlist", r)}
                                 />
                               </>
                             )}
@@ -1958,7 +1980,7 @@ export default function UserProfilePageWrapper() {
                                 icon={BookOpen}
                                 title="No saved blogs"
                                 description="Read and save blogs for later"
-                                action={{ label: "Read Blogs", href: "/blog" }}
+                                action={{ label: "Read Blogs", href: "/about/blogs" }}
                               />
                             ) : (
                               <>
@@ -1969,7 +1991,7 @@ export default function UserProfilePageWrapper() {
                                   items={filterBySearch(lists.blogs.liked, ["title", "category", "authorName"])}
                                   itemClass="w-[260px]"
                                   renderItem={(b) => <BlogCard blog={b} />}
-                                  onRemove={(b) => removeFromList("blogs.liked", b._id)}
+                                  onRemove={(b) => removeFromList("blogs.liked", b)}
                                 />
                                 <HCarousel
                                   label="Saved Blogs"
@@ -1978,7 +2000,7 @@ export default function UserProfilePageWrapper() {
                                   items={filterBySearch(lists.blogs.watchlist, ["title", "category", "authorName"])}
                                   itemClass="w-[260px]"
                                   renderItem={(b) => <BlogCard blog={b} />}
-                                  onRemove={(b) => removeFromList("blogs.watchlist", b._id)}
+                                  onRemove={(b) => removeFromList("blogs.watchlist", b)}
                                 />
                               </>
                             )}

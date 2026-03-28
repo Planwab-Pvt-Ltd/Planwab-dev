@@ -47,7 +47,7 @@ import {
   Store,
 } from "lucide-react";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -268,6 +268,9 @@ const LocationDropdown = ({ isOpen, onClose }) => {
 const ProfileDropdown = ({ isOpen }) => {
   const { user } = useUser();
   const { signOut } = useClerk();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
 
   if (!isOpen) return null;
   const menuItems = [
@@ -304,7 +307,7 @@ const ProfileDropdown = ({ isOpen }) => {
       </div>
       <SignedOut>
         <div className="flex flex-col gap-2 border-t border-gray-100 dark:border-gray-700 pt-2 justify-center items-center">
-          <SignInButton>
+          <SignInButton forceRedirectUrl={fullAuthRedirectUrl}>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -314,7 +317,7 @@ const ProfileDropdown = ({ isOpen }) => {
               <span className="font-medium text-amber-700 dark:text-amber-300">Login</span>
             </motion.button>
           </SignInButton>
-          <SignUpButton>
+          <SignUpButton forceRedirectUrl={fullAuthRedirectUrl}>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -671,12 +674,15 @@ const SubNavigation = () => {
 };
 
 /* ─── Mobile Sidebar (unchanged) ─── */
-const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) => {
+const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggleTheme }) => {
   const [openAccordion, setOpenAccordion] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentCity, setCurrentCity] = useState("");
   const { user } = useUser();
   const { signOut } = useClerk();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
 
   const cities = [
     "Mumbai, Maharashtra",
@@ -808,7 +814,7 @@ const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) =>
             </div>
             {categories.map((cat) => {
               const categoryPath = `/events/${cat?.name?.toLowerCase()}`;
-              const isActive = pathname === categoryPath || pathname === `/plan-my-event/${cat?.name?.toLowerCase()}`;
+              const isActive = pathnameMS === categoryPath || pathnameMS === `/plan-my-event/${cat?.name?.toLowerCase()}`;
               return (
                 <Link href={categoryPath} key={cat.name} onClick={onClose}>
                   <div
@@ -1002,13 +1008,13 @@ const MobileSidebar = ({ categories, pathname, onClose, theme, toggleTheme }) =>
                           </p>
                         </div>
                         <div className="space-y-3">
-                          <SignInButton>
+                          <SignInButton forceRedirectUrl={fullAuthRedirectUrl}>
                             <button className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
                               <LogIn size={20} />
                               <span>Login</span>
                             </button>
                           </SignInButton>
-                          <SignUpButton>
+                          <SignUpButton forceRedirectUrl={fullAuthRedirectUrl}>
                             <button className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg font-semibold border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:shadow-md">
                               <UserPlus size={20} />
                               <span>Sign Up</span>

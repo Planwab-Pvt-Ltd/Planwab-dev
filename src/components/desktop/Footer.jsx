@@ -122,7 +122,7 @@ const Footer = () => {
                     href="/about/blogs" 
                     className="text-sm text-gray-600 hover:text-[#C33765] transition-colors inline-flex items-center group"
                   >
-                    <span className="group-hover:translate-x-1 transition-transform">Blog</span>
+                    <span className="group-hover:translate-x-1 transition-transform">Blogs / Stories</span>
                   </Link>
                 </li>
                 <li>

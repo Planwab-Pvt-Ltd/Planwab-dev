@@ -7407,7 +7407,7 @@ const MoreOptionsDrawer = ({
   );
 };
 
-export const ShareModal = ({ isOpen, onClose, vendorName }) => {
+export const ShareModal = ({ isOpen, title, onClose, vendorName }) => {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -7596,7 +7596,7 @@ export const ShareModal = ({ isOpen, onClose, vendorName }) => {
                 </div>
               </div>
 
-              <p className="text-center text-xs text-gray-500 dark:text-gray-400">Scan to visit this profile</p>
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">Scan to visit {title ? title : "this Profile"}</p>
 
               {/* URL display */}
               <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-3">
@@ -7629,7 +7629,7 @@ export const ShareModal = ({ isOpen, onClose, vendorName }) => {
             </motion.div>
           ) : (
             <motion.div key="share-options" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <h3 className="text-lg font-bold text-center mb-6 text-gray-900 dark:text-white">Share Profile</h3>
+              <h3 className="text-lg font-bold text-center mb-6 text-gray-900 dark:text-white">Share {title ? title : "Profile"}</h3>
 
               {/* QR Code Button */}
               <motion.button
