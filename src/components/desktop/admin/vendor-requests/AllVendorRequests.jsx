@@ -48,6 +48,7 @@ import {
   ShieldCheck,
   Plus,
   Minus,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
@@ -188,14 +189,12 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
   const [showFilters, setShowFilters] = useState(false);
   const [apiStats, setApiStats] = useState(null);
 
-  // Modal states
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
-  // Form states
   const [editFormData, setEditFormData] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -211,7 +210,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
     try {
       let endpoint = "/api/vendor/requests";
 
-      // Select API endpoint based on the request category
       if (requestType === "birthday") {
         endpoint = "/api/vendor/requests/birthday-routes?limit=10000";
       } else if (requestType === "booking") {
@@ -224,6 +222,8 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         endpoint = "/api/planned-events/get-all?page=1&limit=10";
       } else if (requestType === "contact") {
         endpoint = "/api/contact?limit=10000&sortBy=createdAt&sortOrder=desc";
+      } else if (requestType === "newsletter") {
+        endpoint = "/api/admin/newsletter?limit=10000&sortBy=createdAt&sortOrder=desc";
       }
 
       const response = await fetch(endpoint);
@@ -246,6 +246,8 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         } else if (requestType === "planning-tools") {
           requestsArray = result.tools || result.data || [];
         } else if (requestType === "contact") {
+          requestsArray = result.data || [];
+        } else if (requestType === "newsletter") {
           requestsArray = result.data || [];
         } else {
           requestsArray = result.data?.requests || [];
@@ -315,6 +317,13 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
             request.subject?.toLowerCase().includes(query)
           );
         }
+        if (requestType === "newsletter") {
+          return (
+            request.email?.toLowerCase().includes(query) ||
+            request.visitedUrl?.toLowerCase().includes(query) ||
+            request.clerkId?.toLowerCase().includes(query)
+          );
+        }
         return (
           request.businessName?.toLowerCase().includes(query) ||
           request.ownerName?.toLowerCase().includes(query) ||
@@ -358,7 +367,7 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         bVal = getBusinessName(b) || "";
       } else if (sortBy === "ownerName") {
         const getOwnerName = (r) => {
-          if (requestType === "booking") return r.email;
+          if (requestType === "booking" || requestType === "newsletter") return r.email;
           if (requestType === "leads") return r.phone;
           return r.ownerName;
         }
@@ -401,7 +410,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
     requestType,
   ]);
 
-  // Dynamic stats calculation
   const stats = useMemo(() => {
     if (!allRequestsData || allRequestsData.length === 0) {
       return { total: 0 };
@@ -412,8 +420,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
     };
   }, [allRequestsData]);
 
-
-  // Report stats to parent when they change
   useEffect(() => {
     if (onStatsUpdate) {
       onStatsUpdate(stats);
@@ -476,7 +482,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
     try {
       let endpoint = `/api/vendor/requests?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
 
-      // Select API endpoint based on the request category
       if (requestType === "birthday") {
         endpoint = `/api/vendor/requests/birthday-routes?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
       } else if (requestType === "booking") {
@@ -490,6 +495,10 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
           endpoint = `/api/contact/${selectedRequest._id}?password=${encodeURIComponent(adminPassword)}`;
         } else {
           endpoint = `/api/contact/${selectedRequest._id}`;
+        }
+      } else if (requestType === "newsletter") {
+        if (action === "delete") {
+          endpoint = `/api/admin/newsletter?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
         }
       }
 
@@ -505,7 +514,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
           throw new Error(result.error || "Failed to delete request");
         }
 
-        // Success
         closeAllModals();
         toast.success("Request deleted successfully");
         await fetchRequests();
@@ -542,7 +550,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
           throw new Error(result.error || "Failed to update request");
         }
 
-        // Success
         closeAllModals();
         toast.success("Request updated successfully");
         await fetchRequests();
@@ -638,6 +645,14 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         r.userType || "",
         r.status || "pending",
         r.priority || "medium",
+        r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
+      ]);
+    } else if (requestType === "newsletter") {
+      headers = ["Email", "Visited URL", "Clerk ID", "Subscribed At"];
+      rows = filteredRequests.map((r) => [
+        r.email || "",
+        r.visitedUrl || "",
+        r.clerkId || "N/A",
         r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
       ]);
     } else {
@@ -977,6 +992,13 @@ const cityFilterOptions = useMemo(
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">
                         Budget
                       </th>
+                    </>
+                  )}
+                  {requestType === "newsletter" && (
+                    <>
+                      <th className="px-5 py-4 font-semibold">Email</th>
+                      <th className="px-5 py-4 font-semibold">Visited URL</th>
+                      <th className="px-5 py-4 font-semibold">Subscribed At</th>
                     </>
                   )}
                   {requestType === "contact" && (
@@ -2127,7 +2149,55 @@ const RequestTableRow = ({ request, requestType, onAction }) => {
 
   }
 
-  // Default: Vendor
+  if (requestType === "newsletter") {
+    return (
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+        <td className="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+          <div className="flex items-center gap-2">
+            <Mail size={14} className="text-gray-400" />
+            {request.email || "N/A"}
+          </div>
+        </td>
+        <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-[200px] truncate" title={request.visitedUrl}>
+          <div className="flex items-center gap-2">
+            <Globe size={14} className="text-gray-400" />
+            {request.visitedUrl || "N/A"}
+          </div>
+        </td>
+        <td className="px-5 py-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <Calendar size={14} className="text-gray-400" />
+            {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : "N/A"}
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.color}`}>
+            <StatusIcon size={12} />
+            <span className="capitalize">{request.status?.replace("_", " ") || "Active"}</span>
+          </span>
+        </td>
+        <td className="px-4 py-3 text-right">
+          <div className="flex items-center justify-end gap-2 transition-opacity">
+            <button
+              onClick={() => onAction("view", request)}
+              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+              title="View Details"
+            >
+              <Eye size={16} />
+            </button>
+            <button
+              onClick={() => onAction("delete", request)}
+              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+              title="Delete Subscriber"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
       <td className="px-4 py-3">
@@ -2250,7 +2320,6 @@ const RequestCard = ({ request, type, onView, onEdit, onDelete }) => {
   const statusInfo = statusConfig[request.status] || statusConfig.PENDING;
   const StatusIcon = statusInfo?.icon || Clock;
 
-  // Helper to get display data based on type
   const getDisplayData = () => {
     switch (type) {
       case "birthday":
@@ -2295,6 +2364,16 @@ const RequestCard = ({ request, type, onView, onEdit, onDelete }) => {
             { icon: Phone, text: request.phone || "N/A" },
             { icon: Calendar, text: request.createdAt ? new Date(request.createdAt).toLocaleDateString() : "N/A" },
             ...(request.message ? [{ icon: MessageCircle, text: request.message }] : []),
+          ]
+        };
+      case "newsletter":
+        return {
+          title: request.email || "Unknown Subscriber",
+          subtitle: request.visitedUrl || "No URL recorded",
+          badge: "Subscriber",
+          details: [
+            { icon: User, text: request.clerkId || "Not Registered" },
+            { icon: Calendar, text: request.createdAt ? new Date(request.createdAt).toLocaleDateString() : "N/A" },
           ]
         };
       case "vendor":

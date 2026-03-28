@@ -8,6 +8,8 @@ import VendorRequest from "@/database/models/VendorRequestsModel";
 import BirthdayBooking from "@/database/models/BirthdayBooking";
 import DetailsBookingRequest from "@/database/models/DetailsBookingRequestModel";
 import Lead from "@/database/models/LeadsModel";
+import Blog from "@/database/models/BlogModel";
+import Newsletter from "@/database/models/NewsletterModel";
 import mongoose from "mongoose";
 
 export async function GET() {
@@ -33,7 +35,9 @@ export async function GET() {
             totalBirthdayRequests,
             totalBookingRequests,
             totalLeadsRequests,
-            totalContactRequests
+            totalContactRequests,
+            totalBlogs,
+            totalNewsletterSubscribers,
         ] = await Promise.all([
             Vendor.countDocuments(),
             Vendor.countDocuments({ isFeatured: true }),
@@ -45,7 +49,9 @@ export async function GET() {
             BirthdayBooking.countDocuments(),
             DetailsBookingRequest.countDocuments(),
             Lead.countDocuments(),
-            ContactUs.countDocuments()
+            ContactUs.countDocuments(),
+            Blog.countDocuments(),
+            Newsletter.countDocuments(),
         ]);
 
         const totalCategories = categories.length;
@@ -64,7 +70,9 @@ export async function GET() {
                     totalBirthdayRequests,
                     totalBookingRequests,
                     totalLeadsRequests,
-                    totalContactRequests
+                    totalContactRequests,
+                    totalBlogs,
+                    totalNewsletterSubscribers,
                 },
             },
             { status: 200 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Calendar, IdCard, ShoppingCart, Users, Briefcase, Settings, Star, FileClock, ChevronDown, ChevronRight, MessageSquare, Videotape, FileVideo, Film } from "lucide-react";
+import { LayoutDashboard, Calendar, IdCard, ShoppingCart, Users, Briefcase, Settings, Star, FileClock, ChevronDown, ChevronRight, MessageSquare, Videotape, FileVideo, Film, BookOpen, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { name: "Vendor Profile", href: "/admin/vendors/profile", icon: IdCard },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Reels", href: "/admin/reels", icon: Film },
+  { name: "Blogs", href: "/admin/blogs", icon: BookOpen },
   {
     name: "Requests",
     icon: FileClock,
@@ -23,6 +24,7 @@ const navItems = [
       { name: "Leads Requests", href: "/admin/vendor-requests?type=leads" },
       { name: "Planning Tools", href: "/admin/vendor-requests?type=planning-tools" },
       { name: "Contact Requests", href: "/admin/vendor-requests?type=contact" },
+      { name: "Newsletter Requests", href: "/admin/vendor-requests?type=newsletter" },
     ],
   },
   { name: "Users", href: "/admin/users", icon: Users },
@@ -65,7 +67,6 @@ export default function Sidebar({ isOpen }) {
     setIsSidebarOpen(isOpen);
   }, [isOpen]);
 
-  // Handle active state expansion
   useEffect(() => {
     navItems.forEach((item) => {
       if (item.children) {
@@ -91,7 +92,7 @@ export default function Sidebar({ isOpen }) {
   const handleMouseLeave = () => {
     setHovered(false);
     setIsSidebarOpen(false);
-    // Don't auto-collapse expanded items to keep UX consistent
+
   };
 
   const handleMouseEnter = () => {
@@ -149,7 +150,7 @@ export default function Sidebar({ isOpen }) {
 
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
-          // Check if item or any of its children are active
+
           let isActive = pathname === item.href;
           if (item.children) {
             isActive = item.children.some((child) => {

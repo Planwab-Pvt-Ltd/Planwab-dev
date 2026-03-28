@@ -3,7 +3,7 @@
 import DashboardStatsCard from "@/components/desktop/admin/DashboardStatsCard";
 import {
   Users, Briefcase, Star, Layers, IdCard,
-  ShoppingCart, SendHorizontal, Cake, CalendarCheck, Megaphone
+  ShoppingCart, SendHorizontal, Cake, CalendarCheck, Megaphone, BookOpen, Mail
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { VendorCategoriesChart } from "@/components/desktop/ui/Charts/VendorCategoriesChart";
@@ -11,6 +11,7 @@ import { OrdersEventsChart } from "@/components/desktop/ui/Charts/OrdersEventsCh
 import { BirthdayBookingChart } from "@/components/desktop/ui/Charts/BirthdayBookingChart";
 import { LeadsChart } from "@/components/desktop/ui/Charts/LeadsChart";
 import { VendorContactRequestsChart } from "@/components/desktop/ui/Charts/VendorContactRequestsChart";
+import { BlogsNewsletterChart } from "@/components/desktop/ui/Charts/BlogsNewsletterChart";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -25,6 +26,8 @@ export default function DashboardPage() {
     totalBookingRequests: 0,
     totalLeadsRequests: 0,
     totalContactRequests: 0,
+    totalBlogs: 0,
+    totalNewsletterSubscribers: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -116,6 +119,18 @@ export default function DashboardPage() {
           icon={Megaphone}
           loading={loading}
         />
+        <DashboardStatsCard
+          title="Total Blogs"
+          value={stats.totalBlogs}
+          icon={BookOpen}
+          loading={loading}
+        />
+        <DashboardStatsCard
+          title="Newsletter Subs"
+          value={stats.totalNewsletterSubscribers}
+          icon={Mail}
+          loading={loading}
+        />
       </div>
 
       <div className="mt-8 mb-6">
@@ -130,6 +145,10 @@ export default function DashboardPage() {
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         <BirthdayBookingChart />
         <VendorContactRequestsChart />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <BlogsNewsletterChart />
       </div>
     </div>
   );
