@@ -75,13 +75,20 @@ const SmartMedia = memo(
       <div className={containerClass}>
         {/* SKELETON: Only show if NOT loaded and NOT priority */}
         {!isLoaded && !priority && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-200">
-             <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-             <div className="relative z-20 text-gray-400 opacity-50">
-                {type === "video" ? <PlayCircle /> : <ImageIcon />}
-             </div>
-          </div>
-        )}
+  <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-200 overflow-hidden">
+    <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`}</style>
+    <div
+      className="absolute inset-0 bg-gradient-to-r from-gray-200 via-white/80 to-gray-200"
+      style={{
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.2s ease-in-out infinite",
+      }}
+    />
+    <div className="relative z-20 text-gray-300 opacity-60">
+      {type === "video" ? <PlayCircle size={20} /> : <ImageIcon size={20} />}
+    </div>
+  </div>
+)}
 
         {hasError && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-100 text-gray-400">

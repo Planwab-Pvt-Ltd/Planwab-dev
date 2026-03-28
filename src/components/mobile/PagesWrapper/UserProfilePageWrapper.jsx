@@ -1249,10 +1249,7 @@ export default function UserProfilePageWrapper() {
             <SmartMedia 
               src={user.imageUrl}
               alt={displayName}
-              type="image"
-              width={58}
-              height={58}
-              className="rounded-full object-cover ring-[3px] ring-gray-100 dark:ring-gray-800"
+              className="w-[58px] h-[58px] rounded-full object-cover ring-[3px] ring-gray-100 dark:ring-gray-800"
             />
             {currentPlan !== "free" && (
               <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
