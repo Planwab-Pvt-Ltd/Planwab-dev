@@ -320,11 +320,12 @@ export default function MobileSingleBlogPageWrapper() {
 
           <div className="flex items-center gap-3 mb-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
             {blog.authorPhoto ? (
-              <img
-                src={blog.authorPhoto}
-                className="w-11 h-11 rounded-xl border border-slate-200 dark:border-slate-700"
-                alt={blog.authorName}
-              />
+              // <img
+              //   src={blog.authorPhoto}
+              //   className="w-11 h-11 rounded-xl border border-slate-200 dark:border-slate-700"
+              //   alt={blog.authorName}
+              // />
+              <SmartMedia src={blog.authorPhoto} alt={blog.authorName} className="w-11 h-11 rounded-xl border border-slate-200 dark:border-slate-700" />
             ) : (
               <div className="w-11 h-11 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center">
                 <User size={20} className="text-slate-400 dark:text-slate-500" />

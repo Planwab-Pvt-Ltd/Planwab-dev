@@ -167,7 +167,7 @@ const ArticleCard = ({ post, index = 0, currentUserId, onEdit, onDelete }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {post.authorPhoto ? (
-                <img
+                <SmartMedia
                   src={post.authorPhoto}
                   className="w-6 h-6 rounded-full border border-slate-200"
                   alt={post.authorName}
@@ -353,7 +353,7 @@ const ListArticleCard = ({ post, currentUserId, onEdit, onDelete }) => {
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
             {post.authorPhoto ? (
-              <img
+              <SmartMedia
                 src={post.authorPhoto}
                 className="w-5 h-5 rounded-full border border-slate-200"
                 alt={post.authorName}
@@ -784,7 +784,12 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
                     />
                     {imagePreview && !imageUploading ? (
                       <div className="relative">
-                        <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
+                        {/* <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-xl" /> */}
+                        <SmartMedia
+                          src={imagePreview}
+                          className="w-full h-40 object-cover rounded-xl"
+                          alt="Preview"
+                        />
                         <button
                           type="button"
                           onClick={(e) => {
@@ -835,11 +840,10 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
                     className="w-full px-4 py-3 rounded-xl border outline-none transition-all text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-400 dark:focus:border-blue-500"
                   />
                   {imagePreview && (
-                    <img
+                    <SmartMedia
                       src={imagePreview}
-                      alt="Preview"
-                      onError={() => setImagePreview("")}
                       className="w-full h-32 object-cover rounded-xl border border-slate-100 dark:border-slate-600"
+                      alt="Preview"
                     />
                   )}
                 </div>

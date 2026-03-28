@@ -61,7 +61,8 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
-import { useUser } from '@clerk/nextjs';
+import { useUser } from "@clerk/nextjs";
+import SmartMedia from "../SmartMediaLoader";
 
 const DESKTOP_TOP_OFFSET = 77;
 
@@ -301,7 +302,12 @@ const EVENT_CONFIGS = {
     type: "corporate",
     subtypes: [
       { id: "conference", label: "Conference", icon: <Users size={18} />, gradient: "from-blue-400 to-indigo-500" },
-      { id: "team-building", label: "Team Build", icon: <Trophy size={18} />, gradient: "from-amber-400 to-orange-500" },
+      {
+        id: "team-building",
+        label: "Team Build",
+        icon: <Trophy size={18} />,
+        gradient: "from-amber-400 to-orange-500",
+      },
       { id: "launch", label: "Launch", icon: <Megaphone size={18} />, gradient: "from-red-400 to-rose-500" },
       { id: "c-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
       { id: "c-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-green-400 to-emerald-500" },
@@ -439,7 +445,9 @@ const fetchVendorProfile = async (id) => {
 };
 
 const recordView = async (reelId) => {
-  try { await fetch(`/api/reels/${reelId}/view`, { method: "POST" }); } catch {}
+  try {
+    await fetch(`/api/reels/${reelId}/view`, { method: "POST" });
+  } catch {}
 };
 
 const toggleLike = async (reelId, action) => {
@@ -495,7 +503,9 @@ const toggleSave = async (reelId, action) => {
 };
 
 const recordShare = async (reelId) => {
-  try { await fetch(`/api/reels/${reelId}/share`, { method: "POST" }); } catch {}
+  try {
+    await fetch(`/api/reels/${reelId}/share`, { method: "POST" });
+  } catch {}
 };
 
 const fetchReelById = async (reelId) => {
@@ -551,7 +561,9 @@ const getRecentlyViewed = () => {
     const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
     if (!raw) return [];
     return JSON.parse(raw);
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 };
 
 const addToRecentlyViewed = (reel) => {
@@ -582,12 +594,28 @@ const fmt = (n) => {
 const HIGHLIGHT_IDS = new Set(["sponsored", "featured", "trending", "recently-viewed"]);
 
 const ShimmerBlock = ({ className }) => (
-  <div className={`animate-pulse rounded-xl ${className}`} style={{ background: "linear-gradient(90deg,#f5f0eb 25%,#efe8e1 50%,#f5f0eb 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s ease-in-out infinite" }} />
+  <div
+    className={`animate-pulse rounded-xl ${className}`}
+    style={{
+      background: "linear-gradient(90deg,#f5f0eb 25%,#efe8e1 50%,#f5f0eb 75%)",
+      backgroundSize: "200% 100%",
+      animation: "shimmer 1.5s ease-in-out infinite",
+    }}
+  />
 );
 
 const FullPageSkeleton = () => (
   <div className="space-y-10">
-    <style jsx>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+    <style jsx>{`
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+    `}</style>
     {Array.from({ length: 4 }).map((_, idx) => (
       <div key={idx} className="space-y-3">
         <ShimmerBlock className="h-5 w-56" />
@@ -601,8 +629,22 @@ const FullPageSkeleton = () => (
   </div>
 );
 
-const DesktopSidebar = ({ config, eventLabel, activeSubtype, activeNested, onSubtypeClick, onNestedClick, onChangeEvent, weddingQuickFilter, onWeddingQuickFilterClick, isWeddingType }) => (
-  <aside style={{ top: DESKTOP_TOP_OFFSET, height: `calc(100vh - ${DESKTOP_TOP_OFFSET}px)` }} className="w-[256px] xl:w-[272px] 2xl:w-[288px] border-r border-rose-100/60 dark:border-stone-800 bg-white dark:bg-stone-950 sticky overflow-y-auto no-scrollbar">
+const DesktopSidebar = ({
+  config,
+  eventLabel,
+  activeSubtype,
+  activeNested,
+  onSubtypeClick,
+  onNestedClick,
+  onChangeEvent,
+  weddingQuickFilter,
+  onWeddingQuickFilterClick,
+  isWeddingType,
+}) => (
+  <aside
+    style={{ top: DESKTOP_TOP_OFFSET, height: `calc(100vh - ${DESKTOP_TOP_OFFSET}px)` }}
+    className="w-[256px] xl:w-[272px] 2xl:w-[288px] border-r border-rose-100/60 dark:border-stone-800 bg-white dark:bg-stone-950 sticky overflow-y-auto no-scrollbar"
+  >
     <div className="p-4 xl:p-5 border-b border-rose-100/50 dark:border-stone-800">
       <button onClick={onChangeEvent} className="w-full text-left group">
         <div className="flex items-center gap-3">
@@ -610,8 +652,12 @@ const DesktopSidebar = ({ config, eventLabel, activeSubtype, activeNested, onSub
             <Sparkles size={16} className="text-white" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-bold text-stone-800 dark:text-stone-100 truncate leading-tight">{eventLabel} Ideas</h2>
-            <p className="text-[11px] text-stone-400 group-hover:text-rose-500 transition-colors mt-0.5">Change event ›</p>
+            <h2 className="text-[15px] font-bold text-stone-800 dark:text-stone-100 truncate leading-tight">
+              {eventLabel} Ideas
+            </h2>
+            <p className="text-[11px] text-stone-400 group-hover:text-rose-500 transition-colors mt-0.5">
+              Change event ›
+            </p>
           </div>
         </div>
       </button>
@@ -622,7 +668,11 @@ const DesktopSidebar = ({ config, eventLabel, activeSubtype, activeNested, onSub
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Wedding Moments</p>
         <div className="flex flex-wrap gap-1.5">
           {WEDDING_QUICK_FILTERS.map((f) => (
-            <button key={f.id} onClick={() => onWeddingQuickFilterClick(f.id)} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${weddingQuickFilter === f.id ? "bg-rose-500 text-white shadow-sm" : "bg-rose-50/60 dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:bg-rose-100 dark:hover:bg-stone-800"}`}>
+            <button
+              key={f.id}
+              onClick={() => onWeddingQuickFilterClick(f.id)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${weddingQuickFilter === f.id ? "bg-rose-500 text-white shadow-sm" : "bg-rose-50/60 dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:bg-rose-100 dark:hover:bg-stone-800"}`}
+            >
               {f.label}
             </button>
           ))}
@@ -633,8 +683,13 @@ const DesktopSidebar = ({ config, eventLabel, activeSubtype, activeNested, onSub
     <div className="p-4 xl:p-5">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Categories</p>
       <div className="space-y-0.5">
-        <button onClick={() => onSubtypeClick(null)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${!activeSubtype ? "bg-rose-500 text-white shadow-sm" : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"}`}>
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${!activeSubtype ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"}`}>
+        <button
+          onClick={() => onSubtypeClick(null)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${!activeSubtype ? "bg-rose-500 text-white shadow-sm" : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"}`}
+        >
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${!activeSubtype ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"}`}
+          >
             <Sparkles size={14} className={!activeSubtype ? "text-white" : "text-stone-400"} />
           </div>
           <span className="font-semibold text-[13px]">All</span>
@@ -643,19 +698,45 @@ const DesktopSidebar = ({ config, eventLabel, activeSubtype, activeNested, onSub
           const isActive = activeSubtype === subtype.id;
           return (
             <div key={subtype.id}>
-              <button onClick={() => onSubtypeClick(subtype.id)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${isActive ? "bg-rose-50 dark:bg-stone-900 text-rose-700 dark:text-rose-300" : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"}`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-rose-100 dark:bg-stone-800" : "bg-stone-100/80 dark:bg-stone-800/60"}`}>
-                  <span className={isActive ? "text-rose-600 dark:text-rose-300" : "text-stone-400 dark:text-stone-500"}>{subtype.icon}</span>
+              <button
+                onClick={() => onSubtypeClick(subtype.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${isActive ? "bg-rose-50 dark:bg-stone-900 text-rose-700 dark:text-rose-300" : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-rose-100 dark:bg-stone-800" : "bg-stone-100/80 dark:bg-stone-800/60"}`}
+                >
+                  <span
+                    className={isActive ? "text-rose-600 dark:text-rose-300" : "text-stone-400 dark:text-stone-500"}
+                  >
+                    {subtype.icon}
+                  </span>
                 </div>
-                <span className={`font-medium text-[13px] flex-1 truncate ${isActive ? "font-semibold" : ""}`}>{subtype.label}</span>
-                {subtype.nestedTypes && <ChevronRight size={13} className={`transition-transform shrink-0 ${isActive ? "rotate-90 text-rose-400" : "text-stone-300"}`} />}
+                <span className={`font-medium text-[13px] flex-1 truncate ${isActive ? "font-semibold" : ""}`}>
+                  {subtype.label}
+                </span>
+                {subtype.nestedTypes && (
+                  <ChevronRight
+                    size={13}
+                    className={`transition-transform shrink-0 ${isActive ? "rotate-90 text-rose-400" : "text-stone-300"}`}
+                  />
+                )}
               </button>
               <AnimatePresence>
                 {isActive && subtype.nestedTypes?.length > 0 && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
                     <div className="pl-[52px] pr-2 pt-1 pb-1 space-y-0.5">
                       {subtype.nestedTypes.map((nested) => (
-                        <button key={nested.id} onClick={() => onNestedClick(nested.id)} className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${activeNested === nested.id ? "bg-rose-500 text-white" : "text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:bg-rose-50/60 dark:hover:bg-stone-800"}`}>
+                        <button
+                          key={nested.id}
+                          onClick={() => onNestedClick(nested.id)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${activeNested === nested.id ? "bg-rose-500 text-white" : "text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:bg-rose-50/60 dark:hover:bg-stone-800"}`}
+                        >
                           {nested.label}
                         </button>
                       ))}
@@ -688,9 +769,21 @@ const DesktopHero = ({ eventLabel, activeSubtypeData, activeNested }) => (
 );
 
 const ReelCard = ({ item, idx, onClick }) => (
-  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.02, 0.16), duration: 0.3 }} onClick={onClick} className="cursor-pointer group">
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: Math.min(idx * 0.02, 0.16), duration: 0.3 }}
+    onClick={onClick}
+    className="cursor-pointer group"
+  >
     <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200/60 dark:ring-stone-700/40 group-hover:ring-rose-300/60 dark:group-hover:ring-rose-500/30 group-hover:shadow-lg group-hover:shadow-rose-100/40 transition-all duration-300">
-      <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
+      {/* <img
+        src={item.thumbnail}
+        alt={item.title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        loading="lazy"
+      /> */}
+      <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
       {item.tags?.[0] && (
         <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded-md text-[9px] font-semibold uppercase tracking-wide flex items-center gap-1 text-stone-700">
@@ -706,8 +799,16 @@ const ReelCard = ({ item, idx, onClick }) => (
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <p className="text-white font-semibold text-[12px] leading-snug line-clamp-2">{item.title}</p>
         <div className="mt-1 flex items-center gap-2 text-white/70 text-[10px]">
-          <span className="flex items-center gap-0.5"><Star size={8} className="fill-amber-400 text-amber-400" />{item.rating}</span>
-          {item.location && <span className="flex items-center gap-0.5 truncate"><MapPin size={8} />{item.location}</span>}
+          <span className="flex items-center gap-0.5">
+            <Star size={8} className="fill-amber-400 text-amber-400" />
+            {item.rating}
+          </span>
+          {item.location && (
+            <span className="flex items-center gap-0.5 truncate">
+              <MapPin size={8} />
+              {item.location}
+            </span>
+          )}
         </div>
         {item.price && <p className="text-emerald-300 font-semibold text-[11px] mt-1">{item.price}</p>}
       </div>
@@ -716,9 +817,21 @@ const ReelCard = ({ item, idx, onClick }) => (
 );
 
 const FeaturedReelCard = ({ item, idx, onClick }) => (
-  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.02, 0.16), duration: 0.3 }} onClick={onClick} className="cursor-pointer group">
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: Math.min(idx * 0.02, 0.16), duration: 0.3 }}
+    onClick={onClick}
+    className="cursor-pointer group"
+  >
     <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 ring-1 ring-rose-200/40 dark:ring-rose-800/30 group-hover:ring-rose-300 dark:group-hover:ring-rose-500/40 group-hover:shadow-xl group-hover:shadow-rose-100/50 transition-all duration-300">
-      <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" loading="lazy" />
+              {/* <img
+                src={item.thumbnail}
+                alt={item.title}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                loading="lazy"
+              /> */}
+      <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-rose-500/5" />
       {item.tags?.[0] && (
         <div className="absolute top-3 left-3 px-2.5 py-1 bg-gradient-to-r from-rose-500 to-pink-500 rounded-lg text-[9px] font-bold uppercase tracking-wide text-white shadow-sm flex items-center gap-1">
@@ -731,9 +844,22 @@ const FeaturedReelCard = ({ item, idx, onClick }) => (
       <div className="absolute bottom-0 left-0 right-0 p-3.5">
         <p className="text-white font-bold text-[13px] leading-snug line-clamp-2">{item.title}</p>
         <div className="mt-1.5 flex items-center gap-2.5 text-white/75 text-[10px]">
-          <span className="flex items-center gap-0.5"><Star size={8} className="fill-amber-400 text-amber-400" />{item.rating}</span>
-          {item.location && <span className="flex items-center gap-0.5 truncate"><MapPin size={8} />{item.location}</span>}
-          {item.viewCount > 0 && <span className="flex items-center gap-0.5"><Eye size={8} />{fmt(item.viewCount)}</span>}
+          <span className="flex items-center gap-0.5">
+            <Star size={8} className="fill-amber-400 text-amber-400" />
+            {item.rating}
+          </span>
+          {item.location && (
+            <span className="flex items-center gap-0.5 truncate">
+              <MapPin size={8} />
+              {item.location}
+            </span>
+          )}
+          {item.viewCount > 0 && (
+            <span className="flex items-center gap-0.5">
+              <Eye size={8} />
+              {fmt(item.viewCount)}
+            </span>
+          )}
         </div>
         {item.price && <p className="text-emerald-300 font-bold text-[12px] mt-1.5">{item.price}</p>}
       </div>
@@ -765,22 +891,29 @@ const useCarouselScroll = (deps) => {
     el.addEventListener("scroll", handleScroll, { passive: true });
     const ro = new ResizeObserver(() => requestAnimationFrame(updateNav));
     ro.observe(el);
-    return () => { el.removeEventListener("scroll", handleScroll); ro.disconnect(); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      ro.disconnect();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [updateNav, ...deps]);
 
-  const scroll = useCallback((dir) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const firstChild = el.querySelector(":scope > div > div");
-    const cardW = firstChild ? firstChild.offsetWidth : 200;
-    const gap = 14;
-    const visible = Math.max(1, Math.floor(el.clientWidth / (cardW + gap)));
-    const amount = visible * (cardW + gap);
-    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-    setTimeout(updateNav, 150);
-    setTimeout(updateNav, 400);
-    setTimeout(updateNav, 650);
-  }, [updateNav]);
+  const scroll = useCallback(
+    (dir) => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const firstChild = el.querySelector(":scope > div > div");
+      const cardW = firstChild ? firstChild.offsetWidth : 200;
+      const gap = 14;
+      const visible = Math.max(1, Math.floor(el.clientWidth / (cardW + gap)));
+      const amount = visible * (cardW + gap);
+      el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+      setTimeout(updateNav, 150);
+      setTimeout(updateNav, 400);
+      setTimeout(updateNav, 650);
+    },
+    [updateNav],
+  );
 
   return { scrollRef, canPrev, canNext, scroll };
 };
@@ -791,20 +924,38 @@ const DesktopCarouselSection = ({ section, onItemClick }) => {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-4">
-        <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">{section.title}</h3>
+        <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">
+          {section.title}
+        </h3>
         <div className="flex items-center gap-1 shrink-0">
-          <button disabled={!canPrev} onClick={() => scroll("left")} className="w-8 h-8 rounded-lg flex items-center justify-center border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-stone-800 transition-all active:scale-95">
+          <button
+            disabled={!canPrev}
+            onClick={() => scroll("left")}
+            className="w-8 h-8 rounded-lg flex items-center justify-center border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-stone-800 transition-all active:scale-95"
+          >
             <ChevronLeft size={15} />
           </button>
-          <button disabled={!canNext} onClick={() => scroll("right")} className="w-8 h-8 rounded-lg flex items-center justify-center border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-stone-800 transition-all active:scale-95">
+          <button
+            disabled={!canNext}
+            onClick={() => scroll("right")}
+            className="w-8 h-8 rounded-lg flex items-center justify-center border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-stone-800 transition-all active:scale-95"
+          >
             <ChevronRight size={15} />
           </button>
         </div>
       </div>
-      <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden no-scrollbar" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+      <div
+        ref={scrollRef}
+        className="overflow-x-auto overflow-y-hidden no-scrollbar"
+        style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+      >
         <div className="flex gap-3.5 min-w-max pb-1">
           {section.items.map((item, idx) => (
-            <div key={item.id || item._id} className="w-[165px] lg:w-[178px] xl:w-[190px] 2xl:w-[205px] shrink-0" style={{ scrollSnapAlign: "start" }}>
+            <div
+              key={item.id || item._id}
+              className="w-[165px] lg:w-[178px] xl:w-[190px] 2xl:w-[205px] shrink-0"
+              style={{ scrollSnapAlign: "start" }}
+            >
               <ReelCard item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
             </div>
           ))}
@@ -822,23 +973,47 @@ const FeaturedCarouselSection = ({ section, onItemClick }) => {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-sm">
-            {section.id === "trending" ? <TrendingUp size={13} className="text-white" /> : section.id === "sponsored" ? <Zap size={13} className="text-white" /> : <Star size={13} className="text-white" />}
+            {section.id === "trending" ? (
+              <TrendingUp size={13} className="text-white" />
+            ) : section.id === "sponsored" ? (
+              <Zap size={13} className="text-white" />
+            ) : (
+              <Star size={13} className="text-white" />
+            )}
           </div>
-          <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">{section.title}</h3>
+          <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">
+            {section.title}
+          </h3>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button disabled={!canPrev} onClick={() => scroll("left")} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60 dark:bg-stone-800 border border-rose-200/50 dark:border-stone-700 text-stone-500 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-stone-700 transition-all active:scale-95">
+          <button
+            disabled={!canPrev}
+            onClick={() => scroll("left")}
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60 dark:bg-stone-800 border border-rose-200/50 dark:border-stone-700 text-stone-500 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-stone-700 transition-all active:scale-95"
+          >
             <ChevronLeft size={15} />
           </button>
-          <button disabled={!canNext} onClick={() => scroll("right")} className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60 dark:bg-stone-800 border border-rose-200/50 dark:border-stone-700 text-stone-500 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-stone-700 transition-all active:scale-95">
+          <button
+            disabled={!canNext}
+            onClick={() => scroll("right")}
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60 dark:bg-stone-800 border border-rose-200/50 dark:border-stone-700 text-stone-500 disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-stone-700 transition-all active:scale-95"
+          >
             <ChevronRight size={15} />
           </button>
         </div>
       </div>
-      <div ref={scrollRef} className="overflow-x-auto overflow-y-hidden no-scrollbar" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+      <div
+        ref={scrollRef}
+        className="overflow-x-auto overflow-y-hidden no-scrollbar"
+        style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+      >
         <div className="flex gap-3.5 min-w-max pb-1">
           {section.items.map((item, idx) => (
-            <div key={item.id || item._id} className="w-[175px] lg:w-[190px] xl:w-[205px] 2xl:w-[218px] shrink-0" style={{ scrollSnapAlign: "start" }}>
+            <div
+              key={item.id || item._id}
+              className="w-[175px] lg:w-[190px] xl:w-[205px] 2xl:w-[218px] shrink-0"
+              style={{ scrollSnapAlign: "start" }}
+            >
               <FeaturedReelCard item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
             </div>
           ))}
@@ -848,36 +1023,90 @@ const FeaturedCarouselSection = ({ section, onItemClick }) => {
   );
 };
 
-const SearchModalComponent = ({ searchInputRef, setIsSearchOpen, searchQuery, setSearchQuery, searchResults, handleSearchResultClick, isSearching }) => (
-  <div className="fixed inset-0 z-[130] bg-stone-900/20 backdrop-blur-sm flex items-start justify-center pt-[120px] px-6" onClick={() => setIsSearchOpen(false)}>
-    <div className="w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl shadow-2xl overflow-hidden border border-rose-100/50 dark:border-stone-800" onClick={(e) => e.stopPropagation()}>
+const SearchModalComponent = ({
+  searchInputRef,
+  setIsSearchOpen,
+  searchQuery,
+  setSearchQuery,
+  searchResults,
+  handleSearchResultClick,
+  isSearching,
+}) => (
+  <div
+    className="fixed inset-0 z-[130] bg-stone-900/20 backdrop-blur-sm flex items-start justify-center pt-[120px] px-6"
+    onClick={() => setIsSearchOpen(false)}
+  >
+    <div
+      className="w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl shadow-2xl overflow-hidden border border-rose-100/50 dark:border-stone-800"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-stone-100 dark:border-stone-800">
         <Search size={16} className="text-stone-400 shrink-0" />
-        <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search events, services, vendors, reels…" className="flex-1 text-[14px] outline-none text-stone-800 dark:text-stone-100 placeholder:text-stone-400 bg-transparent" />
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search events, services, vendors, reels…"
+          className="flex-1 text-[14px] outline-none text-stone-800 dark:text-stone-100 placeholder:text-stone-400 bg-transparent"
+        />
         {isSearching && <Loader2 size={15} className="animate-spin text-rose-400" />}
-        {searchQuery && <button onClick={() => setSearchQuery("")} className="text-stone-400 hover:text-stone-600 transition-colors"><X size={15} /></button>}
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="text-stone-400 hover:text-stone-600 transition-colors">
+            <X size={15} />
+          </button>
+        )}
       </div>
       {searchResults.length > 0 ? (
         <ul className="max-h-[55vh] overflow-y-auto py-1">
           {searchResults.map((result, i) => (
-            <li key={i}><button onClick={() => handleSearchResultClick(result)} className="w-full flex items-center gap-3.5 px-5 py-3 hover:bg-rose-50/50 dark:hover:bg-stone-800 transition-colors text-left">
-              <span className="text-base shrink-0">{result.type === "reel" ? "🎬" : result.type === "event" ? "🎉" : result.type === "subtype" ? "📌" : "🏢"}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-stone-800 dark:text-stone-100 truncate">{result.label}</p>
-                <p className="text-[11px] text-stone-400 truncate">{result.sublabel}</p>
-              </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium capitalize shrink-0 ${result.type === "reel" ? "bg-emerald-50 text-emerald-600" : result.type === "event" ? "bg-rose-50 text-rose-600" : "bg-stone-100 text-stone-500"}`}>{result.type}</span>
-            </button></li>
+            <li key={i}>
+              <button
+                onClick={() => handleSearchResultClick(result)}
+                className="w-full flex items-center gap-3.5 px-5 py-3 hover:bg-rose-50/50 dark:hover:bg-stone-800 transition-colors text-left"
+              >
+                <span className="text-base shrink-0">
+                  {result.type === "reel"
+                    ? "🎬"
+                    : result.type === "event"
+                      ? "🎉"
+                      : result.type === "subtype"
+                        ? "📌"
+                        : "🏢"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-stone-800 dark:text-stone-100 truncate">
+                    {result.label}
+                  </p>
+                  <p className="text-[11px] text-stone-400 truncate">{result.sublabel}</p>
+                </div>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium capitalize shrink-0 ${result.type === "reel" ? "bg-emerald-50 text-emerald-600" : result.type === "event" ? "bg-rose-50 text-rose-600" : "bg-stone-100 text-stone-500"}`}
+                >
+                  {result.type}
+                </span>
+              </button>
+            </li>
           ))}
         </ul>
       ) : searchQuery.trim() && !isSearching ? (
-        <div className="py-14 text-center"><p className="text-stone-400 text-[13px]">No results for <span className="font-semibold text-stone-600 dark:text-stone-300">"{searchQuery}"</span></p></div>
+        <div className="py-14 text-center">
+          <p className="text-stone-400 text-[13px]">
+            No results for <span className="font-semibold text-stone-600 dark:text-stone-300">"{searchQuery}"</span>
+          </p>
+        </div>
       ) : !searchQuery.trim() ? (
         <div className="px-5 py-5">
           <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] mb-3">Quick Search</p>
           <div className="flex flex-wrap gap-1.5">
             {["Wedding", "Birthday", "Anniversary", "DJ", "Catering", "Venues", "Decor", "Photographers"].map((tag) => (
-              <button key={tag} onClick={() => setSearchQuery(tag)} className="text-[12px] px-3 py-1.5 bg-rose-50/60 dark:bg-stone-800 hover:bg-rose-100 dark:hover:bg-stone-700 rounded-lg text-stone-600 dark:text-stone-400 transition-colors font-medium">{tag}</button>
+              <button
+                key={tag}
+                onClick={() => setSearchQuery(tag)}
+                className="text-[12px] px-3 py-1.5 bg-rose-50/60 dark:bg-stone-800 hover:bg-rose-100 dark:hover:bg-stone-700 rounded-lg text-stone-600 dark:text-stone-400 transition-colors font-medium"
+              >
+                {tag}
+              </button>
             ))}
           </div>
         </div>
@@ -891,35 +1120,117 @@ const FilterDrawer = ({ initialFilter, onApply, onClose }) => {
   const [minRating, setMinRating] = useState(initialFilter.minRating);
   const [priceRange, setPriceRange] = useState(initialFilter.priceRange);
   const [location, setLocation] = useState(initialFilter.location);
-  const sortOptions = [{ id: "relevance", label: "Relevance" }, { id: "rating", label: "Top Rated" }, { id: "trending", label: "Trending" }, { id: "newest", label: "Newest" }];
+  const sortOptions = [
+    { id: "relevance", label: "Relevance" },
+    { id: "rating", label: "Top Rated" },
+    { id: "trending", label: "Trending" },
+    { id: "newest", label: "Newest" },
+  ];
   const ratings = [4.5, 4.0, 3.5];
   const locations = ["Delhi", "Mumbai", "Jaipur", "Bangalore", "Hyderabad", "Goa"];
   const activeCount = [sort !== "relevance", minRating, priceRange, location].filter(Boolean).length;
   return (
     <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-stone-900/25 backdrop-blur-sm z-[140]" />
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 280 }} className="fixed top-0 right-0 h-full w-full max-w-[380px] bg-white dark:bg-stone-950 z-[141] border-l border-rose-100/50 dark:border-stone-800 shadow-xl flex flex-col">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-stone-900/25 backdrop-blur-sm z-[140]"
+      />
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 280 }}
+        className="fixed top-0 right-0 h-full w-full max-w-[380px] bg-white dark:bg-stone-950 z-[141] border-l border-rose-100/50 dark:border-stone-800 shadow-xl flex flex-col"
+      >
         <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
-          <div className="flex items-center gap-2"><h2 className="text-[15px] font-bold text-stone-800 dark:text-stone-100">Filters</h2>{activeCount > 0 && <span className="w-5 h-5 rounded-md bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">{activeCount}</span>}</div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-stone-50 dark:bg-stone-900 flex items-center justify-center text-stone-400"><X size={14} /></button>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[15px] font-bold text-stone-800 dark:text-stone-100">Filters</h2>
+            {activeCount > 0 && (
+              <span className="w-5 h-5 rounded-md bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
+                {activeCount}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg bg-stone-50 dark:bg-stone-900 flex items-center justify-center text-stone-400"
+          >
+            <X size={14} />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div>
             <h4 className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] mb-3">Sort By</h4>
-            <div className="flex flex-wrap gap-2">{sortOptions.map((opt) => (<button key={opt.id} onClick={() => setSort(opt.id)} className={`px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all ${sort === opt.id ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}>{opt.label}</button>))}</div>
+            <div className="flex flex-wrap gap-2">
+              {sortOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setSort(opt.id)}
+                  className={`px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all ${sort === opt.id ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <h4 className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] mb-3">Rating</h4>
-            <div className="flex gap-2 flex-wrap">{ratings.map((r) => (<button key={r} onClick={() => setMinRating(minRating === r ? null : r)} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all ${minRating === r ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}><Star size={11} className={minRating === r ? "fill-white text-white" : "fill-amber-400 text-amber-400"} />{r}+</button>))}</div>
+            <div className="flex gap-2 flex-wrap">
+              {ratings.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setMinRating(minRating === r ? null : r)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all ${minRating === r ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}
+                >
+                  <Star
+                    size={11}
+                    className={minRating === r ? "fill-white text-white" : "fill-amber-400 text-amber-400"}
+                  />
+                  {r}+
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <h4 className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] mb-3">Location</h4>
-            <div className="flex flex-wrap gap-2">{locations.map((loc) => (<button key={loc} onClick={() => setLocation(location === loc ? null : loc)} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all ${location === loc ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}><MapPin size={11} />{loc}</button>))}</div>
+            <div className="flex flex-wrap gap-2">
+              {locations.map((loc) => (
+                <button
+                  key={loc}
+                  onClick={() => setLocation(location === loc ? null : loc)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all ${location === loc ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}
+                >
+                  <MapPin size={11} />
+                  {loc}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <div className="px-6 py-4 border-t border-stone-100 dark:border-stone-800 space-y-2">
-          {activeCount > 0 && <button onClick={() => { setSort("relevance"); setMinRating(null); setPriceRange(null); setLocation(null); }} className="w-full py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900 text-stone-500 font-medium text-[13px]">Reset All</button>}
-          <button onClick={() => onApply({ sort, minRating, priceRange, location })} className="w-full py-3 rounded-xl bg-rose-500 text-white font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors"><Filter size={13} />Apply</button>
+          {activeCount > 0 && (
+            <button
+              onClick={() => {
+                setSort("relevance");
+                setMinRating(null);
+                setPriceRange(null);
+                setLocation(null);
+              }}
+              className="w-full py-2.5 rounded-xl bg-stone-50 dark:bg-stone-900 text-stone-500 font-medium text-[13px]"
+            >
+              Reset All
+            </button>
+          )}
+          <button
+            onClick={() => onApply({ sort, minRating, priceRange, location })}
+            className="w-full py-3 rounded-xl bg-rose-500 text-white font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors"
+          >
+            <Filter size={13} />
+            Apply
+          </button>
         </div>
       </motion.div>
     </>
@@ -930,40 +1241,124 @@ const EventSelectionModal = ({ onSelect }) => {
   const [showOthers, setShowOthers] = useState(false);
   const [searchOther, setSearchOther] = useState("");
   const mainEvents = [
-    { id: "wedding", label: "Wedding", icon: <HeartHandshake size={24} />, desc: "Plan your dream day", color: "from-rose-400 to-pink-500" },
-    { id: "anniversary", label: "Anniversary", icon: <Heart size={24} />, desc: "Celebrate your love", color: "from-red-400 to-rose-500" },
-    { id: "birthday", label: "Birthday", icon: <Cake size={24} />, desc: "Make it memorable", color: "from-amber-400 to-orange-500" },
-    { id: "corporate", label: "Corporate", icon: <Building2 size={24} />, desc: "Professional events", color: "from-blue-400 to-indigo-500" },
+    {
+      id: "wedding",
+      label: "Wedding",
+      icon: <HeartHandshake size={24} />,
+      desc: "Plan your dream day",
+      color: "from-rose-400 to-pink-500",
+    },
+    {
+      id: "anniversary",
+      label: "Anniversary",
+      icon: <Heart size={24} />,
+      desc: "Celebrate your love",
+      color: "from-red-400 to-rose-500",
+    },
+    {
+      id: "birthday",
+      label: "Birthday",
+      icon: <Cake size={24} />,
+      desc: "Make it memorable",
+      color: "from-amber-400 to-orange-500",
+    },
+    {
+      id: "corporate",
+      label: "Corporate",
+      icon: <Building2 size={24} />,
+      desc: "Professional events",
+      color: "from-blue-400 to-indigo-500",
+    },
   ];
   const filteredOthers = OTHER_EVENT_TYPES.filter((e) => e.label.toLowerCase().includes(searchOther.toLowerCase()));
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[160] bg-gradient-to-br from-rose-50/90 via-white/95 to-amber-50/90 dark:from-stone-950/95 dark:via-stone-950/95 dark:to-stone-950/95 backdrop-blur-xl flex items-center justify-center p-8">
-      <motion.div initial={{ y: 14, opacity: 0, scale: 0.99 }} animate={{ y: 0, opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className="w-full max-w-3xl bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-rose-100/50 dark:border-stone-800 overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[160] bg-gradient-to-br from-rose-50/90 via-white/95 to-amber-50/90 dark:from-stone-950/95 dark:via-stone-950/95 dark:to-stone-950/95 backdrop-blur-xl flex items-center justify-center p-8"
+    >
+      <motion.div
+        initial={{ y: 14, opacity: 0, scale: 0.99 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="w-full max-w-3xl bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-rose-100/50 dark:border-stone-800 overflow-hidden"
+      >
         <div className="px-8 xl:px-10 py-8 xl:py-10">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md"><Sparkles size={20} className="text-white" /></div>
-            <h2 className="text-3xl xl:text-[34px] font-bold text-stone-800 dark:text-stone-100 tracking-tight">What are you planning?</h2>
+            <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md">
+              <Sparkles size={20} className="text-white" />
+            </div>
+            <h2 className="text-3xl xl:text-[34px] font-bold text-stone-800 dark:text-stone-100 tracking-tight">
+              What are you planning?
+            </h2>
             <p className="text-[13px] text-stone-400 mt-2">Choose your event to explore ideas</p>
           </div>
           {!showOthers ? (
             <>
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {mainEvents.map((event, idx) => (
-                  <motion.button key={event.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 + idx * 0.04 }} onClick={() => onSelect(event.id, event.label)} className="p-5 rounded-xl bg-stone-50/70 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 hover:border-rose-200 dark:hover:border-rose-800 hover:shadow-md hover:shadow-rose-50 transition-all text-left group">
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${event.color} flex items-center justify-center text-white mb-3 shadow-sm group-hover:scale-105 transition-transform`}>{event.icon}</div>
+                  <motion.button
+                    key={event.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.06 + idx * 0.04 }}
+                    onClick={() => onSelect(event.id, event.label)}
+                    className="p-5 rounded-xl bg-stone-50/70 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 hover:border-rose-200 dark:hover:border-rose-800 hover:shadow-md hover:shadow-rose-50 transition-all text-left group"
+                  >
+                    <div
+                      className={`w-11 h-11 rounded-xl bg-gradient-to-br ${event.color} flex items-center justify-center text-white mb-3 shadow-sm group-hover:scale-105 transition-transform`}
+                    >
+                      {event.icon}
+                    </div>
                     <h3 className="text-lg font-bold text-stone-800 dark:text-stone-100">{event.label}</h3>
                     <p className="text-[12px] text-stone-400 mt-0.5">{event.desc}</p>
                   </motion.button>
                 ))}
               </div>
-              <button onClick={() => setShowOthers(true)} className="w-full py-3 rounded-xl bg-stone-50 dark:bg-stone-800 text-stone-500 font-medium text-[13px] flex items-center justify-center gap-2 border border-stone-100 dark:border-stone-700 hover:bg-rose-50/50 transition-colors"><PartyPopper size={14} />Other Event Types<ChevronDown size={13} /></button>
+              <button
+                onClick={() => setShowOthers(true)}
+                className="w-full py-3 rounded-xl bg-stone-50 dark:bg-stone-800 text-stone-500 font-medium text-[13px] flex items-center justify-center gap-2 border border-stone-100 dark:border-stone-700 hover:bg-rose-50/50 transition-colors"
+              >
+                <PartyPopper size={14} />
+                Other Event Types
+                <ChevronDown size={13} />
+              </button>
             </>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <button onClick={() => setShowOthers(false)} className="flex items-center gap-1.5 text-[13px] font-medium text-stone-400 hover:text-rose-500 mb-4 transition-colors"><ArrowLeft size={13} />Back</button>
-              <div className="relative mb-3"><Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" /><input type="text" placeholder="Search event type..." value={searchOther} onChange={(e) => setSearchOther(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 rounded-xl text-[13px] text-stone-800 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:border-rose-300 transition-colors" /></div>
-              <div className="grid grid-cols-2 gap-2 max-h-[360px] overflow-y-auto">{filteredOthers.map((event) => (<button key={event.id} onClick={() => onSelect(event.id, event.label)} className="w-full flex items-center justify-between p-3.5 rounded-xl bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 hover:border-rose-200 dark:hover:border-rose-800 transition-all text-left"><span className="text-[13px] font-medium text-stone-700 dark:text-stone-200">{event.label}</span><ChevronRight size={14} className="text-stone-300" /></button>))}</div>
-              {filteredOthers.length === 0 && <p className="text-center py-10 text-[13px] text-stone-400">No matching event types</p>}
+              <button
+                onClick={() => setShowOthers(false)}
+                className="flex items-center gap-1.5 text-[13px] font-medium text-stone-400 hover:text-rose-500 mb-4 transition-colors"
+              >
+                <ArrowLeft size={13} />
+                Back
+              </button>
+              <div className="relative mb-3">
+                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Search event type..."
+                  value={searchOther}
+                  onChange={(e) => setSearchOther(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 rounded-xl text-[13px] text-stone-800 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:border-rose-300 transition-colors"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 max-h-[360px] overflow-y-auto">
+                {filteredOthers.map((event) => (
+                  <button
+                    key={event.id}
+                    onClick={() => onSelect(event.id, event.label)}
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl bg-white dark:bg-stone-800 border border-stone-100 dark:border-stone-700 hover:border-rose-200 dark:hover:border-rose-800 transition-all text-left"
+                  >
+                    <span className="text-[13px] font-medium text-stone-700 dark:text-stone-200">{event.label}</span>
+                    <ChevronRight size={14} className="text-stone-300" />
+                  </button>
+                ))}
+              </div>
+              {filteredOthers.length === 0 && (
+                <p className="text-center py-10 text-[13px] text-stone-400">No matching event types</p>
+              )}
             </motion.div>
           )}
         </div>
@@ -983,34 +1378,113 @@ const BookingDrawer = ({ item, onClose }) => {
   const dates = ["Tomorrow", "This Weekend", "Next Week", "Custom"];
   return (
     <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-[170]" />
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 280 }} className="fixed top-0 right-0 h-full w-full max-w-[440px] bg-white dark:bg-stone-950 z-[171] overflow-hidden flex flex-col shadow-xl border-l border-rose-100/50 dark:border-stone-800">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-[170]"
+      />
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 280 }}
+        className="fixed top-0 right-0 h-full w-full max-w-[440px] bg-white dark:bg-stone-950 z-[171] overflow-hidden flex flex-col shadow-xl border-l border-rose-100/50 dark:border-stone-800"
+      >
         <div className="px-6 py-4 flex items-center gap-3 border-b border-stone-100 dark:border-stone-800">
-          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-stone-100"><img src={item.thumbnail} alt="" className="w-full h-full object-cover" /></div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-[14px] font-bold text-stone-800 dark:text-stone-100 truncate">Book {item.title || "Vendor"}</h2>
-            <p className="text-[11px] text-stone-400 flex items-center gap-1 mt-0.5"><Star size={9} className="fill-amber-400 text-amber-400" />{item.rating?.toFixed?.(1) || "4.2"} · {item.location}</p>
+          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-stone-100">
+            {/* <img src={item.thumbnail} alt="" className="w-full h-full object-cover" /> */}
+            <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-stone-50 dark:bg-stone-900 flex items-center justify-center text-stone-400"><X size={14} /></button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[14px] font-bold text-stone-800 dark:text-stone-100 truncate">
+              Book {item.title || "Vendor"}
+            </h2>
+            <p className="text-[11px] text-stone-400 flex items-center gap-1 mt-0.5">
+              <Star size={9} className="fill-amber-400 text-amber-400" />
+              {item.rating?.toFixed?.(1) || "4.2"} · {item.location}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg bg-stone-50 dark:bg-stone-900 flex items-center justify-center text-stone-400"
+          >
+            <X size={14} />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div>
             <h4 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2.5">Date</h4>
-            <div className="flex flex-wrap gap-2">{dates.map((d) => (<button key={d} onClick={() => setSelectedDate(d)} className={`px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${selectedDate === d ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}>{d}</button>))}</div>
+            <div className="flex flex-wrap gap-2">
+              {dates.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setSelectedDate(d)}
+                  className={`px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${selectedDate === d ? "bg-rose-500 text-white" : "bg-rose-50/60 dark:bg-stone-900 text-stone-600 dark:text-stone-400 hover:bg-rose-100"}`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <h4 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2.5">Package</h4>
-            <div className="space-y-2">{packages.map((pkg, i) => (<button key={pkg.name} onClick={() => setSelectedPackage(i)} className={`w-full p-3.5 rounded-xl text-left transition-all border ${selectedPackage === i ? "bg-rose-500 border-rose-500" : "bg-stone-50 dark:bg-stone-900 border-stone-100 dark:border-stone-800 hover:border-rose-200"}`}>
-              <div className="flex items-center justify-between mb-1.5"><span className={`text-[13px] font-bold ${selectedPackage === i ? "text-white" : "text-stone-800 dark:text-stone-100"}`}>{pkg.name}</span><span className={`text-[14px] font-bold ${selectedPackage === i ? "text-white/90" : "text-emerald-600"}`}>{pkg.price}</span></div>
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5">{pkg.features.map((f) => (<span key={f} className={`text-[10px] ${selectedPackage === i ? "text-white/60" : "text-stone-400"}`}>✓ {f}</span>))}</div>
-            </button>))}</div>
+            <div className="space-y-2">
+              {packages.map((pkg, i) => (
+                <button
+                  key={pkg.name}
+                  onClick={() => setSelectedPackage(i)}
+                  className={`w-full p-3.5 rounded-xl text-left transition-all border ${selectedPackage === i ? "bg-rose-500 border-rose-500" : "bg-stone-50 dark:bg-stone-900 border-stone-100 dark:border-stone-800 hover:border-rose-200"}`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span
+                      className={`text-[13px] font-bold ${selectedPackage === i ? "text-white" : "text-stone-800 dark:text-stone-100"}`}
+                    >
+                      {pkg.name}
+                    </span>
+                    <span
+                      className={`text-[14px] font-bold ${selectedPackage === i ? "text-white/90" : "text-emerald-600"}`}
+                    >
+                      {pkg.price}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                    {pkg.features.map((f) => (
+                      <span
+                        key={f}
+                        className={`text-[10px] ${selectedPackage === i ? "text-white/60" : "text-stone-400"}`}
+                      >
+                        ✓ {f}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <div className="px-6 py-4 border-t border-stone-100 dark:border-stone-800">
-          <div className="flex items-center justify-between mb-3"><div><p className="text-[10px] text-stone-400">Total</p><p className="text-lg font-bold text-stone-800 dark:text-stone-100">{packages[selectedPackage].price}</p></div>{selectedDate && <span className="text-[11px] font-medium text-stone-400 bg-stone-50 dark:bg-stone-900 px-2.5 py-1 rounded-lg">{selectedDate}</span>}</div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] text-stone-400">Total</p>
+              <p className="text-lg font-bold text-stone-800 dark:text-stone-100">{packages[selectedPackage].price}</p>
+            </div>
+            {selectedDate && (
+              <span className="text-[11px] font-medium text-stone-400 bg-stone-50 dark:bg-stone-900 px-2.5 py-1 rounded-lg">
+                {selectedDate}
+              </span>
+            )}
+          </div>
           <div className="flex gap-2">
-            <button className="flex-1 py-2.5 bg-stone-50 dark:bg-stone-900 rounded-xl flex items-center justify-center gap-1.5 hover:bg-stone-100 transition-colors"><MessageSquare size={13} className="text-stone-600" /><span className="text-[12px] font-medium text-stone-600">Chat</span></button>
-            <button className="flex-1 py-2.5 bg-rose-500 rounded-xl flex items-center justify-center gap-1.5 hover:bg-rose-600 transition-colors"><Zap size={13} className="text-white" /><span className="text-[12px] font-semibold text-white">Confirm</span></button>
+            <button className="flex-1 py-2.5 bg-stone-50 dark:bg-stone-900 rounded-xl flex items-center justify-center gap-1.5 hover:bg-stone-100 transition-colors">
+              <MessageSquare size={13} className="text-stone-600" />
+              <span className="text-[12px] font-medium text-stone-600">Chat</span>
+            </button>
+            <button className="flex-1 py-2.5 bg-rose-500 rounded-xl flex items-center justify-center gap-1.5 hover:bg-rose-600 transition-colors">
+              <Zap size={13} className="text-white" />
+              <span className="text-[12px] font-semibold text-white">Confirm</span>
+            </button>
           </div>
         </div>
       </motion.div>
@@ -1058,13 +1532,31 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
     const cleanHref = cleanUrl.pathname + cleanUrl.search;
     window.history.replaceState(null, "", cleanHref);
     window.history.pushState({ reelsModal: true }, "", cleanHref);
-    const onPopState = () => { if (!isClosingRef.current) { isClosingRef.current = true; onCloseRef.current(); } };
+    const onPopState = () => {
+      if (!isClosingRef.current) {
+        isClosingRef.current = true;
+        onCloseRef.current();
+      }
+    };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
-  useEffect(() => { return () => { if (videoRef.current) { videoRef.current.pause(); videoRef.current.removeAttribute("src"); videoRef.current.load(); } }; }, []);
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute("src");
+        videoRef.current.load();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!currentReel?._id) return;
@@ -1080,7 +1572,9 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
 
     setIsLiked(initiallyLiked);
     setIsSaved(initiallySaved);
-    setLocalLikeCount(currentReel.likeCount || 0); setLocalSaveCount(currentReel.saveCount || 0); setLocalViewCount(currentReel.viewCount || 0);
+    setLocalLikeCount(currentReel.likeCount || 0);
+    setLocalSaveCount(currentReel.saveCount || 0);
+    setLocalViewCount(currentReel.viewCount || 0);
     setVendorProfile(null);
     if (!viewRecordedRef.current.has(currentReel._id)) {
       viewRecordedRef.current.add(currentReel._id);
@@ -1088,25 +1582,50 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
       setLocalViewCount((c) => c + 1);
       addToRecentlyViewed(currentReel);
     }
-    fetchRelatedReels(currentReel._id, 8).then((res) => { if (res.reels) setRelatedReels(res.reels.map(normalizeReel)); if (res.similarVendors) setSimilarVendors(res.similarVendors); });
-    if (currentReel.vendorId) { setLoadingProfile(true); fetchVendorProfile(currentReel.vendorId).then((profile) => { if (profile) setVendorProfile(profile); setLoadingProfile(false); }); }
+    fetchRelatedReels(currentReel._id, 8).then((res) => {
+      if (res.reels) setRelatedReels(res.reels.map(normalizeReel));
+      if (res.similarVendors) setSimilarVendors(res.similarVendors);
+    });
+    if (currentReel.vendorId) {
+      setLoadingProfile(true);
+      fetchVendorProfile(currentReel.vendorId).then((profile) => {
+        if (profile) setVendorProfile(profile);
+        setLoadingProfile(false);
+      });
+    }
   }, [currentIndex, currentReel?._id]);
 
-  useEffect(() => { const video = videoRef.current; if (!video) return; if (isPlaying) video.play().catch(() => {}); else video.pause(); }, [isPlaying, currentIndex]);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isPlaying) video.play().catch(() => {});
+    else video.pause();
+  }, [isPlaying, currentIndex]);
 
-  const goToReel = useCallback((direction) => {
-    if (direction === "up" && currentIndex < reels.length - 1) setCurrentIndex((p) => p + 1);
-    else if (direction === "down" && currentIndex > 0) setCurrentIndex((p) => p - 1);
-  }, [currentIndex, reels.length]);
+  const goToReel = useCallback(
+    (direction) => {
+      if (direction === "up" && currentIndex < reels.length - 1) setCurrentIndex((p) => p + 1);
+      else if (direction === "down" && currentIndex > 0) setCurrentIndex((p) => p - 1);
+    },
+    [currentIndex, reels.length],
+  );
 
-  const handleClose = useCallback(() => { if (isClosingRef.current) return; isClosingRef.current = true; window.history.back(); onClose(); }, [onClose]);
+  const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    window.history.back();
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "ArrowDown" || e.key === "ArrowRight") goToReel("up");
       else if (e.key === "ArrowUp" || e.key === "ArrowLeft") goToReel("down");
       else if (e.key === "Escape") handleClose();
-      else if (e.key === " ") { e.preventDefault(); if (currentReel?.videoUrl) setIsPlaying((p) => !p); }
+      else if (e.key === " ") {
+        e.preventDefault();
+        if (currentReel?.videoUrl) setIsPlaying((p) => !p);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1119,119 +1638,281 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
     if (info.velocity.x > 500 || info.offset.x > 180) handleClose();
   };
 
-  const closeAndNavigate = useCallback((targetUrl) => {
-    if (isClosingRef.current) return;
-    isClosingRef.current = true;
-    const cleanUrl = new URL(window.location.href);
-    cleanUrl.searchParams.delete("reel");
-    window.history.replaceState(null, "", cleanUrl.pathname + cleanUrl.search);
-    router.push(targetUrl);
-    onClose();
-  }, [router, onClose]);
+  const closeAndNavigate = useCallback(
+    (targetUrl) => {
+      if (isClosingRef.current) return;
+      isClosingRef.current = true;
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("reel");
+      window.history.replaceState(null, "", cleanUrl.pathname + cleanUrl.search);
+      router.push(targetUrl);
+      onClose();
+    },
+    [router, onClose],
+  );
 
-  const navigateToVendorProfile = useCallback(async (vendorId) => {
-    setIsProfileLoading(true);
-    try {
-      const profile = await fetchVendorProfile(vendorId);
-      if (profile && profile.category) {
-        const backTo = encodeURIComponent(window.location.href);
-        const path = profile.vendorId ? `/vendor/${profile.category}/${profile.vendorId}/profile` : `/vendor/${profile.category}/profile/${profile.username}`;
-        closeAndNavigate(`${path}?backTo=${backTo}`);
+  const navigateToVendorProfile = useCallback(
+    async (vendorId) => {
+      setIsProfileLoading(true);
+      try {
+        const profile = await fetchVendorProfile(vendorId);
+        if (profile && profile.category) {
+          const backTo = encodeURIComponent(window.location.href);
+          const path = profile.vendorId
+            ? `/vendor/${profile.category}/${profile.vendorId}/profile`
+            : `/vendor/${profile.category}/profile/${profile.username}`;
+          closeAndNavigate(`${path}?backTo=${backTo}`);
+        }
+      } catch {
+      } finally {
+        setIsProfileLoading(false);
       }
-    } catch {} finally { setIsProfileLoading(false); }
-  }, [closeAndNavigate]);
+    },
+    [closeAndNavigate],
+  );
 
   const handleTap = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
-      if (!isLiked && currentReel?._id) { setIsLiked(true); setLocalLikeCount((c) => c + 1); setShowLikeAnimation(true); setTimeout(() => setShowLikeAnimation(false), 600); toggleLike(currentReel._id, "like"); }
+      if (!isLiked && currentReel?._id) {
+        setIsLiked(true);
+        setLocalLikeCount((c) => c + 1);
+        setShowLikeAnimation(true);
+        setTimeout(() => setShowLikeAnimation(false), 600);
+        toggleLike(currentReel._id, "like");
+      }
       lastTapRef.current = 0;
     } else {
       lastTapRef.current = now;
-      setTimeout(() => { if (lastTapRef.current === now) { if (currentReel?.videoUrl) setIsPlaying((p) => !p); } }, 300);
+      setTimeout(() => {
+        if (lastTapRef.current === now) {
+          if (currentReel?.videoUrl) setIsPlaying((p) => !p);
+        }
+      }, 300);
     }
   };
 
-  const handleLikeToggle = () => { if (!currentReel?._id) return; const n = !isLiked; setIsLiked(n); setLocalLikeCount((c) => n ? c + 1 : Math.max(0, c - 1)); if (n) { setShowLikeAnimation(true); setTimeout(() => setShowLikeAnimation(false), 600); } toggleLike(currentReel._id, n ? "like" : "unlike"); };
-  const handleSaveToggle = () => { if (!currentReel?._id) return; const n = !isSaved; setIsSaved(n); setLocalSaveCount((c) => n ? c + 1 : Math.max(0, c - 1)); toggleSave(currentReel._id, n ? "save" : "unsave"); };
-  const handleShare = () => { if (!currentReel?._id) return; recordShare(currentReel._id); setShowShareModal(true); };
+  const handleLikeToggle = () => {
+    if (!currentReel?._id) return;
+    const n = !isLiked;
+    setIsLiked(n);
+    setLocalLikeCount((c) => (n ? c + 1 : Math.max(0, c - 1)));
+    if (n) {
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 600);
+    }
+    toggleLike(currentReel._id, n ? "like" : "unlike");
+  };
+  const handleSaveToggle = () => {
+    if (!currentReel?._id) return;
+    const n = !isSaved;
+    setIsSaved(n);
+    setLocalSaveCount((c) => (n ? c + 1 : Math.max(0, c - 1)));
+    toggleSave(currentReel._id, n ? "save" : "unsave");
+  };
+  const handleShare = () => {
+    if (!currentReel?._id) return;
+    recordShare(currentReel._id);
+    setShowShareModal(true);
+  };
 
   const handleSeeProfile = async () => {
     const allVendorIds = similarVendors || [];
     if (allVendorIds.length === 0) return;
-    if (allVendorIds.length === 1) { await navigateToVendorProfile(allVendorIds[0]._id); return; }
+    if (allVendorIds.length === 1) {
+      await navigateToVendorProfile(allVendorIds[0]._id);
+      return;
+    }
     setShowSimilarVendorsDrawer(true);
     setLoadingSimilarProfiles(true);
-    try { const profiles = await Promise.all(allVendorIds.map((id) => fetchVendorProfile(id._id))); setSimilarVendorProfiles(profiles.filter(Boolean)); } catch { setSimilarVendorProfiles([]); } finally { setLoadingSimilarProfiles(false); }
+    try {
+      const profiles = await Promise.all(allVendorIds.map((id) => fetchVendorProfile(id._id)));
+      setSimilarVendorProfiles(profiles.filter(Boolean));
+    } catch {
+      setSimilarVendorProfiles([]);
+    } finally {
+      setLoadingSimilarProfiles(false);
+    }
   };
 
-  const loadRelatedIntoFeed = useCallback((relReel) => {
-    const exists = reels.findIndex((r) => r._id === relReel._id);
-    if (exists >= 0) setCurrentIndex(exists);
-    else { const newReels = [...reels, relReel]; setReels(newReels); setCurrentIndex(newReels.length - 1); }
-  }, [reels]);
+  const loadRelatedIntoFeed = useCallback(
+    (relReel) => {
+      const exists = reels.findIndex((r) => r._id === relReel._id);
+      if (exists >= 0) setCurrentIndex(exists);
+      else {
+        const newReels = [...reels, relReel];
+        setReels(newReels);
+        setCurrentIndex(newReels.length - 1);
+      }
+    },
+    [reels],
+  );
 
   if (!currentReel) return null;
   const hasVideo = !!currentReel.videoUrl;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-stone-950/95">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] bg-stone-950/95"
+    >
       <div className="absolute inset-0 flex">
-        <div className="relative flex items-center justify-center bg-black flex-shrink-0" style={{ width: "clamp(340px, 45vw, 680px)" }}>
+        <div
+          className="relative flex items-center justify-center bg-black flex-shrink-0"
+          style={{ width: "clamp(340px, 45vw, 680px)" }}
+        >
           <div className="absolute left-4 top-1/2 -translate-y-1/2 z-30">
-            <button onClick={() => goToReel("down")} disabled={currentIndex === 0} className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-15 hover:bg-white/20 transition-colors"><ChevronLeft size={18} /></button>
+            <button
+              onClick={() => goToReel("down")}
+              disabled={currentIndex === 0}
+              className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-15 hover:bg-white/20 transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
           </div>
           <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30">
-            <button onClick={() => goToReel("up")} disabled={currentIndex === reels.length - 1} className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-15 hover:bg-white/20 transition-colors"><ChevronRight size={18} /></button>
+            <button
+              onClick={() => goToReel("up")}
+              disabled={currentIndex === reels.length - 1}
+              className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-15 hover:bg-white/20 transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
           <div className="absolute top-4 right-4 z-30">
-            <button onClick={() => setIsMuted(!isMuted)} className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors">{isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}</button>
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </button>
           </div>
 
-          <motion.div drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.1} onDragStart={() => setIsDragging(true)} onDragEnd={handleDragEnd} onClick={handleTap} className="relative h-[88vh] aspect-[9/16] rounded-2xl overflow-hidden touch-pan-y" style={{ cursor: isDragging ? "grabbing" : "pointer" }}>
+          <motion.div
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.1}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={handleDragEnd}
+            onClick={handleTap}
+            className="relative h-[88vh] aspect-[9/16] rounded-2xl overflow-hidden touch-pan-y"
+            style={{ cursor: isDragging ? "grabbing" : "pointer" }}
+          >
             <AnimatePresence mode="wait">
-              <motion.div key={currentReel._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.22 }} className="absolute inset-0 z-10">
+              <motion.div
+                key={currentReel._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.22 }}
+                className="absolute inset-0 z-10"
+              >
                 {hasVideo ? (
                   <>
-                    <video ref={videoRef} src={currentReel.videoUrl} poster={currentReel.thumbnail} className="w-full h-full object-cover" loop playsInline muted={isMuted} autoPlay onLoadedData={() => setVideoLoading(false)} onWaiting={() => setVideoLoading(true)} onPlaying={() => setVideoLoading(false)} onTimeUpdate={(e) => { if (e.target.duration) setVideoProgress((e.target.currentTime / e.target.duration) * 100); }} />
-                    {videoLoading && <div className="absolute inset-0 flex items-center justify-center z-20"><Loader2 size={30} className="text-white animate-spin" /></div>}
-                    {!isPlaying && !videoLoading && <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"><div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"><Play size={24} className="text-white fill-white ml-0.5" /></div></div>}
+                    <video
+                      ref={videoRef}
+                      src={currentReel.videoUrl}
+                      poster={currentReel.thumbnail}
+                      className="w-full h-full object-cover"
+                      loop
+                      playsInline
+                      muted={isMuted}
+                      autoPlay
+                      onLoadedData={() => setVideoLoading(false)}
+                      onWaiting={() => setVideoLoading(true)}
+                      onPlaying={() => setVideoLoading(false)}
+                      onTimeUpdate={(e) => {
+                        if (e.target.duration) setVideoProgress((e.target.currentTime / e.target.duration) * 100);
+                      }}
+                    />
+                    {videoLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center z-20">
+                        <Loader2 size={30} className="text-white animate-spin" />
+                      </div>
+                    )}
+                    {!isPlaying && !videoLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                        <div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
+                          <Play size={24} className="text-white fill-white ml-0.5" />
+                        </div>
+                      </div>
+                    )}
                   </>
-                ) : <img src={currentReel.thumbnail} alt={currentReel.title} className="w-full h-full object-cover" />}
+                ) : (
+                  <SmartMedia src={currentReel.thumbnail} alt={currentReel.title} className="w-full h-full object-cover" />
+                )}
               </motion.div>
             </AnimatePresence>
             <AnimatePresence>
               {showLikeAnimation && (
-                <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.6, opacity: 0 }} transition={{ duration: 0.35 }} className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 1.6, opacity: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+                >
                   <Heart size={72} className="text-rose-500 fill-rose-500 drop-shadow-lg" />
                 </motion.div>
               )}
             </AnimatePresence>
-            {hasVideo && <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15 z-30"><div className="h-full bg-rose-400 transition-[width] duration-200" style={{ width: `${videoProgress}%` }} /></div>}
+            {hasVideo && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15 z-30">
+                <div
+                  className="h-full bg-rose-400 transition-[width] duration-200"
+                  style={{ width: `${videoProgress}%` }}
+                />
+              </div>
+            )}
           </motion.div>
         </div>
 
         <div className="flex-1 min-w-0 bg-white dark:bg-stone-950 border-l border-stone-200/40 dark:border-stone-800 overflow-y-auto">
           <div className="sticky top-0 z-10 px-6 py-3.5 bg-white/90 dark:bg-stone-950/90 backdrop-blur-lg border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="text-[12px] font-medium text-stone-400 bg-stone-100 dark:bg-stone-900 px-2.5 py-1 rounded-md">{currentIndex + 1} / {reels.length}</span>
-              {currentReel.category && <span className="text-[11px] text-rose-500 font-medium capitalize">{currentReel.category.replace(/-/g, " ")}</span>}
+              <span className="text-[12px] font-medium text-stone-400 bg-stone-100 dark:bg-stone-900 px-2.5 py-1 rounded-md">
+                {currentIndex + 1} / {reels.length}
+              </span>
+              {currentReel.category && (
+                <span className="text-[11px] text-rose-500 font-medium capitalize">
+                  {currentReel.category.replace(/-/g, " ")}
+                </span>
+              )}
             </div>
-            <button onClick={handleClose} className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-900 flex items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"><X size={14} /></button>
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-900 flex items-center justify-center text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              <X size={14} />
+            </button>
           </div>
 
           <div className="p-6 space-y-5">
             <div className="flex items-center gap-3 cursor-pointer" onClick={handleSeeProfile}>
               <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-rose-200/60 bg-stone-200 shrink-0">
-                <img src={vendorProfile?.vendorAvatar || currentReel.thumbnail} alt="" className="w-full h-full object-cover" />
+                {/* <img
+                  src={vendorProfile?.vendorAvatar || currentReel.thumbnail}
+                  alt=""
+                  className="w-full h-full object-cover"
+                /> */}
+                <SmartMedia src={vendorProfile?.vendorAvatar || currentReel.thumbnail} alt="" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[14px] font-bold text-stone-800 dark:text-stone-100 truncate">{vendorProfile?.vendorBusinessName || `Deto - ${currentReel.title?.slice(0, 16)}...`}</span>
+                  <span className="text-[14px] font-bold text-stone-800 dark:text-stone-100 truncate">
+                    {vendorProfile?.vendorBusinessName || `Deto - ${currentReel.title?.slice(0, 16)}...`}
+                  </span>
                   {currentReel.isPinned && <BadgeCheck size={13} className="text-blue-500 shrink-0" />}
                 </div>
                 <span className="text-[11px] text-stone-400 flex items-center gap-1">
-                  {(vendorProfile?.location?.city || currentReel.location) && <><MapPin size={9} />{vendorProfile?.location?.city || currentReel.location}</>}
+                  {(vendorProfile?.location?.city || currentReel.location) && (
+                    <>
+                      <MapPin size={9} />
+                      {vendorProfile?.location?.city || currentReel.location}
+                    </>
+                  )}
                 </span>
               </div>
               <button className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 px-3 py-1.5 bg-rose-50 rounded-lg transition-colors shrink-0">
@@ -1240,22 +1921,47 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={handleLikeToggle} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-all ${isLiked ? "bg-rose-50 text-rose-600 ring-1 ring-rose-200" : "bg-stone-50 dark:bg-stone-900 text-stone-500 hover:bg-rose-50 hover:text-rose-500"}`}>
-                <Heart size={14} className={isLiked ? "fill-rose-500 text-rose-500" : ""} />{fmt(localLikeCount)}
+              <button
+                onClick={handleLikeToggle}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-all ${isLiked ? "bg-rose-50 text-rose-600 ring-1 ring-rose-200" : "bg-stone-50 dark:bg-stone-900 text-stone-500 hover:bg-rose-50 hover:text-rose-500"}`}
+              >
+                <Heart size={14} className={isLiked ? "fill-rose-500 text-rose-500" : ""} />
+                {fmt(localLikeCount)}
               </button>
-              <button onClick={handleSaveToggle} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-all ${isSaved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-stone-50 dark:bg-stone-900 text-stone-500 hover:bg-amber-50 hover:text-amber-500"}`}>
-                {isSaved ? <BookmarkCheck size={14} className="fill-amber-500 text-amber-500" /> : <Bookmark size={14} />}{isSaved ? "Saved" : "Save"}
+              <button
+                onClick={handleSaveToggle}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-all ${isSaved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-stone-50 dark:bg-stone-900 text-stone-500 hover:bg-amber-50 hover:text-amber-500"}`}
+              >
+                {isSaved ? (
+                  <BookmarkCheck size={14} className="fill-amber-500 text-amber-500" />
+                ) : (
+                  <Bookmark size={14} />
+                )}
+                {isSaved ? "Saved" : "Save"}
               </button>
-              <button onClick={handleShare} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold bg-stone-50 dark:bg-stone-900 text-stone-500 hover:bg-violet-50 hover:text-violet-500 transition-all">
-                <Send size={13} />Share
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold bg-stone-50 dark:bg-stone-900 text-stone-500 hover:bg-violet-50 hover:text-violet-500 transition-all"
+              >
+                <Send size={13} />
+                Share
               </button>
-              <div className="ml-auto flex items-center gap-1 text-[11px] text-stone-400"><Eye size={12} />{fmt(localViewCount)} views</div>
+              <div className="ml-auto flex items-center gap-1 text-[11px] text-stone-400">
+                <Eye size={12} />
+                {fmt(localViewCount)} views
+              </div>
             </div>
 
             <div>
               <h2 className="text-lg font-bold text-stone-800 dark:text-stone-100 leading-snug">{currentReel.title}</h2>
-              {currentReel.caption && <p className="mt-2 text-[13px] text-stone-500 dark:text-stone-400 leading-relaxed">{currentReel.caption}</p>}
-              {currentReel.description && currentReel.description !== currentReel.caption && <p className="mt-1.5 text-[12px] text-stone-400 leading-relaxed">{currentReel.description}</p>}
+              {currentReel.caption && (
+                <p className="mt-2 text-[13px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                  {currentReel.caption}
+                </p>
+              )}
+              {currentReel.description && currentReel.description !== currentReel.caption && (
+                <p className="mt-1.5 text-[12px] text-stone-400 leading-relaxed">{currentReel.description}</p>
+              )}
             </div>
 
             {currentReel.price && (
@@ -1266,13 +1972,22 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
             )}
 
             {currentReel.musicTitle && (
-              <div className="flex items-center gap-2 text-[12px] text-stone-400"><Headphones size={13} className="text-stone-400" /><span>{currentReel.musicTitle}{currentReel.musicArtist ? ` · ${currentReel.musicArtist}` : ""}</span></div>
+              <div className="flex items-center gap-2 text-[12px] text-stone-400">
+                <Headphones size={13} className="text-stone-400" />
+                <span>
+                  {currentReel.musicTitle}
+                  {currentReel.musicArtist ? ` · ${currentReel.musicArtist}` : ""}
+                </span>
+              </div>
             )}
 
             {currentReel.hashtags?.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {currentReel.hashtags.slice(0, 8).map((h) => (
-                  <span key={h} className="px-2.5 py-1 rounded-lg bg-violet-50/60 dark:bg-stone-900 border border-violet-100/40 dark:border-stone-800 text-[11px] font-medium text-violet-500">
+                  <span
+                    key={h}
+                    className="px-2.5 py-1 rounded-lg bg-violet-50/60 dark:bg-stone-900 border border-violet-100/40 dark:border-stone-800 text-[11px] font-medium text-violet-500"
+                  >
                     {h.startsWith("#") ? h : `#${h}`}
                   </span>
                 ))}
@@ -1280,11 +1995,20 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
             )}
 
             <div className="flex gap-2">
-              <button onClick={handleSeeProfile} disabled={isProfileLoading} className="flex-1 py-3 bg-stone-100 dark:bg-stone-900 text-stone-700 dark:text-stone-300 rounded-xl flex items-center justify-center gap-1.5 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors text-[13px] font-semibold">
-                <ExternalLink size={14} />{isProfileLoading ? "Loading..." : "See Profile"}
+              <button
+                onClick={handleSeeProfile}
+                disabled={isProfileLoading}
+                className="flex-1 py-3 bg-stone-100 dark:bg-stone-900 text-stone-700 dark:text-stone-300 rounded-xl flex items-center justify-center gap-1.5 hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors text-[13px] font-semibold"
+              >
+                <ExternalLink size={14} />
+                {isProfileLoading ? "Loading..." : "See Profile"}
               </button>
-              <button onClick={() => onBookNow(currentReel)} className="flex-1 py-3 bg-rose-500 text-white rounded-xl flex items-center justify-center gap-1.5 hover:bg-rose-600 transition-colors text-[13px] font-semibold">
-                <Calendar size={14} />Book Now
+              <button
+                onClick={() => onBookNow(currentReel)}
+                className="flex-1 py-3 bg-rose-500 text-white rounded-xl flex items-center justify-center gap-1.5 hover:bg-rose-600 transition-colors text-[13px] font-semibold"
+              >
+                <Calendar size={14} />
+                Book Now
               </button>
             </div>
 
@@ -1292,13 +2016,34 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
               <div className="pt-3 border-t border-stone-100 dark:border-stone-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[14px] font-bold text-stone-800 dark:text-stone-100">Similar Vendors</h4>
-                  <button onClick={handleSeeProfile} className="text-[11px] font-medium text-rose-500 flex items-center gap-0.5">All<ChevronRight size={11} /></button>
+                  <button
+                    onClick={handleSeeProfile}
+                    className="text-[11px] font-medium text-rose-500 flex items-center gap-0.5"
+                  >
+                    All
+                    <ChevronRight size={11} />
+                  </button>
                 </div>
                 <div className="space-y-2">
                   {similarVendors.slice(0, 3).map((v) => (
-                    <button key={v._id} onClick={() => navigateToVendorProfile(v._id)} className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-stone-50/70 dark:bg-stone-900 hover:bg-rose-50/50 border border-stone-100/60 dark:border-stone-800 transition-colors text-left">
-                      {v.vendorAvatar ? <img src={v.vendorAvatar} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" /> : <div className="w-9 h-9 rounded-lg bg-stone-200 dark:bg-stone-800 flex items-center justify-center shrink-0"><Building2 size={13} className="text-stone-400" /></div>}
-                      <div className="min-w-0 flex-1"><p className="text-[12px] font-semibold text-stone-700 dark:text-stone-200 truncate">{v.vendorBusinessName || v.vendorName}</p>{v.location?.city && <p className="text-[10px] text-stone-400">{v.location.city}</p>}</div>
+                    <button
+                      key={v._id}
+                      onClick={() => navigateToVendorProfile(v._id)}
+                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-stone-50/70 dark:bg-stone-900 hover:bg-rose-50/50 border border-stone-100/60 dark:border-stone-800 transition-colors text-left"
+                    >
+                      {v.vendorAvatar ? (
+                        <SmartMedia src={v.vendorAvatar} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-stone-200 dark:bg-stone-800 flex items-center justify-center shrink-0">
+                          <Building2 size={13} className="text-stone-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-semibold text-stone-700 dark:text-stone-200 truncate">
+                          {v.vendorBusinessName || v.vendorName}
+                        </p>
+                        {v.location?.city && <p className="text-[10px] text-stone-400">{v.location.city}</p>}
+                      </div>
                       <ChevronRight size={13} className="text-stone-300 shrink-0" />
                     </button>
                   ))}
@@ -1311,10 +2056,17 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                 <h4 className="text-[14px] font-bold text-stone-800 dark:text-stone-100">Related Reels</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {relatedReels.slice(0, 6).map((rr) => (
-                    <button key={rr._id} onClick={() => loadRelatedIntoFeed(rr)} className="relative aspect-[9/16] rounded-xl overflow-hidden ring-1 ring-stone-200/50 dark:ring-stone-700 hover:ring-rose-300 transition-all">
-                      <img src={rr.thumbnail} alt="" className="w-full h-full object-cover" />
+                    <button
+                      key={rr._id}
+                      onClick={() => loadRelatedIntoFeed(rr)}
+                      className="relative aspect-[9/16] rounded-xl overflow-hidden ring-1 ring-stone-200/50 dark:ring-stone-700 hover:ring-rose-300 transition-all"
+                    >
+                      {/* <img src={rr.thumbnail} alt="" className="w-full h-full object-cover" /> */}
+                      <SmartMedia src={rr.thumbnail} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-1.5 left-1.5 right-1.5"><p className="text-white text-[9px] font-medium line-clamp-2 text-left">{rr.title}</p></div>
+                      <div className="absolute bottom-1.5 left-1.5 right-1.5">
+                        <p className="text-white text-[9px] font-medium line-clamp-2 text-left">{rr.title}</p>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -1326,7 +2078,9 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                 <Info size={16} className="text-rose-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[12px] font-semibold text-stone-700 dark:text-stone-300">Navigation tips</p>
-                  <p className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">Arrow keys to navigate · Space to pause · Double-click to like · Esc to close</p>
+                  <p className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">
+                    Arrow keys to navigate · Space to pause · Double-click to like · Esc to close
+                  </p>
                 </div>
               </div>
             </div>
@@ -1334,33 +2088,102 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
         </div>
       </div>
 
-      <AnimatePresence>{showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} vendorName={vendorProfile?.vendorBusinessName || currentReel.title} />}</AnimatePresence>
+      <AnimatePresence>
+        {showShareModal && (
+          <ShareModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            vendorName={vendorProfile?.vendorBusinessName || currentReel.title}
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {showSimilarVendorsDrawer && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSimilarVendorsDrawer(false)} className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-[180]" />
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 280 }} className="fixed top-0 right-0 h-full w-full max-w-[440px] bg-white dark:bg-stone-950 z-[181] overflow-hidden flex flex-col shadow-xl border-l border-stone-200 dark:border-stone-800">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSimilarVendorsDrawer(false)}
+              className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-[180]"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 280 }}
+              className="fixed top-0 right-0 h-full w-full max-w-[440px] bg-white dark:bg-stone-950 z-[181] overflow-hidden flex flex-col shadow-xl border-l border-stone-200 dark:border-stone-800"
+            >
               <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 dark:border-stone-800">
-                <div className="flex items-center gap-2"><Users size={15} className="text-stone-600" /><h2 className="text-[14px] font-bold text-stone-800 dark:text-stone-100">Similar Vendors</h2><span className="text-[11px] text-stone-400">({similarVendorProfiles.length})</span></div>
-                <button onClick={() => setShowSimilarVendorsDrawer(false)} className="w-8 h-8 rounded-lg bg-stone-50 dark:bg-stone-900 flex items-center justify-center text-stone-400"><X size={14} /></button>
+                <div className="flex items-center gap-2">
+                  <Users size={15} className="text-stone-600" />
+                  <h2 className="text-[14px] font-bold text-stone-800 dark:text-stone-100">Similar Vendors</h2>
+                  <span className="text-[11px] text-stone-400">({similarVendorProfiles.length})</span>
+                </div>
+                <button
+                  onClick={() => setShowSimilarVendorsDrawer(false)}
+                  className="w-8 h-8 rounded-lg bg-stone-50 dark:bg-stone-900 flex items-center justify-center text-stone-400"
+                >
+                  <X size={14} />
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {loadingSimilarProfiles ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3"><Loader2 size={22} className="animate-spin text-rose-400" /><p className="text-[13px] text-stone-400">Loading...</p></div>
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <Loader2 size={22} className="animate-spin text-rose-400" />
+                    <p className="text-[13px] text-stone-400">Loading...</p>
+                  </div>
                 ) : similarVendorProfiles.length > 0 ? (
                   <div className="p-4 space-y-2">
                     {similarVendorProfiles.map((profile) => {
                       if (!profile || !profile._id || !profile.category) return null;
                       return (
-                        <div key={profile._id} onClick={() => { setShowSimilarVendorsDrawer(false); const backTo = encodeURIComponent(window.location.href); const path = profile.vendorId ? `/vendor/${profile.category}/${profile.vendorId}/profile` : `/vendor/${profile.category}/profile/${profile.username}`; closeAndNavigate(`${path}?backTo=${backTo}`); }} className="flex items-center gap-3 p-3.5 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-100 dark:border-stone-800 cursor-pointer hover:border-rose-200 transition-colors">
-                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-800 shrink-0">{profile.vendorAvatar ? <img src={profile.vendorAvatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-stone-400"><Building2 size={16} /></div>}</div>
+                        <div
+                          key={profile._id}
+                          onClick={() => {
+                            setShowSimilarVendorsDrawer(false);
+                            const backTo = encodeURIComponent(window.location.href);
+                            const path = profile.vendorId
+                              ? `/vendor/${profile.category}/${profile.vendorId}/profile`
+                              : `/vendor/${profile.category}/profile/${profile.username}`;
+                            closeAndNavigate(`${path}?backTo=${backTo}`);
+                          }}
+                          className="flex items-center gap-3 p-3.5 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-100 dark:border-stone-800 cursor-pointer hover:border-rose-200 transition-colors"
+                        >
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-800 shrink-0">
+                            {profile.vendorAvatar ? (
+                              <SmartMedia src={profile.vendorAvatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-stone-400">
+                                <Building2 size={16} />
+                              </div>
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-stone-800 dark:text-stone-100 truncate">{profile.vendorBusinessName || profile.vendorName || "Vendor"}</p>
-                            <p className="text-[11px] text-stone-400 capitalize truncate">{profile.category?.replace(/-/g, " ")}</p>
+                            <p className="text-[13px] font-semibold text-stone-800 dark:text-stone-100 truncate">
+                              {profile.vendorBusinessName || profile.vendorName || "Vendor"}
+                            </p>
+                            <p className="text-[11px] text-stone-400 capitalize truncate">
+                              {profile.category?.replace(/-/g, " ")}
+                            </p>
                             <div className="flex items-center gap-2 mt-1">
-                              {(profile.location?.city || profile.city) && <span className="text-[10px] text-stone-400 flex items-center gap-0.5"><MapPin size={8} />{profile.location?.city || profile.city}</span>}
-                              {profile.rating && <span className="text-[10px] text-stone-400 flex items-center gap-0.5"><Star size={8} className="fill-amber-400 text-amber-400" />{profile.rating}</span>}
-                              {profile.startingPrice && <span className="text-[10px] text-emerald-500 font-medium">{profile.startingPrice}</span>}
+                              {(profile.location?.city || profile.city) && (
+                                <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
+                                  <MapPin size={8} />
+                                  {profile.location?.city || profile.city}
+                                </span>
+                              )}
+                              {profile.rating && (
+                                <span className="text-[10px] text-stone-400 flex items-center gap-0.5">
+                                  <Star size={8} className="fill-amber-400 text-amber-400" />
+                                  {profile.rating}
+                                </span>
+                              )}
+                              {profile.startingPrice && (
+                                <span className="text-[10px] text-emerald-500 font-medium">
+                                  {profile.startingPrice}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <ChevronRight size={14} className="text-stone-300 shrink-0" />
@@ -1368,7 +2191,11 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                       );
                     })}
                   </div>
-                ) : <div className="flex items-center justify-center py-20"><p className="text-[13px] text-stone-400">No profiles found</p></div>}
+                ) : (
+                  <div className="flex items-center justify-center py-20">
+                    <p className="text-[13px] text-stone-400">No profiles found</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
@@ -1395,8 +2222,8 @@ export default function IdeasDesktopPage() {
         const res = await fetch(`/api/user/interactionsLists?userId=${user.id}`);
         const data = await res.json();
         if (data.success) {
-          const likedIds = new Set(data.reels?.liked?.map(r => r._id) || []);
-          const savedIds = new Set(data.reels?.watchlist?.map(r => r._id) || []);
+          const likedIds = new Set(data.reels?.liked?.map((r) => r._id) || []);
+          const savedIds = new Set(data.reels?.watchlist?.map((r) => r._id) || []);
           setUserInteractions({ liked: likedIds, saved: savedIds });
         }
       } catch (err) {
@@ -1431,7 +2258,12 @@ export default function IdeasDesktopPage() {
   const [reelsViewerData, setReelsViewerData] = useState(null);
   const [drawerItem, setDrawerItem] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
-  const [filterState, setFilterState] = useState({ sort: urlSort, minRating: urlRating, priceRange: null, location: urlLocation });
+  const [filterState, setFilterState] = useState({
+    sort: urlSort,
+    minRating: urlRating,
+    priceRange: null,
+    location: urlLocation,
+  });
   const [weddingQuickFilter, setWeddingQuickFilter] = useState(urlQuickFilter);
   const [isSearchOpen, setIsSearchOpen] = useState(!!urlSearch);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
@@ -1459,42 +2291,78 @@ export default function IdeasDesktopPage() {
     return params;
   }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter]);
 
-  const syncURL = useCallback((extra = {}) => {
-    const params = { ...getURLParams(), ...extra };
-    Object.keys(params).forEach((k) => { if (params[k] === null || params[k] === undefined || params[k] === "") delete params[k]; });
-    replaceURLParams(pathname, params);
-  }, [getURLParams, pathname]);
+  const syncURL = useCallback(
+    (extra = {}) => {
+      const params = { ...getURLParams(), ...extra };
+      Object.keys(params).forEach((k) => {
+        if (params[k] === null || params[k] === undefined || params[k] === "") delete params[k];
+      });
+      replaceURLParams(pathname, params);
+    },
+    [getURLParams, pathname],
+  );
 
-  useEffect(() => { if (showModal) return; syncURL(); }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter, showModal, syncURL]);
-  useEffect(() => { setRecentlyViewedReels(getRecentlyViewed()); }, [reelsViewerData]);
+  useEffect(() => {
+    if (showModal) return;
+    syncURL();
+  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter, showModal, syncURL]);
+  useEffect(() => {
+    setRecentlyViewedReels(getRecentlyViewed());
+  }, [reelsViewerData]);
 
   useEffect(() => {
     if (pendingReelIdRef.current && initialLoadDone && !reelsViewerData) {
       const reelId = pendingReelIdRef.current;
       pendingReelIdRef.current = null;
       let foundReel = null;
-      for (const section of carouselSections) { const match = section.items.find((r) => r._id === reelId); if (match) { foundReel = match; break; } }
+      for (const section of carouselSections) {
+        const match = section.items.find((r) => r._id === reelId);
+        if (match) {
+          foundReel = match;
+          break;
+        }
+      }
       if (foundReel) {
         const allReels = carouselSections.flatMap((s) => s.items);
-        const uniqueMap = new Map(); allReels.forEach((r) => { if (!uniqueMap.has(r._id)) uniqueMap.set(r._id, r); });
+        const uniqueMap = new Map();
+        allReels.forEach((r) => {
+          if (!uniqueMap.has(r._id)) uniqueMap.set(r._id, r);
+        });
         const uniqueReels = Array.from(uniqueMap.values());
         const idx = uniqueReels.findIndex((r) => r._id === reelId);
         setReelsViewerData({ reels: uniqueReels, initialIndex: Math.max(0, idx) });
       } else {
-        fetchReelById(reelId).then((raw) => { if (raw) { const reel = normalizeReel(raw); setReelsViewerData({ reels: [reel], initialIndex: 0 }); } });
+        fetchReelById(reelId).then((raw) => {
+          if (raw) {
+            const reel = normalizeReel(raw);
+            setReelsViewerData({ reels: [reel], initialIndex: 0 });
+          }
+        });
       }
     }
   }, [initialLoadDone, reelsViewerData, carouselSections]);
 
   useEffect(() => {
-    if (showModal || !eventType) { setIsNavbarVisible(false); return; }
+    if (showModal || !eventType) {
+      setIsNavbarVisible(false);
+      return;
+    }
     const shouldHide = !!reelsViewerData || !!drawerItem || showFilter || isSearchOpen;
     setIsNavbarVisible(!shouldHide);
   }, [showModal, eventType, reelsViewerData, drawerItem, showFilter, isSearchOpen, setIsNavbarVisible]);
 
-  const config = useMemo(() => { if (!eventType) return null; return EVENT_CONFIGS[eventType] || getDefaultConfigForOther(eventType); }, [eventType]);
-  const activeSubtypeData = useMemo(() => { if (!config || !activeSubtype) return null; return config.subtypes.find((s) => s.id === activeSubtype) || null; }, [config, activeSubtype]);
-  const getWeddingHeading = useCallback((index) => WEDDING_SECTION_HEADINGS[index % WEDDING_SECTION_HEADINGS.length], []);
+  const config = useMemo(() => {
+    if (!eventType) return null;
+    return EVENT_CONFIGS[eventType] || getDefaultConfigForOther(eventType);
+  }, [eventType]);
+  const activeSubtypeData = useMemo(() => {
+    if (!config || !activeSubtype) return null;
+    return config.subtypes.find((s) => s.id === activeSubtype) || null;
+  }, [config, activeSubtype]);
+  const getWeddingHeading = useCallback(
+    (index) => WEDDING_SECTION_HEADINGS[index % WEDDING_SECTION_HEADINGS.length],
+    [],
+  );
 
   useEffect(() => {
     if (!eventType || !config) return;
@@ -1506,140 +2374,429 @@ export default function IdeasDesktopPage() {
       if (activeSubtype) baseParams.subtype = activeSubtype;
       if (activeNested) baseParams.nestedType = activeNested;
       if (filterState.location) baseParams.city = filterState.location;
-      if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all") baseParams.tag = weddingQuickFilter;
-      if (filterState.sort === "trending") { baseParams.sortBy = "viewCount"; baseParams.sortOrder = "desc"; }
-      else if (filterState.sort === "rating") { baseParams.sortBy = "priority"; baseParams.sortOrder = "desc"; }
-      else if (filterState.sort === "newest") { baseParams.sortBy = "createdAt"; baseParams.sortOrder = "desc"; }
-      else { baseParams.sortBy = "priority"; baseParams.sortOrder = "desc"; }
+      if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all")
+        baseParams.tag = weddingQuickFilter;
+      if (filterState.sort === "trending") {
+        baseParams.sortBy = "viewCount";
+        baseParams.sortOrder = "desc";
+      } else if (filterState.sort === "rating") {
+        baseParams.sortBy = "priority";
+        baseParams.sortOrder = "desc";
+      } else if (filterState.sort === "newest") {
+        baseParams.sortBy = "createdAt";
+        baseParams.sortOrder = "desc";
+      } else {
+        baseParams.sortBy = "priority";
+        baseParams.sortOrder = "desc";
+      }
       if (filterState.minRating) baseParams.minPriority = Math.round(((filterState.minRating - 3.5) / 1.5) * 100);
       try {
-        const [mainResult, featuredResult, trendingResult] = await Promise.all([fetchReels(baseParams), fetchFeaturedReels({ limit: 15 }), fetchTrendingReels({ limit: 15 })]);
+        const [mainResult, featuredResult, trendingResult] = await Promise.all([
+          fetchReels(baseParams),
+          fetchFeaturedReels({ limit: 15 }),
+          fetchTrendingReels({ limit: 15 }),
+        ]);
         if (cancelled || version !== fetchVersionRef.current) return;
         const allReels = (mainResult.data || []).map(normalizeReel);
         const featuredReels = (featuredResult.reels || []).map(normalizeReel);
         const tReels = (trendingResult.reels || []).map(normalizeReel);
-        setTrendingReels(tReels); setPaginationInfo(mainResult.pagination || null);
+        setTrendingReels(tReels);
+        setPaginationInfo(mainResult.pagination || null);
         const sections = [];
         let headingIdx = 0;
         const isWedding = eventType === "wedding";
         if (activeSubtype) {
           const subtypeLabel = activeSubtypeData?.label || activeSubtype;
           if (activeNested) {
-            const nestedLabel = activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested;
+            const nestedLabel =
+              activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested;
             const half = Math.ceil(allReels.length / 2);
-            if (allReels.length > 0) { sections.push({ id: `${activeNested}-top`, title: isWedding ? getWeddingHeading(headingIdx++) : `${nestedLabel} — Top Picks`, items: allReels.slice(0, half) }); if (allReels.length > half) sections.push({ id: `${activeNested}-more`, title: isWedding ? getWeddingHeading(headingIdx++) : `More ${nestedLabel}`, items: allReels.slice(half) }); }
+            if (allReels.length > 0) {
+              sections.push({
+                id: `${activeNested}-top`,
+                title: isWedding ? getWeddingHeading(headingIdx++) : `${nestedLabel} — Top Picks`,
+                items: allReels.slice(0, half),
+              });
+              if (allReels.length > half)
+                sections.push({
+                  id: `${activeNested}-more`,
+                  title: isWedding ? getWeddingHeading(headingIdx++) : `More ${nestedLabel}`,
+                  items: allReels.slice(half),
+                });
+            }
           } else if (allReels.length > 0) {
-            if (allReels.length > 15) { sections.push({ id: `${activeSubtype}-top`, title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${subtypeLabel}`, items: allReels.slice(0, 15) }); sections.push({ id: `${activeSubtype}-more`, title: isWedding ? getWeddingHeading(headingIdx++) : `More ${subtypeLabel}`, items: allReels.slice(15) }); }
-            else sections.push({ id: `${activeSubtype}-main`, title: isWedding ? getWeddingHeading(headingIdx++) : `${subtypeLabel} Reels`, items: allReels });
+            if (allReels.length > 15) {
+              sections.push({
+                id: `${activeSubtype}-top`,
+                title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${subtypeLabel}`,
+                items: allReels.slice(0, 15),
+              });
+              sections.push({
+                id: `${activeSubtype}-more`,
+                title: isWedding ? getWeddingHeading(headingIdx++) : `More ${subtypeLabel}`,
+                items: allReels.slice(15),
+              });
+            } else
+              sections.push({
+                id: `${activeSubtype}-main`,
+                title: isWedding ? getWeddingHeading(headingIdx++) : `${subtypeLabel} Reels`,
+                items: allReels,
+              });
           }
         } else {
           const categoryGroups = {};
-          allReels.forEach((reel) => { const cat = reel.category || "general"; if (!categoryGroups[cat]) categoryGroups[cat] = []; categoryGroups[cat].push(reel); });
+          allReels.forEach((reel) => {
+            const cat = reel.category || "general";
+            if (!categoryGroups[cat]) categoryGroups[cat] = [];
+            categoryGroups[cat].push(reel);
+          });
           const entries = Object.entries(categoryGroups);
-          if (entries.length > 1) { entries.forEach(([cat, items]) => { const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, " "); sections.push({ id: `cat-${cat}`, title: isWedding ? getWeddingHeading(headingIdx++) : label, items }); }); }
-          else if (allReels.length > 0) {
-            if (allReels.length > 20) { sections.push({ id: "all-top", title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${eventLabel}`, items: allReels.slice(0, 15) }); sections.push({ id: "all-more", title: isWedding ? getWeddingHeading(headingIdx++) : `Explore More`, items: allReels.slice(15) }); }
-            else sections.push({ id: "all-reels", title: isWedding ? getWeddingHeading(headingIdx++) : `${eventLabel} Reels`, items: allReels });
+          if (entries.length > 1) {
+            entries.forEach(([cat, items]) => {
+              const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, " ");
+              sections.push({ id: `cat-${cat}`, title: isWedding ? getWeddingHeading(headingIdx++) : label, items });
+            });
+          } else if (allReels.length > 0) {
+            if (allReels.length > 20) {
+              sections.push({
+                id: "all-top",
+                title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${eventLabel}`,
+                items: allReels.slice(0, 15),
+              });
+              sections.push({
+                id: "all-more",
+                title: isWedding ? getWeddingHeading(headingIdx++) : `Explore More`,
+                items: allReels.slice(15),
+              });
+            } else
+              sections.push({
+                id: "all-reels",
+                title: isWedding ? getWeddingHeading(headingIdx++) : `${eventLabel} Reels`,
+                items: allReels,
+              });
           }
         }
         const pinnedReels = allReels.filter((r) => r.isPinned || r.isSponsored);
-        if (pinnedReels.length > 0) sections.unshift({ id: "sponsored", title: isWedding ? "Premium & Luxury Wedding Services" : "Sponsored", items: pinnedReels });
-        if (featuredReels.length > 0) sections.push({ id: "featured", title: isWedding ? "Couples' Favorite Picks" : "Featured", items: featuredReels });
-        if (tReels.length > 0) sections.push({ id: "trending", title: isWedding ? "Viral Wedding Reels" : "Trending Now", items: tReels });
-        setCarouselSections(sections); setInitialLoadDone(true);
-      } catch { if (!cancelled && version === fetchVersionRef.current) { setCarouselSections([]); setInitialLoadDone(true); } }
-      finally { if (!cancelled && version === fetchVersionRef.current) setIsLoadingCarousels(false); }
+        if (pinnedReels.length > 0)
+          sections.unshift({
+            id: "sponsored",
+            title: isWedding ? "Premium & Luxury Wedding Services" : "Sponsored",
+            items: pinnedReels,
+          });
+        if (featuredReels.length > 0)
+          sections.push({
+            id: "featured",
+            title: isWedding ? "Couples' Favorite Picks" : "Featured",
+            items: featuredReels,
+          });
+        if (tReels.length > 0)
+          sections.push({ id: "trending", title: isWedding ? "Viral Wedding Reels" : "Trending Now", items: tReels });
+        setCarouselSections(sections);
+        setInitialLoadDone(true);
+      } catch {
+        if (!cancelled && version === fetchVersionRef.current) {
+          setCarouselSections([]);
+          setInitialLoadDone(true);
+        }
+      } finally {
+        if (!cancelled && version === fetchVersionRef.current) setIsLoadingCarousels(false);
+      }
     };
     loadReels();
-    return () => { cancelled = true; };
-  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter, config, activeSubtypeData, eventLabel, getWeddingHeading]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    eventType,
+    activeSubtype,
+    activeNested,
+    filterState,
+    weddingQuickFilter,
+    config,
+    activeSubtypeData,
+    eventLabel,
+    getWeddingHeading,
+  ]);
 
   useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.trim().length < 2) { setSearchResults([]); setIsSearching(false); return; }
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
     setIsSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const sp = { limit: 8 }; if (eventType) sp.type = eventType;
+        const sp = { limit: 8 };
+        if (eventType) sp.type = eventType;
         const apiResults = await searchReelsAPI(searchQuery.trim(), sp);
-        const reelResults = (apiResults.reels || []).map((r) => ({ type: "reel", label: r.title, sublabel: [r.vendorName, r.category, r.city].filter(Boolean).join(" · "), reel: normalizeReel(r), eventId: r.type, subtypeId: r.subtype }));
+        const reelResults = (apiResults.reels || []).map((r) => ({
+          type: "reel",
+          label: r.title,
+          sublabel: [r.vendorName, r.category, r.city].filter(Boolean).join(" · "),
+          reel: normalizeReel(r),
+          eventId: r.type,
+          subtypeId: r.subtype,
+        }));
         const localResults = [];
         Object.entries(EVENT_CONFIGS).forEach(([eventKey, cfg]) => {
           const eLabel = eventKey.charAt(0).toUpperCase() + eventKey.slice(1);
-          if (eLabel.toLowerCase().includes(searchQuery.toLowerCase())) localResults.push({ type: "event", label: eLabel, sublabel: "Event Category", eventId: eventKey });
-          cfg.subtypes?.forEach((sub) => { if (sub.label.toLowerCase().includes(searchQuery.toLowerCase())) localResults.push({ type: "subtype", label: sub.label, sublabel: `${eLabel} › Service`, eventId: eventKey, subtypeId: sub.id }); });
+          if (eLabel.toLowerCase().includes(searchQuery.toLowerCase()))
+            localResults.push({ type: "event", label: eLabel, sublabel: "Event Category", eventId: eventKey });
+          cfg.subtypes?.forEach((sub) => {
+            if (sub.label.toLowerCase().includes(searchQuery.toLowerCase()))
+              localResults.push({
+                type: "subtype",
+                label: sub.label,
+                sublabel: `${eLabel} › Service`,
+                eventId: eventKey,
+                subtypeId: sub.id,
+              });
+          });
         });
         setSearchResults([...reelResults, ...localResults].slice(0, 12));
-      } catch { setSearchResults([]); } finally { setIsSearching(false); }
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
     }, 350);
     return () => clearTimeout(timer);
   }, [searchQuery, eventType]);
 
   useEffect(() => {
-    const onKey = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setIsSearchOpen(true); } if (e.key === "Escape") setIsSearchOpen(false); };
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+      if (e.key === "Escape") setIsSearchOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => { if (isSearchOpen) setTimeout(() => searchInputRef.current?.focus(), 40); else { setSearchQuery(""); setSearchResults([]); } }, [isSearchOpen]);
+  useEffect(() => {
+    if (isSearchOpen) setTimeout(() => searchInputRef.current?.focus(), 40);
+    else {
+      setSearchQuery("");
+      setSearchResults([]);
+    }
+  }, [isSearchOpen]);
 
   const handleSearchResultClick = (result) => {
     setIsSearchOpen(false);
-    if (result.type === "reel" && result.reel) { setReelsViewerData({ reels: [result.reel], initialIndex: 0 }); syncURL({ reel: result.reel._id, q: null }); return; }
-    if (result.eventId && result.eventId !== eventType) { setEventType(result.eventId); setEventLabel(result.eventId.charAt(0).toUpperCase() + result.eventId.slice(1)); setShowModal(false); setActiveSubtype(null); setActiveNested(null); setWeddingQuickFilter("all"); setInitialLoadDone(false); }
+    if (result.type === "reel" && result.reel) {
+      setReelsViewerData({ reels: [result.reel], initialIndex: 0 });
+      syncURL({ reel: result.reel._id, q: null });
+      return;
+    }
+    if (result.eventId && result.eventId !== eventType) {
+      setEventType(result.eventId);
+      setEventLabel(result.eventId.charAt(0).toUpperCase() + result.eventId.slice(1));
+      setShowModal(false);
+      setActiveSubtype(null);
+      setActiveNested(null);
+      setWeddingQuickFilter("all");
+      setInitialLoadDone(false);
+    }
     if (result.subtypeId) setActiveSubtype(result.subtypeId);
   };
 
-  const handleEventSelect = (type, label) => { setEventType(type); setEventLabel(label); setShowModal(false); setActiveSubtype(null); setActiveNested(null); setWeddingQuickFilter("all"); setInitialLoadDone(false); };
-
-  const handleSubtypeClick = (subtypeId) => {
-    if (!subtypeId || activeSubtype === subtypeId) { setActiveSubtype(null); setActiveNested(null); setInitialLoadDone(false); return; }
-    setActiveSubtype(subtypeId); setActiveNested(null); setInitialLoadDone(false);
+  const handleEventSelect = (type, label) => {
+    setEventType(type);
+    setEventLabel(label);
+    setShowModal(false);
+    setActiveSubtype(null);
+    setActiveNested(null);
+    setWeddingQuickFilter("all");
+    setInitialLoadDone(false);
   };
 
-  const handleNestedClick = (nestedId) => { setActiveNested(activeNested === nestedId ? null : nestedId); setInitialLoadDone(false); };
-  const handleWeddingQuickFilterClick = (filterId) => { setWeddingQuickFilter(filterId); setInitialLoadDone(false); };
+  const handleSubtypeClick = (subtypeId) => {
+    if (!subtypeId || activeSubtype === subtypeId) {
+      setActiveSubtype(null);
+      setActiveNested(null);
+      setInitialLoadDone(false);
+      return;
+    }
+    setActiveSubtype(subtypeId);
+    setActiveNested(null);
+    setInitialLoadDone(false);
+  };
 
-  const handleItemClick = useCallback((item, allItems, index) => { setReelsViewerData({ reels: allItems, initialIndex: index }); setIsNavbarVisible(false); }, [setIsNavbarVisible]);
-  const handleBookNow = (item) => { setDrawerItem(item); setIsNavbarVisible(false); };
+  const handleNestedClick = (nestedId) => {
+    setActiveNested(activeNested === nestedId ? null : nestedId);
+    setInitialLoadDone(false);
+  };
+  const handleWeddingQuickFilterClick = (filterId) => {
+    setWeddingQuickFilter(filterId);
+    setInitialLoadDone(false);
+  };
+
+  const handleItemClick = useCallback(
+    (item, allItems, index) => {
+      setReelsViewerData({ reels: allItems, initialIndex: index });
+      setIsNavbarVisible(false);
+    },
+    [setIsNavbarVisible],
+  );
+  const handleBookNow = (item) => {
+    setDrawerItem(item);
+    setIsNavbarVisible(false);
+  };
 
   const handleCloseReels = useCallback(() => {
-    setReelsViewerData(null); setIsNavbarVisible(true);
-    const clean = () => { try { const url = new URL(window.location.href); if (url.searchParams.has("reel")) { url.searchParams.delete("reel"); window.history.replaceState(null, "", url.pathname + url.search); } } catch {} };
-    clean(); setTimeout(clean, 80); setRecentlyViewedReels(getRecentlyViewed());
+    setReelsViewerData(null);
+    setIsNavbarVisible(true);
+    const clean = () => {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("reel")) {
+          url.searchParams.delete("reel");
+          window.history.replaceState(null, "", url.pathname + url.search);
+        }
+      } catch {}
+    };
+    clean();
+    setTimeout(clean, 80);
+    setRecentlyViewedReels(getRecentlyViewed());
   }, [setIsNavbarVisible]);
 
-  const handleRefresh = () => { setInitialLoadDone(false); setCarouselSections([]); setFilterState((prev) => ({ ...prev })); };
+  const handleRefresh = () => {
+    setInitialLoadDone(false);
+    setCarouselSections([]);
+    setFilterState((prev) => ({ ...prev }));
+  };
 
   if (showModal || !eventType || !config) {
-    return (<div className="min-h-screen bg-gradient-to-br from-rose-50/60 via-white to-amber-50/40 dark:bg-stone-950"><AnimatePresence><EventSelectionModal onSelect={handleEventSelect} /></AnimatePresence></div>);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50/60 via-white to-amber-50/40 dark:bg-stone-950">
+        <AnimatePresence>
+          <EventSelectionModal onSelect={handleEventSelect} />
+        </AnimatePresence>
+      </div>
+    );
   }
 
-  const activeFilterCount = [filterState.sort !== "relevance", filterState.minRating, filterState.priceRange, filterState.location].filter(Boolean).length;
+  const activeFilterCount = [
+    filterState.sort !== "relevance",
+    filterState.minRating,
+    filterState.priceRange,
+    filterState.location,
+  ].filter(Boolean).length;
   const isWeddingType = eventType === "wedding";
 
   return (
     <div className="min-h-screen bg-[#faf8f5] dark:bg-stone-950 text-stone-800 dark:text-stone-100">
-      <style jsx global>{`.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.no-scrollbar::-webkit-scrollbar{display:none}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+      <style jsx global>{`
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+      `}</style>
       <div className="flex">
-        <DesktopSidebar config={config} eventLabel={eventLabel} activeSubtype={activeSubtype} activeNested={activeNested} onSubtypeClick={handleSubtypeClick} onNestedClick={handleNestedClick} onChangeEvent={() => { setShowModal(true); setEventType(null); setActiveSubtype(null); setActiveNested(null); setWeddingQuickFilter("all"); setInitialLoadDone(false); window.history.replaceState(null, "", pathname); }} weddingQuickFilter={weddingQuickFilter} onWeddingQuickFilterClick={handleWeddingQuickFilterClick} isWeddingType={isWeddingType} />
+        <DesktopSidebar
+          config={config}
+          eventLabel={eventLabel}
+          activeSubtype={activeSubtype}
+          activeNested={activeNested}
+          onSubtypeClick={handleSubtypeClick}
+          onNestedClick={handleNestedClick}
+          onChangeEvent={() => {
+            setShowModal(true);
+            setEventType(null);
+            setActiveSubtype(null);
+            setActiveNested(null);
+            setWeddingQuickFilter("all");
+            setInitialLoadDone(false);
+            window.history.replaceState(null, "", pathname);
+          }}
+          weddingQuickFilter={weddingQuickFilter}
+          onWeddingQuickFilterClick={handleWeddingQuickFilterClick}
+          isWeddingType={isWeddingType}
+        />
         <main className="flex-1 min-w-0">
-          <div style={{ top: DESKTOP_TOP_OFFSET }} className="sticky z-40 border-b border-rose-100/50 dark:border-stone-800 bg-white dark:bg-stone-950/85 backdrop-blur-xl">
+          <div
+            style={{ top: DESKTOP_TOP_OFFSET }}
+            className="sticky z-40 border-b border-rose-100/50 dark:border-stone-800 bg-white dark:bg-stone-950/85 backdrop-blur-xl"
+          >
             <div className="px-5 xl:px-7 2xl:px-8 py-3 flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-[13px]">
-                  <button onClick={() => { setActiveSubtype(null); setActiveNested(null); setInitialLoadDone(false); }} className="text-stone-400 font-medium hover:text-rose-500 transition-colors">{eventLabel}</button>
-                  {activeSubtypeData && (<><ChevronRight size={12} className="text-stone-300" /><button onClick={() => { setActiveNested(null); setInitialLoadDone(false); }} className="text-stone-600 dark:text-stone-300 font-medium hover:text-rose-500 transition-colors">{activeSubtypeData.label}</button></>)}
-                  {activeNested && (<><ChevronRight size={12} className="text-stone-300" /><span className="text-stone-800 dark:text-stone-100 font-semibold">{activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested}</span></>)}
+                  <button
+                    onClick={() => {
+                      setActiveSubtype(null);
+                      setActiveNested(null);
+                      setInitialLoadDone(false);
+                    }}
+                    className="text-stone-400 font-medium hover:text-rose-500 transition-colors"
+                  >
+                    {eventLabel}
+                  </button>
+                  {activeSubtypeData && (
+                    <>
+                      <ChevronRight size={12} className="text-stone-300" />
+                      <button
+                        onClick={() => {
+                          setActiveNested(null);
+                          setInitialLoadDone(false);
+                        }}
+                        className="text-stone-600 dark:text-stone-300 font-medium hover:text-rose-500 transition-colors"
+                      >
+                        {activeSubtypeData.label}
+                      </button>
+                    </>
+                  )}
+                  {activeNested && (
+                    <>
+                      <ChevronRight size={12} className="text-stone-300" />
+                      <span className="text-stone-800 dark:text-stone-100 font-semibold">
+                        {activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={handleRefresh} className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:border-rose-200 transition-colors"><RefreshCw size={13} className={isLoadingCarousels ? "animate-spin" : ""} /></button>
-                <button onClick={() => setIsSearchOpen(true)} className="flex items-center gap-2 h-8 min-w-[240px] xl:min-w-[280px] px-3 rounded-lg border border-stone-200 dark:border-stone-700 text-left text-[12px] text-stone-400 hover:border-rose-200 transition-colors">
-                  <Search size={13} /><span className="flex-1">Search…</span><span className="text-[9px] px-1.5 py-0.5 rounded bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-800 font-medium">⌘K</span>
+                <button
+                  onClick={handleRefresh}
+                  className="w-8 h-8 rounded-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:border-rose-200 transition-colors"
+                >
+                  <RefreshCw size={13} className={isLoadingCarousels ? "animate-spin" : ""} />
                 </button>
-                <button onClick={() => setShowFilter(true)} className="relative h-8 px-3 rounded-lg border border-stone-200 dark:border-stone-700 flex items-center gap-1.5 text-[12px] font-medium text-stone-500 hover:border-rose-200 hover:text-rose-500 transition-colors">
-                  <Filter size={12} />Filters
-                  {activeFilterCount > 0 && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[9px] font-bold">{activeFilterCount}</span>}
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center gap-2 h-8 min-w-[240px] xl:min-w-[280px] px-3 rounded-lg border border-stone-200 dark:border-stone-700 text-left text-[12px] text-stone-400 hover:border-rose-200 transition-colors"
+                >
+                  <Search size={13} />
+                  <span className="flex-1">Search…</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-800 font-medium">
+                    ⌘K
+                  </span>
+                </button>
+                <button
+                  onClick={() => setShowFilter(true)}
+                  className="relative h-8 px-3 rounded-lg border border-stone-200 dark:border-stone-700 flex items-center gap-1.5 text-[12px] font-medium text-stone-500 hover:border-rose-200 hover:text-rose-500 transition-colors"
+                >
+                  <Filter size={12} />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[9px] font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -1651,9 +2808,36 @@ export default function IdeasDesktopPage() {
 
               {activeFilterCount > 0 && (
                 <div className="flex gap-1.5 flex-wrap">
-                  {filterState.sort !== "relevance" && <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-medium">{filterState.sort === "trending" ? "Trending" : filterState.sort === "rating" ? "Top Rated" : "Newest"}<button onClick={() => setFilterState((p) => ({ ...p, sort: "relevance" }))}><X size={10} /></button></span>}
-                  {filterState.location && <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-medium"><MapPin size={9} />{filterState.location}<button onClick={() => setFilterState((p) => ({ ...p, location: null }))}><X size={10} /></button></span>}
-                  {filterState.minRating && <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-medium"><Star size={9} />{filterState.minRating}+<button onClick={() => setFilterState((p) => ({ ...p, minRating: null }))}><X size={10} /></button></span>}
+                  {filterState.sort !== "relevance" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-medium">
+                      {filterState.sort === "trending"
+                        ? "Trending"
+                        : filterState.sort === "rating"
+                          ? "Top Rated"
+                          : "Newest"}
+                      <button onClick={() => setFilterState((p) => ({ ...p, sort: "relevance" }))}>
+                        <X size={10} />
+                      </button>
+                    </span>
+                  )}
+                  {filterState.location && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-medium">
+                      <MapPin size={9} />
+                      {filterState.location}
+                      <button onClick={() => setFilterState((p) => ({ ...p, location: null }))}>
+                        <X size={10} />
+                      </button>
+                    </span>
+                  )}
+                  {filterState.minRating && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-medium">
+                      <Star size={9} />
+                      {filterState.minRating}+
+                      <button onClick={() => setFilterState((p) => ({ ...p, minRating: null }))}>
+                        <X size={10} />
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -1667,49 +2851,99 @@ export default function IdeasDesktopPage() {
                         <FeaturedCarouselSection key={section.id} section={section} onItemClick={handleItemClick} />
                       ) : (
                         <DesktopCarouselSection key={section.id} section={section} onItemClick={handleItemClick} />
-                      )
+                      ),
                     )
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 px-6 text-center rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/50 dark:border-stone-800">
-                      <div className="w-14 h-14 bg-rose-50 dark:bg-stone-800 rounded-xl flex items-center justify-center mb-4"><Search size={22} className="text-rose-300" /></div>
+                      <div className="w-14 h-14 bg-rose-50 dark:bg-stone-800 rounded-xl flex items-center justify-center mb-4">
+                        <Search size={22} className="text-rose-300" />
+                      </div>
                       <p className="text-lg font-bold text-stone-800 dark:text-stone-100 mb-1">No reels found</p>
                       <p className="text-[13px] text-stone-400 mb-4">Try a different category or adjust filters</p>
-                      {activeFilterCount > 0 && <button onClick={() => setFilterState({ sort: "relevance", minRating: null, priceRange: null, location: null })} className="px-4 py-2.5 bg-rose-500 rounded-lg text-white text-[13px] font-semibold hover:bg-rose-600 transition-colors">Clear Filters</button>}
+                      {activeFilterCount > 0 && (
+                        <button
+                          onClick={() =>
+                            setFilterState({ sort: "relevance", minRating: null, priceRange: null, location: null })
+                          }
+                          className="px-4 py-2.5 bg-rose-500 rounded-lg text-white text-[13px] font-semibold hover:bg-rose-600 transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
                     </div>
                   )}
 
                   {carouselSections.length > 0 && (
-                    <div onClick={() => { setFilterState((p) => ({ ...p, sort: "trending" })); setInitialLoadDone(false); }} className="rounded-xl p-4 bg-gradient-to-r from-rose-50/60 to-amber-50/40 dark:from-stone-900 dark:to-stone-900 border border-rose-100/40 dark:border-stone-800 flex items-center gap-4 cursor-pointer hover:border-rose-200 dark:hover:border-stone-700 transition-colors">
-                      <div className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm"><TrendingUp size={16} className="text-white" /></div>
+                    <div
+                      onClick={() => {
+                        setFilterState((p) => ({ ...p, sort: "trending" }));
+                        setInitialLoadDone(false);
+                      }}
+                      className="rounded-xl p-4 bg-gradient-to-r from-rose-50/60 to-amber-50/40 dark:from-stone-900 dark:to-stone-900 border border-rose-100/40 dark:border-stone-800 flex items-center gap-4 cursor-pointer hover:border-rose-200 dark:hover:border-stone-700 transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                        <TrendingUp size={16} className="text-white" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-[14px] font-bold text-stone-800 dark:text-stone-100">Trending in {eventLabel}</h4>
-                        <p className="text-[12px] text-stone-400 mt-0.5">{trendingReels.length > 0 ? `${trendingReels.length} trending reels this month` : "See what's popular this season"}</p>
+                        <h4 className="text-[14px] font-bold text-stone-800 dark:text-stone-100">
+                          Trending in {eventLabel}
+                        </h4>
+                        <p className="text-[12px] text-stone-400 mt-0.5">
+                          {trendingReels.length > 0
+                            ? `${trendingReels.length} trending reels this month`
+                            : "See what's popular this season"}
+                        </p>
                       </div>
                       <ChevronRight size={16} className="text-stone-300 shrink-0" />
                     </div>
                   )}
 
                   {paginationInfo?.hasNextPage && carouselSections.length > 0 && (
-                    <button onClick={async () => {
-                      const nextPage = (paginationInfo.page || 1) + 1;
-                      const params = { type: config.type || eventType, isActive: "true", limit: 50, page: nextPage };
-                      if (activeSubtype) params.subtype = activeSubtype;
-                      if (activeNested) params.nestedType = activeNested;
-                      if (filterState.location) params.city = filterState.location;
-                      if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all") params.tag = weddingQuickFilter;
-                      if (filterState.sort === "trending") { params.sortBy = "viewCount"; params.sortOrder = "desc"; }
-                      else if (filterState.sort === "rating") { params.sortBy = "priority"; params.sortOrder = "desc"; }
-                      else if (filterState.sort === "newest") { params.sortBy = "createdAt"; params.sortOrder = "desc"; }
-                      else { params.sortBy = "priority"; params.sortOrder = "desc"; }
-                      const result = await fetchReels(params);
-                      const moreReels = (result.data || []).map(normalizeReel);
-                      if (moreReels.length > 0) { setCarouselSections((prev) => [...prev, { id: `page-${nextPage}`, title: `More ${eventLabel} Reels`, items: moreReels }]); setPaginationInfo(result.pagination || null); }
-                    }} className="w-full py-3 bg-white dark:bg-stone-900 rounded-xl flex items-center justify-center gap-2 text-stone-500 font-medium text-[13px] border border-stone-200/60 dark:border-stone-800 hover:border-rose-200 hover:text-rose-500 transition-colors">
-                      <ChevronDown size={14} />Load More
+                    <button
+                      onClick={async () => {
+                        const nextPage = (paginationInfo.page || 1) + 1;
+                        const params = { type: config.type || eventType, isActive: "true", limit: 50, page: nextPage };
+                        if (activeSubtype) params.subtype = activeSubtype;
+                        if (activeNested) params.nestedType = activeNested;
+                        if (filterState.location) params.city = filterState.location;
+                        if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all")
+                          params.tag = weddingQuickFilter;
+                        if (filterState.sort === "trending") {
+                          params.sortBy = "viewCount";
+                          params.sortOrder = "desc";
+                        } else if (filterState.sort === "rating") {
+                          params.sortBy = "priority";
+                          params.sortOrder = "desc";
+                        } else if (filterState.sort === "newest") {
+                          params.sortBy = "createdAt";
+                          params.sortOrder = "desc";
+                        } else {
+                          params.sortBy = "priority";
+                          params.sortOrder = "desc";
+                        }
+                        const result = await fetchReels(params);
+                        const moreReels = (result.data || []).map(normalizeReel);
+                        if (moreReels.length > 0) {
+                          setCarouselSections((prev) => [
+                            ...prev,
+                            { id: `page-${nextPage}`, title: `More ${eventLabel} Reels`, items: moreReels },
+                          ]);
+                          setPaginationInfo(result.pagination || null);
+                        }
+                      }}
+                      className="w-full py-3 bg-white dark:bg-stone-900 rounded-xl flex items-center justify-center gap-2 text-stone-500 font-medium text-[13px] border border-stone-200/60 dark:border-stone-800 hover:border-rose-200 hover:text-rose-500 transition-colors"
+                    >
+                      <ChevronDown size={14} />
+                      Load More
                     </button>
                   )}
 
-                  {recentlyViewedReels.length > 0 && <FeaturedCarouselSection section={{ id: "recently-viewed", title: "Recently Viewed", items: recentlyViewedReels }} onItemClick={handleItemClick} />}
+                  {recentlyViewedReels.length > 0 && (
+                    <FeaturedCarouselSection
+                      section={{ id: "recently-viewed", title: "Recently Viewed", items: recentlyViewedReels }}
+                      onItemClick={handleItemClick}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -1717,10 +2951,46 @@ export default function IdeasDesktopPage() {
         </main>
       </div>
 
-      <AnimatePresence>{reelsViewerData && <ReelsViewerModal reels={reelsViewerData.reels} initialIndex={reelsViewerData.initialIndex} onClose={handleCloseReels} onBookNow={handleBookNow} userInteractions={userInteractions} />}</AnimatePresence>
-      <AnimatePresence>{drawerItem && <BookingDrawer item={drawerItem} onClose={() => setDrawerItem(null)} />}</AnimatePresence>
-      <AnimatePresence>{isSearchOpen && <SearchModalComponent searchInputRef={searchInputRef} handleSearchResultClick={handleSearchResultClick} searchResults={searchResults} setSearchQuery={setSearchQuery} searchQuery={searchQuery} setIsSearchOpen={setIsSearchOpen} isSearching={isSearching} />}</AnimatePresence>
-      <AnimatePresence>{showFilter && <FilterDrawer initialFilter={filterState} onApply={(f) => { setFilterState(f); setShowFilter(false); setInitialLoadDone(false); }} onClose={() => setShowFilter(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {reelsViewerData && (
+          <ReelsViewerModal
+            reels={reelsViewerData.reels}
+            initialIndex={reelsViewerData.initialIndex}
+            onClose={handleCloseReels}
+            onBookNow={handleBookNow}
+            userInteractions={userInteractions}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {drawerItem && <BookingDrawer item={drawerItem} onClose={() => setDrawerItem(null)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isSearchOpen && (
+          <SearchModalComponent
+            searchInputRef={searchInputRef}
+            handleSearchResultClick={handleSearchResultClick}
+            searchResults={searchResults}
+            setSearchQuery={setSearchQuery}
+            searchQuery={searchQuery}
+            setIsSearchOpen={setIsSearchOpen}
+            isSearching={isSearching}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showFilter && (
+          <FilterDrawer
+            initialFilter={filterState}
+            onApply={(f) => {
+              setFilterState(f);
+              setShowFilter(false);
+              setInitialLoadDone(false);
+            }}
+            onClose={() => setShowFilter(false)}
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>{showModal && <EventSelectionModal onSelect={handleEventSelect} />}</AnimatePresence>
     </div>
   );

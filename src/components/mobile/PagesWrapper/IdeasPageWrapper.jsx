@@ -83,6 +83,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
 import { cos } from "three/src/nodes/math/MathNode.js";
 import { useUser } from '@clerk/nextjs';
+import SmartMedia from "../SmartMediaLoader";
 
 const EVENT_CONFIGS = {
   wedding: {
@@ -813,12 +814,13 @@ const MiniCard = ({ item, idx, onClick }) => (
     className="w-[104px] shrink-0 cursor-pointer group"
   >
     <div className="relative h-[140px] w-[104px] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
-      <img
+      {/* <img
         src={item.thumbnail}
         alt={item.title}
         className="w-full h-full object-cover transition-transform duration-500 group-active:scale-105"
         loading="lazy"
-      />
+      /> */}
+      <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-active:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       {item.tags?.[0] && (
         <div className="absolute top-1.5 left-1.5 px-1.5 py-[1px] bg-white/90 dark:bg-black/70 backdrop-blur-sm rounded text-[7px] font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-0.5">
@@ -1503,7 +1505,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                 )}
               </>
             ) : (
-              <img src={currentReel.thumbnail} alt={currentReel.title} className="w-full h-full object-cover" />
+              <SmartMedia src={currentReel.thumbnail} alt={currentReel.title} className="w-full h-full object-cover" />
             )}
           </motion.div>
         </AnimatePresence>
@@ -1577,7 +1579,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
             className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/30 bg-gray-600 shrink-0"
             onClick={handleSeeProfile}
           >
-            <img
+            <SmartMedia
               src={vendorProfile?.vendorAvatar || currentReel.thumbnail}
               alt=""
               className="w-full h-full object-cover"
@@ -1667,7 +1669,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                           className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1.5 shrink-0 cursor-pointer active:bg-white/10 transition-colors"
                         >
                           {v.vendorAvatar && (
-                            <img src={v.vendorAvatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                            <SmartMedia src={v.vendorAvatar} alt="" className="w-5 h-5 rounded-full object-cover" />
                           )}
                           <div>
                             <p className="text-white text-[9px] font-semibold truncate max-w-[80px]">
@@ -1694,7 +1696,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                           onClick={() => loadRelatedIntoFeed(rr)}
                           className="w-[52px] h-[72px] rounded-lg overflow-hidden shrink-0 cursor-pointer ring-1 ring-white/10 active:ring-white/30 transition-all"
                         >
-                          <img src={rr.thumbnail} alt="" className="w-full h-full object-cover" />
+                          <SmartMedia src={rr.thumbnail} alt="" className="w-full h-full object-cover" />
                         </div>
                       ))}
                     </div>
@@ -1813,7 +1815,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                         >
                           <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 shrink-0">
                             {profile.vendorAvatar ? (
-                              <img src={profile.vendorAvatar} alt="" className="w-full h-full object-cover" />
+                              <SmartMedia src={profile.vendorAvatar} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-400">
                                 <Building2 size={20} />
@@ -1907,7 +1909,7 @@ const BookingDrawer = ({ item, onClose }) => {
         </div>
         <div className="px-5 pt-1 pb-3 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
           <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-200">
-            <img src={item.thumbnail} alt="" className="w-full h-full object-cover" />
+            <SmartMedia src={item.thumbnail} alt="" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-[15px] font-bold text-gray-900 dark:text-white truncate">
