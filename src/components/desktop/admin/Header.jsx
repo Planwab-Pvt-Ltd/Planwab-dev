@@ -26,7 +26,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
   return (
     <header className="sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 z-30">
       <div className="flex items-center justify-between h-20 px-6">
-        <motion.h1
+        <Link href={'/'}
           variants={textVariants}
           initial="hidden"
           animate="visible"
@@ -34,7 +34,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
           className="font-bold text-2xl bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent ml-2"
         >
           PlanWAB
-        </motion.h1>
+        </Link>
 
         <div className="flex items-center space-x-4">
           <button
