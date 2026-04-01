@@ -30,86 +30,78 @@ import Link from "next/link";
 import SmartMedia from "../SmartMediaLoader";
 import { formatPrice } from "../../../lib/utils";
 
-// =============================================================================
-// DATA
-// =============================================================================
-
 const HERO_CATEGORIES = [
   {
     id: 1,
     name: "Makeup Artists",
     key: "makeup",
-    image: "/quickServicesPhotos/makeupQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png",
     count: "456",
   },
   {
     id: 2,
     name: "Planners",
     key: "planners",
-    image: "/quickServicesPhotos/plannerQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png",
     count: "145",
   },
   {
     id: 3,
     name: "Decorators",
     key: "decor",
-    image: "/quickServicesPhotos/decorQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif",
     count: "267",
   },
   {
     id: 4,
     name: "Photographers",
     key: "photographers",
-    image: "/quickServicesPhotos/photographerQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png",
     count: "198",
   },
   {
     id: 5,
     name: "Venues",
     key: "venues",
-    image: "/quickServicesPhotos/venueQS.png",
+    image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg",
     count: "476",
   },
   {
     id: 6,
     name: "Mehendi",
     key: "mehendi",
-    image: "/quickServicesPhotos/mehndiQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png",
     count: "156",
   },
   {
     id: 7,
     name: "Caterers",
     key: "catering",
-    image: "/quickServicesPhotos/caterorQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png",
     count: "189",
   },
   {
     id: 8,
     name: "DJ & Music",
     key: "djs",
-    image: "/quickServicesPhotos/djQS.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png",
     count: "97",
   },
   {
     id: 9,
     name: "Florists",
     key: "florists",
-    image: "https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=400&h=500&fit=crop",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif",
     count: "0",
   },
   {
     id: 10,
     name: "Choreographers",
     key: "choreographers",
-    image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=400&h=500&fit=crop",
+    image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1767931666/pkg-lifestyle-events-management-vishnu-garden-delhi-event-organisers-j3dtzmp1pt_upqonu.jpg",
     count: "0",
   },
 ];
-
-// =============================================================================
-// THEME
-// =============================================================================
 
 const THEME = {
   primary: "#6366f1",
@@ -125,10 +117,6 @@ const THEME = {
   backgroundAlt: "#f8fafc",
 };
 
-// =============================================================================
-// HELPER HOOKS
-// =============================================================================
-
 function useHapticFeedback() {
   return useCallback((type = "light") => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
@@ -138,10 +126,6 @@ function useHapticFeedback() {
   }, []);
 }
 
-// =============================================================================
-// HERO CAROUSEL - Matching Image Design with Functional Progress Bar
-// =============================================================================
-
 const HeroCarousel = memo(() => {
   const scrollRef = useRef(null);
   const haptic = useHapticFeedback();
@@ -149,7 +133,6 @@ const HeroCarousel = memo(() => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Calculate items per page based on visible area (approximately 3 items visible)
   const itemsPerPage = 3;
   const totalPages = Math.ceil(HERO_CATEGORIES.length / itemsPerPage);
 
@@ -159,7 +142,6 @@ const HeroCarousel = memo(() => {
     router.push(`/vendors/marketplace/${item?.key}`);
   };
 
-  // Track scroll position and update current page
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
 
@@ -179,7 +161,6 @@ const HeroCarousel = memo(() => {
     }
   }, [handleScroll]);
 
-  // Scroll to specific page when clicking progress indicator
   const scrollToPage = (pageIndex) => {
     if (!scrollRef.current) return;
     haptic("light");
@@ -196,10 +177,7 @@ const HeroCarousel = memo(() => {
 
   return (
     <div className="mb-6 bg-blue-100/25 rounded-4xl py-3">
-      {/* Section Title */}
       <h2 className="text-lg font-bold text-gray-900 px-4 mb-4">Vendor categories</h2>
-
-      {/* Two Row Grid - Horizontal Scroll */}
       <motion.div
         ref={scrollRef}
         className="grid grid-rows-2 grid-flow-col gap-3 gap-x-8 overflow-x-auto px-4 pb-2 no-scrollbar"
@@ -230,41 +208,36 @@ const HeroCarousel = memo(() => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {/* Image Card */}
-            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm">
+            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm transition-all duration-300">
               <SmartMedia
                 src={item.image}
                 alt={item.name}
                 type="image"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover grayscale-[0.2] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110 group-active:grayscale-0 group-active:scale-110"
                 prioirity={true}
               />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                <span className="text-white font-black text-sm tracking-wider text-center px-2 drop-shadow-md">
+                  {item.name}
+                </span>
+              </div>
             </div>
-
-            {/* Category Name */}
             <h3 className="text-xs font-semibold text-gray-900 leading-tight truncate">{item.name}</h3>
-
-            {/* Count with Arrow */}
             <div className="flex items-center gap-0.5 mt-0.5">
               <span className="text-[11px] text-rose-500 font-medium">{item.count}</span>
               <ChevronRight size={10} className="text-rose-500" />
             </div>
           </motion.div>
         ))}
-
-        {/* Right Spacer */}
         <div className="w-4 flex-shrink-0" />
       </motion.div>
-
-      {/* Functional Progress Bar Indicators */}
       <div className="flex justify-center gap-1.5 mt-4">
         {Array.from({ length: totalPages }).map((_, index) => (
           <motion.button
             key={index}
             onClick={() => scrollToPage(index)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              currentPage === index ? "bg-gray-400" : "bg-gray-200 hover:bg-gray-300"
-            }`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${currentPage === index ? "bg-gray-400" : "bg-gray-200 hover:bg-gray-300"
+              }`}
             animate={{
               width: currentPage === index ? 24 : 6,
             }}
@@ -278,10 +251,6 @@ const HeroCarousel = memo(() => {
 });
 
 HeroCarousel.displayName = "HeroCarousel";
-
-// =============================================================================
-// VENDOR CARD - Compact Design
-// =============================================================================
 
 const VendorCardSkeleton = memo(() => (
   <div className="flex-shrink-0 w-44 bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
@@ -353,7 +322,6 @@ const VendorCard = memo(({ vendor }) => {
     }
   };
 
-  // ✅ ADD: Navigation handler
   const handleCardClick = () => {
     haptic("light");
     const categorySlug = vendor.category?.toLowerCase().replace(/\s+/g, "-") || "vendor";
@@ -380,7 +348,6 @@ const VendorCard = memo(({ vendor }) => {
       onClick={handleCardClick}
       className="flex-shrink-0 w-44 bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 snap-center group"
     >
-      {/* Image */}
       <div className="relative h-28 bg-gray-100 overflow-hidden">
         <SmartMedia
           src={vendor?.defaultImage || vendor.images[0] || vendor.images?.[1] || ""}
@@ -388,8 +355,6 @@ const VendorCard = memo(({ vendor }) => {
           className="w-full h-full object-cover object-center"
           loading="lazy"
         />
-
-        {/* Badge */}
         {vendor?.tags?.length > 0 && (
           <span
             className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded text-white"
@@ -398,8 +363,6 @@ const VendorCard = memo(({ vendor }) => {
             {vendor.tags[0]}
           </span>
         )}
-
-        {/* Discount Tag */}
         {vendor?.perDayPrice?.max && vendor?.perDayPrice?.min && (
           <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-green-500 rounded">
             <span className="text-[9px] font-bold text-white">
@@ -408,8 +371,6 @@ const VendorCard = memo(({ vendor }) => {
           </div>
         )}
       </div>
-
-      {/* Content */}
       <div className="p-2.5">
         {/* Name & Verified */}
         <div className="flex items-start justify-between gap-1 mb-0.5">
@@ -420,8 +381,6 @@ const VendorCard = memo(({ vendor }) => {
             </div>
           )}
         </div>
-
-        {/* Category */}
         <p className="text-[10px] text-gray-500 mb-1.5">{vendor?.category}</p>
 
         {/* Rating & Location */}
@@ -434,8 +393,6 @@ const VendorCard = memo(({ vendor }) => {
             </div>
           </div>
         )}
-
-        {/* Response Time */}
         {vendor?.responseTime && (
           <div className="flex items-center gap-1 mb-2 text-gray-400">
             <Clock size={9} />
@@ -450,9 +407,8 @@ const VendorCard = memo(({ vendor }) => {
           </div>
           <button
             onClick={handleCart}
-            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-90 ${
-              inCart ? "bg-green-500 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
-            }`}
+            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-90 ${inCart ? "bg-green-500 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
+              }`}
           >
             {inCart ? (
               <>
@@ -471,10 +427,6 @@ const VendorCard = memo(({ vendor }) => {
 });
 
 VendorCard.displayName = "VendorCard";
-
-// =============================================================================
-// VIEW MORE CARD - Compact
-// =============================================================================
 
 const ViewMoreCard = memo(({ title, count, icon: Icon, color, viewMoreurl }) => {
   const haptic = useHapticFeedback();
@@ -511,10 +463,6 @@ const ViewMoreCard = memo(({ title, count, icon: Icon, color, viewMoreurl }) => 
 
 ViewMoreCard.displayName = "ViewMoreCard";
 
-// =============================================================================
-// SECTION HEADER
-// =============================================================================
-
 const SectionHeader = memo(({ title, subtitle, icon: Icon, color, onViewAll }) => {
   const haptic = useHapticFeedback();
 
@@ -529,7 +477,6 @@ const SectionHeader = memo(({ title, subtitle, icon: Icon, color, onViewAll }) =
           <p className="text-[10px] text-gray-500">{subtitle}</p>
         </div>
       </div>
-      {/* View All Button */}
       {onViewAll && (
         <button
           onClick={() => {
@@ -550,10 +497,6 @@ const SectionHeader = memo(({ title, subtitle, icon: Icon, color, onViewAll }) =
 
 SectionHeader.displayName = "SectionHeader";
 
-// =============================================================================
-// VENDOR CAROUSEL - Adjusted Spacing
-// =============================================================================
-
 export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, color, isLoading }) => {
   const haptic = useHapticFeedback();
   const router = useRouter();
@@ -571,7 +514,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
     if (typeof Icon === "string") {
       return IconMap[Icon.toLowerCase()] || Calendar;
     }
-    
+
     return Icon || Calendar;
   }, [Icon]);
 
@@ -617,49 +560,52 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
   const viewMoreUrl = useMemo(() => {
     const baseUrl = "/vendors/marketplace";
     const params = new URLSearchParams();
+    const t = title.toLowerCase();
 
-    // Determine section type and add appropriate filters
-    if (title.includes("Featured")) {
-      params.set("featured", "true");
-      params.set("sortBy", "rating");
-    } else if (title.includes("Popular") || title.includes("Most Booked")) {
-      params.set("sortBy", "bookings");
-      params.set("sortOrder", "desc");
-    } else if (title.includes("Trending")) {
-      params.set("sortBy", "views");
-      params.set("sortOrder", "desc");
-    } else if (title.includes("Top Rated")) {
-      params.set("sortBy", "rating");
-      params.set("minRating", "4");
-    } else if (title.includes("New") || title.includes("Recently Added")) {
-      params.set("sortBy", "newest");
-      params.set("sortOrder", "desc");
-    } else if (title.includes("Planners")) {
-      // Handle "Top Event Planners" or "Top Wedding Planners"
-      params.set("categories", "planners");
-      params.set("sortBy", "rating");
-      params.set("sortOrder", "desc");
-    } else if (title.includes("Photographers")) {
-      params.set("categories", "photographers");
-      params.set("sortBy", "rating");
-    } else if (title.includes("Makeup")) {
-      params.set("categories", "makeup");
-      params.set("sortBy", "rating");
+    if (t.includes('featured') || t.includes('handpicked')) {
+      params.set('featured', 'true');
+      params.set('sortBy', 'rating');
+    } else if (t.includes('venues')) {
+      params.set('categories', 'venues');
+      params.set('sortBy', 'price-desc');
+    } else if (t.includes('planners')) {
+      params.set('categories', 'planners');
+      params.set('sortBy', 'rating');
+    } else if (t.includes('photographers')) {
+      params.set('categories', 'photographers');
+      params.set('sortBy', 'rating');
+      params.set('minRating', '4');
+    } else if (t.includes('makeup')) {
+      params.set('categories', 'makeup');
+      params.set('sortBy', 'price-desc');
+    } else if (t.includes('mehendi')) {
+      params.set('categories', 'mehendi');
+      params.set('sortBy', 'rating');
+    } else if (t.includes('catering')) {
+      params.set('categories', 'catering');
+      params.set('sortBy', 'rating');
+    } else if (t.includes('dj') || t.includes('music')) {
+      params.set('categories', 'djs');
+      params.set('sortBy', 'rating');
+    } else if (t.includes('most booked') || t.includes('popular')) {
+      params.set('sortBy', 'bookings');
+    } else if (t.includes('trending')) {
+      params.set('sortBy', 'bookings');
+    } else if (t.includes('top rated')) {
+      params.set('sortBy', 'rating');
+      params.set('minRating', '4');
     }
 
-    // Add category filter if vendors have a consistent category (and not already set)
-    if (vendors?.[0]?.category && !params.has("categories")) {
-      params.set("categories", vendors[0].category);
+    if (vendors?.[0]?.category && !params.has('categories')) {
+      params.set('categories', vendors[0].category);
     }
 
-    // Build final URL
     const queryString = params.toString();
     return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   }, [vendors, title]);
 
   return (
     <section className="py-4 bg-white mb-1">
-      {/* Header */}
       <SectionHeader
         title={title}
         subtitle={subtitle}
@@ -667,10 +613,7 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
         color={color}
         onViewAll={() => router.push(viewMoreUrl)}
       />
-
-      {/* Scroll Indicators */}
       <div className="relative">
-        {/* Left Scroll Button */}
         <AnimatePresence>
           {canScrollLeft && (
             <motion.div
@@ -691,8 +634,6 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Right Scroll Button */}
         <AnimatePresence>
           {canScrollRight && (
             <motion.div
@@ -713,8 +654,6 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Cards Container */}
         <div
           ref={scrollRef}
           className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory scroll-smooth"
@@ -725,7 +664,6 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
           }}
         >
           {isLoading ? (
-            // Show 4 skeleton cards while loading
             [...Array(4)].map((_, i) => (
               <motion.div
                 key={`skeleton-${i}`}
@@ -737,9 +675,8 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
               </motion.div>
             ))
           ) : vendors.length === 0 ? (
-            // ✅ ADD: Empty state when no vendors
             <div className="flex-shrink-0 w-44 h-[260px] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center px-4">
-               <ResolvedIcon size={32} className="text-gray-300 mb-2" style={{ color }} />
+              <ResolvedIcon size={32} className="text-gray-300 mb-2" style={{ color }} />
               <p className="text-xs font-medium text-gray-400">No vendors found</p>
             </div>
           ) : (
@@ -754,8 +691,6 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
                   <VendorCard vendor={vendor} />
                 </motion.div>
               ))}
-
-              {/* Only show View More if there are vendors */}
               {vendors.length > 0 && (
                 <ViewMoreCard
                   title={title.split(" ").pop()}
@@ -767,8 +702,6 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
               )}
             </>
           )}
-
-          {/* Spacer */}
           <div className="w-1 flex-shrink-0" />
         </div>
       </div>
@@ -777,10 +710,6 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
 });
 
 VendorCarousel.displayName = "VendorCarousel";
-
-// =============================================================================
-// FLOATING CART
-// =============================================================================
 
 const FloatingCart = memo(({ setOpenCartNavbar }) => {
   const router = useRouter();
@@ -842,9 +771,103 @@ const FloatingCart = memo(({ setOpenCartNavbar }) => {
 
 FloatingCart.displayName = "FloatingCart";
 
-// =============================================================================
-// MAIN PAGE
-// =============================================================================
+const TrustStrip = memo(() => (
+  <div className="bg-white px-4 pb-4 hover:z-10 relative">
+    <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 border border-slate-200 dark:border-indigo-800/50 to-purple-50 dark:to-purple-900/40 rounded-[28px] p-6 lg:py-8 lg:px-12 flex flex-col items-center gap-6 shadow-xl dark:shadow-none hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] transition-all hover:-translate-y-1 duration-500">
+
+      <div className="flex flex-col items-center gap-3 text-center group cursor-default w-full">
+        <div className="w-12 h-12 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
+          <Check className="text-indigo-500 dark:text-indigo-400" size={20} strokeWidth={3} />
+        </div>
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">100% Verified</h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">Every vendor is manually checked</p>
+        </div>
+      </div>
+
+      <div className="w-12 h-px bg-indigo-200 dark:bg-indigo-800/50" />
+
+      <div className="flex flex-col items-center gap-3 text-center group cursor-default w-full">
+        <div className="w-12 h-12 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
+          <Star className="text-amber-500 dark:text-amber-400" size={20} strokeWidth={3} />
+        </div>
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">Top Rated</h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">Only the best in the industry</p>
+        </div>
+      </div>
+
+      <div className="w-12 h-px bg-indigo-200 dark:bg-indigo-800/50" />
+
+      <div className="flex flex-col items-center gap-3 text-center group cursor-default w-full">
+        <div className="w-12 h-12 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
+          <Heart className="text-rose-500 dark:text-rose-400" size={20} strokeWidth={3} />
+        </div>
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">Loved by Couples</h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">10,000+ happy weddings planned</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+));
+
+const ConciergeStrip = memo(() => (
+  <div className="bg-white px-4 pb-4 hover:z-10 relative">
+    <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 border border-slate-200 dark:border-indigo-800/50 to-purple-50 dark:to-purple-900/40 rounded-[28px] p-6 lg:py-8 lg:px-12 flex flex-col items-center text-center gap-6 shadow-xl dark:shadow-none hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] transition-all hover:-translate-y-1 duration-500">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
+          <Sparkles className="text-indigo-500 dark:text-indigo-400" size={26} />
+        </div>
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-2 transition-colors">Overwhelmed with choices?</h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold px-2 transition-colors">Our expert concierge is available 24/7 to help you structure your dream event.</p>
+        </div>
+      </div>
+      <button
+        className="bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white px-6 py-3.5 rounded-2xl font-black text-[11px] tracking-widest transition-all active:scale-95 shadow-md dark:shadow-none whitespace-nowrap w-full cursor-pointer"
+        onClick={() => { try { toast.success("Our team will contact you soon!"); } catch (e) { alert("Our team will contact you soon!"); } }}
+      >
+        GET FREE EXPERT HELP
+      </button>
+    </div>
+  </div>
+));
+
+const PromoStrip = memo(() => (
+  <div className="bg-white px-4 pb-4 hover:z-10 relative">
+    <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 border border-slate-200 dark:border-indigo-800/50 to-purple-50 dark:to-purple-900/40 rounded-[28px] p-6 lg:py-8 lg:px-12 flex flex-col items-center text-center gap-6 shadow-xl dark:shadow-none hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] transition-all hover:-translate-y-1 duration-500">
+
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
+          <Zap className="text-indigo-500 dark:text-indigo-400" size={26} />
+        </div>
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-2 flex flex-col items-center gap-2 transition-colors">
+            Wedding Season Offer
+            <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] uppercase tracking-widest leading-none w-max mt-1">Limited Time</span>
+          </h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold px-2 transition-colors">Save 25% on your first booking using the code below.</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center shrink-0 w-full mt-2">
+        <button
+          className="bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white w-full py-4 rounded-2xl font-black text-base tracking-widest transition-all active:scale-95 shadow-md dark:shadow-none cursor-pointer"
+          onClick={() => {
+            navigator.clipboard?.writeText("PLANWAB25");
+            try { toast.success("Code copied!"); } catch (e) { alert("Code copied!"); }
+          }}
+        >
+          PLANWAB25
+        </button>
+        <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-widest font-bold mt-2.5 transition-colors">Click to copy</span>
+      </div>
+
+    </div>
+  </div>
+));
 
 export default function FindAVendorPageWrapper() {
   const router = useRouter();
@@ -852,7 +875,6 @@ export default function FindAVendorPageWrapper() {
   const { cartItems, getCartCount, setOpenCartNavbar } = useCartStore();
   const count = getCartCount?.() || cartItems?.length || 0;
 
-  // State for all sections
   const [featuredVendors, setFeaturedVendors] = useState([]);
   const [topPlanners, setTopPlanners] = useState([]);
   const [mostBooked, setMostBooked] = useState([]);
@@ -864,7 +886,6 @@ export default function FindAVendorPageWrapper() {
   const [topMehendi, setTopMehendi] = useState([]);
   const [topVenues, setTopVenues] = useState([]);
 
-  // Loading states
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
   const [isLoadingPlanners, setIsLoadingPlanners] = useState(true);
   const [isLoadingBooked, setIsLoadingBooked] = useState(true);
@@ -876,14 +897,12 @@ export default function FindAVendorPageWrapper() {
   const [isLoadingMehendi, setIsLoadingMehendi] = useState(true);
   const [isLoadingVenues, setIsLoadingVenues] = useState(true);
 
-  // Helper to filter valid vendors
   const filterValidVendors = (vendors) => {
     return vendors.filter((vendor) => vendor && (vendor._id || vendor.id) && vendor.name);
   };
 
   useEffect(() => {
     const fetchAllData = async () => {
-      // Set all loading states to true immediately
       setIsLoadingFeatured(true);
       setIsLoadingPlanners(true);
       setIsLoadingBooked(true);
@@ -895,13 +914,10 @@ export default function FindAVendorPageWrapper() {
       setIsLoadingMehendi(true);
       setIsLoadingVenues(true);
 
-      // Create abort controller for cleanup
       const abortController = new AbortController();
       const { signal } = abortController;
 
-      // Define all fetch promises with error boundaries
       const fetchPromises = [
-        // 1. Featured Vendors
         fetch(
           `/api/vendor?${new URLSearchParams({
             featured: "true",
@@ -927,7 +943,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingFeatured(false)),
 
-        // 2. Top Planners
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "planners",
@@ -953,7 +968,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingPlanners(false)),
 
-        // 3. Most Booked
         fetch(
           `/api/vendor?${new URLSearchParams({
             sortBy: "bookings",
@@ -978,7 +992,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingBooked(false)),
 
-        // 4. Top Photographers
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "photographers",
@@ -1004,7 +1017,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingPhotographers(false)),
 
-        // 5. Top Makeup Artists
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "makeup",
@@ -1030,7 +1042,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingMakeup(false)),
 
-        // 6. Trending Vendors
         fetch(
           `/api/vendor?${new URLSearchParams({
             trending: "true",
@@ -1056,7 +1067,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingTrending(false)),
 
-        // 7. Top DJs
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "djs",
@@ -1082,7 +1092,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingDJs(false)),
 
-        // 8. Top Catering
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "catering",
@@ -1108,7 +1117,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingCatering(false)),
 
-        // 9. Top Mehendi Artists
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "mehendi",
@@ -1134,7 +1142,6 @@ export default function FindAVendorPageWrapper() {
           })
           .finally(() => setIsLoadingMehendi(false)),
 
-        // 10. Top Venues
         fetch(
           `/api/vendor?${new URLSearchParams({
             categories: "venues",
@@ -1161,7 +1168,6 @@ export default function FindAVendorPageWrapper() {
           .finally(() => setIsLoadingVenues(false)),
       ];
 
-      // Execute all fetches in parallel with timeout
       try {
         await Promise.race([
           Promise.allSettled(fetchPromises),
@@ -1169,7 +1175,6 @@ export default function FindAVendorPageWrapper() {
         ]);
       } catch (error) {
         console.error("Critical error in data fetching:", error);
-        // Ensure all loading states are false even on timeout
         setIsLoadingFeatured(false);
         setIsLoadingPlanners(false);
         setIsLoadingBooked(false);
@@ -1182,7 +1187,6 @@ export default function FindAVendorPageWrapper() {
         setIsLoadingVenues(false);
       }
 
-      // Cleanup function
       return () => {
         abortController.abort();
       };
@@ -1193,7 +1197,6 @@ export default function FindAVendorPageWrapper() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-3">
@@ -1225,16 +1228,9 @@ export default function FindAVendorPageWrapper() {
           </Link>
         </div>
       </header>
-
-      {/* Spacer */}
       <div className="h-14" />
-
-      {/* Content */}
       <div className="pt-4 pb-4">
-        {/* Hero Carousel - Category Grid */}
         <HeroCarousel />
-
-        {/* Vendor Sections */}
         <VendorCarousel
           title="Featured Vendors"
           subtitle="Handpicked by our experts"
@@ -1252,6 +1248,8 @@ export default function FindAVendorPageWrapper() {
           color="#8b5cf6"
           isLoading={isLoadingPlanners}
         />
+
+        <TrustStrip />
 
         <VendorCarousel
           title="Most Booked"
@@ -1271,6 +1269,8 @@ export default function FindAVendorPageWrapper() {
           isLoading={isLoadingPhotographers}
         />
 
+        <ConciergeStrip />
+
         <VendorCarousel
           title="Top DJs & Music"
           subtitle="Set the perfect mood"
@@ -1288,6 +1288,8 @@ export default function FindAVendorPageWrapper() {
           color="#14b8a6"
           isLoading={isLoadingCatering}
         />
+
+        <PromoStrip />
 
         <VendorCarousel
           title="Mehendi Artists"
@@ -1325,13 +1327,9 @@ export default function FindAVendorPageWrapper() {
           isLoading={isLoadingTrending}
         />
       </div>
-
-      {/* Floating Cart */}
       <AnimatePresence>
         <FloatingCart setOpenCartNavbar={setOpenCartNavbar} />
       </AnimatePresence>
-
-      {/* Global Styles */}
       <style jsx global>{`
         .no-scrollbar {
           -ms-overflow-style: none;
