@@ -8845,11 +8845,11 @@ const RightSidebar = ({
   };
 
   const handleSimilarprofileClick = (profile) => {
-    if (profile?.username) {
-      router.push(`/vendor/${profile.category}/${profile.username}/profile`);
-    } else {
-      router.push(`/vendor/${profile.category}/profile/${profile.username}`);
-    }
+    if (profile?.vendorId) {
+          router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
+        } else {
+          router.push(`/vendor/${profile.category}/profile/${profile.username}`);
+        }
   };
 
   const handleQuickSettingClick = (action) => {

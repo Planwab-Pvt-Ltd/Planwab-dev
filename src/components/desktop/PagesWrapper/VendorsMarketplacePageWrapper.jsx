@@ -4195,7 +4195,6 @@ const TopProfilesCarousel = memo(
     ]);
 
     const handleVendorClick = useCallback((vendor) => {
-        haptic("medium");
        if (vendor?.vendorId) {
           router.push(`/vendor/${vendor.category}/${vendor.vendorId}/profile`);
         } else {

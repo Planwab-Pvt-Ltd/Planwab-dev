@@ -31,6 +31,7 @@ import {
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 
 const quillModules = {
   toolbar: [
@@ -174,6 +175,7 @@ const VendorProfileOnboardingPageWrapper = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categoryQuery, setCategoryQuery] = useState("");
   const categoryRef = useRef(null);
+  const {user} = useUser();
 
   const [formData, setFormData] = useState({
     vendorBusinessName: "",
@@ -227,7 +229,8 @@ const VendorProfileOnboardingPageWrapper = () => {
         [parent]: { ...prev[parent], [child]: value },
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      const sanitized = name === "username" ? value.replace(/[^a-zA-Z0-9_-]/g, "") : value;
+    setFormData((prev) => ({ ...prev, [name]: sanitized }));
     }
   };
 
@@ -297,6 +300,14 @@ const VendorProfileOnboardingPageWrapper = () => {
         setError("Please fill all required fields");
         return false;
       }
+      if (!profilePicture) {
+        setError("Profile picture is required");
+        return false;
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+    setError("Username can only contain letters, numbers, hyphens (-) and underscores (_). No spaces or special characters.");
+    return false;
+  }
     }
     if (currentStep === 3) {
       if (formData.password.length < 6) {
@@ -342,6 +353,7 @@ const VendorProfileOnboardingPageWrapper = () => {
         vendorCoverImage: coverImage || "",
         location: formData.location,
         password: formData.password,
+        createdBy: user?.id || user?.primaryEmailAddress?.emailAddress || "unknown",
       };
 
       const response = await fetch(`/api/vendor/profile`, {
@@ -759,3 +771,4 @@ const VendorProfileOnboardingPageWrapper = () => {
 };
 
 export default VendorProfileOnboardingPageWrapper;
+ 

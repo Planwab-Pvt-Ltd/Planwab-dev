@@ -74,7 +74,12 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
-import { CustomDropdown, REEL_NESTED_TYPES, REEL_SUBTYPES, REEL_TYPES } from "./AddReels";
+import { CustomDropdown, 
+  REEL_CATEGORIES, 
+  REEL_SUBCATEGORIES, 
+  REEL_NESTED_TYPES, 
+  REEL_SUBTYPES, 
+  REEL_TYPES } from "./AddReels";
 
 // ============================================================================
 // TOAST CONTEXT
@@ -321,30 +326,6 @@ const AdminPasswordModal = ({ isOpen, onClose, onSuccess }) => {
     </AnimatePresence>
   );
 };
-
-// ============================================================================
-// CATEGORIES CONFIG
-// ============================================================================
-const REEL_CATEGORIES = [
-  { key: "venues", label: "Venues", icon: Building2 },
-  { key: "photographers", label: "Photographers", icon: Camera },
-  { key: "makeup", label: "Makeup", icon: Paintbrush2 },
-  { key: "planners", label: "Planners", icon: UserCheck },
-  { key: "catering", label: "Catering", icon: UtensilsCrossed },
-  { key: "clothes", label: "Clothes", icon: Shirt },
-  { key: "mehendi", label: "Mehendi", icon: Hand },
-  { key: "cakes", label: "Cakes", icon: CakeSlice },
-  { key: "jewellery", label: "Jewellery", icon: Gem },
-  { key: "invitations", label: "Invitations", icon: Mail },
-  { key: "djs", label: "DJs", icon: Music },
-  { key: "hairstyling", label: "Hairstyling", icon: Scissors },
-  { key: "decor", label: "Decorators", icon: Lamp },
-  { key: "dhol", label: "Dhol", icon: Drum },
-  { key: "anchor", label: "Anchor", icon: MicVocal },
-  { key: "stageEntry", label: "Stage Entry", icon: Sparkles },
-  { key: "fireworks", label: "Fireworks", icon: FlameKindling },
-  { key: "other", label: "Other", icon: FileText },
-];
 
 // ============================================================================
 // SECTIONS CONFIG
@@ -1345,7 +1326,6 @@ useEffect(() => {
                     onChange={handleInputChange}
                     onListChange={handleListChange}
                     errors={errors}
-                    categories={REEL_CATEGORIES}
                   />
                 )}
                 {activeSection === "media" && (
@@ -1902,17 +1882,29 @@ const TagInput = ({ label, tags = [], onChange, suggestions = [], placeholder, a
 // EDIT SECTION COMPONENTS
 // ============================================================================
 
-const EditBasicInfoSection = ({ data, onChange, errors, onListChange, categories }) => (
-  <div className="space-y-8">
-    <Section
-      title="Reel Identity"
-      icon={Film}
-      description="Edit core reel information"
-      badge="Required"
-      tip="Updating the title and vendor association affects how this reel is displayed across the platform."
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
+const EditBasicInfoSection = ({ data, onChange, errors, onListChange }) => {
+  // Helper to get nested types based on selected type and subtype
+  const getNestedTypeOptions = () => {
+    if (!data.type || !data.subType) return [];
+    const typeGroup = REEL_SUBTYPES[data.type];
+    if (!typeGroup) return [];
+    const subTypeData = typeGroup.find(st => st.value === data.subType);
+    return subTypeData?.nestedTypes || [];
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* ============================== */}
+      {/* TOP ROW: TITLE */}
+      {/* ============================== */}
+      <Section
+        title="Reel Identity"
+        icon={Film}
+        description="Edit core reel information"
+        badge="Required"
+        tip="Updating the title affects how this reel is displayed across the platform."
+      >
+        <div className="w-full">
           <InputField
             label="Reel Title"
             value={data.title || ""}
@@ -1923,94 +1915,115 @@ const EditBasicInfoSection = ({ data, onChange, errors, onListChange, categories
             icon={Film}
           />
         </div>
-        <InputField
-          label="Subcategory"
-          value={data.subcategory || ""}
-          onChange={(e) => onChange("subcategory", e.target.value)}
-          placeholder="e.g., Luxury Venues"
-          icon={Layers}
-        />
-     {/* Event Type */}
-<CustomDropdown
-  label="Event Type"
-  placeholder="Select event type"
-  options={REEL_TYPES}
-  value={data.type}
-  onChange={(val) => {
-    onChange("type", val);
-    onChange("subType", "");
-  }}
-  error={errors.type}
-  icon={Tag}
-/>
+      </Section>
 
-{/* Event Subtype */}
-<CustomDropdown
-  label="Event Subtype"
-  placeholder={data.type ? "Select subType" : "Select a type first"}
-  options={data.type ? REEL_SUBTYPES[data.type] ?? [] : []}
-  value={data.subType}
-  onChange={(val) => onChange("subType", val)}
-  error={errors.subType}
-  disabled={!data.type}
-  icon={Layers}
-/>
+        {/* ============================== */}
+      {/* SECTION 1: CATEGORIZATION */}
+      {/* ============================== */}
+      <Section 
+        title="Categorization" 
+        icon={Layers}
+        description="Map this reel to specific vendor categories"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Category */}
+          <CustomDropdown
+            label="Category"
+            placeholder="Select category"
+            options={REEL_CATEGORIES}
+            value={data.category}
+            onChange={(val) => {
+              onChange("category", val);
+              onChange("subcategory", ""); // Reset subcategory on category change
+            }}
+            error={errors.category}
+            icon={Layers}
+            allowCustom={true}
+          />
 
-{/* Reel / Film Style */}
-<CustomDropdown
-  label="Reel Style"
-  placeholder="Select reel style"
-  options={REEL_NESTED_TYPES}
-  value={data.nestedType}
-  onChange={(val) => onChange("nestedType", val)}
-  error={errors.nestedType}
-  icon={Film}
-/>
+          {/* Subcategory */}
+          <CustomDropdown
+            label="Subcategory"
+            placeholder={data.category ? "Select subcategory" : "Select a category first"}
+            options={data.category ? REEL_SUBCATEGORIES[data.category] || [] : []}
+            value={data.subcategory || ""}
+            onChange={(val) => onChange("subcategory", val)}
+            error={errors.subcategory}
+            disabled={!data.category}
+            icon={Layers}
+            allowCustom={true}
+          />
+        </div>
+      </Section>
 
-<div className="md:col-span-2">
-  <TagInput
-    label="Nested Values"
-    tags={data.nestedValues || []}
-    onChange={(v) => onListChange("nestedValues", v)}
-    placeholder="Add nested values and press Enter…"
-  />
-</div>
-      </div>
-    </Section>
+      {/* ============================== */}
+      {/* SECTION 2: EVENT DETAILS */}
+      {/* ============================== */}
+      <Section
+        title="Event Classification"
+        icon={Tag}
+        description="Define the specific event type, moments, and styles"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Event Type */}
+          <CustomDropdown
+            label="Event Type"
+            placeholder="Select event type"
+            options={REEL_TYPES}
+            value={data.type}
+            onChange={(val) => {
+              onChange("type", val);
+              onChange("subType", ""); // Reset subtype on type change
+              onChange("nestedType", ""); // Reset nestedType on type change
+            }}
+            error={errors.type}
+            icon={Tag}
+            allowCustom={true}
+          />
 
-    <Section title="Category" icon={Layers} badge="Required">
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-        {categories.map((cat) => (
-          <motion.button
-            key={cat.key}
-            type="button"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => onChange("category", cat.key)}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all min-w-[85px] flex-shrink-0 ${
-              data.category === cat.key
-                ? "border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 shadow-lg shadow-violet-500/20"
-                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-violet-300 hover:shadow-md"
-            }`}
-          >
-            <cat.icon className="h-6 w-6 mb-1.5" />
-            <span className="text-[11px] font-medium text-center leading-tight">{cat.label}</span>
-          </motion.button>
-        ))}
-      </div>
-      {errors.category && (
-        <motion.p
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 text-xs mt-2 flex items-center gap-1"
-        >
-          <AlertCircle size={12} />
-          {errors.category}
-        </motion.p>
-      )}
-    </Section>
-  </div>
-);
+          {/* Event Subtype */}
+          <CustomDropdown
+            label="Event Subtype"
+            placeholder={data.type ? "Select subType" : "Select a type first"}
+            options={data.type ? REEL_SUBTYPES[data.type] || [] : []}
+            value={data.subType || ""}
+            onChange={(val) => {
+              onChange("subType", val);
+              onChange("nestedType", ""); // Reset nestedType on subtype change
+            }}
+            error={errors.subType}
+            disabled={!data.type}
+            icon={Layers}
+            allowCustom={true}
+          />
+
+          {/* Event NestedType */}
+          <CustomDropdown
+            label="Event NestedType"
+            placeholder={data.subType ? "Select nested type" : "Select a subtype first"}
+            options={getNestedTypeOptions()}
+            value={data.nestedType || ""}
+            onChange={(val) => onChange("nestedType", val)}
+            error={errors.nestedType}
+            disabled={!data.subType}
+            icon={Film}
+            allowCustom={true}
+          />
+
+          {/* Nested Values (Tags) */}
+          <div className="col-span-2">
+            <TagInput
+              label="Nested Values"
+              tags={data.nestedValues || []}
+              onChange={(v) => onListChange("nestedValues", v)}
+              placeholder="Add nested values and press Enter…"
+            />
+          </div>
+        </div>
+      </Section>
+    </div>
+  );
+};
 
 const EditMediaSection = ({
   data,

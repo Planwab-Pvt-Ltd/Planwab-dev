@@ -172,6 +172,10 @@ const vendorProfileSchema = new mongoose.Schema(
     highlights: [highlightSchema],
     posts: [postSchema],
     reels: [reelSchema],
+    createdBy: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,

@@ -534,7 +534,7 @@ const CategoryGrid = ({ currentCategory }) => {
         pixelWidth: 80,
       },
       {
-        name: "mehendi",
+        name: "Mehendi",
         key: "mehendi",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png",
         span: 1,
@@ -550,7 +550,7 @@ const CategoryGrid = ({ currentCategory }) => {
         pixelWidth: 80,
       },
       {
-        name: `${currentCategory} Venues`,
+        name: `${currentCategory === "Default" ? "Event" : currentCategory} Venues`,
         key: "venues",
         // Use a smaller, optimized static image if possible instead of a heavy GIF for thumbnails
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771518098/Hydra_Category_Wedding_Season-18-11-25_yrbjzq.webp",
@@ -614,7 +614,7 @@ const CategoryGrid = ({ currentCategory }) => {
         pixelWidth: 80,
       },
       {
-        name: `${currentCategory} Venues`,
+        name: `${currentCategory === "Default" ? "Event" : currentCategory} Venues`,
         key: "venues",
         // Use a smaller, optimized static image if possible instead of a heavy GIF for thumbnails
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771518098/Hydra_Category_Wedding_Season-18-11-25_yrbjzq.webp",

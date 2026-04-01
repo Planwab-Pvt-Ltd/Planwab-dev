@@ -49,7 +49,7 @@ const HERO_CATEGORIES = [
     id: 3,
     name: "Decorators",
     key: "decor",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
     count: "267",
   },
   {
@@ -91,7 +91,7 @@ const HERO_CATEGORIES = [
     id: 9,
     name: "Florists",
     key: "florists",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
     count: "0",
   },
   {
@@ -330,10 +330,10 @@ const VendorCard = memo(({ vendor }) => {
 
   const displayPrice = useMemo(() => {
     if (vendor.perDayPrice?.min) {
-      return `₹${formatPrice(vendor.perDayPrice.min)}`;
+      return `${formatPrice(vendor.perDayPrice.min)}`;
     }
     if (typeof vendor.price === "number") {
-      return `₹${formatPrice(vendor.price)}`;
+      return `${formatPrice(vendor.price)}`;
     }
     if (typeof vendor.price === "string" && vendor.price.trim()) {
       return vendor.price;
