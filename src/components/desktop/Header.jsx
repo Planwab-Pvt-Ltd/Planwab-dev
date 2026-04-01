@@ -46,7 +46,7 @@ import {
   Images,
   Store,
 } from "lucide-react";
-import { useCategoryStore } from "@/GlobalState/CategoryStore";
+import { useCategoryStore } from "../../GlobalState/CategoryStore";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,10 +85,11 @@ const CategoryButton = ({ category, imageSrc, active }) => (
         transition-all duration-300 ease-out group
         focus:outline-none
         hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:scale-105 hover:shadow-md cursor-pointer
-        ${active
-        ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm"
-        : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-      }
+        ${
+          active
+            ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm"
+            : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+        }
     `}
   >
     <div className="relative flex items-center justify-center">
@@ -104,9 +105,10 @@ const CategoryButton = ({ category, imageSrc, active }) => (
     <span
       className={`
         whitespace-nowrap transition-all duration-300 ease-out
-        ${active
-          ? "text-base font-bold text-gray-900 dark:text-gray-100"
-          : "text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 group-hover:font-semibold"
+        ${
+          active
+            ? "text-base font-bold text-gray-900 dark:text-gray-100"
+            : "text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 group-hover:font-semibold"
         }
     `}
     >
@@ -135,10 +137,16 @@ const PlannerDropdown = ({ isOpen }) => {
           Join our community of professional event planners and start earning
         </p>
         <div className="space-y-3 flex flex-col">
-          <Link href="/vendor/onboarding" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
+          <Link
+            href="/vendor/onboarding"
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer"
+          >
             Start Application
           </Link>
-          <Link href="/vendor/register" className="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 cursor-pointer">
+          <Link
+            href="/vendor/register"
+            className="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 cursor-pointer"
+          >
             Learn More
           </Link>
         </div>
@@ -238,17 +246,19 @@ const LocationDropdown = ({ isOpen, onClose }) => {
           <button
             key={index}
             onClick={() => handleCitySelect(city)}
-            className={`w-full px-4 py-3 text-left transition-all duration-200 flex items-center ${currentCity === city
-              ? "bg-blue-50 dark:bg-blue-900/40 border-r-2 border-blue-500"
-              : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
-              }`}
+            className={`w-full px-4 py-3 text-left transition-all duration-200 flex items-center ${
+              currentCity === city
+                ? "bg-blue-50 dark:bg-blue-900/40 border-r-2 border-blue-500"
+                : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+            }`}
           >
             <MapPin className={`w-4 h-4 mr-3 ${currentCity === city ? "text-blue-500" : "text-gray-400"}`} />
             <span
-              className={`${currentCity === city
-                ? "text-blue-700 dark:text-blue-300 font-medium"
-                : "text-gray-700 dark:text-gray-300"
-                }`}
+              className={`${
+                currentCity === city
+                  ? "text-blue-700 dark:text-blue-300 font-medium"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
             >
               {city}
             </span>
@@ -284,7 +294,7 @@ const ProfileDropdown = ({ isOpen }) => {
     menuItems.push({ icon: LucideLayoutDashboard, label: "Admin Dashboard", href: "/admin/vendors" });
   }
   return (
-    <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 !z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2 px-2">
+    <div className="absolute !z-60 top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2 px-2">
       <SignedIn>
         <div className="flex items-center space-x-2 p-2">
           <img src={user?.imageUrl} alt={user?.fullName} className="w-10 h-10 rounded-xl" />
@@ -292,7 +302,9 @@ const ProfileDropdown = ({ isOpen }) => {
             <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
               {user?.username || user?.fullName || "User"}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.primaryEmailAddress?.emailAddress}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              {user?.primaryEmailAddress?.emailAddress}
+            </p>
           </div>
         </div>
       </SignedIn>
@@ -375,10 +387,8 @@ const HomeSearchBar = ({ onOpen }) => {
     setQuery("");
   };
 
-  const handleSearchAll = (q) =>
-    navigate(`/vendors/marketplace?search=${encodeURIComponent(q.trim())}`);
-  const handleVendorSelect = (cat) =>
-    navigate(`/vendors/marketplace/${cat.key}`);
+  const handleSearchAll = (q) => navigate(`/vendors/marketplace?search=${encodeURIComponent(q.trim())}`);
+  const handleVendorSelect = (cat) => navigate(`/vendors/marketplace/${cat.key}`);
   const handleServiceSelect = (svc) => navigate(svc.href);
 
   const handleSubmit = () => {
@@ -423,8 +433,14 @@ const HomeSearchBar = ({ onOpen }) => {
             setShowSuggestions(true);
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); handleSubmit(); }
-            if (e.key === "Escape") { setShowSuggestions(false); inputRef.current?.blur(); }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSubmit();
+            }
+            if (e.key === "Escape") {
+              setShowSuggestions(false);
+              inputRef.current?.blur();
+            }
           }}
           className={`w-full pl-11 pr-16 py-2.5 bg-gray-50/80 dark:bg-gray-800/60 border rounded-2xl
             text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500
@@ -439,9 +455,7 @@ const HomeSearchBar = ({ onOpen }) => {
           type="button"
           onClick={() => onOpen?.()}
           className={`absolute right-3 px-2 py-1 rounded-lg text-[11px] font-medium tracking-wide transition-all duration-300 ${
-            isFocused
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200/80 dark:bg-gray-700/80 text-gray-400 dark:text-gray-500"
+            isFocused ? "bg-blue-500 text-white" : "bg-gray-200/80 dark:bg-gray-700/80 text-gray-400 dark:text-gray-500"
           }`}
         >
           ⌘K
@@ -494,9 +508,10 @@ const SubNavigation = () => {
   }, []);
 
   const navBtnClass = (name) =>
-    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none ${activeDropdown === name
-      ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800"
-      : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none ${
+      activeDropdown === name
+        ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800"
+        : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50"
     }`;
 
   const galleryLinks = [
@@ -512,12 +527,12 @@ const SubNavigation = () => {
   ];
 
   const blogLinks = [
-    { label: "Wedding Blogs",     href: "/about/blogs?category=wedding",      icon: Heart },
-    { label: "Anniversary Blogs", href: "/about/blogs?category=anniversary",   icon: Star },
-    { label: "Birthday Blogs",    href: "/about/blogs?category=birthday",      icon: CakeSlice },
-    { label: "Corporate Blogs",   href: "/about/blogs?category=corporate",     icon: Building2 },
-    { label: "Planning Tips",     href: "/about/blogs?category=planning-tips", icon: FileText },
-    { label: "All Blogs",         href: "/about/blogs",                        icon: Images },
+    { label: "Wedding Blogs", href: "/about/blogs?category=wedding", icon: Heart },
+    { label: "Anniversary Blogs", href: "/about/blogs?category=anniversary", icon: Star },
+    { label: "Birthday Blogs", href: "/about/blogs?category=birthday", icon: CakeSlice },
+    { label: "Corporate Blogs", href: "/about/blogs?category=corporate", icon: Building2 },
+    { label: "Planning Tips", href: "/about/blogs?category=planning-tips", icon: FileText },
+    { label: "All Blogs", href: "/about/blogs", icon: Images },
   ];
 
   return (
@@ -530,8 +545,9 @@ const SubNavigation = () => {
               <SlidersHorizontal className="w-4 h-4" />
               <span>All</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === "all" ? "rotate-180" : ""
-                  }`}
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  activeDropdown === "all" ? "rotate-180" : ""
+                }`}
               />
             </button>
           </div>
@@ -544,8 +560,9 @@ const SubNavigation = () => {
             <button className={navBtnClass("vendors")}>
               <span>Vendors</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === "vendors" ? "rotate-180" : ""
-                  }`}
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  activeDropdown === "vendors" ? "rotate-180" : ""
+                }`}
               />
             </button>
           </div>
@@ -555,8 +572,9 @@ const SubNavigation = () => {
             <button className={navBtnClass("gallery")}>
               <span>Gallery</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === "gallery" ? "rotate-180" : ""
-                  }`}
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  activeDropdown === "gallery" ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -635,8 +653,9 @@ const SubNavigation = () => {
             <button className={navBtnClass("planning")}>
               <span>Planning</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === "planning" ? "rotate-180" : ""
-                  }`}
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  activeDropdown === "planning" ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -854,14 +873,16 @@ const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggl
             </div>
             {categories.map((cat) => {
               const categoryPath = `/events/${cat?.name?.toLowerCase()}`;
-              const isActive = pathnameMS === categoryPath || pathnameMS === `/plan-my-event/${cat?.name?.toLowerCase()}`;
+              const isActive =
+                pathnameMS === categoryPath || pathnameMS === `/plan-my-event/${cat?.name?.toLowerCase()}`;
               return (
                 <Link href={categoryPath} key={cat.name} onClick={onClose}>
                   <div
-                    className={`flex items-center space-x-4 p-3 rounded-xl text-md font-semibold transition-all duration-200 ${isActive
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
-                      }`}
+                    className={`flex items-center space-x-4 p-3 rounded-xl text-md font-semibold transition-all duration-200 ${
+                      isActive
+                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
+                    }`}
                   >
                     <img src={cat.image} alt={cat.name} className="w-9 h-9" />
                     <span>{cat.name}</span>
@@ -901,7 +922,10 @@ const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggl
                       Join our community and turn your passion into a profession.
                     </p>
                     <div className="space-y-2.5">
-                      <Link href="/vendor/onboarding" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+                      <Link
+                        href="/vendor/onboarding"
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
+                      >
                         Start Application
                       </Link>
                       <button className="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-all duration-300">
@@ -954,15 +978,17 @@ const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggl
                         <button
                           key={index}
                           onClick={() => handleCitySelect(city)}
-                          className={`w-full px-3 py-2 text-left transition-all duration-200 flex items-center rounded-lg ${currentCity === city
-                            ? "bg-blue-500 text-white shadow-md"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-600"
-                            }`}
+                          className={`w-full px-3 py-2 text-left transition-all duration-200 flex items-center rounded-lg ${
+                            currentCity === city
+                              ? "bg-blue-500 text-white shadow-md"
+                              : "hover:bg-gray-100 dark:hover:bg-gray-600"
+                          }`}
                         >
                           <MapPin className={`w-4 h-4 mr-3 ${currentCity === city ? "text-white" : "text-gray-400"}`} />
                           <span
-                            className={`text-sm ${currentCity === city ? "text-white font-medium" : "text-gray-700 dark:text-gray-300"
-                              }`}
+                            className={`text-sm ${
+                              currentCity === city ? "text-white font-medium" : "text-gray-700 dark:text-gray-300"
+                            }`}
                           >
                             {city}
                           </span>
@@ -1078,10 +1104,11 @@ const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggl
             </span>
             <button
               onClick={toggleTheme}
-              className={`relative w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 shadow-inner ${theme === "dark"
-                ? "bg-gradient-to-r from-blue-500 to-purple-600 shadow-blue-300"
-                : "bg-gradient-to-r from-yellow-400 to-orange-500 shadow-yellow-200"
-                }`}
+              className={`relative w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 shadow-inner ${
+                theme === "dark"
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 shadow-blue-300"
+                  : "bg-gradient-to-r from-yellow-400 to-orange-500 shadow-yellow-200"
+              }`}
             >
               <motion.div
                 animate={{ x: theme === "dark" ? 32 : 0 }}
@@ -1105,10 +1132,11 @@ const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggl
 const AccordionButton = ({ icon: Icon, label, name, openAccordion, toggleAccordion }) => (
   <button
     onClick={() => toggleAccordion(name)}
-    className={`flex items-center justify-between w-full p-3 rounded-xl text-md font-semibold transition-all duration-200 ${openAccordion === name
-      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
-      : "text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
-      }`}
+    className={`flex items-center justify-between w-full p-3 rounded-xl text-md font-semibold transition-all duration-200 ${
+      openAccordion === name
+        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
+        : "text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
+    }`}
   >
     <span className="flex items-center space-x-4">
       <Icon className="w-6 h-6" />
@@ -1122,25 +1150,45 @@ const AccordionButton = ({ icon: Icon, label, name, openAccordion, toggleAccordi
 
 const categories = [
   { name: "Wedding", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430828/WeddingCat_qz1gdd.png" },
-  { name: "Anniversary", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430833/AnniversaryCat_iyr77x.png" },
+  {
+    name: "Anniversary",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430833/AnniversaryCat_iyr77x.png",
+  },
   { name: "Birthday", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430838/BirthdayCat_adjjnh.png" },
 ];
 
 const LOGO_SEGMENTS = [
   { key: "plan", text: "plan", tooltip: "Event Planning & Marketplace", alignLeft: true },
-  { key: "W",    text: "W",    tooltip: "Wedding",     alignLeft: false },
-  { key: "A",    text: "A",    tooltip: "Anniversary", alignLeft: false },
-  { key: "B",    text: "B",    tooltip: "Birthday",    alignLeft: false },
+  { key: "W", text: "W", tooltip: "Wedding", alignLeft: false },
+  { key: "A", text: "A", tooltip: "Anniversary", alignLeft: false },
+  { key: "B", text: "B", tooltip: "Birthday", alignLeft: false },
 ];
 
 const SEGMENT_HOVER_COLOR = {
-  W: "text-rose-500   dark:text-rose-400",
+  W: "text-rose-500 dark:text-rose-400",
   A: "text-emerald-500 dark:text-emerald-400",
   B: "text-violet-500 dark:text-violet-400",
 };
 
+const DROPLET_ACCENT = {
+  W: { bg: "rgba(244,63,94,0.18)", border: "rgba(251,113,133,0.55)", glow: "rgba(244,63,94,0.25)", text: "#fff0f3" },
+  A: { bg: "rgba(16,185,129,0.18)", border: "rgba(52,211,153,0.55)", glow: "rgba(16,185,129,0.25)", text: "#f0fff8" },
+  B: { bg: "rgba(139,92,246,0.18)", border: "rgba(167,139,250,0.55)", glow: "rgba(139,92,246,0.25)", text: "#f5f0ff" },
+  plan: { bg: "rgba(245,158,11,0.18)", border: "rgba(251,191,36,0.55)", glow: "rgba(245,158,11,0.25)", text: "#fffbeb" },
+};
+
 function LogoText({ logoHovered }) {
+  const router = useRouter();
   const [hoveredSegment, setHoveredSegment] = useState(null);
+  const { activeCategoryDesktop } = useCategoryStore();
+  const planUrl = activeCategoryDesktop ? `/events/${activeCategoryDesktop.toLowerCase()}` : "/events/wedding";
+
+  const SEGMENT_HREF = {
+    plan: planUrl,
+    W: "/",
+    A: "/?category=anniversary",
+    B: "/?category=birthday",
+  };
 
   return (
     <span
@@ -1151,49 +1199,98 @@ function LogoText({ logoHovered }) {
       {LOGO_SEGMENTS.map((seg) => {
         const isHov = hoveredSegment === seg.key;
         const hoverColor = SEGMENT_HOVER_COLOR[seg.key];
+        const accent = DROPLET_ACCENT[seg.key];
 
         return (
           <span
-            key={seg.key}
-            className="relative inline-block"
+            key={seg.key} 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(SEGMENT_HREF[seg.key]); }}
+            style={{ isolation: "isolate" }}
+            className={`relative inline-block cursor-pointer select-none ${isHov ? "z-[9999]" : "z-10"}`}
             onMouseEnter={() => setHoveredSegment(seg.key)}
             onMouseLeave={() => setHoveredSegment(null)}
           >
             {/* Letter */}
             <span
               className={`transition-colors duration-200 ${
-                isHov && hoverColor
-                  ? hoverColor
-                  : "text-[#f59e0b] dark:text-slate-200"
+                isHov && hoverColor ? hoverColor : "text-[#f59e0b] dark:text-slate-200"
               }`}
             >
               {seg.text}
             </span>
 
-            {/* Tooltip */}
+            {/* 
+              FIX: Separate centering wrapper (static div) from the animation wrapper (motion.div).
+              Framer Motion overrides the `transform` property entirely for its animations (scale, y),
+              which previously clobbered the `translateX(-50%)` centering transform.
+              Now the outer div owns the centering, and motion.div owns only the animation.
+            */}
             <AnimatePresence>
               {isHov && (
-                <motion.div
-                  key={`tip-${seg.key}`}
-                  initial={{ opacity: 0, y: 6, scale: 0.88 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.88 }}
-                  transition={{ type: "spring", stiffness: 480, damping: 26 }}
-                  className={`absolute top-full mt-2.5 z-[200] pointer-events-none ${
-                    seg.alignLeft ? "left-0" : "left-1/2 -translate-x-1/2"
-                  }`}
+                <div
+                  className="absolute top-full mt-3 pointer-events-none"
+                  style={{
+                    zIndex: 2147483647,
+                    ...(seg.alignLeft
+                      ? { left: 0 }
+                      : { left: "50%", transform: "translateX(-50%)" }),
+                  }}
                 >
-                  {/* Arrow */}
+                  <motion.div
+                    key={`tip-${seg.key}`}
+                    initial={{ opacity: 0, y: 10, scale: 0.80 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.80 }}
+                    transition={{ type: "spring", stiffness: 480, damping: 26, mass: 0.5 }}
+                  >
+                    {/* Arrow */}
                   <div
-                    className={`absolute -top-[5px] w-2.5 h-2.5 bg-gray-900 dark:bg-white rotate-45 rounded-[2px] ${
-                      seg.alignLeft ? "left-3" : "left-1/2 -translate-x-1/2"
+                    className={`absolute -top-[6px] w-3 h-3 rotate-45 rounded-[3px] ${
+                      seg.alignLeft ? "left-4" : "left-1/2 -translate-x-1/2"
                     }`}
+                    style={{
+                      background: "linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.18) 100%)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+                      backdropFilter: "blur(16px)",
+                      WebkitBackdropFilter: "blur(16px)",
+                      border: "1px solid rgba(255,255,255,0.45)",
+                    }}
                   />
-                  {/* Bubble */}
-                  <div className="relative bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[11px] font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl">
-                    {seg.tooltip}
-                  </div>
-                </motion.div>
+
+                    {/* Main water droplet bubble */}
+                    <div
+                      className="relative whitespace-nowrap text-[11px] font-bold px-4 py-[7px]"
+                      style={{
+                        borderRadius: "50px 50px 46px 46px",
+                        background: `linear-gradient(160deg, rgba(255,255,255,0.38) 0%, ${accent.bg} 50%, rgba(255,255,255,0.10) 100%)`,
+                        backdropFilter: "blur(24px) saturate(200%) brightness(1.08)",
+                        WebkitBackdropFilter: "blur(24px) saturate(200%) brightness(1.08)",
+                        border: `1px solid ${accent.border}`,
+                        boxShadow: `
+                          0 8px 32px ${accent.glow},
+                          0 2px 12px rgba(0,0,0,0.10),
+                          inset 0 1.5px 0 rgba(255,255,255,0.75),
+                          inset 0 -1px 0 rgba(255,255,255,0.15)
+                        `,
+                        color: "rgba(15,23,42,0.88)",
+                      }}
+                    >
+                      {/* Inner specular shimmer — the "wet" highlight */}
+                      <div
+                      className="!text-white"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: "inherit",
+                          background:
+                            "linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 55%)",
+                          pointerEvents: "none",
+                        }}
+                      />
+                      {seg.tooltip}
+                    </div>
+                  </motion.div>
+                </div>
               )}
             </AnimatePresence>
           </span>
@@ -1221,16 +1318,16 @@ export default function DesktopHeader() {
   const profileRef = useRef(null);
 
   useEffect(() => {
-  const handleKeyDown = (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-      e.preventDefault();
-      e.stopPropagation();
-      setSearchOpen((prev) => !prev);
-    }
-  };
-  document.addEventListener("keydown", handleKeyDown, { capture: true });
-  return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
-}, []);
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, []);
 
   useEffect(() => {
     if (document.body) {
@@ -1295,10 +1392,11 @@ export default function DesktopHeader() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 !z-[40] transition-all duration-500 ease-out rounded-b-xl ${isScrolled
-          ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-xl"
-          : `${isHomePage ? "bg-white/40 dark:bg-transparent" : "bg-white dark:bg-gray-800"}`
-          }`}
+        className={`fixed top-0 left-0 right-0 !z-[40] transition-all duration-500 ease-out rounded-b-xl ${
+          isScrolled
+            ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-xl"
+            : `${isHomePage ? "bg-white/40 dark:bg-transparent" : "bg-white dark:bg-gray-800"}`
+        }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* ── Row 1: Logo / Search or Categories / Actions ── */}
@@ -1317,8 +1415,9 @@ export default function DesktopHeader() {
                     alt="PlanWAB Logo"
                     width={38}
                     height={38}
-                    className={`transition-all duration-400 ease-out mix-blend-multiply dark:mix-blend-normal dark:brightness-110 ${isHovered ? "rotate-12 scale-110" : ""
-                      }`}
+                    className={`transition-all duration-400 ease-out mix-blend-multiply dark:mix-blend-normal dark:brightness-110 ${
+                      isHovered ? "rotate-12 scale-110" : ""
+                    }`}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = "https://placehold.co/38x38/FDE2E8/C1284A?text=P";
@@ -1383,8 +1482,9 @@ export default function DesktopHeader() {
                 >
                   <span>Become a Planner</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${openDropdown === "planner" ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      openDropdown === "planner" ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
                 <PlannerDropdown isOpen={openDropdown === "planner"} />
@@ -1447,8 +1547,9 @@ export default function DesktopHeader() {
 
         {/* Bottom gradient line */}
         <div
-          className={`absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-300 to-transparent transition-all duration-500 ease-out ${isScrolled ? "opacity-100 scale-x-100" : "opacity-0 scale-x-50"
-            }`}
+          className={`absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-300 to-transparent transition-all duration-500 ease-out ${
+            isScrolled ? "opacity-100 scale-x-100" : "opacity-0 scale-x-50"
+          }`}
         ></div>
       </header>
 

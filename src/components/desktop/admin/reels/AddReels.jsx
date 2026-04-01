@@ -904,25 +904,529 @@ export const CustomDropdown = ({
 // ============================================================================
 // CATEGORIES CONFIG
 // ============================================================================
-const REEL_CATEGORIES = [
-  { key: "venues", label: "Venues", icon: Building2 },
-  { key: "photographers", label: "Photographers", icon: Camera },
-  { key: "makeup", label: "Makeup", icon: Paintbrush2 },
-  { key: "planners", label: "Planners", icon: UserCheck },
-  { key: "catering", label: "Catering", icon: UtensilsCrossed },
-  { key: "clothes", label: "Clothes", icon: Shirt },
-  { key: "mehendi", label: "Mehendi", icon: Hand },
-  { key: "cakes", label: "Cakes", icon: CakeSlice },
-  { key: "jewellery", label: "Jewellery", icon: Gem },
-  { key: "invitations", label: "Invitations", icon: Mail },
-  { key: "djs", label: "DJs", icon: Music },
-  { key: "hairstyling", label: "Hairstyling", icon: Scissors },
-  { key: "decor", label: "Decorators", icon: Lamp },
-  { key: "dhol", label: "Dhol", icon: Drum },
-  { key: "anchor", label: "Anchor", icon: MicVocal },
-  { key: "stageEntry", label: "Stage Entry", icon: Sparkles },
-  { key: "fireworks", label: "Fireworks", icon: FlameKindling },
-  { key: "other", label: "Other", icon: FileText },
+export const REEL_CATEGORIES = [
+  { value: "venues", label: "Venues", icon: "🏛️" },
+  { value: "planners", label: "Planners", icon: "📋" },
+  { value: "decor", label: "Decor", icon: "🎪" },
+  { value: "photographers", label: "Photo & Video", icon: "📸" },
+  { value: "makeup", label: "Makeup", icon: "💄" },
+  { value: "mehendi", label: "Mehendi", icon: "🌿" },
+  { value: "catering", label: "Catering", icon: "🍽️" },
+  { value: "clothes", label: "Outfits", icon: "👗" },
+  { value: "jewellery", label: "Jewelry", icon: "💎" },
+  { value: "djs", label: "Entertainment", icon: "🎶" },
+  { value: "choreographers", label: "Choreographers", icon: "💃" },
+  { value: "cakes", label: "Cakes & Desserts", icon: "🎂" },
+  { value: "gifts", label: "Gifts & Favors", icon: "🎁" },
+  { value: "transport", label: "Transport & Baraat", icon: "🚗" },
+];
+
+export const REEL_SUBCATEGORIES = {
+  planners: [
+    { value: "full-planning", label: "Full Planning" },
+    { value: "partial-planning", label: "Partial Planning" },
+    { value: "day-coordination", label: "Day-of Coordination" },
+    { value: "destination-planner", label: "Destination Specialist" },
+    { value: "luxury-planner", label: "Luxury Weddings" },
+    { value: "budget-planner", label: "Budget Planning" },
+    { value: "proposal-planner", label: "Proposal Planner" },
+  ],
+  venues: [
+    { value: "banquet-halls", label: "Banquet Halls" },
+    { value: "farmhouses", label: "Farmhouses & Lawns" },
+    { value: "hotels-resorts", label: "Hotels & Resorts" },
+    { value: "heritage-properties", label: "Heritage Properties" },
+    { value: "beach-weddings", label: "Beach Venues" },
+    { value: "clubs-lounges", label: "Clubs & Lounges" },
+    { value: "restaurants", label: "Restaurants & Cafes" },
+  ],
+  decor: [
+    { value: "floral-decor", label: "Floral Decor" },
+    { value: "theme-decor", label: "Theme Decor" },
+    { value: "stage-mandap", label: "Stage & Mandap" },
+    { value: "lighting", label: "Lighting & SFX" },
+    { value: "haldi-mehendi-decor", label: "Haldi / Mehendi Setup" },
+    { value: "prop-rentals", label: "Prop Rentals" },
+    { value: "table-settings", label: "Table Settings & Centerpieces" },
+  ],
+  photographers: [
+    { value: "candid-photography", label: "Candid Photography" },
+    { value: "traditional-photography", label: "Traditional Coverage" },
+    { value: "cinematic-films", label: "Cinematic Films" },
+    { value: "drone-shoots", label: "Drone & Aerial" },
+    { value: "pre-wedding-shoots", label: "Pre-Wedding Shoots" },
+    { value: "live-streaming", label: "Live Streaming" },
+    { value: "photobooths", label: "Photobooths & 360 Spin" },
+  ],
+  makeup: [
+    { value: "bridal-makeup", label: "Bridal Makeup" },
+    { value: "hd-makeup", label: "HD Makeup" },
+    { value: "airbrush-makeup", label: "Airbrush Makeup" },
+    { value: "party-makeup", label: "Party / Guest Makeup" },
+    { value: "celebrity-mua", label: "Celebrity MUA" },
+    { value: "groom-grooming", label: "Groom Makeup & Styling" },
+  ],
+  mehendi: [
+    { value: "bridal-mehendi", label: "Bridal Mehendi" },
+    { value: "arabic-mehendi", label: "Arabic Design" },
+    { value: "indo-arabic", label: "Indo-Arabic" },
+    { value: "portrait-mehendi", label: "Portrait / Figure Mehendi" },
+    { value: "minimal-mehendi", label: "Minimalist" },
+    { value: "guest-mehendi", label: "Guest Mehendi Artists" },
+  ],
+  catering: [
+    { value: "north-indian", label: "North Indian" },
+    { value: "south-indian", label: "South Indian" },
+    { value: "multi-cuisine", label: "Multi-Cuisine" },
+    { value: "live-counters", label: "Live Counters & Chaat" },
+    { value: "cocktail-bar", label: "Cocktail & Bar Services" },
+    { value: "dessert-bars", label: "Dessert Bars" },
+    { value: "vegan-organic", label: "Vegan / Organic" },
+  ],
+  clothes: [
+    { value: "bridal-lehenga", label: "Bridal Lehenga" },
+    { value: "designer-wear", label: "Designer Wear" },
+    { value: "rental-wear", label: "Rental Wear" },
+    { value: "groom-sherwani", label: "Groom Sherwani & Suits" },
+    { value: "custom-tailors", label: "Custom Tailors / Boutiques" },
+    { value: "trousseau", label: "Trousseau Packing" },
+  ],
+  jewellery: [
+    { value: "bridal-jewelry", label: "Bridal Jewelry" },
+    { value: "artificial-jewelry", label: "Artificial / Imitation" },
+    { value: "gold-diamonds", label: "Gold & Diamonds" },
+    { value: "floral-jewelry", label: "Floral / Gota Jewelry" },
+    { value: "rental-jewelry", label: "Rental Jewelry" },
+  ],
+  djs: [
+    { value: "djs", label: "DJs" },
+    { value: "live-bands", label: "Live Bands & Singers" },
+    { value: "anchors-emcees", label: "Anchors / Emcees" },
+    { value: "instrumentalists", label: "Instrumentalists (Violin, Flute)" },
+    { value: "celebrity-performers", label: "Celebrity Performers" },
+  ],
+  choreographers: [
+    { value: "sangeet-choreography", label: "Sangeet Choreography" },
+    { value: "couple-dance", label: "Couple Dance" },
+    { value: "flash-mob", label: "Flash Mobs" },
+    { value: "backup-dancers", label: "Backup Dancers" },
+  ],
+  cakes: [
+    { value: "wedding-cakes", label: "Tiered Wedding Cakes" },
+    { value: "custom-fondant", label: "Custom Theme / Fondant" },
+    { value: "dessert-hampers", label: "Dessert Hampers" },
+  ],
+  gifts: [
+    { value: "wedding-favors", label: "Wedding Favors" },
+    { value: "return-gifts", label: "Return Gifts" },
+    { value: "custom-hampers", label: "Custom Hampers" },
+  ],
+  transport: [
+    { value: "vintage-cars", label: "Vintage Cars" },
+    { value: "luxury-rentals", label: "Luxury Car Rentals" },
+    { value: "baraat-ghodi", label: "Baraat Ghodi / Elephant" },
+    { value: "guest-shuttles", label: "Guest Shuttles & Buses" },
+  ],
+};
+
+export const REEL_TYPES = [
+  { value: "wedding", label: "Wedding", icon: "💍" },
+  { value: "engagement", label: "Engagement / Roka", icon: "💍" },
+  { value: "birthday", label: "Birthday", icon: "🎂" },
+  { value: "anniversary", label: "Anniversary", icon: "🥂" },
+  { value: "corporate", label: "Corporate", icon: "🏢" },
+  { value: "baby-shower", label: "Baby Shower", icon: "🍼" },
+  { value: "housewarming", label: "Housewarming", icon: "🏠" },
+  { value: "retirement", label: "Retirement Party", icon: "🌅" },
+  { value: "graduation", label: "Graduation", icon: "🎓" },
+  { value: "puja", label: "Puja / Religious", icon: "🪔" },
+  { value: "kitty-party", label: "Kitty Party", icon: "👯‍♀️" },
+  { value: "farewell", label: "Farewell Party", icon: "👋" },
+  { value: "reunion", label: "Reunion", icon: "🫂" },
+  { value: "charity-gala", label: "Charity Gala", icon: "🤝" },
+];
+
+export const REEL_SUBTYPES = {
+  wedding: [
+    { 
+      value: "pre_wedding", 
+      label: "Pre-Wedding Shoot",
+      nestedTypes: [
+        { value: "cinematic_trailer", label: "Cinematic Trailer" },
+        { value: "save_the_date", label: "Save The Date Reel" },
+        { value: "behind_the_scenes", label: "Behind The Scenes (BTS)" },
+        { value: "drone_aerial", label: "Drone / Aerial Focus" },
+      ]
+    },
+    { 
+      value: "haldi", 
+      label: "Haldi",
+      nestedTypes: [
+        { value: "flower_holi", label: "Flower Holi / Phoolon Ki Haldi" },
+        { value: "candid_messy", label: "Candid & Messy Moments" },
+        { value: "cinematic_highlight", label: "Cinematic Highlight" },
+        { value: "family_fun", label: "Family Fun / Raw Footage" },
+      ]
+    },
+    { 
+      value: "mehendi", 
+      label: "Mehendi",
+      nestedTypes: [
+        { value: "decor_tour", label: "Decor Showcase" },
+        { value: "designer_focus", label: "Mehendi Design Focus" },
+        { value: "group_dance", label: "Impromptu Group Dance" },
+        { value: "cinematic", label: "Cinematic Edit" },
+      ]
+    },
+    { 
+      value: "sangeet", 
+      label: "Sangeet",
+      nestedTypes: [
+        { value: "performance_full", label: "Full Dance Performance" },
+        { value: "couple_dance", label: "Couple Dance Focus" },
+        { value: "dance_montage", label: "High-Energy Montage" },
+        { value: "flash_mob", label: "Flash Mob" },
+      ]
+    },
+    { 
+      value: "bridal_prep", 
+      label: "Bridal / Groom Prep",
+      nestedTypes: [
+        { value: "makeup_transition", label: "Makeup Transition (Before/After)" },
+        { value: "getting_ready", label: "Getting Ready Candid" },
+        { value: "first_look", label: "First Look (Bridesmaids/Groom)" },
+      ]
+    },
+    { 
+      value: "baraat", 
+      label: "Baraat",
+      nestedTypes: [
+        { value: "groom_entry", label: "Groom Entry Focus" },
+        { value: "dj_dhol_energy", label: "DJ & Dhol Energy" },
+        { value: "drone_aerial", label: "Aerial Baraat View" },
+        { value: "raw_dancing", label: "Raw Dancing Footage" },
+      ]
+    },
+    { 
+      value: "pheras", 
+      label: "Pheras & Ceremony",
+      nestedTypes: [
+        { value: "bridal_entry", label: "Bridal Entry" },
+        { value: "varmala", label: "Varmala / Jaimala Moment" },
+        { value: "sindoor_mangalsutra", label: "Sindoor & Mangalsutra" },
+        { value: "cinematic_vows", label: "Cinematic Vows / Audio Overlay" },
+        { value: "traditional_doc", label: "Traditional Documentary" },
+      ]
+    },
+    { 
+      value: "vidaai", 
+      label: "Vidaai",
+      nestedTypes: [
+        { value: "emotional_candid", label: "Emotional Candid" },
+        { value: "cinematic_exit", label: "Cinematic Exit" },
+        { value: "car_decor", label: "Getaway Car Focus" },
+      ]
+    },
+    { 
+      value: "reception", 
+      label: "Reception",
+      nestedTypes: [
+        { value: "grand_entry", label: "Couple Grand Entry" },
+        { value: "first_dance", label: "First Dance" },
+        { value: "speeches", label: "Speeches & Toasts" },
+        { value: "party_vibe", label: "Late Night Party Vibe" },
+        { value: "highlight_reel", label: "Event Highlight Reel" },
+      ]
+    },
+    { 
+      value: "cocktail", 
+      label: "Cocktail / After-Party",
+      nestedTypes: [
+        { value: "bartender_flair", label: "Bartender Flair / Drinks" },
+        { value: "party_montage", label: "High-Energy Montage" },
+        { value: "glambot", label: "GlamCam / Slow-Mo Booth" },
+      ]
+    },
+    { 
+      value: "destination", 
+      label: "Destination Wedding",
+      nestedTypes: [
+        { value: "scenic_cinematic", label: "Scenic Resort/Location Cinematic" },
+        { value: "travel_vlog", label: "Travel Vlog Style" },
+        { value: "same_day_edit", label: "Same Day Edit (SDE)" },
+      ]
+    },
+  ],
+  engagement: [
+    { 
+      value: "proposal", 
+      label: "Proposal",
+      nestedTypes: [
+        { value: "surprise_reveal", label: "Surprise Reveal" },
+        { value: "hidden_camera", label: "Hidden Camera Candid" },
+        { value: "cinematic_recap", label: "Cinematic Recap" },
+      ]
+    },
+    { 
+      value: "ring_ceremony", 
+      label: "Ring Ceremony / Roka",
+      nestedTypes: [
+        { value: "ring_exchange", label: "Ring Exchange Close-up" },
+        { value: "family_reactions", label: "Family Reactions" },
+        { value: "event_highlight", label: "Event Highlight" },
+      ]
+    },
+  ],
+  birthday: [
+    { 
+      value: "kids-party", 
+      label: "Kids Birthday",
+      nestedTypes: [
+        { value: "cake_cutting", label: "Cake Cutting Moment" },
+        { value: "games_activities", label: "Games & Activities" },
+        { value: "entertainer_focus", label: "Magic Show / Entertainer" },
+        { value: "highlight", label: "Highlight Reel" },
+      ]
+    },
+    { 
+      value: "theme-party", 
+      label: "Theme Party",
+      nestedTypes: [
+        { value: "decor_tour", label: "Decor & Setup Tour" },
+        { value: "costume_showcase", label: "Costume / Outfit Showcase" },
+        { value: "highlight", label: "Party Highlight" },
+      ]
+    },
+    { 
+      value: "milestone", 
+      label: "Milestone (18th, 21st, 50th)",
+      nestedTypes: [
+        { value: "grand_entry", label: "Grand Entry" },
+        { value: "speech_montage", label: "Speech & Toast Montage" },
+        { value: "documentary", label: "Documentary Style" },
+      ]
+    },
+    { 
+      value: "surprise-party", 
+      label: "Surprise Party",
+      nestedTypes: [
+        { value: "the_reveal", label: "The Reveal Reaction" },
+        { value: "setup_timelapse", label: "Setup Timelapse" },
+      ]
+    },
+  ],
+  anniversary: [
+    { 
+      value: "milestone_anniversary", 
+      label: "Silver/Golden Jubilee",
+      nestedTypes: [
+        { value: "vow_renewal", label: "Vow Renewal Ceremony" },
+        { value: "family_interviews", label: "Family Interviews / Wishes" },
+        { value: "archive_integration", label: "Old Photo Integration" },
+        { value: "highlight", label: "Event Highlight" },
+      ]
+    },
+    { 
+      value: "intimate", 
+      label: "Intimate Celebration",
+      nestedTypes: [
+        { value: "dinner_setup", label: "Romantic Dinner Setup" },
+        { value: "candid_aesthetic", label: "Candid Aesthetic" },
+        { value: "gift_exchange", label: "Gift Exchange" },
+      ]
+    },
+  ],
+  corporate: [
+    { 
+      value: "conference", 
+      label: "Conference / Summit",
+      nestedTypes: [
+        { value: "keynote", label: "Keynote Speaker Highlights" },
+        { value: "networking", label: "Networking B-Roll" },
+        { value: "sponsor_booths", label: "Sponsor / Booth Tour" },
+        { value: "recap", label: "Fast-Paced Event Recap" },
+      ]
+    },
+    { 
+      value: "product-launch", 
+      label: "Product Launch",
+      nestedTypes: [
+        { value: "cinematic_reveal", label: "Cinematic Product Reveal" },
+        { value: "influencer_reactions", label: "Influencer / Guest Reactions" },
+        { value: "teaser", label: "Pre-Launch Teaser" },
+      ]
+    },
+    { 
+      value: "gala", 
+      label: "Award Gala / Annual Day",
+      nestedTypes: [
+        { value: "red_carpet", label: "Red Carpet / Arrivals" },
+        { value: "awards_ceremony", label: "Awards Distribution" },
+        { value: "employee_performances", label: "Employee Performances" },
+      ]
+    },
+    { 
+      value: "offsite", 
+      label: "Team Offsite",
+      nestedTypes: [
+        { value: "team_building", label: "Team Building Activities" },
+        { value: "vlog_style", label: "Raw Vlog Style" },
+      ]
+    },
+  ],
+  "baby-shower": [
+    { 
+      value: "godh_bharai", 
+      label: "Traditional Godh Bharai",
+      nestedTypes: [
+        { value: "rituals", label: "Traditional Rituals" },
+        { value: "family_blessings", label: "Family Blessings" },
+        { value: "highlight", label: "Cinematic Highlight" },
+      ]
+    },
+    { 
+      value: "gender_reveal", 
+      label: "Gender Reveal",
+      nestedTypes: [
+        { value: "the_reveal", label: "The Big Reveal Moment" },
+        { value: "guest_predictions", label: "Guest Predictions / Interviews" },
+      ]
+    },
+    { 
+      value: "baby_shower_party", 
+      label: "Modern Baby Shower",
+      nestedTypes: [
+        { value: "decor_tour", label: "Theme & Decor Tour" },
+        { value: "games", label: "Shower Games Fun" },
+      ]
+    },
+  ],
+  housewarming: [
+    { 
+      value: "griha_pravesh", 
+      label: "Griha Pravesh / Puja",
+      nestedTypes: [
+        { value: "traditional_rituals", label: "Traditional Rituals Focus" },
+        { value: "ribbon_cutting", label: "Door Opening / Ribbon Cutting" },
+      ]
+    },
+    { 
+      value: "house_party", 
+      label: "Housewarming Party",
+      nestedTypes: [
+        { value: "home_tour", label: "Cinematic Home Tour" },
+        { value: "party_vlog", label: "Party Vlog / Raw Fun" },
+      ]
+    },
+  ],
+  graduation: [
+    { 
+      value: "convocation", 
+      label: "Convocation",
+      nestedTypes: [
+        { value: "cap_toss", label: "Cap Toss Moment (Slow-Mo)" },
+        { value: "degree_walk", label: "Walking the Stage" },
+      ]
+    },
+    { 
+      value: "grad_party", 
+      label: "Graduation Party",
+      nestedTypes: [
+        { value: "party_highlight", label: "Party Highlight Reel" },
+        { value: "cinematic_portraits", label: "Cinematic Portraits" },
+      ]
+    },
+  ],
+  retirement: [
+    { 
+      value: "farewell_event", 
+      label: "Retirement Farewell",
+      nestedTypes: [
+        { value: "career_montage", label: "Career Retrospective Montage" },
+        { value: "speeches", label: "Colleague Speeches" },
+        { value: "emotional_candid", label: "Emotional Goodbyes" },
+      ]
+    },
+  ],
+  puja: [
+    { 
+      value: "mata_ki_chowki", 
+      label: "Mata Ki Chowki / Jagran",
+      nestedTypes: [
+        { value: "aarti_focus", label: "Aarti Focus" },
+        { value: "bhajan_singing", label: "Bhajan Singing / Devotional" },
+        { value: "decor_setup", label: "Darbar Decor Setup" },
+      ]
+    },
+    { 
+      value: "festive_puja", 
+      label: "Festive Puja (Diwali/Ganesh)",
+      nestedTypes: [
+        { value: "cinematic_rituals", label: "Cinematic Rituals" },
+        { value: "family_candid", label: "Family Candid" },
+      ]
+    },
+  ],
+  "kitty-party": [
+    { 
+      value: "theme_lunch", 
+      label: "Theme Lunch/Dinner",
+      nestedTypes: [
+        { value: "decor_food", label: "Decor & Food Showcase" },
+        { value: "games_tambola", label: "Games & Tambola Fun" },
+        { value: "raw_vlog", label: "Raw / Vlog Style" },
+      ]
+    },
+  ],
+  farewell: [
+    { 
+      value: "school_college_farewell", 
+      label: "School/College Farewell",
+      nestedTypes: [
+        { value: "title_distribution", label: "Titles & Awards" },
+        { value: "dance_performances", label: "Dance Performances" },
+        { value: "nostalgic_montage", label: "Nostalgic Montage" },
+      ]
+    },
+  ],
+  reunion: [
+    { 
+      value: "alumni_meet", 
+      label: "Alumni Meet",
+      nestedTypes: [
+        { value: "interviews", label: "Nostalgic Interviews" },
+        { value: "party_highlight", label: "Event Highlight" },
+      ]
+    },
+  ],
+  "charity-gala": [
+    { 
+      value: "fundraiser", 
+      label: "Fundraiser Event",
+      nestedTypes: [
+        { value: "impact_doc", label: "Impact Documentary Short" },
+        { value: "auction_highlights", label: "Live Auction Highlights" },
+        { value: "donor_interviews", label: "Donor Interviews" },
+      ]
+    },
+  ]
+};
+
+export const REEL_STYLES = [
+  { value: "cinematic", label: "Cinematic" },
+  { value: "traditional", label: "Traditional" },
+  { value: "documentary", label: "Documentary Style" },
+  { value: "aerial", label: "Aerial / Drone" },
+  { value: "highlight", label: "Highlight Reel" },
+  { value: "teaser", label: "Short Teaser" },
+  { value: "full_film", label: "Full Film" },
+  { value: "same_day_edit", label: "Same Day Edit (SDE)" },
+  { value: "instagram_reel", label: "Instagram Reel" },
+  { value: "youtube_film", label: "YouTube Film" },
+  { value: "candid", label: "Candid Style" },
+  { value: "montage", label: "Montage" },
+  { value: "raw_footage", label: "Raw Footage" },
+  { value: "slow_motion", label: "Slow Motion Highlight" },
 ];
 
 // ============================================================================
@@ -971,174 +1475,6 @@ const SECTIONS = [
     required: [],
     description: "Publishing options and advanced configuration",
   },
-];
-
-export const REEL_TYPES = [
-  { value: "wedding", label: "Wedding", icon: "💍" },
-  { value: "anniversary", label: "Anniversary", icon: "🥂" },
-  { value: "birthday", label: "Birthday", icon: "🎂" },
-  { value: "corporate", label: "Corporate", icon: "🏢" },
-  { value: "engagement", label: "Engagement", icon: "💒" },
-  { value: "babyshower", label: "Baby Shower", icon: "🍼" },
-  { value: "graduation", label: "Graduation", icon: "🎓" },
-  { value: "festival", label: "Festival", icon: "🎉" },
-  { value: "religious", label: "Religious", icon: "🕌" },
-  { value: "reception", label: "Reception", icon: "🎊" },
-  { value: "naming", label: "Naming Ceremony", icon: "👶" },
-  { value: "farewell", label: "Farewell", icon: "👋" },
-  { value: "other", label: "Other", icon: "✨" },
-];
-
-export const REEL_SUBTYPES = {
-  wedding: [
-    { value: "baraat", label: "Baraat" },
-    { value: "shaligiraah", label: "Shaligiraah" },
-    { value: "nikah", label: "Nikah" },
-    { value: "mehndi", label: "Mehndi" },
-    { value: "haldi", label: "Haldi" },
-    { value: "sangeet", label: "Sangeet" },
-    { value: "pheras", label: "Pheras / Saat Phere" },
-    { value: "vidaai", label: "Vidaai" },
-    { value: "reception", label: "Reception" },
-    { value: "cocktail", label: "Cocktail Party" },
-    { value: "ring_ceremony", label: "Ring Ceremony" },
-    { value: "tilak", label: "Tilak Ceremony" },
-    { value: "jaimala", label: "Jaimala" },
-    { value: "wedding_highlight", label: "Full Wedding Highlight" },
-    { value: "pre_wedding", label: "Pre-Wedding Shoot" },
-    { value: "wedding_teaser", label: "Wedding Teaser" },
-  ],
-  anniversary: [
-    { value: "1st_anniversary", label: "1st Anniversary" },
-    { value: "5th_anniversary", label: "5th Anniversary" },
-    { value: "10th_anniversary", label: "10th Anniversary" },
-    { value: "25th_anniversary", label: "Silver Jubilee (25th)" },
-    { value: "50th_anniversary", label: "Golden Jubilee (50th)" },
-    { value: "surprise_anniversary", label: "Surprise Anniversary" },
-    { value: "anniversary_party", label: "Anniversary Party" },
-    { value: "anniversary_shoot", label: "Anniversary Shoot" },
-  ],
-  birthday: [
-    { value: "baby_birthday", label: "Baby Birthday (0–2 yrs)" },
-    { value: "kids_birthday", label: "Kids Birthday (3–12 yrs)" },
-    { value: "teen_birthday", label: "Teen Birthday (13–19 yrs)" },
-    { value: "18th_birthday", label: "18th Birthday" },
-    { value: "21st_birthday", label: "21st Birthday" },
-    { value: "30th_birthday", label: "30th Birthday" },
-    { value: "50th_birthday", label: "50th Birthday" },
-    { value: "surprise_birthday", label: "Surprise Party" },
-    { value: "birthday_highlight", label: "Birthday Highlight" },
-    { value: "theme_birthday", label: "Theme Birthday Party" },
-  ],
-  corporate: [
-    { value: "product_launch", label: "Product Launch" },
-    { value: "award_night", label: "Award Night" },
-    { value: "conference", label: "Conference / Summit" },
-    { value: "seminar", label: "Seminar / Workshop" },
-    { value: "team_outing", label: "Team Outing" },
-    { value: "annual_day", label: "Annual Day" },
-    { value: "brand_event", label: "Brand Event" },
-    { value: "office_party", label: "Office Party" },
-    { value: "inauguration", label: "Inauguration" },
-    { value: "dealer_meet", label: "Dealer Meet" },
-    { value: "csr_event", label: "CSR Event" },
-    { value: "corporate_shoot", label: "Corporate Shoot" },
-  ],
-  engagement: [
-    { value: "ring_ceremony", label: "Ring Ceremony" },
-    { value: "roka", label: "Roka Ceremony" },
-    { value: "sagai", label: "Sagai" },
-    { value: "engagement_party", label: "Engagement Party" },
-    { value: "engagement_shoot", label: "Engagement Shoot" },
-    { value: "surprise_proposal", label: "Surprise Proposal" },
-  ],
-  babyshower: [
-    { value: "godh_bharai", label: "Godh Bharai" },
-    { value: "baby_shower_party", label: "Baby Shower Party" },
-    { value: "gender_reveal", label: "Gender Reveal" },
-    { value: "baby_welcome", label: "Baby Welcome" },
-  ],
-  graduation: [
-    { value: "convocation", label: "Convocation Ceremony" },
-    { value: "farewell_grad", label: "Farewell + Graduation" },
-    { value: "graduation_party", label: "Graduation Party" },
-    { value: "graduation_shoot", label: "Graduation Shoot" },
-  ],
-  festival: [
-    { value: "diwali", label: "Diwali" },
-    { value: "holi", label: "Holi" },
-    { value: "eid", label: "Eid" },
-    { value: "navratri", label: "Navratri / Garba" },
-    { value: "durga_puja", label: "Durga Puja" },
-    { value: "christmas", label: "Christmas" },
-    { value: "new_year", label: "New Year" },
-    { value: "lohri", label: "Lohri" },
-    { value: "baisakhi", label: "Baisakhi" },
-    { value: "ganesh_chaturthi", label: "Ganesh Chaturthi" },
-    { value: "raksha_bandhan", label: "Raksha Bandhan" },
-    { value: "karwa_chauth", label: "Karwa Chauth" },
-  ],
-  religious: [
-    { value: "puja", label: "Puja / Havan" },
-    { value: "mundan", label: "Mundan Ceremony" },
-    { value: "upanayana", label: "Upanayana / Janeu" },
-    { value: "annaprashan", label: "Annaprashan" },
-    { value: "namakaran", label: "Namakaran" },
-    { value: "griha_pravesh", label: "Griha Pravesh" },
-    { value: "mata_ki_chowki", label: "Mata Ki Chowki" },
-    { value: "kirtan", label: "Kirtan / Satsang" },
-    { value: "church_event", label: "Church Event" },
-    { value: "gurudwara_event", label: "Gurudwara Event" },
-  ],
-  reception: [
-    { value: "wedding_reception", label: "Wedding Reception" },
-    { value: "cocktail_reception", label: "Cocktail Reception" },
-    { value: "ring_reception", label: "Ring Reception" },
-    { value: "welcome_reception", label: "Welcome Reception" },
-  ],
-  naming: [
-    { value: "namakaran_ceremony", label: "Namakaran Ceremony" },
-    { value: "baptism", label: "Baptism" },
-    { value: "aqiqah", label: "Aqiqah" },
-    { value: "naming_party", label: "Naming Party" },
-  ],
-  farewell: [
-    { value: "school_farewell", label: "School Farewell" },
-    { value: "college_farewell", label: "College Farewell" },
-    { value: "office_farewell", label: "Office Farewell" },
-    { value: "retirement", label: "Retirement Party" },
-    { value: "going_abroad", label: "Going Abroad Send-off" },
-  ],
-  other: [
-    { value: "maternity_shoot", label: "Maternity Shoot" },
-    { value: "family_reunion", label: "Family Reunion" },
-    { value: "house_warming", label: "House Warming" },
-    { value: "charity_event", label: "Charity Event" },
-    { value: "sports_event", label: "Sports Event" },
-    { value: "fashion_show", label: "Fashion Show" },
-    { value: "concert", label: "Concert / Live Show" },
-    { value: "music_video", label: "Music Video" },
-    { value: "short_film", label: "Short Film" },
-    { value: "documentary", label: "Documentary" },
-    { value: "custom", label: "Custom / Other" },
-  ],
-};
-
-export const REEL_NESTED_TYPES = [
-  { value: "cinematic", label: "Cinematic" },
-  { value: "traditional", label: "Traditional" },
-  { value: "documentary", label: "Documentary Style" },
-  { value: "aerial", label: "Aerial / Drone" },
-  { value: "highlight", label: "Highlight Reel" },
-  { value: "teaser", label: "Short Teaser" },
-  { value: "full_film", label: "Full Film" },
-  { value: "same_day_edit", label: "Same Day Edit (SDE)" },
-  { value: "instagram_reel", label: "Instagram Reel" },
-  { value: "youtube_film", label: "YouTube Film" },
-  { value: "candid", label: "Candid Style" },
-  { value: "montage", label: "Montage" },
-  { value: "raw_footage", label: "Raw Footage" },
-  { value: "slow_motion", label: "Slow Motion Highlight" },
 ];
 
 // ============================================================================
@@ -2798,17 +3134,29 @@ const TagInput = ({ label, tags = [], onChange, suggestions = [], placeholder, a
 // ============================================================================
 // BASIC INFO SECTION
 // ============================================================================
-const BasicInfoSection = ({ data, onChange, errors, onListChange, categories, addToast, setHasUserInteracted }) => (
-  <div className="space-y-8">
-    <Section
-      title="Reel Identity"
-      icon={Film}
-      description="Core reel information"
-      badge="Required"
-      tip="Give your reel a catchy title and link it to the correct vendor. This helps users discover the reel through search."
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
+const BasicInfoSection = ({ data, onChange, errors, onListChange, setHasUserInteracted }) => {
+  // Helper to get nested types based on selected type and subtype
+  const getNestedTypeOptions = () => {
+    if (!data.type || !data.subType) return [];
+    const typeGroup = REEL_SUBTYPES[data.type];
+    if (!typeGroup) return [];
+    const subTypeData = typeGroup.find(st => st.value === data.subType);
+    return subTypeData?.nestedTypes || [];
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* ============================== */}
+      {/* TOP ROW: TITLE */}
+      {/* ============================== */}
+      <Section
+        title="Reel Identity"
+        icon={Film}
+        description="Core reel information"
+        badge="Required"
+        tip="Give your reel a catchy title to help users discover it through search."
+      >
+        <div className="w-full">
           <InputField
             label="Reel Title"
             value={data.title || ""}
@@ -2819,107 +3167,127 @@ const BasicInfoSection = ({ data, onChange, errors, onListChange, categories, ad
             icon={Film}
           />
         </div>
-        <InputField
-          label="Subcategory"
-          value={data.subcategory || ""}
-          onChange={(e) => onChange("subcategory", e.target.value)}
-          placeholder="e.g., Luxury Venues, Candid Photography"
-          icon={Layers}
-          helperText="Optional: Refine the category"
-        />
-     {/* Event Type */}
-<CustomDropdown
-  label="Event Type"
-  placeholder="Select event type"
-  options={REEL_TYPES}
-  value={data.type}
-  onChange={(val) => {
-    onChange("type", val);
-    onChange("subType", "");
-  }}
-  error={errors.type}
-  icon={Tag}
-  CustomDropdown={true}
-/>
+      </Section>
 
-{/* Event Subtype */}
-<CustomDropdown
-  label="Event Subtype"
-  placeholder={
-    data.type ? "Select subType" : "Select a type first"
-  }
-  options={data.type ? REEL_SUBTYPES[data.type] ?? [] : []}
-  value={data.subType || ""}
-  onChange={(val) =>
-    onChange("subType", val)
-  }
-  error={errors.subType}
-  disabled={!data.type}
-  icon={Layers}
-  CustomDropdown={true}
-/>
-
-{/* Reel / Film Style */}
-<CustomDropdown
-  label="Reel Style"
-  placeholder="Select reel style"
-  options={REEL_NESTED_TYPES}
-  value={data.nestedType}
-  onChange={(val) =>
-    onChange("nestedType", val)
-  }
-  error={errors.nestedType}
-  icon={Film}
-  
-/>
-<div className="md:col-span-2">
-  <TagInput
-    label="Nested Values"
-    tags={data.nestedValues || []}
-    onChange={(v) => { setHasUserInteracted(true); onListChange("nestedValues", v); }}
-    placeholder="Add nested values and press Enter…"
-  />
-</div>
-      </div>
-    </Section>
-
-    <Section title="Category" icon={Layers} description="Select the category this reel belongs to" badge="Required">
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-        {categories.map((cat) => (
-          <motion.button
-            key={cat.key}
-            type="button"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => {
+        {/* ============================== */}
+      {/* SECTION 1: CATEGORIZATION */}
+      {/* ============================== */}
+      <Section 
+        title="Categorization" 
+        icon={Layers}
+        description="Map this reel to specific vendor categories"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Category */}
+          <CustomDropdown
+            label="Category"
+            placeholder="Select category"
+            options={REEL_CATEGORIES}
+            value={data.category}
+            onChange={(val) => {
               setHasUserInteracted(true);
-              onChange("category", cat.key);
-              addToast(`Category set to ${cat.label}`, "info");
+              onChange("category", val);
+              onChange("subcategory", ""); // Reset subcategory on category change
             }}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all min-w-[85px] flex-shrink-0 ${
-              data.category === cat.key
-                ? "border-rose-500 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 shadow-lg shadow-rose-500/20"
-                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-rose-300 hover:shadow-md"
-            }`}
-          >
-            <cat.icon className="h-6 w-6 mb-1.5" />
-            <span className="text-[11px] font-medium text-center leading-tight">{cat.label}</span>
-          </motion.button>
-        ))}
-      </div>
-      {errors.category && (
-        <motion.p
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 text-xs mt-2 flex items-center gap-1"
-        >
-          <AlertCircle size={12} />
-          {errors.category}
-        </motion.p>
-      )}
-    </Section>
-  </div>
-);
+            error={errors.category}
+            icon={Layers}
+            allowCustom={true}
+          />
+
+          {/* Subcategory */}
+          <CustomDropdown
+            label="Subcategory"
+            placeholder={data.category ? "Select subcategory" : "Select a category first"}
+            options={data.category ? REEL_SUBCATEGORIES[data.category] || [] : []}
+            value={data.subcategory || ""}
+            onChange={(val) => {
+              setHasUserInteracted(true);
+              onChange("subcategory", val);
+            }}
+            error={errors.subcategory}
+            disabled={!data.category}
+            icon={Layers}
+            allowCustom={true}
+          />
+        </div>
+      </Section>
+
+      {/* ============================== */}
+      {/* SECTION 2: EVENT DETAILS */}
+      {/* ============================== */}
+      <Section
+        title="Event Classification"
+        icon={Tag}
+        description="Define the specific event type, moments, and styles"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Event Type */}
+          <CustomDropdown
+            label="Event Type"
+            placeholder="Select event type"
+            options={REEL_TYPES}
+            value={data.type}
+            onChange={(val) => {
+              setHasUserInteracted(true);
+              onChange("type", val);
+              onChange("subType", ""); // Reset subtype on type change
+              onChange("nestedType", ""); // Reset nestedType on type change
+            }}
+            error={errors.type}
+            icon={Tag}
+            allowCustom={true}
+          />
+
+          {/* Event Subtype */}
+          <CustomDropdown
+            label="Event Subtype"
+            placeholder={data.type ? "Select subType" : "Select a type first"}
+            options={data.type ? REEL_SUBTYPES[data.type] || [] : []}
+            value={data.subType || ""}
+            onChange={(val) => {
+              setHasUserInteracted(true);
+              onChange("subType", val);
+              onChange("nestedType", ""); // Reset nestedType on subtype change
+            }}
+            error={errors.subType}
+            disabled={!data.type}
+            icon={Layers}
+            allowCustom={true}
+          />
+
+          {/* Event NestedType */}
+          <CustomDropdown
+            label="Event NestedType"
+            placeholder={data.subType ? "Select nested type" : "Select a subtype first"}
+            options={getNestedTypeOptions()}
+            value={data.nestedType || ""}
+            onChange={(val) => {
+              setHasUserInteracted(true);
+              onChange("nestedType", val);
+            }}
+            error={errors.nestedType}
+            disabled={!data.subType}
+            icon={Film}
+            allowCustom={true}
+          />
+
+          {/* Nested Values (Tags) */}
+          <div className="col-span-2">
+            <TagInput
+              label="Nested Values"
+              tags={data.nestedValues || []}
+              onChange={(v) => {
+                setHasUserInteracted(true);
+                onListChange("nestedValues", v);
+              }}
+              placeholder="Add nested values and press Enter…"
+            />
+          </div>
+        </div>
+      </Section>
+    </div>
+  );
+};
 
 // ============================================================================
 // MEDIA SECTION

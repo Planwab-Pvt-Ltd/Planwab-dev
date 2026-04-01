@@ -7,6 +7,7 @@ import { X, ChevronRight, CheckCircle, Store, MapPin, Tag, Lock, Sparkles } from
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
+import { useUser } from "@clerk/clerk-react";
 
 // Keep modules as they are
 const quillModules = {
@@ -49,6 +50,7 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [bio, setBio] = useState("");
+  const {user} = useUser();
 
   const [formData, setFormData] = useState({
     vendorBusinessName: "",
@@ -305,6 +307,7 @@ const VendorProfileOnboarding = ({ vendor, id, onProfileCreated, isOpen, onClose
         vendorCoverImage: coverImage || "",
         location: formData.location,
         password: formData.password,
+        createdBy: user?.id || user?.primaryEmailAddress?.emailAddress || "unknown",
       };
 
       const response = await fetch(`/api/vendor/${id}/profile`, {

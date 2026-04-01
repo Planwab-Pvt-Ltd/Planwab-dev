@@ -593,7 +593,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: "mehendi",
+        name: "Mehendi Artists",
         key: "mehendi",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428066/mehendiCatHeroDesktop_zlzx53.png",
         span: 1,
@@ -611,7 +611,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: `${currentCategory} Venues`,
+        name: `${currentCategory === "Default" ? "Event" : currentCategory} Venues`,
         key: "venues",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771518098/Hydra_Category_Wedding_Season-18-11-25_yrbjzq.webp",
         span: 2,
@@ -689,7 +689,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: "mehendi",
+        name: "Mehendi Artists",
         key: "mehendi",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771597582/mehendiWeddingCatHeroDesktop_zjkwol.png",
         span: 1,
@@ -707,7 +707,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: `${currentCategory} Venues`,
+        name: `${currentCategory === "Default" ? "Event" : currentCategory} Venues`,
         key: "venues",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771518098/Hydra_Category_Wedding_Season-18-11-25_yrbjzq.webp",
         span: 2,
@@ -785,7 +785,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: "mehendi",
+        name: "Mehendi Artists",
         key: "mehendi",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771597894/mehendiAnniversaryCatHeroDesktop_gtsycz.png",
         span: 1,
@@ -803,7 +803,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: `${currentCategory} Venues`,
+        name: `${currentCategory === "Default" ? "Event" : currentCategory} Venues`,
         key: "venues",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771518098/Hydra_Category_Wedding_Season-18-11-25_yrbjzq.webp",
         span: 2,
@@ -881,7 +881,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: "mehendi",
+        name: "Mehendi Artists",
         key: "mehendi",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771598849/mehendiBirthdayCatHeroDesktop_gnamzs.png",
         span: 1,
@@ -899,7 +899,7 @@ export default function CategoryGrid() {
         pixelWidth: 160,
       },
       {
-        name: `${currentCategory} Venues`,
+        name: `${currentCategory === "Default" ? "Event" : currentCategory} Venues`,
         key: "venues",
         image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771518098/Hydra_Category_Wedding_Season-18-11-25_yrbjzq.webp",
         span: 2,
