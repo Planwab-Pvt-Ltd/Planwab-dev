@@ -37,10 +37,5 @@ const UserSchema = new Schema(
   { timestamps: true }
 );
 
-// DELETE CACHED MODEL to force schema refresh
-if (models?.User) {
-  delete models.User;
-}
-
 const User = model("User", UserSchema);
 export default User;

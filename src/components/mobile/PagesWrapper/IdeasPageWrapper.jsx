@@ -81,26 +81,39 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
-import { cos } from "three/src/nodes/math/MathNode.js";
 import { useUser } from "@clerk/nextjs";
 import SmartMedia from "../SmartMediaLoader";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
 const EVENT_CONFIGS = {
   wedding: {
     type: "wedding",
-    subtypes: [
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "roka", label: "Roka" },
+      { id: "haldi", label: "Haldi" },
+      { id: "mehendi", label: "Mehendi" },
+      { id: "sangeet", label: "Sangeet" },
+      { id: "baraat", label: "Baraat" },
+      { id: "pheras", label: "Pheras" },
+      { id: "reception", label: "Reception" },
+      { id: "vidaai", label: "Vidaai" },
+      { id: "cocktail", label: "Cocktail" },
+      { id: "engagement", label: "Engagement" },
+      { id: "destination", label: "Destination" },
+    ],
+    categories: [
       {
-        id: "wedding-planners",
+        id: "planners",
         label: "Planners",
         icon: <Lightbulb size={18} />,
         gradient: "from-sky-400 to-blue-500",
-        nestedTypes: [
+        subcategories: [
           { id: "full-planning", label: "Full Planning" },
           { id: "partial-planning", label: "Partial Planning" },
           { id: "day-coordination", label: "Day-of Coordination" },
           { id: "destination-planner", label: "Destination" },
           { id: "luxury-planner", label: "Luxury" },
-          { id: "budget-planner", label: "Budget" },
         ],
       },
       {
@@ -108,27 +121,25 @@ const EVENT_CONFIGS = {
         label: "Venues",
         icon: <Building2 size={18} />,
         gradient: "from-slate-400 to-gray-500",
-        nestedTypes: [
+        subcategories: [
           { id: "banquet-halls", label: "Banquet Halls" },
           { id: "farmhouses", label: "Farmhouses" },
           { id: "hotels-resorts", label: "Hotels & Resorts" },
-          { id: "destination-venues", label: "Destination" },
           { id: "outdoor-lawns", label: "Outdoor Lawns" },
           { id: "beach-weddings", label: "Beach" },
         ],
       },
       {
-        id: "decorators",
+        id: "decor",
         label: "Decor",
         icon: <Palette size={18} />,
         gradient: "from-teal-400 to-cyan-500",
-        nestedTypes: [
-          { id: "haldi-decor", label: "Haldi Decor" },
-          { id: "mehendi-decor", label: "Mehendi Decor" },
-          { id: "stage-decor", label: "Stage Decor" },
-          { id: "reception-decor", label: "Reception" },
+        subcategories: [
           { id: "floral-decor", label: "Floral" },
           { id: "theme-decor", label: "Theme Decor" },
+          { id: "stage-decor", label: "Stage Decor" },
+          { id: "haldi-decor", label: "Haldi Decor" },
+          { id: "mehendi-decor", label: "Mehendi Decor" },
         ],
       },
       {
@@ -136,220 +147,157 @@ const EVENT_CONFIGS = {
         label: "Photo & Video",
         icon: <Camera size={18} />,
         gradient: "from-pink-400 to-rose-500",
-        nestedTypes: [
+        subcategories: [
           { id: "candid-photography", label: "Candid" },
           { id: "traditional-photography", label: "Traditional" },
           { id: "cinematic-films", label: "Cinematic Films" },
           { id: "drone-shoots", label: "Drone Shoots" },
           { id: "pre-wedding-shoots", label: "Pre-Wedding" },
-          { id: "destination-shoots", label: "Destination" },
         ],
       },
       {
-        id: "makeup-artists",
+        id: "makeup",
         label: "Makeup",
         icon: <Gem size={18} />,
         gradient: "from-fuchsia-400 to-pink-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-makeup", label: "Bridal" },
           { id: "hd-makeup", label: "HD Makeup" },
           { id: "airbrush-makeup", label: "Airbrush" },
           { id: "party-makeup", label: "Party" },
-          { id: "celebrity-mua", label: "Celebrity MUA" },
         ],
       },
       {
-        id: "mehendi-artists",
+        id: "mehendi",
         label: "Mehendi",
         icon: <Flower2 size={18} />,
         gradient: "from-green-400 to-emerald-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-mehendi", label: "Bridal" },
           { id: "arabic-mehendi", label: "Arabic" },
-          { id: "traditional-mehendi", label: "Traditional" },
           { id: "indo-arabic", label: "Indo-Arabic" },
           { id: "minimal-mehendi", label: "Minimal" },
         ],
       },
       {
-        id: "caterers",
+        id: "catering",
         label: "Catering",
         icon: <Utensils size={18} />,
         gradient: "from-red-400 to-orange-500",
-        nestedTypes: [
+        subcategories: [
           { id: "north-indian", label: "North Indian" },
           { id: "south-indian", label: "South Indian" },
           { id: "multi-cuisine", label: "Multi-Cuisine" },
           { id: "live-counters", label: "Live Counters" },
-          { id: "luxury-catering", label: "Luxury" },
-          { id: "budget-catering", label: "Budget" },
         ],
       },
       {
-        id: "bridal-groom-wear",
+        id: "clothes",
         label: "Outfits",
         icon: <Shirt size={18} />,
         gradient: "from-violet-400 to-indigo-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-lehenga", label: "Bridal Lehenga" },
           { id: "designer-wear", label: "Designer Wear" },
           { id: "rental-wear", label: "Rental Wear" },
           { id: "groom-sherwani", label: "Groom Sherwani" },
-          { id: "custom-designers", label: "Custom Designers" },
         ],
       },
       {
-        id: "jewelry",
+        id: "jewellery",
         label: "Jewelry",
         icon: <Diamond size={18} />,
         gradient: "from-amber-400 to-yellow-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-jewelry", label: "Bridal" },
           { id: "artificial-jewelry", label: "Artificial" },
           { id: "gold-jewelry", label: "Gold" },
           { id: "diamond-jewelry", label: "Diamond" },
-          { id: "rental-jewelry", label: "Rental" },
         ],
       },
       {
-        id: "entertainment",
+        id: "djs",
         label: "Entertainment",
         icon: <Music size={18} />,
         gradient: "from-indigo-400 to-purple-500",
-        nestedTypes: [
+        subcategories: [
           { id: "djs", label: "DJs" },
           { id: "live-bands", label: "Live Bands" },
           { id: "anchors-emcees", label: "Anchors / Emcees" },
-          { id: "dancers-choreographers", label: "Dancers" },
-          { id: "celebrity-performers", label: "Celebrity" },
-        ],
-      },
-      {
-        id: "invitations",
-        label: "Invites",
-        icon: <Mail size={18} />,
-        gradient: "from-orange-400 to-rose-500",
-        nestedTypes: [
-          { id: "printed-cards", label: "Printed Cards" },
-          { id: "digital-invitations", label: "Digital" },
-          { id: "video-invitations", label: "Video" },
-          { id: "luxury-invitations", label: "Luxury" },
-          { id: "eco-friendly-cards", label: "Eco-Friendly" },
-        ],
-      },
-      {
-        id: "transportation-baraat",
-        label: "Transport",
-        icon: <Car size={18} />,
-        gradient: "from-blue-400 to-sky-500",
-        nestedTypes: [
-          { id: "luxury-cars", label: "Luxury Cars" },
-          { id: "vintage-cars", label: "Vintage Cars" },
-          { id: "baraat-ghodi", label: "Baraat Ghodi" },
-          { id: "band-baja", label: "Band Baja" },
-          { id: "guest-transport", label: "Guest Transport" },
-        ],
-      },
-      {
-        id: "pre-wedding",
-        label: "Pre-Wedding",
-        icon: <HeartHandshake size={18} />,
-        gradient: "from-rose-400 to-pink-500",
-        nestedTypes: [
-          { id: "pre-wedding-shoots-svc", label: "Shoots" },
-          { id: "couple-styling", label: "Couple Styling" },
-          { id: "proposal-planning", label: "Proposal" },
-          { id: "pre-wedding-events", label: "Events Planning" },
-          { id: "save-the-date", label: "Save-the-Date" },
-        ],
-      },
-      {
-        id: "honeymoon",
-        label: "Honeymoon",
-        icon: <Plane size={18} />,
-        gradient: "from-cyan-400 to-blue-500",
-        nestedTypes: [
-          { id: "domestic-honeymoon", label: "Domestic" },
-          { id: "international-honeymoon", label: "International" },
-          { id: "luxury-packages", label: "Luxury" },
-          { id: "budget-trips", label: "Budget" },
-          { id: "adventure-honeymoon", label: "Adventure" },
+          { id: "dancers", label: "Dancers" },
         ],
       },
     ],
   },
   birthday: {
     type: "birthday",
-    subtypes: [
-      { id: "kids", label: "Kids Party", icon: <Baby size={18} />, gradient: "from-pink-400 to-rose-500" },
-      {
-        id: "theme",
-        label: "Theme Party",
-        icon: <PartyPopper size={18} />,
-        gradient: "from-violet-400 to-purple-500",
-        nestedTypes: [
-          { id: "bollywood-theme", label: "Bollywood Night" },
-          { id: "retro-theme", label: "Retro Theme" },
-          { id: "pool-theme", label: "Pool Party" },
-          { id: "neon-theme", label: "Neon Party" },
-        ],
-      },
-      { id: "cake", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-orange-500" },
-      { id: "b-decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
-      { id: "b-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
-      { id: "b-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-rose-400 to-pink-500" },
-      { id: "b-dj", label: "DJ & Music", icon: <Music size={18} />, gradient: "from-purple-400 to-violet-500" },
-      { id: "b-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
-      { id: "entertainer", label: "Acts", icon: <Crown size={18} />, gradient: "from-yellow-400 to-amber-500" },
-      { id: "b-gift", label: "Gifts", icon: <Gift size={18} />, gradient: "from-green-400 to-emerald-500" },
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "kids-party", label: "Kids Party" },
+      { id: "theme-party", label: "Theme Party" },
+      { id: "surprise-party", label: "Surprise" },
+      { id: "milestone", label: "Milestone" },
+      { id: "sweet-16", label: "Sweet 16" },
+    ],
+    categories: [
+      { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
+      { id: "decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
+      { id: "cakes", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-orange-500" },
+      { id: "photographers", label: "Photo", icon: <Camera size={18} />, gradient: "from-rose-400 to-pink-500" },
+      { id: "djs", label: "DJ & Music", icon: <Music size={18} />, gradient: "from-purple-400 to-violet-500" },
+      { id: "catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
+      { id: "planners", label: "Planners", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
     ],
   },
   anniversary: {
     type: "anniversary",
-    subtypes: [
-      { id: "surprise", label: "Surprise", icon: <Gift size={18} />, gradient: "from-pink-400 to-fuchsia-500" },
-      { id: "dinner", label: "Dinner", icon: <Utensils size={18} />, gradient: "from-red-400 to-rose-500" },
-      { id: "a-decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
-      { id: "a-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-violet-400 to-purple-500" },
-      { id: "a-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
-      { id: "a-music", label: "Music", icon: <Music size={18} />, gradient: "from-orange-400 to-amber-500" },
-      { id: "a-cake", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-yellow-500" },
-      { id: "a-gift", label: "Gifts", icon: <Gift size={18} />, gradient: "from-green-400 to-emerald-500" },
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "silver-jubilee", label: "Silver Jubilee" },
+      { id: "golden-jubilee", label: "Golden Jubilee" },
+      { id: "surprise", label: "Surprise" },
+      { id: "intimate", label: "Intimate" },
+      { id: "vow-renewal", label: "Vow Renewal" },
+    ],
+    categories: [
+      { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
+      { id: "decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
+      { id: "photographers", label: "Photo", icon: <Camera size={18} />, gradient: "from-violet-400 to-purple-500" },
+      { id: "catering", label: "Dining", icon: <Utensils size={18} />, gradient: "from-red-400 to-rose-500" },
+      { id: "cakes", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-yellow-500" },
+      { id: "planners", label: "Planners", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
     ],
   },
   corporate: {
     type: "corporate",
-    subtypes: [
-      { id: "conference", label: "Conference", icon: <Users size={18} />, gradient: "from-blue-400 to-indigo-500" },
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "conference", label: "Conference" },
+      { id: "seminar", label: "Seminar" },
+      { id: "offsite", label: "Offsite" },
+      { id: "product-launch", label: "Product Launch" },
+      { id: "gala", label: "Gala" },
+      { id: "holiday-party", label: "Holiday Party" },
+    ],
+    categories: [
+      { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
+      { id: "planners", label: "Planners", icon: <Lightbulb size={18} />, gradient: "from-blue-400 to-indigo-500" },
+      { id: "catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-green-400 to-emerald-500" },
       {
-        id: "team-building",
-        label: "Team Build",
-        icon: <Trophy size={18} />,
-        gradient: "from-amber-400 to-orange-500",
+        id: "decor",
+        label: "Production & Decor",
+        icon: <Palette size={18} />,
+        gradient: "from-violet-400 to-purple-500",
       },
-      { id: "launch", label: "Launch", icon: <Megaphone size={18} />, gradient: "from-red-400 to-rose-500" },
-      { id: "c-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
-      { id: "c-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-green-400 to-emerald-500" },
-      { id: "c-av", label: "AV & Tech", icon: <Lightbulb size={18} />, gradient: "from-violet-400 to-purple-500" },
-      { id: "c-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-pink-400 to-rose-500" },
-      { id: "seminar", label: "Seminars", icon: <GraduationCap size={18} />, gradient: "from-cyan-400 to-teal-500" },
+      {
+        id: "photographers",
+        label: "Photo & Video",
+        icon: <Camera size={18} />,
+        gradient: "from-pink-400 to-rose-500",
+      },
     ],
   },
 };
-
-const WEDDING_QUICK_FILTERS = [
-  { id: "all", label: "All" },
-  { id: "baraat", label: "Baraat" },
-  { id: "sangeet", label: "Sangeet" },
-  { id: "haldi", label: "Haldi" },
-  { id: "mehendi", label: "Mehendi" },
-  { id: "reception", label: "Reception" },
-  { id: "pheras", label: "Pheras" },
-  { id: "engagement", label: "Engagement" },
-  { id: "cocktail", label: "Cocktail" },
-  { id: "vidaai", label: "Vidaai" },
-  { id: "destination", label: "Destination" },
-];
 
 const OTHER_EVENT_TYPES = [
   { id: "engagement", label: "Engagement" },
@@ -366,31 +314,26 @@ const OTHER_EVENT_TYPES = [
 
 const getDefaultConfigForOther = (eventId) => ({
   type: eventId,
-  subtypes: [
-    { id: "o-planner", label: "Planner", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
-    { id: "o-decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
-    { id: "o-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-pink-400 to-rose-500" },
-    { id: "o-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
-    { id: "o-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
-    { id: "o-music", label: "Music", icon: <Music size={18} />, gradient: "from-purple-400 to-violet-500" },
+  quickFilters: [{ id: "all", label: "All" }],
+  categories: [
+    { id: "planners", label: "Planner", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
+    { id: "decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
+    { id: "photographers", label: "Photo", icon: <Camera size={18} />, gradient: "from-pink-400 to-rose-500" },
+    { id: "catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
+    { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
   ],
 });
 
-const WEDDING_SECTION_HEADINGS = [
-  "✨ Trending Wedding Vendors Near You",
-  "🏆 Most Booked Wedding Planners",
-  "📸 Trending Wedding Photographers",
-  "💄 Top Bridal Makeup Artists in Your City",
-  "🏛️ Popular Wedding Venues Near You",
-  "🎪 Stunning Wedding Decor Ideas & Experts",
-  "🍽️ Most Loved Caterers (Top Rated)",
-  "🎶 Best DJs & Entertainment for Weddings",
-  "👗 Trending Bridal & Groom Wear Designers",
-  "💎 Premium & Luxury Wedding Services",
-  "💰 Budget-Friendly Wedding Vendors",
-  "🔥 Viral Wedding Reels (Must Watch)",
-  "❤️ Couples' Favorite Picks",
-  "🌍 Destination Wedding Specialists",
+const EVENT_SECTION_HEADINGS = [
+  "✨ Trending Vendors Near You",
+  "🏆 Most Booked Experts",
+  "📸 Trending Inspiration",
+  "⭐ Top Rated in Your City",
+  "🏛️ Popular Venues Near You",
+  "🎪 Stunning Decor Ideas",
+  "🍽️ Most Loved Services",
+  "🔥 Viral Reels (Must Watch)",
+  "❤️ Users' Favorite Picks",
   "🎯 Perfect Matches For You",
 ];
 
@@ -471,7 +414,7 @@ const recordView = async (reelId) => {
 
 const toggleLike = async (reelId, action) => {
   try {
-    const [res, res2] = await Promise.all([
+    const [res] = await Promise.all([
       fetch(`/api/reels/${reelId}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -483,21 +426,16 @@ const toggleLike = async (reelId, action) => {
         body: JSON.stringify({ reelId }),
       }),
     ]);
-
-    console.log({ res, res2 });
-
     if (!res.ok) throw new Error("Like API failed");
-
     return await res.json();
   } catch (err) {
-    console.error("toggleLike error:", err);
     return null;
   }
 };
 
 const toggleSave = async (reelId, action) => {
   try {
-    const [res, res2] = await Promise.all([
+    const [res] = await Promise.all([
       fetch(`/api/reels/${reelId}/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -509,14 +447,9 @@ const toggleSave = async (reelId, action) => {
         body: JSON.stringify({ reelId }),
       }),
     ]);
-
-    console.log({ res, res2 });
-
     if (!res.ok) throw new Error("Save API failed");
-
     return await res.json();
   } catch (err) {
-    console.error("toggleSave error:", err);
     return null;
   }
 };
@@ -553,7 +486,7 @@ const normalizeReel = (reel) => ({
   caption: reel.caption || reel.description || "",
   category: reel.category || "",
   type: reel.type || "",
-  subtype: reel.subtype || "",
+  subType: reel.subType || reel.subtype || "",
   nestedType: reel.nestedType || "",
   viewCount: reel.viewCount || 0,
   likeCount: reel.likeCount || 0,
@@ -601,6 +534,15 @@ const replaceURLParams = (pathname, params) => {
   const qs = sp.toString();
   window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
 };
+
+const fmt = (n) => {
+  if (!n) return "0";
+  if (n > 999999) return `${(n / 1000000).toFixed(1)}M`;
+  if (n > 999) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+};
+
+const HIGHLIGHT_IDS = new Set(["sponsored", "featured", "trending", "recently-viewed"]);
 
 const ShimmerBlock = ({ className }) => (
   <div
@@ -664,7 +606,7 @@ const FullPageSkeleton = () => (
   </div>
 );
 
-const SubtypeGridCarousel = ({ subtypes, activeSubtype, onSubtypeClick }) => {
+const CategoryGridCarousel = ({ categories, activeCategory, onCategoryClick }) => {
   const constraintRef = useRef(null);
   return (
     <div ref={constraintRef} className="overflow-hidden">
@@ -675,16 +617,16 @@ const SubtypeGridCarousel = ({ subtypes, activeSubtype, onSubtypeClick }) => {
         dragTransition={{ bounceStiffness: 120, bounceDamping: 20 }}
         className="grid grid-rows-2 grid-flow-col auto-cols-max gap-0 px-2 py-1 gap-y-0 cursor-grab active:cursor-grabbing"
       >
-        {subtypes.map((subtype, idx) => {
-          const isActive = activeSubtype === subtype.id;
+        {categories.map((category, idx) => {
+          const isActive = activeCategory === category.id;
           return (
             <motion.button
-              key={subtype.id}
+              key={category.id}
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.02, type: "spring", stiffness: 300, damping: 24 }}
               whileTap={{ scale: 0.92 }}
-              onClick={() => onSubtypeClick(subtype.id)}
+              onClick={() => onCategoryClick(category.id)}
               className={`relative flex flex-col items-center justify-center gap-1 pl-0 w-[80px] h-[70px] rounded-2xl transition-all select-none ${
                 isActive
                   ? "bg-gray-900 dark:bg-white shadow-lg shadow-gray-900/20 dark:shadow-white/10"
@@ -695,21 +637,23 @@ const SubtypeGridCarousel = ({ subtypes, activeSubtype, onSubtypeClick }) => {
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                   isActive
                     ? "bg-white/20 text-white dark:text-gray-900 dark:bg-gray-900/20"
-                    : `bg-gradient-to-br ${subtype.gradient} text-white shadow-sm`
+                    : `bg-gradient-to-br ${category.gradient} text-white shadow-sm`
                 }`}
               >
-                {subtype.icon}
+                {category.icon}
               </div>
               <span
                 className={`text-[9px] font-semibold leading-tight text-center transition-colors ${
                   isActive ? "text-white dark:text-gray-900" : "text-gray-500 dark:text-gray-400"
                 }`}
               >
-                {subtype.label}
+                {category.label}
               </span>
-              {subtype.nestedTypes && (
+              {category.subcategories && (
                 <div
-                  className={`absolute top-1.5 right-1.5 w-1 h-1 rounded-full ${isActive ? "bg-white/60 dark:bg-gray-900/40" : "bg-violet-400"}`}
+                  className={`absolute top-1.5 right-1.5 w-1 h-1 rounded-full ${
+                    isActive ? "bg-white/60 dark:bg-gray-900/40" : "bg-violet-400"
+                  }`}
                 />
               )}
             </motion.button>
@@ -720,7 +664,7 @@ const SubtypeGridCarousel = ({ subtypes, activeSubtype, onSubtypeClick }) => {
   );
 };
 
-const NestedChips = ({ nestedTypes, activeNested, onNestedClick }) => {
+const SubcategoryChips = ({ subcategories, activeSubcategory, onSubcategoryClick }) => {
   const constraintRef = useRef(null);
   return (
     <motion.div
@@ -739,23 +683,23 @@ const NestedChips = ({ nestedTypes, activeNested, onNestedClick }) => {
           className="flex gap-2 px-3 py-2.5 cursor-grab active:cursor-grabbing"
           style={{ width: "max-content" }}
         >
-          {nestedTypes.map((nested, idx) => {
-            const isActive = activeNested === nested.id;
+          {subcategories.map((subcat, idx) => {
+            const isActive = activeSubcategory === subcat.id;
             return (
               <motion.button
-                key={nested.id}
+                key={subcat.id}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.04 }}
                 whileTap={{ scale: 0.93 }}
-                onClick={() => onNestedClick(nested.id)}
+                onClick={() => onSubcategoryClick(subcat.id)}
                 className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all select-none ${
                   isActive
                     ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-sm"
                     : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-150 dark:border-gray-700"
                 }`}
               >
-                {nested.label}
+                {subcat.label}
               </motion.button>
             );
           })}
@@ -765,8 +709,9 @@ const NestedChips = ({ nestedTypes, activeNested, onNestedClick }) => {
   );
 };
 
-const WeddingQuickFilters = ({ activeFilter, onFilterClick }) => {
+const QuickFiltersCarousel = ({ filters, activeFilter, onFilterClick }) => {
   const constraintRef = useRef(null);
+  if (!filters || filters.length === 0) return null;
   return (
     <div
       ref={constraintRef}
@@ -780,7 +725,7 @@ const WeddingQuickFilters = ({ activeFilter, onFilterClick }) => {
         className="flex gap-2 px-3 py-2 cursor-grab active:cursor-grabbing"
         style={{ width: "max-content" }}
       >
-        {WEDDING_QUICK_FILTERS.map((f, idx) => {
+        {filters.map((f, idx) => {
           const isActive = activeFilter === f.id;
           return (
             <motion.button
@@ -814,12 +759,6 @@ const MiniCard = ({ item, idx, onClick }) => (
     className="w-[104px] shrink-0 snap-start cursor-pointer group"
   >
     <div className="relative h-[140px] w-[104px] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
-      {/* <img
-        src={item.thumbnail}
-        alt={item.title}
-        className="w-full h-full object-cover transition-transform duration-500 group-active:scale-105"
-        loading="lazy"
-      /> */}
       <SmartMedia
         src={item.thumbnail}
         alt={item.title}
@@ -1718,177 +1657,6 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
   );
 };
 
-const BookingDrawer = ({ item, onClose }) => {
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedPackage, setSelectedPackage] = useState(0);
-
-  const packages = [
-    { name: "Basic", price: "₹15,000", features: ["4 hours coverage", "50 edited photos", "Online gallery"] },
-    {
-      name: "Standard",
-      price: "₹35,000",
-      features: ["8 hours coverage", "200 edited photos", "Highlight reel", "Online gallery"],
-    },
-    {
-      name: "Premium",
-      price: "₹65,000",
-      features: ["Full day coverage", "500+ edited photos", "Cinematic film", "Album", "Online gallery"],
-    },
-  ];
-  const dates = ["Tomorrow", "This Weekend", "Next Week", "Custom Date"];
-
-  return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120]"
-      />
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 28, stiffness: 220 }}
-        className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-[1.75rem] z-[120] overflow-hidden flex flex-col shadow-2xl"
-      >
-        <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer" onClick={onClose}>
-          <div className="w-10 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full" />
-        </div>
-        <div className="px-5 pt-1 pb-3 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
-          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-200">
-            <SmartMedia src={item.thumbnail} alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-[15px] font-bold text-gray-900 dark:text-white truncate">
-              Book {item.title || "Vendor"}
-            </h2>
-            <p className="text-[11px] text-gray-400 flex items-center gap-1">
-              <Star size={9} className="fill-amber-400 text-amber-400" /> {item.rating?.toFixed?.(1) || "4.2"} ·{" "}
-              {item.location}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-400">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-5 space-y-5">
-            <div>
-              <h4 className="text-[12px] font-bold text-gray-900 dark:text-white mb-2.5 uppercase tracking-wider">
-                Preferred Date
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {dates.map((d) => (
-                  <motion.button
-                    key={d}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedDate(d)}
-                    className={`px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all ${
-                      selectedDate === d
-                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                        : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700"
-                    }`}
-                  >
-                    {d}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="text-[12px] font-bold text-gray-900 dark:text-white mb-2.5 uppercase tracking-wider">
-                Choose Package
-              </h4>
-              <div className="space-y-2.5">
-                {packages.map((pkg, i) => (
-                  <motion.button
-                    key={pkg.name}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setSelectedPackage(i)}
-                    className={`w-full p-3.5 rounded-2xl text-left transition-all ${
-                      selectedPackage === i
-                        ? "bg-gray-900 dark:bg-white ring-2 ring-gray-900 dark:ring-white"
-                        : "bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span
-                        className={`text-[13px] font-bold ${selectedPackage === i ? "text-white dark:text-gray-900" : "text-gray-900 dark:text-white"}`}
-                      >
-                        {pkg.name}
-                      </span>
-                      <span
-                        className={`text-[14px] font-bold ${selectedPackage === i ? "text-emerald-400 dark:text-emerald-600" : "text-emerald-600 dark:text-emerald-400"}`}
-                      >
-                        {pkg.price}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                      {pkg.features.map((f) => (
-                        <span
-                          key={f}
-                          className={`text-[10px] ${selectedPackage === i ? "text-white/60 dark:text-gray-900/50" : "text-gray-400"}`}
-                        >
-                          ✓ {f}
-                        </span>
-                      ))}
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="text-[12px] font-bold text-gray-900 dark:text-white mb-2.5 uppercase tracking-wider">
-                Add-ons
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {["Extra Hours", "Drone Shots", "Photo Album", "Same-day Edit"].map((addon) => (
-                  <button
-                    key={addon}
-                    className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700"
-                  >
-                    + {addon}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[10px] text-gray-400 font-medium">Total</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">{packages[selectedPackage].price}</p>
-            </div>
-            {selectedDate && (
-              <span className="text-[10px] font-medium text-gray-400 bg-gray-50 dark:bg-gray-800 px-2.5 py-1 rounded-lg">
-                {selectedDate}
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2.5">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center gap-2"
-            >
-              <MessageSquare size={14} className="text-gray-700 dark:text-gray-300" />
-              <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-300">Chat First</span>
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 py-3 bg-gray-900 dark:bg-white rounded-xl flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Zap size={14} className="text-white dark:text-gray-900" />
-              <span className="text-[12px] font-bold text-white dark:text-gray-900">Confirm Booking</span>
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-    </>
-  );
-};
-
 const EventSelectionModal = ({ onSelect }) => {
   const [showOthers, setShowOthers] = useState(false);
   const [searchOther, setSearchOther] = useState("");
@@ -2190,6 +1958,177 @@ const FilterDrawer = ({ initialFilter, onApply, onClose }) => {
   );
 };
 
+const BookingDrawer = ({ item, onClose }) => {
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(0);
+
+  const packages = [
+    { name: "Basic", price: "₹15,000", features: ["4 hours coverage", "50 edited photos", "Online gallery"] },
+    {
+      name: "Standard",
+      price: "₹35,000",
+      features: ["8 hours coverage", "200 edited photos", "Highlight reel", "Online gallery"],
+    },
+    {
+      name: "Premium",
+      price: "₹65,000",
+      features: ["Full day coverage", "500+ edited photos", "Cinematic film", "Album", "Online gallery"],
+    },
+  ];
+  const dates = ["Tomorrow", "This Weekend", "Next Week", "Custom Date"];
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120]"
+      />
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 220 }}
+        className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white dark:bg-gray-900 rounded-t-[1.75rem] z-[120] overflow-hidden flex flex-col shadow-2xl"
+      >
+        <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer" onClick={onClose}>
+          <div className="w-10 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full" />
+        </div>
+        <div className="px-5 pt-1 pb-3 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-200">
+            <SmartMedia src={item.thumbnail} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[15px] font-bold text-gray-900 dark:text-white truncate">
+              Book {item.title || "Vendor"}
+            </h2>
+            <p className="text-[11px] text-gray-400 flex items-center gap-1">
+              <Star size={9} className="fill-amber-400 text-amber-400" /> {item.rating?.toFixed?.(1) || "4.2"} ·{" "}
+              {item.location}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-400">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-5 space-y-5">
+            <div>
+              <h4 className="text-[12px] font-bold text-gray-900 dark:text-white mb-2.5 uppercase tracking-wider">
+                Preferred Date
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {dates.map((d) => (
+                  <motion.button
+                    key={d}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedDate(d)}
+                    className={`px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                      selectedDate === d
+                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                        : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700"
+                    }`}
+                  >
+                    {d}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-[12px] font-bold text-gray-900 dark:text-white mb-2.5 uppercase tracking-wider">
+                Choose Package
+              </h4>
+              <div className="space-y-2.5">
+                {packages.map((pkg, i) => (
+                  <motion.button
+                    key={pkg.name}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedPackage(i)}
+                    className={`w-full p-3.5 rounded-2xl text-left transition-all ${
+                      selectedPackage === i
+                        ? "bg-gray-900 dark:bg-white ring-2 ring-gray-900 dark:ring-white"
+                        : "bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span
+                        className={`text-[13px] font-bold ${selectedPackage === i ? "text-white dark:text-gray-900" : "text-gray-900 dark:text-white"}`}
+                      >
+                        {pkg.name}
+                      </span>
+                      <span
+                        className={`text-[14px] font-bold ${selectedPackage === i ? "text-emerald-400 dark:text-emerald-600" : "text-emerald-600 dark:text-emerald-400"}`}
+                      >
+                        {pkg.price}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {pkg.features.map((f) => (
+                        <span
+                          key={f}
+                          className={`text-[10px] ${selectedPackage === i ? "text-white/60 dark:text-gray-900/50" : "text-gray-400"}`}
+                        >
+                          ✓ {f}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-[12px] font-bold text-gray-900 dark:text-white mb-2.5 uppercase tracking-wider">
+                Add-ons
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {["Extra Hours", "Drone Shots", "Photo Album", "Same-day Edit"].map((addon) => (
+                  <button
+                    key={addon}
+                    className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700"
+                  >
+                    + {addon}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] text-gray-400 font-medium">Total</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{packages[selectedPackage].price}</p>
+            </div>
+            {selectedDate && (
+              <span className="text-[10px] font-medium text-gray-400 bg-gray-50 dark:bg-gray-800 px-2.5 py-1 rounded-lg">
+                {selectedDate}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2.5">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center gap-2"
+            >
+              <MessageSquare size={14} className="text-gray-700 dark:text-gray-300" />
+              <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-300">Chat First</span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="flex-1 py-3 bg-gray-900 dark:bg-white rounded-xl flex items-center justify-center gap-2 shadow-lg"
+            >
+              <Zap size={14} className="text-white dark:text-gray-900" />
+              <span className="text-[12px] font-bold text-white dark:text-gray-900">Confirm Booking</span>
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
 const SearchModalComponent = ({
   searchInputRef,
   setIsSearchOpen,
@@ -2236,26 +2175,35 @@ const SearchModalComponent = ({
                 onClick={() => handleSearchResultClick(result)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
               >
-                <span className="text-lg shrink-0">
-                  {result.type === "reel"
-                    ? "🎬"
-                    : result.type === "event"
-                      ? "🎉"
-                      : result.type === "subtype"
-                        ? "📌"
-                        : "🏢"}
-                </span>
+                <div className="shrink-0 flex items-center justify-center w-10 h-12 rounded-lg bg-gray-50 dark:bg-gray-800/50 overflow-hidden relative border border-gray-100 dark:border-gray-700/50">
+                  {result.type === "reel" && result.reel?.thumbnail ? (
+                    <>
+                      <SmartMedia
+                        src={result.reel.thumbnail}
+                        alt={result.label}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                        <Play size={12} className="text-white fill-white opacity-80" />
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-lg">
+                      {result.type === "event" ? "🎉" : result.type === "category" ? "📌" : "🏢"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{result.label}</p>
-                  <p className="text-xs text-gray-400 truncate">{result.sublabel}</p>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">{result.sublabel}</p>
                 </div>
                 <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${
                     result.type === "reel"
                       ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
                       : result.type === "event"
                         ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                        : result.type === "subtype"
+                        : result.type === "category"
                           ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
                           : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
                   }`}
@@ -2277,15 +2225,17 @@ const SearchModalComponent = ({
         <div className="px-4 py-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Quick Search</p>
           <div className="flex flex-wrap gap-2">
-            {["Wedding", "Birthday", "Anniversary", "DJ", "Catering", "Venues", "Decor", "Photographers"].map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSearchQuery(tag)}
-                className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 transition-colors"
-              >
-                {tag}
-              </button>
-            ))}
+            {["Wedding", "Birthday", "Anniversary", "Corporate", "Catering", "Venues", "Decor", "Photographers"].map(
+              (tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSearchQuery(tag)}
+                  className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 transition-colors"
+                >
+                  {tag}
+                </button>
+              ),
+            )}
           </div>
         </div>
       ) : null}
@@ -2299,8 +2249,36 @@ export default function IdeasPageWrapper() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  const urlType = searchParams.get("type") || null;
+  const urlCategory = searchParams.get("category") || null;
+  const urlSubcategory = searchParams.get("subcategory") || null;
+  const urlSort = searchParams.get("sort") || "relevance";
+  const urlRating = searchParams.get("rating") ? parseFloat(searchParams.get("rating")) : null;
+  const urlLocation = searchParams.get("location") || null;
+  const urlReel = searchParams.get("reel") || null;
+  const urlSearch = searchParams.get("q") || "";
+  const urlSubType = searchParams.get("subType") || searchParams.get("wf") || "all";
+
+  const [isDirectReelLoading, setIsDirectReelLoading] = useState(!!urlReel);
+
   const { user, isLoaded } = useUser();
   const [userInteractions, setUserInteractions] = useState({ liked: new Set(), saved: new Set() });
+
+  useEffect(() => {
+    if (urlReel) {
+      setIsNavbarVisible(false);
+      fetchReelById(urlReel).then((raw) => {
+        if (raw) {
+          const reel = normalizeReel(raw);
+          setReelsViewerData({ reels: [reel], initialIndex: 0 });
+        } else {
+          // Fallback if reel not found
+          setIsNavbarVisible(true);
+        }
+        setIsDirectReelLoading(false);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -2310,7 +2288,6 @@ export default function IdeasPageWrapper() {
         const res = await fetch(`/api/user/interactionsLists?userId=${user.id}`);
         const data = await res.json();
         if (data.success) {
-          // Store IDs in Sets for fast O(1) lookups inside the modal
           const likedIds = new Set(data.reels?.liked?.map((r) => r._id) || []);
           const savedIds = new Set(data.reels?.watchlist?.map((r) => r._id) || []);
           setUserInteractions({ liked: likedIds, saved: savedIds });
@@ -2323,16 +2300,6 @@ export default function IdeasPageWrapper() {
     fetchInteractions();
   }, [isLoaded, user]);
 
-  const urlType = searchParams.get("type") || null;
-  const urlSubtype = searchParams.get("subtype") || null;
-  const urlNested = searchParams.get("nested") || null;
-  const urlSort = searchParams.get("sort") || "relevance";
-  const urlRating = searchParams.get("rating") ? parseFloat(searchParams.get("rating")) : null;
-  const urlLocation = searchParams.get("location") || null;
-  const urlReel = searchParams.get("reel") || null;
-  const urlSearch = searchParams.get("q") || "";
-  const urlQuickFilter = searchParams.get("wf") || "all";
-
   const [eventType, setEventType] = useState(urlType);
   const [eventLabel, setEventLabel] = useState(() => {
     if (!urlType) return "";
@@ -2341,9 +2308,12 @@ export default function IdeasPageWrapper() {
     const other = OTHER_EVENT_TYPES.find((e) => e.id === urlType);
     return other ? other.label : urlType.charAt(0).toUpperCase() + urlType.slice(1);
   });
+
   const [showModal, setShowModal] = useState(!urlType);
-  const [activeSubtype, setActiveSubtype] = useState(urlSubtype);
-  const [activeNested, setActiveNested] = useState(urlNested);
+  const [activeCategory, setActiveCategory] = useState(urlCategory);
+  const [activeSubcategory, setActiveSubcategory] = useState(urlSubcategory);
+  const [activeSubType, setActiveSubType] = useState(urlSubType);
+
   const [reelsViewerData, setReelsViewerData] = useState(null);
   const [drawerItem, setDrawerItem] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -2353,7 +2323,7 @@ export default function IdeasPageWrapper() {
     priceRange: null,
     location: urlLocation,
   });
-  const [weddingQuickFilter, setWeddingQuickFilter] = useState(urlQuickFilter);
+
   const [isSearchOpen, setIsSearchOpen] = useState(!!urlSearch);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [searchResults, setSearchResults] = useState([]);
@@ -2373,14 +2343,14 @@ export default function IdeasPageWrapper() {
   const getURLParams = useCallback(() => {
     const params = {};
     if (eventType) params.type = eventType;
-    if (activeSubtype) params.subtype = activeSubtype;
-    if (activeNested) params.nested = activeNested;
+    if (activeCategory) params.category = activeCategory;
+    if (activeSubcategory) params.subcategory = activeSubcategory;
+    if (activeSubType && activeSubType !== "all") params.subType = activeSubType;
     if (filterState.sort && filterState.sort !== "relevance") params.sort = filterState.sort;
     if (filterState.minRating) params.rating = String(filterState.minRating);
     if (filterState.location) params.location = filterState.location;
-    if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all") params.wf = weddingQuickFilter;
     return params;
-  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState]);
 
   const syncURL = useCallback(
     (extra = {}) => {
@@ -2396,67 +2366,33 @@ export default function IdeasPageWrapper() {
   useEffect(() => {
     if (showModal) return;
     syncURL();
-  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter, showModal, syncURL]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState, showModal, syncURL]);
 
   useEffect(() => {
     setRecentlyViewedReels(getRecentlyViewed());
   }, [reelsViewerData]);
 
   useEffect(() => {
-    if (pendingReelIdRef.current && initialLoadDone && !reelsViewerData) {
-      const reelId = pendingReelIdRef.current;
-      pendingReelIdRef.current = null;
-
-      let foundReel = null;
-      for (const section of carouselSections) {
-        const match = section.items.find((r) => r._id === reelId);
-        if (match) {
-          foundReel = match;
-          break;
-        }
-      }
-
-      if (foundReel) {
-        const allReels = carouselSections.flatMap((s) => s.items);
-        const uniqueMap = new Map();
-        allReels.forEach((r) => {
-          if (!uniqueMap.has(r._id)) uniqueMap.set(r._id, r);
-        });
-        const uniqueReels = Array.from(uniqueMap.values());
-        const idx = uniqueReels.findIndex((r) => r._id === reelId);
-        setReelsViewerData({ reels: uniqueReels, initialIndex: Math.max(0, idx) });
-      } else {
-        fetchReelById(reelId).then((raw) => {
-          if (raw) {
-            const reel = normalizeReel(raw);
-            setReelsViewerData({ reels: [reel], initialIndex: 0 });
-          }
-        });
-      }
-    }
-  }, [initialLoadDone, reelsViewerData, carouselSections]);
-
-  useEffect(() => {
     if (showModal || !eventType) {
       setIsNavbarVisible(false);
       return;
     }
-    const shouldHide = !!reelsViewerData || !!drawerItem || showFilter;
+    const shouldHide = !!reelsViewerData || !!drawerItem || showFilter || isSearchOpen;
     setIsNavbarVisible(!shouldHide);
-  }, [showModal, eventType, reelsViewerData, drawerItem, showFilter, setIsNavbarVisible]);
+  }, [showModal, eventType, reelsViewerData, drawerItem, showFilter, isSearchOpen, setIsNavbarVisible]);
 
   const config = useMemo(() => {
     if (!eventType) return null;
     return EVENT_CONFIGS[eventType] || getDefaultConfigForOther(eventType);
   }, [eventType]);
 
-  const activeSubtypeData = useMemo(() => {
-    if (!config || !activeSubtype) return null;
-    return config.subtypes.find((s) => s.id === activeSubtype) || null;
-  }, [config, activeSubtype]);
+  const activeCategoryData = useMemo(() => {
+    if (!config || !activeCategory) return null;
+    return config.categories.find((s) => s.id === activeCategory) || null;
+  }, [config, activeCategory]);
 
-  const getWeddingHeading = useCallback((index) => {
-    return WEDDING_SECTION_HEADINGS[index % WEDDING_SECTION_HEADINGS.length];
+  const getDynamicHeading = useCallback((index) => {
+    return EVENT_SECTION_HEADINGS[index % EVENT_SECTION_HEADINGS.length];
   }, []);
 
   useEffect(() => {
@@ -2474,13 +2410,10 @@ export default function IdeasPageWrapper() {
         limit: 50,
       };
 
-      if (activeSubtype) baseParams.subtype = activeSubtype;
-      if (activeNested) baseParams.nestedType = activeNested;
+      if (activeCategory) baseParams.category = activeCategory;
+      if (activeSubcategory) baseParams.subcategory = activeSubcategory;
+      if (activeSubType && activeSubType !== "all") baseParams.subType = activeSubType;
       if (filterState.location) baseParams.city = filterState.location;
-
-      if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all") {
-        baseParams.tag = weddingQuickFilter;
-      }
 
       if (filterState.sort === "trending") {
         baseParams.sortBy = "viewCount";
@@ -2501,8 +2434,8 @@ export default function IdeasPageWrapper() {
       try {
         const [mainResult, featuredResult, trendingResult] = await Promise.all([
           fetchReels(baseParams),
-          fetchFeaturedReels({ limit: 15 }),
-          fetchTrendingReels({ limit: 15 }),
+          fetchFeaturedReels({ limit: 15, type: eventType }),
+          fetchTrendingReels({ limit: 15, type: eventType }),
         ]);
 
         if (cancelled || version !== fetchVersionRef.current) return;
@@ -2510,29 +2443,29 @@ export default function IdeasPageWrapper() {
         const allReels = (mainResult.data || []).map(normalizeReel);
         const featuredReels = (featuredResult.reels || []).map(normalizeReel);
         const tReels = (trendingResult.reels || []).map(normalizeReel);
+
         setTrendingReels(tReels);
         setPaginationInfo(mainResult.pagination || null);
 
         const sections = [];
         let headingIdx = 0;
-        const isWedding = eventType === "wedding";
 
-        if (activeSubtype) {
-          const subtypeLabel = activeSubtypeData?.label || activeSubtype;
-          if (activeNested) {
-            const nestedLabel =
-              activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested;
+        if (activeCategory) {
+          const categoryLabel = activeCategoryData?.label || activeCategory;
+          if (activeSubcategory) {
+            const subcategoryLabel =
+              activeCategoryData?.subcategories?.find((n) => n.id === activeSubcategory)?.label || activeSubcategory;
             const half = Math.ceil(allReels.length / 2);
             if (allReels.length > 0) {
               sections.push({
-                id: `${activeNested}-top`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `${nestedLabel} — Top Picks`,
+                id: `${activeSubcategory}-top`,
+                title: `${subcategoryLabel} — Top Picks`,
                 items: allReels.slice(0, half),
               });
               if (allReels.length > half) {
                 sections.push({
-                  id: `${activeNested}-more`,
-                  title: isWedding ? getWeddingHeading(headingIdx++) : `More ${nestedLabel}`,
+                  id: `${activeSubcategory}-more`,
+                  title: `More ${subcategoryLabel}`,
                   items: allReels.slice(half),
                 });
               }
@@ -2540,19 +2473,19 @@ export default function IdeasPageWrapper() {
           } else if (allReels.length > 0) {
             if (allReels.length > 15) {
               sections.push({
-                id: `${activeSubtype}-top`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${subtypeLabel}`,
+                id: `${activeCategory}-top`,
+                title: `Top ${categoryLabel}`,
                 items: allReels.slice(0, 15),
               });
               sections.push({
-                id: `${activeSubtype}-more`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `More ${subtypeLabel}`,
+                id: `${activeCategory}-more`,
+                title: `More ${categoryLabel}`,
                 items: allReels.slice(15),
               });
             } else {
               sections.push({
-                id: `${activeSubtype}-main`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `${subtypeLabel} Reels`,
+                id: `${activeCategory}-main`,
+                title: `${categoryLabel} Reels`,
                 items: allReels,
               });
             }
@@ -2569,24 +2502,24 @@ export default function IdeasPageWrapper() {
           if (entries.length > 1) {
             entries.forEach(([cat, items]) => {
               const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, " ");
-              sections.push({ id: `cat-${cat}`, title: isWedding ? getWeddingHeading(headingIdx++) : label, items });
+              sections.push({ id: `cat-${cat}`, title: getDynamicHeading(headingIdx++), items });
             });
           } else if (allReels.length > 0) {
             if (allReels.length > 20) {
               sections.push({
                 id: "all-top",
-                title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${eventLabel}`,
+                title: `Top ${eventLabel}`,
                 items: allReels.slice(0, 15),
               });
               sections.push({
                 id: "all-more",
-                title: isWedding ? getWeddingHeading(headingIdx++) : `Explore More`,
+                title: `Explore More`,
                 items: allReels.slice(15),
               });
             } else {
               sections.push({
                 id: "all-reels",
-                title: isWedding ? getWeddingHeading(headingIdx++) : `${eventLabel} Reels`,
+                title: `${eventLabel} Reels`,
                 items: allReels,
               });
             }
@@ -2597,7 +2530,7 @@ export default function IdeasPageWrapper() {
         if (pinnedReels.length > 0) {
           sections.unshift({
             id: "sponsored",
-            title: isWedding ? "💎 Premium & Luxury Wedding Services" : "⚡ Sponsored",
+            title: "💎 Premium Services",
             items: pinnedReels,
           });
         }
@@ -2605,7 +2538,7 @@ export default function IdeasPageWrapper() {
         if (featuredReels.length > 0) {
           sections.push({
             id: "featured",
-            title: isWedding ? "❤️ Couples' Favorite Picks" : "⭐ Featured",
+            title: "❤️ Couples' Favorite Picks",
             items: featuredReels,
           });
         }
@@ -2613,7 +2546,7 @@ export default function IdeasPageWrapper() {
         if (tReels.length > 0) {
           sections.push({
             id: "trending",
-            title: isWedding ? "🔥 Viral Wedding Reels (Must Watch)" : "🔥 Trending Now",
+            title: "🔥 Trending Now",
             items: tReels,
           });
         }
@@ -2634,7 +2567,17 @@ export default function IdeasPageWrapper() {
     return () => {
       cancelled = true;
     };
-  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter, config]);
+  }, [
+    eventType,
+    activeCategory,
+    activeSubcategory,
+    filterState,
+    activeSubType,
+    config,
+    activeCategoryData,
+    eventLabel,
+    getDynamicHeading,
+  ]);
 
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.trim().length < 2) {
@@ -2656,7 +2599,7 @@ export default function IdeasPageWrapper() {
           sublabel: [r.vendorName, r.category, r.city].filter(Boolean).join(" · "),
           reel: normalizeReel(r),
           eventId: r.type,
-          subtypeId: r.subtype,
+          categoryId: r.category,
         }));
 
         const localResults = [];
@@ -2665,14 +2608,14 @@ export default function IdeasPageWrapper() {
           if (eLabel.toLowerCase().includes(searchQuery.toLowerCase())) {
             localResults.push({ type: "event", label: eLabel, sublabel: "Event Category", eventId: eventKey });
           }
-          cfg.subtypes?.forEach((sub) => {
-            if (sub.label.toLowerCase().includes(searchQuery.toLowerCase())) {
+          cfg.categories?.forEach((cat) => {
+            if (cat.label.toLowerCase().includes(searchQuery.toLowerCase())) {
               localResults.push({
-                type: "subtype",
-                label: sub.label,
+                type: "category",
+                label: cat.label,
                 sublabel: `${eLabel} › Service`,
                 eventId: eventKey,
-                subtypeId: sub.id,
+                categoryId: cat.id,
               });
             }
           });
@@ -2716,12 +2659,12 @@ export default function IdeasPageWrapper() {
       setEventType(result.eventId);
       setEventLabel(result.eventId.charAt(0).toUpperCase() + result.eventId.slice(1));
       setShowModal(false);
-      setActiveSubtype(null);
-      setActiveNested(null);
-      setWeddingQuickFilter("all");
+      setActiveCategory(null);
+      setActiveSubcategory(null);
+      setActiveSubType("all");
       setInitialLoadDone(false);
     }
-    if (result.subtypeId) setActiveSubtype(result.subtypeId);
+    if (result.categoryId) setActiveCategory(result.categoryId);
   };
 
   const carouselLayout = useMemo(() => buildCarouselLayout(carouselSections), [carouselSections]);
@@ -2730,30 +2673,30 @@ export default function IdeasPageWrapper() {
     setEventType(type);
     setEventLabel(label);
     setShowModal(false);
-    setActiveSubtype(null);
-    setActiveNested(null);
-    setWeddingQuickFilter("all");
+    setActiveCategory(null);
+    setActiveSubcategory(null);
+    setActiveSubType("all");
     setInitialLoadDone(false);
   };
 
-  const handleSubtypeClick = (subtypeId) => {
-    if (activeSubtype === subtypeId) {
-      setActiveSubtype(null);
-      setActiveNested(null);
+  const handleCategoryClick = (categoryId) => {
+    if (activeCategory === categoryId) {
+      setActiveCategory(null);
+      setActiveSubcategory(null);
     } else {
-      setActiveSubtype(subtypeId);
-      setActiveNested(null);
+      setActiveCategory(categoryId);
+      setActiveSubcategory(null);
     }
     setInitialLoadDone(false);
   };
 
-  const handleNestedClick = (nestedId) => {
-    setActiveNested(activeNested === nestedId ? null : nestedId);
+  const handleSubcategoryClick = (subcategoryId) => {
+    setActiveSubcategory(activeSubcategory === subcategoryId ? null : subcategoryId);
     setInitialLoadDone(false);
   };
 
-  const handleWeddingQuickFilterClick = (filterId) => {
-    setWeddingQuickFilter(filterId);
+  const handleSubTypeClick = (filterId) => {
+    setActiveSubType(filterId);
     setInitialLoadDone(false);
   };
 
@@ -2841,9 +2784,9 @@ export default function IdeasPageWrapper() {
           onClick={() => {
             setShowModal(true);
             setEventType(null);
-            setActiveSubtype(null);
-            setActiveNested(null);
-            setWeddingQuickFilter("all");
+            setActiveCategory(null);
+            setActiveSubcategory(null);
+            setActiveSubType("all");
             setInitialLoadDone(false);
             window.history.replaceState(null, "", pathname);
           }}
@@ -2856,8 +2799,8 @@ export default function IdeasPageWrapper() {
             {eventLabel} Ideas
           </h1>
           <p className="text-[10px] text-gray-400 font-medium">
-            {activeSubtype
-              ? `${activeSubtypeData?.label || ""} ${activeNested ? `› ${activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || ""}` : ""}`
+            {activeCategory
+              ? `${activeCategoryData?.label || ""} ${activeSubcategory ? `› ${activeCategoryData?.subcategories?.find((n) => n.id === activeSubcategory)?.label || ""}` : ""}`
               : "Explore all categories"}
             {paginationInfo?.total > 0 && ` · ${paginationInfo.total} reels`}
           </p>
@@ -2890,23 +2833,27 @@ export default function IdeasPageWrapper() {
         </motion.button>
       </div>
 
-      {isWeddingType && (
-        <WeddingQuickFilters activeFilter={weddingQuickFilter} onFilterClick={handleWeddingQuickFilterClick} />
+      {config.quickFilters && config.quickFilters.length > 0 && (
+        <QuickFiltersCarousel
+          activeFilter={activeSubType}
+          onFilterClick={handleSubTypeClick}
+          filters={config.quickFilters}
+        />
       )}
 
       <div className="z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100/80 dark:border-gray-800/80">
-        <SubtypeGridCarousel
-          subtypes={config.subtypes}
-          activeSubtype={activeSubtype}
-          onSubtypeClick={handleSubtypeClick}
+        <CategoryGridCarousel
+          categories={config.categories}
+          activeCategory={activeCategory}
+          onCategoryClick={handleCategoryClick}
         />
         <AnimatePresence>
-          {activeSubtypeData?.nestedTypes && activeSubtypeData.nestedTypes.length > 0 && (
-            <NestedChips
-              key={activeSubtype}
-              nestedTypes={activeSubtypeData.nestedTypes}
-              activeNested={activeNested}
-              onNestedClick={handleNestedClick}
+          {activeCategoryData?.subcategories && activeCategoryData.subcategories.length > 0 && (
+            <SubcategoryChips
+              key={activeCategory}
+              subcategories={activeCategoryData.subcategories}
+              activeSubcategory={activeSubcategory}
+              onSubcategoryClick={handleSubcategoryClick}
             />
           )}
         </AnimatePresence>
@@ -2943,122 +2890,132 @@ export default function IdeasPageWrapper() {
         </div>
       )}
 
-      {isLoadingCarousels && !initialLoadDone && <FullPageSkeleton />}
-
-      {initialLoadDone && (
-        <div className="pt-4 space-y-1">
-          {carouselLayout.length > 0 ? (
-            carouselLayout.map(({ section, type }) =>
-              type === "single" ? (
-                <SingleRowCarousel key={section.id} section={section} onItemClick={handleItemClick} />
-              ) : (
-                <TwoRowGridCarousel key={section.id} section={section} onItemClick={handleItemClick} />
-              ),
-            )
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-              <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
-                <Search size={24} className="text-gray-300" />
-              </div>
-              <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">No reels found</p>
-              <p className="text-[12px] text-gray-400 mb-4">Try selecting a different category or adjusting filters</p>
-              {activeFilterCount > 0 && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() =>
-                    setFilterState({ sort: "relevance", minRating: null, priceRange: null, location: null })
-                  }
-                  className="px-4 py-2 bg-gray-900 dark:bg-white rounded-xl text-white dark:text-gray-900 text-xs font-semibold"
-                >
-                  Clear All Filters
-                </motion.button>
-              )}
-            </div>
-          )}
-
-          {carouselLayout.length > 0 && (
-            <div className="px-4 pt-3 pb-4">
-              <div
-                onClick={() => {
-                  setFilterState((p) => ({ ...p, sort: "trending" }));
-                  setInitialLoadDone(false);
-                }}
-                className="bg-gray-900 dark:bg-white rounded-2xl p-4 flex items-center gap-3 cursor-pointer active:opacity-90 transition-opacity"
-              >
-                <div className="w-10 h-10 bg-white/10 dark:bg-gray-900/10 rounded-xl flex items-center justify-center shrink-0">
-                  <TrendingUp size={18} className="text-white dark:text-gray-900" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-[12px] font-bold text-white dark:text-gray-900">Trending in {eventLabel}</h4>
-                  <p className="text-[10px] text-white/50 dark:text-gray-900/50 mt-0.5">
-                    {trendingReels.length > 0
-                      ? `${trendingReels.length} trending reels this month`
-                      : "See what others are booking this season"}
-                  </p>
-                </div>
-                <ChevronRight size={16} className="text-white/40 dark:text-gray-900/30 shrink-0" />
-              </div>
-            </div>
-          )}
-
-          {paginationInfo?.hasNextPage && carouselLayout.length > 0 && (
-            <div className="px-4 pb-4">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={async () => {
-                  const nextPage = (paginationInfo.page || 1) + 1;
-                  const params = {
-                    type: config.type || eventType,
-                    isActive: "true",
-                    limit: 50,
-                    page: nextPage,
-                  };
-                  if (activeSubtype) params.subtype = activeSubtype;
-                  if (activeNested) params.nestedType = activeNested;
-                  if (filterState.location) params.city = filterState.location;
-                  if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all") {
-                    params.tag = weddingQuickFilter;
-                  }
-                  if (filterState.sort === "trending") {
-                    params.sortBy = "viewCount";
-                    params.sortOrder = "desc";
-                  } else if (filterState.sort === "rating") {
-                    params.sortBy = "priority";
-                    params.sortOrder = "desc";
-                  } else if (filterState.sort === "newest") {
-                    params.sortBy = "createdAt";
-                    params.sortOrder = "desc";
-                  } else {
-                    params.sortBy = "priority";
-                    params.sortOrder = "desc";
-                  }
-
-                  const result = await fetchReels(params);
-                  const moreReels = (result.data || []).map(normalizeReel);
-                  if (moreReels.length > 0) {
-                    setCarouselSections((prev) => [
-                      ...prev,
-                      { id: `page-${nextPage}`, title: `More ${eventLabel} Reels`, items: moreReels },
-                    ]);
-                    setPaginationInfo(result.pagination || null);
-                  }
-                }}
-                className="w-full py-3 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 font-semibold text-[12px]"
-              >
-                <ChevronDown size={14} />
-                Load More Reels
-              </motion.button>
-            </div>
-          )}
-
-          {recentlyViewedReels.length > 0 && (
-            <SingleRowCarousel
-              section={{ id: "recently-viewed", title: "🕐 Recently Viewed", items: recentlyViewedReels }}
-              onItemClick={handleItemClick}
-            />
-          )}
+      {isDirectReelLoading ? (
+        <div className="flex flex-col items-center justify-center py-32 h-[50vh]">
+          <Loader2 size={32} className="animate-spin text-gray-400 mb-4" />
+          <p className="text-gray-400 text-xs font-medium">Loading Reel...</p>
         </div>
-      )}
+      ) : isLoadingCarousels && !initialLoadDone ? (
+        <FullPageSkeleton />
+      ) : initialLoadDone ? (
+        <div className="pt-4 space-y-1">
+          <div className="pt-4 space-y-1">
+            {carouselLayout.length > 0 ? (
+              carouselLayout.map(({ section, type }) =>
+                type === "single" ? (
+                  <SingleRowCarousel key={section.id} section={section} onItemClick={handleItemClick} />
+                ) : (
+                  <TwoRowGridCarousel key={section.id} section={section} onItemClick={handleItemClick} />
+                ),
+              )
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+                  <Search size={24} className="text-gray-300" />
+                </div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">No reels found</p>
+                <p className="text-[12px] text-gray-400 mb-4">
+                  Try selecting a different category or adjusting filters
+                </p>
+                {activeFilterCount > 0 && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() =>
+                      setFilterState({ sort: "relevance", minRating: null, priceRange: null, location: null })
+                    }
+                    className="px-4 py-2 bg-gray-900 dark:bg-white rounded-xl text-white dark:text-gray-900 text-xs font-semibold"
+                  >
+                    Clear All Filters
+                  </motion.button>
+                )}
+              </div>
+            )}
+
+            {carouselLayout.length > 0 && (
+              <div className="px-4 pt-3 pb-4">
+                <div
+                  onClick={() => {
+                    setFilterState((p) => ({ ...p, sort: "trending" }));
+                    setInitialLoadDone(false);
+                  }}
+                  className="bg-gray-900 dark:bg-white rounded-2xl p-4 flex items-center gap-3 cursor-pointer active:opacity-90 transition-opacity"
+                >
+                  <div className="w-10 h-10 bg-white/10 dark:bg-gray-900/10 rounded-xl flex items-center justify-center shrink-0">
+                    <TrendingUp size={18} className="text-white dark:text-gray-900" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[12px] font-bold text-white dark:text-gray-900">Trending in {eventLabel}</h4>
+                    <p className="text-[10px] text-white/50 dark:text-gray-900/50 mt-0.5">
+                      {trendingReels.length > 0
+                        ? `${trendingReels.length} trending reels this month`
+                        : "See what others are booking this season"}
+                    </p>
+                  </div>
+                  <ChevronRight size={16} className="text-white/40 dark:text-gray-900/30 shrink-0" />
+                </div>
+              </div>
+            )}
+
+            {paginationInfo?.hasNextPage && carouselLayout.length > 0 && (
+              <div className="px-4 pb-4">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={async () => {
+                    const nextPage = (paginationInfo.page || 1) + 1;
+                    const params = {
+                      type: config.type || eventType,
+                      isActive: "true",
+                      limit: 50,
+                      page: nextPage,
+                    };
+                    if (activeCategory) params.category = activeCategory;
+                    if (activeSubcategory) params.subcategory = activeSubcategory;
+                    if (filterState.location) params.city = filterState.location;
+                    if (activeSubType && activeSubType !== "all") {
+                      params.subType = activeSubType;
+                    }
+
+                    if (filterState.sort === "trending") {
+                      params.sortBy = "viewCount";
+                      params.sortOrder = "desc";
+                    } else if (filterState.sort === "rating") {
+                      params.sortBy = "priority";
+                      params.sortOrder = "desc";
+                    } else if (filterState.sort === "newest") {
+                      params.sortBy = "createdAt";
+                      params.sortOrder = "desc";
+                    } else {
+                      params.sortBy = "priority";
+                      params.sortOrder = "desc";
+                    }
+
+                    const result = await fetchReels(params);
+                    const moreReels = (result.data || []).map(normalizeReel);
+                    if (moreReels.length > 0) {
+                      setCarouselSections((prev) => [
+                        ...prev,
+                        { id: `page-${nextPage}`, title: `More ${eventLabel} Reels`, items: moreReels },
+                      ]);
+                      setPaginationInfo(result.pagination || null);
+                    }
+                  }}
+                  className="w-full py-3 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 font-semibold text-[12px]"
+                >
+                  <ChevronDown size={14} />
+                  Load More Reels
+                </motion.button>
+              </div>
+            )}
+
+            {recentlyViewedReels.length > 0 && (
+              <SingleRowCarousel
+                section={{ id: "recently-viewed", title: "🕐 Recently Viewed", items: recentlyViewedReels }}
+                onItemClick={handleItemClick}
+              />
+            )}
+          </div>
+        </div>
+      ) : null}
 
       <AnimatePresence>
         {reelsViewerData && (
@@ -3074,17 +3031,19 @@ export default function IdeasPageWrapper() {
 
       <AnimatePresence>{drawerItem && <BookingDrawer item={drawerItem} onClose={handleCloseDrawer} />}</AnimatePresence>
 
-      {isSearchOpen && (
-        <SearchModalComponent
-          searchInputRef={searchInputRef}
-          handleSearchResultClick={handleSearchResultClick}
-          searchResults={searchResults}
-          setSearchQuery={setSearchQuery}
-          searchQuery={searchQuery}
-          setIsSearchOpen={setIsSearchOpen}
-          isSearching={isSearching}
-        />
-      )}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <SearchModalComponent
+            searchInputRef={searchInputRef}
+            handleSearchResultClick={handleSearchResultClick}
+            searchResults={searchResults}
+            setSearchQuery={setSearchQuery}
+            searchQuery={searchQuery}
+            setIsSearchOpen={setIsSearchOpen}
+            isSearching={isSearching}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showFilter && (

@@ -125,7 +125,6 @@ const SampleProposal = ({ category }) => {
                 src={proposals[currentIndex].image}
                 type="image"
                 className="w-full h-full object-contain" // Changed to cover for better aesthetic
-                loaderImage="/GlowLoadingGif.gif"
                 alt={proposals[currentIndex].title}
                 priority={true} // Prioritize loading the active slide
               />

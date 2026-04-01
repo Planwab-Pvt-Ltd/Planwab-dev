@@ -11422,7 +11422,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const { id, category } = useParams();
   const router = useRouter();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
-  const { backUrl, canGoBack } = useNavigationState();
+  const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
@@ -12058,15 +12058,12 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
     if (canGoBack) {
       router.push(backUrl);
-      return;
+    } else if (id && category) {
+      router.push(`/vendor/${category}/${id}`);
+    }  else {
+      router.back();
     }
-
-    if (category || id) {
-      router.push(`/vendor/${category || "all"}/${id}`);
-    } else {
-      router.push("/");
-    }
-  }, [router, category, id]);
+  }, [router, canGoBack, backUrl]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {

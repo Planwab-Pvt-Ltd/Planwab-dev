@@ -202,14 +202,14 @@ export default function SingleBlogPageWrapper() {
   const [interactingAction, setInteractingAction] = useState(null);
 
   useEffect(() => {
-    if (!id || !userLoaded) return;
+    if (!id) return;
     fetchBlogDetails();
   }, [id, userLoaded]);
 
   const fetchBlogDetails = async () => {
     setLoading(true);
     try {
-      const blogRes = await fetch(`/api/blogs/${id}`, { cache: "no-store" });
+      const blogRes = await fetch(`/api/blogs/${id}`);
       if (blogRes.ok) {
         const blogData = await blogRes.json();
         const b = blogData.data;
@@ -331,7 +331,7 @@ export default function SingleBlogPageWrapper() {
   const htmlContent = processContent(blog.content);
 
   return (
-    <div className="min-h-screen pb-20 transition-colors bg-slate-50 dark:bg-slate-900 pt-20">
+    <div className="min-h-screen pb-20 transition-colors bg-slate-50 dark:bg-slate-900 pt-24">
       <ReadingProgressBar />
       <ScrollToTop />
 

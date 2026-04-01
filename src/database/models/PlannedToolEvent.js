@@ -92,7 +92,6 @@ const PlannedToolEventSchema = new mongoose.Schema(
 PlannedToolEventSchema.index({ userId: 1, createdAt: -1 });
 PlannedToolEventSchema.index({ category: 1 });
 PlannedToolEventSchema.index({ date: 1 });
-PlannedToolEventSchema.index({ shareCode: 1 });
 
 PlannedToolEventSchema.virtual("tasksCompleted").get(function () {
   return this.checklist.filter((item) => item.completed).length;

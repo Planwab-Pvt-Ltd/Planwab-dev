@@ -1,4 +1,3 @@
-// app/api/reels/featured/route.js
 import connectToDatabase from "../../../../database/mongoose";
 import ReelsModel from "../../../../database/models/ReelsModel";
 import { ok, serverError } from "../../../../lib/apiResponse";
@@ -6,10 +5,11 @@ import { ok, serverError } from "../../../../lib/apiResponse";
 export async function GET(request) {
   try {
     await connectToDatabase();
-
     const { searchParams } = new URL(request.url);
+    
     const limit    = Math.min(50, parseInt(searchParams.get("limit") || "12"));
     const category = searchParams.get("category");
+    const type     = searchParams.get("type");
 
     const query = {
       isActive: true,
@@ -22,6 +22,7 @@ export async function GET(request) {
     };
 
     if (category) query.category = category;
+    if (type)     query.type = type;
 
     const reels = await ReelsModel.find(query)
       .sort({ priority: -1, publishedAt: -1 })

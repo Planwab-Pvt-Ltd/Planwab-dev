@@ -11,13 +11,15 @@ export default clerkMiddleware(async (auth, req) => {
 
   // 1. Auth Protection
   if (isAdminRoute(req)) {
-  const redirectUrl = `${pathname}${url.search}`;
-  
-  await auth.protect({
-    unauthenticatedUrl: `/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`,
-  });
-}
+    const redirectPath = `${pathname}${url.search}`;
 
+    const signInUrl = new URL("/sign-in", req.url);
+    signInUrl.searchParams.set("redirect_url", redirectPath);
+
+    await auth.protect({
+      unauthenticatedUrl: signInUrl.toString(),
+    });
+  }
 
   // 2. Skip internal files
   if (

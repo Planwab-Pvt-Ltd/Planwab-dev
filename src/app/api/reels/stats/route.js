@@ -1,5 +1,3 @@
-// app/api/reels/stats/route.js
-
 import ReelsModel from "../../../../database/models/ReelsModel";
 import connectToDatabase from "../../../../database/mongoose";
 import { ok, serverError } from "../../../../lib/apiResponse";
@@ -8,14 +6,22 @@ export async function GET() {
   try {
     await connectToDatabase();
 
+    const validReelsMatch = {
+      isActive: true,
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: null },
+        { expiresAt: { $gt: new Date() } },
+      ],
+    };
+
     const [overall, byCategory, topReels, recentReels] = await Promise.all([
-      // Overall platform stats
       ReelsModel.aggregate([
+        { $match: validReelsMatch },
         {
           $group: {
             _id: null,
             totalReels:    { $sum: 1 },
-            activeReels:   { $sum: { $cond: ["$isActive", 1, 0] } },
             featuredReels: { $sum: { $cond: ["$isFeatured", 1, 0] } },
             sponsoredReels:{ $sum: { $cond: ["$isSponsored", 1, 0] } },
             totalViews:    { $sum: "$viewCount" },
@@ -28,9 +34,8 @@ export async function GET() {
         },
       ]),
 
-      // By category
       ReelsModel.aggregate([
-        { $match: { isActive: true } },
+        { $match: validReelsMatch },
         {
           $group: {
             _id: "$category",
@@ -42,18 +47,16 @@ export async function GET() {
         { $sort: { count: -1 } },
       ]),
 
-      // Top 5 reels by engagement
-      ReelsModel.find({ isActive: true })
+      ReelsModel.find(validReelsMatch)
         .sort({ viewCount: -1 })
         .limit(5)
-        .select("title vendorName category viewCount likeCount shareCount thumbnailUrl")
+        .select("title category type subType viewCount likeCount shareCount thumbnailUrl")
         .lean(),
 
-      // 5 most recent
-      ReelsModel.find({})
+      ReelsModel.find(validReelsMatch)
         .sort({ createdAt: -1 })
         .limit(5)
-        .select("title vendorName category isActive createdAt thumbnailUrl")
+        .select("title category type subType createdAt thumbnailUrl")
         .lean(),
     ]);
 

@@ -4,6 +4,227 @@ import React from "react";
 import { MapPin, Mail, Phone, Instagram, Linkedin, Facebook, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+const SeoFooterLinks = () => {
+  const BASE_URL =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://planwab.com";
+
+  // Vendor Data
+  const categories = [
+    { id: "venues", label: "Wedding Venues" },
+    { id: "photographers", label: "Wedding Photographers" },
+    { id: "catering", label: "Caterers" },
+    { id: "makeup", label: "Makeup Artists" },
+    { id: "mehendi", label: "Mehendi Artists" },
+    { id: "djs", label: "DJs & Music" },
+    { id: "planners", label: "Event Planners" },
+    { id: "clothes", label: "Wedding Clothing" },
+  ];
+
+  const cities = ["Delhi NCR", "Mumbai", "Jaipur", "Bangalore"];
+
+  // Ideas Data
+  const ideaEvents = [
+    { id: "wedding", label: "Wedding Ideas" },
+    { id: "birthday", label: "Birthday Party Ideas" },
+    { id: "anniversary", label: "Anniversary Ideas" },
+    { id: "corporate", label: "Corporate Event Ideas" },
+  ];
+
+  const ideaCategories = [
+    { id: "venues", label: "Venue & Mandap Ideas" },
+    { id: "decor", label: "Wedding Decor Ideas" },
+    { id: "makeup", label: "Bridal Makeup Looks" },
+    { id: "clothes", label: "Bridal Lehenga & Outfits" },
+    { id: "photographers", label: "Photography & Poses" },
+    { id: "mehendi", label: "Latest Mehendi Designs" },
+  ];
+
+  const ideaMoments = [
+    { id: "haldi", label: "Haldi Ceremony Ideas" },
+    { id: "mehendi", label: "Mehendi Function Ideas" },
+    { id: "sangeet", label: "Sangeet Dance & Decor" },
+    { id: "baraat", label: "Baraat & Groom Entry" },
+    { id: "reception", label: "Reception Party Ideas" },
+    { id: "destination", label: "Destination Weddings" },
+  ];
+
+  return (
+    <div className="mt-16 pt-10 border-t border-gray-200">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 space-y-10">
+
+        {/* Existing: Category Links */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Browse Vendors by Category
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {categories.map((cat) => (
+              <a
+                key={cat.id}
+                href={`${BASE_URL}/vendors/marketplace/${cat.id}`}
+                className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+              >
+                {cat.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Existing: City + Category SEO Links */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Vendors by City
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {categories.map((cat) =>
+              cities.map((city) => (
+                <a
+                  key={`${cat.id}-${city}`}
+                  href={`${BASE_URL}/vendors/marketplace/${cat.id}?cities=${city.replace(
+                    " ",
+                    "+"
+                  )}`}
+                  className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+                >
+                  {cat.label} in {city}
+                </a>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* NEW: Ideas & Inspiration by Event */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Event Ideas & Inspiration
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {ideaEvents.map((event) => (
+              <a
+                key={event.id}
+                href={`${BASE_URL}/ideas?type=${event.id}`}
+                className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+              >
+                {event.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* NEW: Wedding Ideas by Category */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Trending Wedding Categories
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {ideaCategories.map((cat) => (
+              <a
+                key={cat.id}
+                href={`${BASE_URL}/ideas?type=wedding&category=${cat.id}`}
+                className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+              >
+                {cat.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* NEW: Wedding Ideas by Moments/Functions */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Wedding Ceremony Ideas
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {ideaMoments.map((moment) => (
+              <a
+                key={moment.id}
+                href={`${BASE_URL}/ideas?type=wedding&subType=${moment.id}`}
+                className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+              >
+                {moment.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Existing: Filter Based Links */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Discover Vendors
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            <a
+              href={`${BASE_URL}/vendors/marketplace?sortBy=price-asc`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Budget Vendors in India
+            </a>
+            <a
+              href={`${BASE_URL}/vendors/marketplace?sortBy=price-desc`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Premium Vendors in India
+            </a>
+            <a
+              href={`${BASE_URL}/vendors/marketplace?sortBy=bookings`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Most Popular Vendors
+            </a>
+            <a
+              href={`${BASE_URL}/vendors/marketplace?sortBy=newest`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Newly Added Vendors
+            </a>
+            <a
+              href={`${BASE_URL}/vendors/marketplace?sortBy=reviews`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Most Reviewed Vendors
+            </a>
+            <a
+              href={`${BASE_URL}/vendors/marketplace?maxPrice=50000`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Vendors Under ₹50,000
+            </a>
+            <a
+              href={`${BASE_URL}/vendors/marketplace?minRating=4`}
+              className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+            >
+              Top Rated Vendors (4★+)
+            </a>
+          </div>
+        </div>
+
+        {/* Existing: Event Links */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-4">
+            Explore Events
+          </h4>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {["wedding", "birthday", "anniversary", "corporate", "events"].map(
+              (event) => (
+                <a
+                  key={event}
+                  href={`${BASE_URL}/events/${event}`}
+                  className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+                >
+                  {event.charAt(0).toUpperCase() + event.slice(1)} Planning
+                </a>
+              )
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
 const Footer = () => {
   return (
     <footer
@@ -109,6 +330,22 @@ const Footer = () => {
                     <span className="group-hover:translate-x-1 transition-transform">Explore Vendors</span>
                   </Link>
                 </li>
+                 <li>
+                  <Link 
+                    href="/vendors/explore/events" 
+                    className="text-sm text-gray-600 hover:text-[#C33765] transition-colors inline-flex items-center group"
+                  >
+                    <span className="group-hover:translate-x-1 transition-transform">Wedding Vendors</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/ideas" 
+                    className="text-sm text-gray-600 hover:text-[#C33765] transition-colors inline-flex items-center group"
+                  >
+                    <span className="group-hover:translate-x-1 transition-transform">Ideas & Inspiration</span>
+                  </Link>
+                </li>
                 <li>
                   <Link 
                     href="/pricing" 
@@ -188,6 +425,8 @@ const Footer = () => {
               </div>
             </div>
           </div>
+
+          <SeoFooterLinks />
 
           {/* Bottom Bar */}
           <div className="mt-12 pt-8 border-t border-gray-300">

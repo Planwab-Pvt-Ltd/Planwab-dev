@@ -157,6 +157,7 @@ import UpdateProfileDrawer from "../UpdateProfileDrawer";
 import SmartMedia from "@/components/mobile/SmartMediaLoader";
 import ImageKit from "imagekit-javascript";
 import { useVideoThumbnail, generateVideoThumbnail } from "../../../lib/video-thumbnail";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -10769,6 +10770,7 @@ const formatBio = (bio) => {
 const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendor }) => {
   const { id, category } = useParams();
   const router = useRouter();
+  const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -11407,12 +11409,14 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const handleBack = useCallback(() => {
     if (typeof window === "undefined") return;
 
-    if (category || id) {
-      router.push(`/vendor/${category || "all"}/${id}`);
-    } else {
-      router.push("/");
+    if (canGoBack) {
+      router.push(backUrl);
+    } else if (id && category) {
+      router.push(`/vendor/${category}/${id}`);
+    }  else {
+      router.back();
     }
-  }, [router, category, id]);
+  }, [router, canGoBack, backUrl]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {

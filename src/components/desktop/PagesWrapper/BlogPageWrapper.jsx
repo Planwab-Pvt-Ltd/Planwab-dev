@@ -63,6 +63,19 @@ const CATEGORIES = [
   { id: "other", name: "Other", icon: Pen },
 ];
 
+const DESKTOP_TOP_OFFSET = 110;
+
+const replaceURLParams = (pathname, params) => {
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== null && v !== undefined && v !== "" && v !== "all" && v !== "newest") {
+      sp.set(k, String(v));
+    }
+  });
+  const qs = sp.toString();
+  window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
+};
+
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -1000,9 +1013,13 @@ const BlogPageWrapper = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState("newest");
+  const urlCategory = searchParams.get("category") || "all";
+  const urlSort = searchParams.get("sort") || "newest";
+  const urlSearch = searchParams.get("search") || "";
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
+  const [selectedCategory, setSelectedCategory] = useState(urlCategory);
+  const [sortBy, setSortBy] = useState(urlSort);
+
   const [viewMode, setViewMode] = useState("grid");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -1017,10 +1034,36 @@ const BlogPageWrapper = () => {
   const debouncedSearch = useDebounce(searchQuery, 500);
   const topRef = useRef(null);
 
+  const getURLParams = useCallback(() => {
+    const params = {};
+    if (selectedCategory && selectedCategory !== "all") params.category = selectedCategory;
+    if (sortBy && sortBy !== "newest") params.sort = sortBy;
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    return params;
+  }, [selectedCategory, sortBy, debouncedSearch]);
+
+  const syncURL = useCallback(
+    (extra = {}) => {
+      const params = { ...getURLParams(), ...extra };
+      replaceURLParams(pathname, params);
+    },
+    [getURLParams, pathname]
+  );
+
+  useEffect(() => {
+    syncURL();
+  }, [selectedCategory, sortBy, debouncedSearch, syncURL]);
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
+
+  useEffect(() => {
+    if (urlCategory !== selectedCategory) setSelectedCategory(urlCategory);
+    if (urlSort !== sortBy) setSortBy(urlSort);
+    if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
+  },[urlCategory, urlSort, urlSearch, pathname]);
 
   const fetchAllBlogs = useCallback(
     async (page = 1) => {
@@ -1164,7 +1207,7 @@ const BlogPageWrapper = () => {
   };
 
   return (
-    <div className="min-h-screen transition-colors bg-slate-50 dark:bg-slate-900 pt-10" ref={topRef}>
+    <div className="min-h-screen transition-colors bg-slate-50 dark:bg-slate-900 pt-20" ref={topRef}>
       <AnimatePresence>
         {toast && (
           <motion.div
