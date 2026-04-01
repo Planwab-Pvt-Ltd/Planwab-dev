@@ -1184,7 +1184,7 @@ function LogoText({ logoHovered }) {
   const planUrl = activeCategoryDesktop ? `/events/${activeCategoryDesktop.toLowerCase()}` : "/events/wedding";
 
   const SEGMENT_HREF = {
-    plan: planUrl,
+    plan: planUrl || '/events/wedding',
     W: "/",
     A: "/?category=anniversary",
     B: "/?category=birthday",
@@ -1206,7 +1206,7 @@ function LogoText({ logoHovered }) {
             key={seg.key} 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(SEGMENT_HREF[seg.key]); }}
             style={{ isolation: "isolate" }}
-            className={`relative inline-block cursor-pointer select-none ${isHov ? "z-[9999]" : "z-10"}`}
+            className={`relative text-white inline-block cursor-pointer select-none ${isHov ? "z-[9999]" : "z-10"}`}
             onMouseEnter={() => setHoveredSegment(seg.key)}
             onMouseLeave={() => setHoveredSegment(null)}
           >
@@ -1259,7 +1259,7 @@ function LogoText({ logoHovered }) {
 
                     {/* Main water droplet bubble */}
                     <div
-                      className="relative whitespace-nowrap text-[11px] font-bold px-4 py-[7px]"
+                      className="relative text-gray-500 whitespace-nowrap text-[11px] font-bold px-4 py-[7px]"
                       style={{
                         borderRadius: "50px 50px 46px 46px",
                         background: `linear-gradient(160deg, rgba(255,255,255,0.38) 0%, ${accent.bg} 50%, rgba(255,255,255,0.10) 100%)`,
@@ -1272,7 +1272,6 @@ function LogoText({ logoHovered }) {
                           inset 0 1.5px 0 rgba(255,255,255,0.75),
                           inset 0 -1px 0 rgba(255,255,255,0.15)
                         `,
-                        color: "rgba(15,23,42,0.88)",
                       }}
                     >
                       {/* Inner specular shimmer — the "wet" highlight */}

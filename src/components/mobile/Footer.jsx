@@ -153,11 +153,6 @@ const SeoFooterLinks = () => {
     setOpen(open === section ? null : section);
   };
 
-  const BASE_URL =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://planwab.com";
-
   // Vendor Data
   const categories = [
     { id: "venues", label: "Wedding Venues" },
@@ -229,7 +224,7 @@ const SeoFooterLinks = () => {
         {categories.map((cat) => (
           <a
             key={cat.id}
-            href={`${BASE_URL}/vendors/marketplace/${cat.id}`}
+            href={`/vendors/marketplace/${cat.id}`}
             className="text-sm text-gray-600 hover:text-[#C33765]"
           >
             {cat.label}
@@ -243,7 +238,7 @@ const SeoFooterLinks = () => {
           cities.map((city) => (
             <a
               key={`${cat.id}-${city}`}
-              href={`${BASE_URL}/vendors/marketplace/${cat.id}?cities=${city.replace(
+              href={`/vendors/marketplace/${cat.id}?cities=${city.replace(
                 " ",
                 "+"
               )}`}
@@ -260,7 +255,7 @@ const SeoFooterLinks = () => {
         {ideaEvents.map((event) => (
           <a
             key={event.id}
-            href={`${BASE_URL}/ideas?type=${event.id}`}
+            href={`/ideas?type=${event.id}`}
             className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
           >
             {event.label}
@@ -273,7 +268,7 @@ const SeoFooterLinks = () => {
         {ideaCategories.map((cat) => (
           <a
             key={cat.id}
-            href={`${BASE_URL}/ideas?type=wedding&category=${cat.id}`}
+            href={`/ideas?type=wedding&category=${cat.id}`}
             className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
           >
             {cat.label}
@@ -286,7 +281,7 @@ const SeoFooterLinks = () => {
         {ideaMoments.map((moment) => (
           <a
             key={moment.id}
-            href={`${BASE_URL}/ideas?type=wedding&subType=${moment.id}`}
+            href={`/ideas?type=wedding&subType=${moment.id}`}
             className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
           >
             {moment.label}
@@ -296,25 +291,25 @@ const SeoFooterLinks = () => {
 
       {/* Existing: Filter Based Links */}
       <Section title="Discover Vendors" id="filters">
-        <a href={`${BASE_URL}/vendors/marketplace?sortBy=price-asc`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?sortBy=price-asc`} className="text-sm text-gray-600">
           Budget Vendors
         </a>
-        <a href={`${BASE_URL}/vendors/marketplace?sortBy=price-desc`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?sortBy=price-desc`} className="text-sm text-gray-600">
           Premium Vendors
         </a>
-        <a href={`${BASE_URL}/vendors/marketplace?sortBy=bookings`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?sortBy=bookings`} className="text-sm text-gray-600">
           Popular Vendors
         </a>
-        <a href={`${BASE_URL}/vendors/marketplace?sortBy=newest`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?sortBy=newest`} className="text-sm text-gray-600">
           Newly Added Vendors
         </a>
-        <a href={`${BASE_URL}/vendors/marketplace?sortBy=reviews`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?sortBy=reviews`} className="text-sm text-gray-600">
           Most Reviewed Vendors
         </a>
-        <a href={`${BASE_URL}/vendors/marketplace?maxPrice=50000`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?maxPrice=50000`} className="text-sm text-gray-600">
           Vendors Under ₹50,000
         </a>
-        <a href={`${BASE_URL}/vendors/marketplace?minRating=4`} className="text-sm text-gray-600">
+        <a href={`/vendors/marketplace?minRating=4`} className="text-sm text-gray-600">
           Top Rated Vendors (4★+)
         </a>
       </Section>
@@ -324,7 +319,7 @@ const SeoFooterLinks = () => {
         {["wedding", "birthday", "anniversary", "corporate"].map((event) => (
           <a
             key={event}
-            href={`${BASE_URL}/events/${event}`}
+            href={`/events/${event}`}
             className="text-sm text-gray-600 hover:text-[#C33765]"
           >
             {event.charAt(0).toUpperCase() + event.slice(1)} Planning
