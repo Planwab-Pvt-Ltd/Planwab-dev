@@ -42,7 +42,6 @@ const LeadCaptureModalMobile = ({ isOpen, onClose, actionType, title, subtitle }
     }
     return () => {
       document.body.style.overflow = "unset";
-      setIsNavbarVisible(true);
     };
   }, [isOpen]);
 

@@ -149,6 +149,7 @@ import UpdateProfileDrawer from "../UpdateProfileDrawer";
 import SmartMedia from "@/components/mobile/SmartMediaLoader";
 import ImageKit from "imagekit-javascript";
 import { useVideoThumbnail } from "../../../lib/video-thumbnail";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -10947,6 +10948,7 @@ ReelThumbnailRenderer.displayName = "ReelThumbnailRenderer";
 
 const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initialReviews = [], vendorId: initialVendorId }) => {
   const { id: routeId, category, username } = useParams();
+  const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
   const id = routeId || initialVendorId || initialVendor?._id || initialProfile?.vendorId;
   const router = useRouter();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
@@ -11573,14 +11575,16 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   }, []);
 
   const handleBack = useCallback(() => {
-    if (typeof window === "undefined") return;
-
-    if (category || id) {
-      router.push(`/vendor/${category || "all"}/${id}`);
-    } else {
-      router.push("/");
-    }
-  }, [router, category, id]);
+      if (typeof window === "undefined") return;
+  
+      if (canGoBack) {
+        router.push(backUrl);
+      } else if (id && category) {
+        router.push(`/vendor/${category}/${id}`);
+      }  else {
+        router.back();
+      }
+    }, [router, canGoBack, backUrl]);
 
   const handleShare = useCallback(() => {
     // if (navigator.share) {

@@ -2,6 +2,7 @@ import VendorProfile from "../models/VendorProfileModel";
 import { connectToDatabase } from "../mongoose";
 import Vendor from './../models/VendorModel';
 import Review from './../models/VendorsReviewsModel';
+import { cache } from "react";
 
 const logAction = (actionName, details = "") => {
   console.log(`[ServerAction] ${new Date().toISOString()} | ${actionName} | ${details}`);
@@ -13,7 +14,7 @@ const logError = (actionName, error) => {
 
 const sanitize = (data) => JSON.parse(JSON.stringify(data));
 
-export async function getMostBookedVendors() {
+export const getMostBookedVendors = cache(async (id) => {
   try {
     logAction("getMostBookedVendors", "Start fetching...");
     await connectToDatabase();
@@ -28,9 +29,9 @@ export async function getMostBookedVendors() {
     logError("getMostBookedVendors", error);
     return [];
   }
-}
+});
 
-export async function getTopPlanners() {
+export const getTopPlanners = cache(async (id) => {
   try {
     logAction("getTopPlanners", "Start fetching...");
     await connectToDatabase();
@@ -45,9 +46,9 @@ export async function getTopPlanners() {
     logError("getTopPlanners", error);
     return [];
   }
-}
+});
 
-export async function getTrendingVendors() {
+export const getTrendingVendors = cache(async (id) => {
   try {
     logAction("getTrendingVendors", "Start fetching...");
     await connectToDatabase();
@@ -62,11 +63,9 @@ export async function getTrendingVendors() {
     logError("getTrendingVendors", error);
     return [];
   }
-}
+});
 
-// --- 2. Vendor Details & Profile Actions ---
-
-export async function getVendorById(id) {
+export const getVendorById = cache(async (id) => {
   try {
     logAction("getVendorById", `Start fetching vendor with ID: ${id}`);
     await connectToDatabase();
@@ -77,9 +76,9 @@ export async function getVendorById(id) {
     logError("getVendorById", error);
     return null;
   }
-}
+});
 
-export async function getVendorProfile(id) {
+export const getVendorProfile = cache(async (id) => {
   try {
     logAction("getVendorProfile", `Start fetching profile for vendor ID: ${id}`);
     await connectToDatabase();
@@ -91,9 +90,9 @@ export async function getVendorProfile(id) {
     logError("getVendorProfile", error);
     return null;
   }
-}
+});
 
-export async function getVendorProfileByUsername(username) {
+export const getVendorProfileByUsername = cache(async (username) => {
   try {
     logAction("getVendorProfileByUsername", `Start fetching profile for vendor username: ${username}`);
     await connectToDatabase();
@@ -105,9 +104,9 @@ export async function getVendorProfileByUsername(username) {
     logError("getVendorProfileByUsername", error);
     return null;
   }
-}
+});
 
-export async function getVendorReviews(id) {
+export const getVendorReviews = cache(async (id) => {
   try {
     logAction("getVendorReviews", `Start fetching reviews for vendor ID: ${id}`);
     await connectToDatabase();
@@ -118,9 +117,9 @@ export async function getVendorReviews(id) {
     logError("getVendorReviews", error);
     return { reviews: [] };
   }
-}
+});
 
-export async function getRelatedVendors(id) {
+export const getRelatedVendors = cache(async (id) => {
   try {
     logAction("getRelatedVendors", `Start fetching related vendors for ID: ${id}`);
     await connectToDatabase();
@@ -149,9 +148,7 @@ export async function getRelatedVendors(id) {
     logError("getRelatedVendors", error);
     return { similarVendors: [], recommendedVendors: [] };
   }
-}
-
-// --- 3. Marketplace Data Fetching (MATCHES API ROUTE EXACTLY) ---
+});
 
 const SUBCATEGORY_MAPPINGS = {
   // Venues

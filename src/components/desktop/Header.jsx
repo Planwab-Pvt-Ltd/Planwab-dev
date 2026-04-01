@@ -271,29 +271,32 @@ const ProfileDropdown = ({ isOpen }) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const fullAuthRedirectUrl = `${pathname}?${searchParams.toString()}`;
+  const isAdmin = user?.primaryEmailAddress?.emailAddress?.includes("@planwab.com") || false;
 
   if (!isOpen) return null;
   const menuItems = [
-    { icon: User, label: "Profile", href: "/admin/settings" },
-    { icon: Heart, label: "Favorites", href: "/" },
-    { icon: CreditCard, label: "Billing", href: "/" },
-    { icon: Settings, label: "Settings", href: "/admin/settings" },
-    { icon: LucideLayoutDashboard, label: "Admin Dashboard", href: "/admin/vendors" },
+    { icon: User, label: "Profile", href: "/user/profile" },
+    { icon: Heart, label: "My Collection", href: "/user/profile?section=collection&tab=vendors" },
+    { icon: CreditCard, label: "Billing", href: "/pricing" },
+    { icon: Settings, label: "Settings", href: "/user/profile?section=settings" },
   ];
+  if (isAdmin) {
+    menuItems.push({ icon: LucideLayoutDashboard, label: "Admin Dashboard", href: "/admin/vendors" });
+  }
   return (
     <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 !z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2 px-2">
       <SignedIn>
         <div className="flex items-center space-x-2 p-2">
           <img src={user?.imageUrl} alt={user?.fullName} className="w-10 h-10 rounded-xl" />
           <div>
-            <p className="font-semibold text-gray-900 dark:text-gray-100">
+            <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
               {user?.username || user?.fullName || "User"}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{user?.primaryEmailAddress?.emailAddress}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.primaryEmailAddress?.emailAddress}</p>
           </div>
         </div>
       </SignedIn>
-      <div className="py-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+      <div className="py-2 border-t border-gray-100 dark:border-gray-700 mt-2 !z-50">
         {menuItems.map((item, index) => (
           <Link
             key={index}
@@ -508,8 +511,17 @@ const SubNavigation = () => {
     { label: "Birthday Planning", href: "/events/birthday", icon: CakeSlice },
   ];
 
+  const blogLinks = [
+    { label: "Wedding Blogs",     href: "/about/blogs?category=wedding",      icon: Heart },
+    { label: "Anniversary Blogs", href: "/about/blogs?category=anniversary",   icon: Star },
+    { label: "Birthday Blogs",    href: "/about/blogs?category=birthday",      icon: CakeSlice },
+    { label: "Corporate Blogs",   href: "/about/blogs?category=corporate",     icon: Building2 },
+    { label: "Planning Tips",     href: "/about/blogs?category=planning-tips", icon: FileText },
+    { label: "All Blogs",         href: "/about/blogs",                        icon: Images },
+  ];
+
   return (
-    <div className="relative w-full">
+    <div className="relative w-full !z-50">
       <div className="flex items-center justify-between pb-1">
         {/* Left group: All */}
         <div className="flex items-center">
@@ -578,17 +590,45 @@ const SubNavigation = () => {
             </AnimatePresence>
           </div>
 
-          {/* Blogs — no dropdown */}
-          <Link
-            href="/about/blogs"
-            onMouseEnter={() => {
-              if (timeoutRef.current) clearTimeout(timeoutRef.current);
-              setActiveDropdown(null);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200"
-          >
-            <span>Blogs</span>
-          </Link>
+          {/* Blogs */}
+          <div onMouseEnter={() => open("blogs")} onMouseLeave={close} className="relative">
+            <button className={navBtnClass("blogs")}>
+              <span>Blogs</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  activeDropdown === "blogs" ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {activeDropdown === "blogs" && (
+                <motion.div
+                  key="blogs"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  onMouseEnter={() => open("blogs")}
+                  onMouseLeave={close}
+                  className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xl shadow-black/6 dark:shadow-black/30 z-50 py-2"
+                >
+                  {blogLinks.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 group"
+                    >
+                      <item.icon className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-200">
+                        {item.label}
+                      </span>
+                    </Link>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Planning */}
           <div onMouseEnter={() => open("planning")} onMouseLeave={close} className="relative">
@@ -1086,6 +1126,83 @@ const categories = [
   { name: "Birthday", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430838/BirthdayCat_adjjnh.png" },
 ];
 
+const LOGO_SEGMENTS = [
+  { key: "plan", text: "plan", tooltip: "Event Planning & Marketplace", alignLeft: true },
+  { key: "W",    text: "W",    tooltip: "Wedding",     alignLeft: false },
+  { key: "A",    text: "A",    tooltip: "Anniversary", alignLeft: false },
+  { key: "B",    text: "B",    tooltip: "Birthday",    alignLeft: false },
+];
+
+const SEGMENT_HOVER_COLOR = {
+  W: "text-rose-500   dark:text-rose-400",
+  A: "text-emerald-500 dark:text-emerald-400",
+  B: "text-violet-500 dark:text-violet-400",
+};
+
+function LogoText({ logoHovered }) {
+  const [hoveredSegment, setHoveredSegment] = useState(null);
+
+  return (
+    <span
+      className={`text-2xl font-bold tracking-tight inline-flex transition-all duration-400 ease-out ${
+        logoHovered ? "scale-105" : ""
+      }`}
+    >
+      {LOGO_SEGMENTS.map((seg) => {
+        const isHov = hoveredSegment === seg.key;
+        const hoverColor = SEGMENT_HOVER_COLOR[seg.key];
+
+        return (
+          <span
+            key={seg.key}
+            className="relative inline-block"
+            onMouseEnter={() => setHoveredSegment(seg.key)}
+            onMouseLeave={() => setHoveredSegment(null)}
+          >
+            {/* Letter */}
+            <span
+              className={`transition-colors duration-200 ${
+                isHov && hoverColor
+                  ? hoverColor
+                  : "text-[#f59e0b] dark:text-slate-200"
+              }`}
+            >
+              {seg.text}
+            </span>
+
+            {/* Tooltip */}
+            <AnimatePresence>
+              {isHov && (
+                <motion.div
+                  key={`tip-${seg.key}`}
+                  initial={{ opacity: 0, y: 6, scale: 0.88 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.88 }}
+                  transition={{ type: "spring", stiffness: 480, damping: 26 }}
+                  className={`absolute top-full mt-2.5 z-[200] pointer-events-none ${
+                    seg.alignLeft ? "left-0" : "left-1/2 -translate-x-1/2"
+                  }`}
+                >
+                  {/* Arrow */}
+                  <div
+                    className={`absolute -top-[5px] w-2.5 h-2.5 bg-gray-900 dark:bg-white rotate-45 rounded-[2px] ${
+                      seg.alignLeft ? "left-3" : "left-1/2 -translate-x-1/2"
+                    }`}
+                  />
+                  {/* Bubble */}
+                  <div className="relative bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[11px] font-semibold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl">
+                    {seg.tooltip}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export default function DesktopHeader() {
   const { setActiveCategory } = useCategoryStore();
   const { theme, setTheme } = useTheme();
@@ -1096,7 +1213,8 @@ export default function DesktopHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const isHomePage = pathname === "/";
+  const isHomePage = pathname === "/" || pathname.startsWith("/ideas") || pathname.startsWith("/about/blogs");
+  const isMarketplace = pathname.startsWith("/vendors/marketplace");
 
   const plannerRef = useRef(null);
   const locationRef = useRef(null);
@@ -1207,12 +1325,7 @@ export default function DesktopHeader() {
                     }}
                   />
                 </div>
-                <span
-                  className={`text-2xl font-bold tracking-tight transition-all duration-400 ease-out bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-[#f59e0b] dark:text-transparent ${isHovered ? "scale-105" : ""
-                    }`}
-                >
-                  planWAB
-                </span>
+                <LogoText logoHovered={isHovered} />
               </Link>
             </div>
 
@@ -1317,7 +1430,7 @@ export default function DesktopHeader() {
 
           {/* ── Row 2: Sub-navigation (homepage only, desktop only) ── */}
           <AnimatePresence>
-            {isHomePage && (
+            {!isMarketplace && isHomePage && (
               <motion.div
                 key="subnav"
                 initial={{ opacity: 0, height: 0 }}

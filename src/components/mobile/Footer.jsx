@@ -16,8 +16,14 @@ const SECTIONS = [
         <Link href="/about" className="hover:text-[#C33765] transition-colors">
           About Us
         </Link>
+        <Link href="/ideas" className="hover:text-[#C33765] transition-colors">
+          Ideas & Inspiration
+        </Link>
         <Link href="/vendors/marketplace" className="hover:text-[#C33765] transition-colors">
           Explore Vendors
+        </Link>
+        <Link href="/vendors/explore/events" className="hover:text-[#C33765] transition-colors">
+          Wedding Vendors
         </Link>
         <Link href="/vendor/onboarding" className="hover:text-[#C33765] transition-colors">
           List Your Business
@@ -140,6 +146,195 @@ const SECTIONS = [
   },
 ];
 
+const SeoFooterLinks = () => {
+  const [open, setOpen] = useState(null);
+
+  const toggle = (section) => {
+    setOpen(open === section ? null : section);
+  };
+
+  const BASE_URL =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://planwab.com";
+
+  // Vendor Data
+  const categories = [
+    { id: "venues", label: "Wedding Venues" },
+    { id: "photographers", label: "Wedding Photographers" },
+    { id: "catering", label: "Caterers" },
+    { id: "makeup", label: "Makeup Artists" },
+    { id: "mehendi", label: "Mehendi Artists" },
+    { id: "djs", label: "DJs & Music" },
+    { id: "planners", label: "Event Planners" },
+    { id: "clothes", label: "Wedding Clothing" },
+  ];
+
+  const cities = ["Delhi NCR", "Mumbai", "Jaipur", "Bangalore"];
+
+  // Ideas Data
+  const ideaEvents = [
+    { id: "wedding", label: "Wedding Ideas" },
+    { id: "birthday", label: "Birthday Party Ideas" },
+    { id: "anniversary", label: "Anniversary Ideas" },
+    { id: "corporate", label: "Corporate Event Ideas" },
+  ];
+
+  const ideaCategories = [
+    { id: "venues", label: "Venue & Mandap Ideas" },
+    { id: "decor", label: "Wedding Decor Ideas" },
+    { id: "makeup", label: "Bridal Makeup Looks" },
+    { id: "clothes", label: "Bridal Lehenga & Outfits" },
+    { id: "photographers", label: "Photography & Poses" },
+    { id: "mehendi", label: "Latest Mehendi Designs" },
+  ];
+
+  const ideaMoments = [
+    { id: "haldi", label: "Haldi Ceremony Ideas" },
+    { id: "mehendi", label: "Mehendi Function Ideas" },
+    { id: "sangeet", label: "Sangeet Dance & Decor" },
+    { id: "baraat", label: "Baraat & Groom Entry" },
+    { id: "reception", label: "Reception Party Ideas" },
+    { id: "destination", label: "Destination Weddings" },
+  ];
+
+  const Section = ({ title, id, children }) => (
+    <div className="border-b border-gray-200 pb-4">
+      <button
+        onClick={() => toggle(id)}
+        className="w-full flex justify-between items-center py-3 text-left"
+      >
+        <span className="text-sm font-semibold text-gray-900 uppercase">
+          {title}
+        </span>
+        <span className="text-gray-500 text-lg">
+          {open === id ? "-" : "+"}
+        </span>
+      </button>
+
+      <div
+        className={`transition-all duration-300 overflow-hidden ${
+          open === id ? "max-h-[500px] mt-3" : "max-h-0"
+        }`}
+      >
+        <div className="flex flex-col gap-3">{children}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mt-2 pt-6 border-t border-gray-200 px-2 w-full">
+      {/* Existing: Category Links */}
+      <Section title="Browse Vendors by Category" id="cat">
+        {categories.map((cat) => (
+          <a
+            key={cat.id}
+            href={`${BASE_URL}/vendors/marketplace/${cat.id}`}
+            className="text-sm text-gray-600 hover:text-[#C33765]"
+          >
+            {cat.label}
+          </a>
+        ))}
+      </Section>
+
+      {/* Existing: City + Category SEO Links */}
+      <Section title="Vendors by City" id="city">
+        {categories.map((cat) =>
+          cities.map((city) => (
+            <a
+              key={`${cat.id}-${city}`}
+              href={`${BASE_URL}/vendors/marketplace/${cat.id}?cities=${city.replace(
+                " ",
+                "+"
+              )}`}
+              className="text-sm text-gray-600 hover:text-[#C33765]"
+            >
+              {cat.label} in {city}
+            </a>
+          ))
+        )}
+      </Section>
+
+      {/* NEW: Ideas & Inspiration by Event */}
+      <Section title="Event Ideas & Inspiration" id="idea-events">
+        {ideaEvents.map((event) => (
+          <a
+            key={event.id}
+            href={`${BASE_URL}/ideas?type=${event.id}`}
+            className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+          >
+            {event.label}
+          </a>
+        ))}
+      </Section>
+
+      {/* NEW: Wedding Ideas by Category */}
+      <Section title="Trending Wedding Categories" id="idea-categories">
+        {ideaCategories.map((cat) => (
+          <a
+            key={cat.id}
+            href={`${BASE_URL}/ideas?type=wedding&category=${cat.id}`}
+            className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+          >
+            {cat.label}
+          </a>
+        ))}
+      </Section>
+
+      {/* NEW: Wedding Ideas by Moments/Functions */}
+      <Section title="Wedding Ceremony Ideas" id="idea-moments">
+        {ideaMoments.map((moment) => (
+          <a
+            key={moment.id}
+            href={`${BASE_URL}/ideas?type=wedding&subType=${moment.id}`}
+            className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
+          >
+            {moment.label}
+          </a>
+        ))}
+      </Section>
+
+      {/* Existing: Filter Based Links */}
+      <Section title="Discover Vendors" id="filters">
+        <a href={`${BASE_URL}/vendors/marketplace?sortBy=price-asc`} className="text-sm text-gray-600">
+          Budget Vendors
+        </a>
+        <a href={`${BASE_URL}/vendors/marketplace?sortBy=price-desc`} className="text-sm text-gray-600">
+          Premium Vendors
+        </a>
+        <a href={`${BASE_URL}/vendors/marketplace?sortBy=bookings`} className="text-sm text-gray-600">
+          Popular Vendors
+        </a>
+        <a href={`${BASE_URL}/vendors/marketplace?sortBy=newest`} className="text-sm text-gray-600">
+          Newly Added Vendors
+        </a>
+        <a href={`${BASE_URL}/vendors/marketplace?sortBy=reviews`} className="text-sm text-gray-600">
+          Most Reviewed Vendors
+        </a>
+        <a href={`${BASE_URL}/vendors/marketplace?maxPrice=50000`} className="text-sm text-gray-600">
+          Vendors Under ₹50,000
+        </a>
+        <a href={`${BASE_URL}/vendors/marketplace?minRating=4`} className="text-sm text-gray-600">
+          Top Rated Vendors (4★+)
+        </a>
+      </Section>
+
+      {/* Existing: Event Links */}
+      <Section title="Explore Events" id="events">
+        {["wedding", "birthday", "anniversary", "corporate"].map((event) => (
+          <a
+            key={event}
+            href={`${BASE_URL}/events/${event}`}
+            className="text-sm text-gray-600 hover:text-[#C33765]"
+          >
+            {event.charAt(0).toUpperCase() + event.slice(1)} Planning
+          </a>
+        ))}
+      </Section>
+    </div>
+  );
+};
+
 const Footer = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -221,6 +416,7 @@ const Footer = () => {
               {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           </div>
+          <SeoFooterLinks />
         </div>
       </div>
     </section>

@@ -57,6 +57,19 @@ const CATEGORIES = [
   { id: "other", name: "Other", icon: Pen },
 ];
 
+const DESKTOP_TOP_OFFSET = 110;
+
+const replaceURLParams = (pathname, params) => {
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== null && v !== undefined && v !== "" && v !== "all" && v !== "newest") {
+      sp.set(k, String(v));
+    }
+  });
+  const qs = sp.toString();
+  window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
+};
+
 const CATEGORY_IMAGES = {
   wedding: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/wedding_cat_eQikY7JCR.png",
   birthday: "https://ik.imagekit.io/nkeo53cqt/planwab/categories/birthday_cat_ZFWlGHwqe.png",
@@ -572,9 +585,16 @@ const BlogPageWrapper = () => {
   const [newsletterMsg, setNewsletterMsg] = useState("");
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+
+  // Read from URL first
+  const urlCategory = searchParams.get("category") || "all";
+  const urlSort = searchParams.get("sort") || "newest";
+  const urlSearch = searchParams.get("search") || "";
+
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
+  const [selectedCategory, setSelectedCategory] = useState(urlCategory);
+  const [sortBy, setSortBy] = useState(urlSort);
+
   const [viewMode, setViewMode] = useState("list");
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [pagination, setPagination] = useState({ totalPages: 1, hasNextPage: false, hasPrevPage: false });
@@ -585,6 +605,32 @@ const BlogPageWrapper = () => {
   const [deletingBlog, setDeletingBlog] = useState(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [toast, setToast] = useState(null);
+
+  const getURLParams = useCallback(() => {
+    const params = {};
+    if (selectedCategory && selectedCategory !== "all") params.category = selectedCategory;
+    if (sortBy && sortBy !== "newest") params.sort = sortBy;
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+    return params;
+  }, [selectedCategory, sortBy, debouncedSearch]);
+
+  const syncURL = useCallback(
+    (extra = {}) => {
+      const params = { ...getURLParams(), ...extra };
+      replaceURLParams(pathname, params);
+    },
+    [getURLParams, pathname]
+  );
+
+  useEffect(() => {
+    syncURL();
+  }, [selectedCategory, sortBy, debouncedSearch, syncURL]);
+
+  useEffect(() => {
+      if (urlCategory !== selectedCategory) setSelectedCategory(urlCategory);
+      if (urlSort !== sortBy) setSortBy(urlSort);
+      if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
+  },[urlCategory, urlSort, urlSearch, pathname]);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });

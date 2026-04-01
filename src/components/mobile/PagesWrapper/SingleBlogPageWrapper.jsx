@@ -161,7 +161,7 @@ export default function MobileSingleBlogPageWrapper() {
   const [interactingAction, setInteractingAction] = useState(null);
 
   useEffect(() => {
-    if (!id || !userLoaded) return;
+    if (!id) return;
     fetchBlogDetails();
   }, [id, userLoaded]);
 

@@ -1,5 +1,3 @@
-// app/api/reels/route.js
-
 import ReelsModel from "../../../database/models/ReelsModel";
 import connectToDatabase from "../../../database/mongoose";
 import { ok, serverError, badRequest } from "../../../lib/apiResponse";
@@ -7,7 +5,6 @@ import { ok, serverError, badRequest } from "../../../lib/apiResponse";
 export async function GET(request) {
   try {
     await connectToDatabase();
-
     const { searchParams } = new URL(request.url);
 
     // ── Pagination ─────────────────────────────────────────────────────
@@ -15,65 +12,52 @@ export async function GET(request) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
     const skip  = (page - 1) * limit;
 
-    // ── Filters ────────────────────────────────────────────────────────
-    const query = {};
+    // ── Base Expiry & Active Filter ────────────────────────────────────
+    const query = {
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: null },
+        { expiresAt: { $gt: new Date() } },
+      ],
+    };
 
+    // ── Dynamic Filters ────────────────────────────────────────────────
+    const isActive    = searchParams.get("isActive");
     const category    = searchParams.get("category");
     const city        = searchParams.get("city");
-    const language    = searchParams.get("language");
-    const isFeatured  = searchParams.get("isFeatured");
-    const isActive    = searchParams.get("isActive");
-    const isSponsored = searchParams.get("isSponsored");
-    const isPinned    = searchParams.get("isPinned");
+    const type        = searchParams.get("type");
+    const subtype     = searchParams.get("subtype") || searchParams.get("subType"); // Map frontend to DB
+    const nestedType  = searchParams.get("nestedType");
     const tag         = searchParams.get("tag");
     const hashtag     = searchParams.get("hashtag");
-    const search      = searchParams.get("search");
     const minPriority = searchParams.get("minPriority");
-    const type        = searchParams.get("type");
-    const subtype     = searchParams.get("subtype");
-    const nestedType  = searchParams.get("nestedType");
+    const isFeatured  = searchParams.get("isFeatured");
+    const isSponsored = searchParams.get("isSponsored");
+    const isPinned    = searchParams.get("isPinned");
+
+    query.isActive = isActive !== "false"; // Default to true unless explicitly false
 
     if (category)   query.category   = category;
-    if (city)       query.city       = new RegExp(city, "i");
-    if (language)   query.language   = language;
+    if (city)       query.city       = new RegExp(`^${city}$`, "i"); // Case-insensitive exact match
     if (type)       query.type       = type;
-    if (subtype)    query.subtype    = subtype;
+    if (subtype)    query.subType    = subtype; // NOTE: DB schema uses subType
     if (nestedType) query.nestedType = nestedType;
 
-    if (isFeatured !== null && isFeatured !== undefined)
-      query.isFeatured = isFeatured === "true";
-    if (isActive !== null && isActive !== undefined)
-      query.isActive = isActive === "true";
-    else
-      query.isActive = true;
-    if (isSponsored !== null && isSponsored !== undefined)
-      query.isSponsored = isSponsored === "true";
-    if (isPinned !== null && isPinned !== undefined)
-      query.isPinned = isPinned === "true";
-    if (tag)     query.tags     = { $in: [tag.toLowerCase()] };
-    if (hashtag) query.hashtags = { $in: [hashtag] };
+    if (isFeatured !== null)  query.isFeatured  = isFeatured === "true";
+    if (isSponsored !== null) query.isSponsored = isSponsored === "true";
+    if (isPinned !== null)    query.isPinned    = isPinned === "true";
+    
+    // Tag and Hashtag arrays
+    if (tag)     query.tags     = { $regex: new RegExp(`^${tag}$`, "i") };
+    if (hashtag) query.hashtags = { $regex: new RegExp(`^${hashtag}$`, "i") };
+    
+    // Rating / Priority
     if (minPriority) query.priority = { $gte: parseInt(minPriority) };
-
-    // Text search
-    if (search?.trim()) {
-      query.$text = { $search: search.trim() };
-    }
-
-    // Expiry filter
-    query.$or = [
-      { expiresAt: { $exists: false } },
-      { expiresAt: null },
-      { expiresAt: { $gt: new Date() } },
-    ];
 
     // ── Sort ───────────────────────────────────────────────────────────
     const sortField = searchParams.get("sortBy") || "priority";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
-
-    const allowedSortFields = [
-      "priority", "createdAt", "updatedAt", "publishedAt",
-      "viewCount", "likeCount", "shareCount", "title",
-    ];
+    const allowedSortFields = ["priority", "createdAt", "publishedAt", "viewCount", "likeCount"];
     const sort = {
       [allowedSortFields.includes(sortField) ? sortField : "priority"]: sortOrder,
       createdAt: -1,

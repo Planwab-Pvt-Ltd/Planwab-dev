@@ -56,32 +56,46 @@ import {
   Diamond,
   Info,
   Headphones,
-  Hash,
-  Clock,
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ShareModal } from "./VendorProfilePageWrapper";
 import { useUser } from "@clerk/nextjs";
 import SmartMedia from "../SmartMediaLoader";
+import { useNavigationState } from "../../../hooks/useNavigationState";
 
-const DESKTOP_TOP_OFFSET = 77;
+const DESKTOP_TOP_OFFSET = 110;
 
+// --- HIERARCHY: category -> subcategory ---
 const EVENT_CONFIGS = {
   wedding: {
     type: "wedding",
-    subtypes: [
+    // HIERARCHY: subType (Quick Filters / Moments)
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "roka", label: "Roka" },
+      { id: "haldi", label: "Haldi" },
+      { id: "mehendi", label: "Mehendi" },
+      { id: "sangeet", label: "Sangeet" },
+      { id: "baraat", label: "Baraat" },
+      { id: "pheras", label: "Pheras" },
+      { id: "reception", label: "Reception" },
+      { id: "vidaai", label: "Vidaai" },
+      { id: "cocktail", label: "Cocktail" },
+      { id: "engagement", label: "Engagement" },
+      { id: "destination", label: "Destination" },
+    ],
+    categories: [
       {
-        id: "wedding-planners",
+        id: "planners",
         label: "Planners",
         icon: <Lightbulb size={18} />,
         gradient: "from-sky-400 to-blue-500",
-        nestedTypes: [
+        subcategories: [
           { id: "full-planning", label: "Full Planning" },
           { id: "partial-planning", label: "Partial Planning" },
           { id: "day-coordination", label: "Day-of Coordination" },
           { id: "destination-planner", label: "Destination" },
           { id: "luxury-planner", label: "Luxury" },
-          { id: "budget-planner", label: "Budget" },
         ],
       },
       {
@@ -89,27 +103,25 @@ const EVENT_CONFIGS = {
         label: "Venues",
         icon: <Building2 size={18} />,
         gradient: "from-slate-400 to-gray-500",
-        nestedTypes: [
+        subcategories: [
           { id: "banquet-halls", label: "Banquet Halls" },
           { id: "farmhouses", label: "Farmhouses" },
           { id: "hotels-resorts", label: "Hotels & Resorts" },
-          { id: "destination-venues", label: "Destination" },
           { id: "outdoor-lawns", label: "Outdoor Lawns" },
           { id: "beach-weddings", label: "Beach" },
         ],
       },
       {
-        id: "decorators",
+        id: "decor",
         label: "Decor",
         icon: <Palette size={18} />,
         gradient: "from-teal-400 to-cyan-500",
-        nestedTypes: [
-          { id: "haldi-decor", label: "Haldi Decor" },
-          { id: "mehendi-decor", label: "Mehendi Decor" },
-          { id: "stage-decor", label: "Stage Decor" },
-          { id: "reception-decor", label: "Reception" },
+        subcategories: [
           { id: "floral-decor", label: "Floral" },
           { id: "theme-decor", label: "Theme Decor" },
+          { id: "stage-decor", label: "Stage Decor" },
+          { id: "haldi-decor", label: "Haldi Decor" },
+          { id: "mehendi-decor", label: "Mehendi Decor" },
         ],
       },
       {
@@ -117,220 +129,157 @@ const EVENT_CONFIGS = {
         label: "Photo & Video",
         icon: <Camera size={18} />,
         gradient: "from-pink-400 to-rose-500",
-        nestedTypes: [
+        subcategories: [
           { id: "candid-photography", label: "Candid" },
           { id: "traditional-photography", label: "Traditional" },
           { id: "cinematic-films", label: "Cinematic Films" },
           { id: "drone-shoots", label: "Drone Shoots" },
           { id: "pre-wedding-shoots", label: "Pre-Wedding" },
-          { id: "destination-shoots", label: "Destination" },
         ],
       },
       {
-        id: "makeup-artists",
+        id: "makeup",
         label: "Makeup",
         icon: <Gem size={18} />,
         gradient: "from-fuchsia-400 to-pink-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-makeup", label: "Bridal" },
           { id: "hd-makeup", label: "HD Makeup" },
           { id: "airbrush-makeup", label: "Airbrush" },
           { id: "party-makeup", label: "Party" },
-          { id: "celebrity-mua", label: "Celebrity MUA" },
         ],
       },
       {
-        id: "mehendi-artists",
+        id: "mehendi",
         label: "Mehendi",
         icon: <Flower2 size={18} />,
         gradient: "from-green-400 to-emerald-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-mehendi", label: "Bridal" },
           { id: "arabic-mehendi", label: "Arabic" },
-          { id: "traditional-mehendi", label: "Traditional" },
           { id: "indo-arabic", label: "Indo-Arabic" },
           { id: "minimal-mehendi", label: "Minimal" },
         ],
       },
       {
-        id: "caterers",
+        id: "catering",
         label: "Catering",
         icon: <Utensils size={18} />,
         gradient: "from-red-400 to-orange-500",
-        nestedTypes: [
+        subcategories: [
           { id: "north-indian", label: "North Indian" },
           { id: "south-indian", label: "South Indian" },
           { id: "multi-cuisine", label: "Multi-Cuisine" },
           { id: "live-counters", label: "Live Counters" },
-          { id: "luxury-catering", label: "Luxury" },
-          { id: "budget-catering", label: "Budget" },
         ],
       },
       {
-        id: "bridal-groom-wear",
+        id: "clothes",
         label: "Outfits",
         icon: <Shirt size={18} />,
         gradient: "from-violet-400 to-indigo-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-lehenga", label: "Bridal Lehenga" },
           { id: "designer-wear", label: "Designer Wear" },
           { id: "rental-wear", label: "Rental Wear" },
           { id: "groom-sherwani", label: "Groom Sherwani" },
-          { id: "custom-designers", label: "Custom Designers" },
         ],
       },
       {
-        id: "jewelry",
+        id: "jewellery",
         label: "Jewelry",
         icon: <Diamond size={18} />,
         gradient: "from-amber-400 to-yellow-500",
-        nestedTypes: [
+        subcategories: [
           { id: "bridal-jewelry", label: "Bridal" },
           { id: "artificial-jewelry", label: "Artificial" },
           { id: "gold-jewelry", label: "Gold" },
           { id: "diamond-jewelry", label: "Diamond" },
-          { id: "rental-jewelry", label: "Rental" },
         ],
       },
       {
-        id: "entertainment",
+        id: "djs",
         label: "Entertainment",
         icon: <Music size={18} />,
         gradient: "from-indigo-400 to-purple-500",
-        nestedTypes: [
+        subcategories: [
           { id: "djs", label: "DJs" },
           { id: "live-bands", label: "Live Bands" },
           { id: "anchors-emcees", label: "Anchors / Emcees" },
-          { id: "dancers-choreographers", label: "Dancers" },
-          { id: "celebrity-performers", label: "Celebrity" },
-        ],
-      },
-      {
-        id: "invitations",
-        label: "Invites",
-        icon: <Mail size={18} />,
-        gradient: "from-orange-400 to-rose-500",
-        nestedTypes: [
-          { id: "printed-cards", label: "Printed Cards" },
-          { id: "digital-invitations", label: "Digital" },
-          { id: "video-invitations", label: "Video" },
-          { id: "luxury-invitations", label: "Luxury" },
-          { id: "eco-friendly-cards", label: "Eco-Friendly" },
-        ],
-      },
-      {
-        id: "transportation-baraat",
-        label: "Transport",
-        icon: <Car size={18} />,
-        gradient: "from-blue-400 to-sky-500",
-        nestedTypes: [
-          { id: "luxury-cars", label: "Luxury Cars" },
-          { id: "vintage-cars", label: "Vintage Cars" },
-          { id: "baraat-ghodi", label: "Baraat Ghodi" },
-          { id: "band-baja", label: "Band Baja" },
-          { id: "guest-transport", label: "Guest Transport" },
-        ],
-      },
-      {
-        id: "pre-wedding",
-        label: "Pre-Wedding",
-        icon: <HeartHandshake size={18} />,
-        gradient: "from-rose-400 to-pink-500",
-        nestedTypes: [
-          { id: "pre-wedding-shoots-svc", label: "Shoots" },
-          { id: "couple-styling", label: "Couple Styling" },
-          { id: "proposal-planning", label: "Proposal" },
-          { id: "pre-wedding-events", label: "Events Planning" },
-          { id: "save-the-date", label: "Save-the-Date" },
-        ],
-      },
-      {
-        id: "honeymoon",
-        label: "Honeymoon",
-        icon: <Plane size={18} />,
-        gradient: "from-cyan-400 to-blue-500",
-        nestedTypes: [
-          { id: "domestic-honeymoon", label: "Domestic" },
-          { id: "international-honeymoon", label: "International" },
-          { id: "luxury-packages", label: "Luxury" },
-          { id: "budget-trips", label: "Budget" },
-          { id: "adventure-honeymoon", label: "Adventure" },
+          { id: "dancers", label: "Dancers" },
         ],
       },
     ],
   },
   birthday: {
     type: "birthday",
-    subtypes: [
-      { id: "kids", label: "Kids Party", icon: <Baby size={18} />, gradient: "from-pink-400 to-rose-500" },
-      {
-        id: "theme",
-        label: "Theme Party",
-        icon: <PartyPopper size={18} />,
-        gradient: "from-violet-400 to-purple-500",
-        nestedTypes: [
-          { id: "bollywood-theme", label: "Bollywood Night" },
-          { id: "retro-theme", label: "Retro Theme" },
-          { id: "pool-theme", label: "Pool Party" },
-          { id: "neon-theme", label: "Neon Party" },
-        ],
-      },
-      { id: "cake", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-orange-500" },
-      { id: "b-decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
-      { id: "b-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
-      { id: "b-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-rose-400 to-pink-500" },
-      { id: "b-dj", label: "DJ & Music", icon: <Music size={18} />, gradient: "from-purple-400 to-violet-500" },
-      { id: "b-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
-      { id: "entertainer", label: "Acts", icon: <Crown size={18} />, gradient: "from-yellow-400 to-amber-500" },
-      { id: "b-gift", label: "Gifts", icon: <Gift size={18} />, gradient: "from-green-400 to-emerald-500" },
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "kids-party", label: "Kids Party" },
+      { id: "theme-party", label: "Theme Party" },
+      { id: "surprise-party", label: "Surprise" },
+      { id: "milestone", label: "Milestone" },
+      { id: "sweet-16", label: "Sweet 16" },
+    ],
+    categories: [
+      { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
+      { id: "decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
+      { id: "cakes", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-orange-500" },
+      { id: "photographers", label: "Photo", icon: <Camera size={18} />, gradient: "from-rose-400 to-pink-500" },
+      { id: "djs", label: "DJ & Music", icon: <Music size={18} />, gradient: "from-purple-400 to-violet-500" },
+      { id: "catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
+      { id: "planners", label: "Planners", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
     ],
   },
   anniversary: {
     type: "anniversary",
-    subtypes: [
-      { id: "surprise", label: "Surprise", icon: <Gift size={18} />, gradient: "from-pink-400 to-fuchsia-500" },
-      { id: "dinner", label: "Dinner", icon: <Utensils size={18} />, gradient: "from-red-400 to-rose-500" },
-      { id: "a-decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
-      { id: "a-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-violet-400 to-purple-500" },
-      { id: "a-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
-      { id: "a-music", label: "Music", icon: <Music size={18} />, gradient: "from-orange-400 to-amber-500" },
-      { id: "a-cake", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-yellow-500" },
-      { id: "a-gift", label: "Gifts", icon: <Gift size={18} />, gradient: "from-green-400 to-emerald-500" },
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "silver-jubilee", label: "Silver Jubilee" },
+      { id: "golden-jubilee", label: "Golden Jubilee" },
+      { id: "surprise", label: "Surprise" },
+      { id: "intimate", label: "Intimate" },
+      { id: "vow-renewal", label: "Vow Renewal" },
+    ],
+    categories: [
+      { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-blue-400 to-indigo-500" },
+      { id: "decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
+      { id: "photographers", label: "Photo", icon: <Camera size={18} />, gradient: "from-violet-400 to-purple-500" },
+      { id: "catering", label: "Dining", icon: <Utensils size={18} />, gradient: "from-red-400 to-rose-500" },
+      { id: "cakes", label: "Cakes", icon: <Cake size={18} />, gradient: "from-amber-400 to-yellow-500" },
+      { id: "planners", label: "Planners", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
     ],
   },
   corporate: {
     type: "corporate",
-    subtypes: [
-      { id: "conference", label: "Conference", icon: <Users size={18} />, gradient: "from-blue-400 to-indigo-500" },
+    quickFilters: [
+      { id: "all", label: "All" },
+      { id: "conference", label: "Conference" },
+      { id: "seminar", label: "Seminar" },
+      { id: "offsite", label: "Offsite" },
+      { id: "product-launch", label: "Product Launch" },
+      { id: "gala", label: "Gala" },
+      { id: "holiday-party", label: "Holiday Party" },
+    ],
+    categories: [
+      { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
+      { id: "planners", label: "Planners", icon: <Lightbulb size={18} />, gradient: "from-blue-400 to-indigo-500" },
+      { id: "catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-green-400 to-emerald-500" },
       {
-        id: "team-building",
-        label: "Team Build",
-        icon: <Trophy size={18} />,
-        gradient: "from-amber-400 to-orange-500",
+        id: "decor",
+        label: "Production & Decor",
+        icon: <Palette size={18} />,
+        gradient: "from-violet-400 to-purple-500",
       },
-      { id: "launch", label: "Launch", icon: <Megaphone size={18} />, gradient: "from-red-400 to-rose-500" },
-      { id: "c-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
-      { id: "c-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-green-400 to-emerald-500" },
-      { id: "c-av", label: "AV & Tech", icon: <Lightbulb size={18} />, gradient: "from-violet-400 to-purple-500" },
-      { id: "c-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-pink-400 to-rose-500" },
-      { id: "seminar", label: "Seminars", icon: <GraduationCap size={18} />, gradient: "from-cyan-400 to-teal-500" },
+      {
+        id: "photographers",
+        label: "Photo & Video",
+        icon: <Camera size={18} />,
+        gradient: "from-pink-400 to-rose-500",
+      },
     ],
   },
 };
-
-const WEDDING_QUICK_FILTERS = [
-  { id: "all", label: "All" },
-  { id: "baraat", label: "Baraat" },
-  { id: "sangeet", label: "Sangeet" },
-  { id: "haldi", label: "Haldi" },
-  { id: "mehendi", label: "Mehendi" },
-  { id: "reception", label: "Reception" },
-  { id: "pheras", label: "Pheras" },
-  { id: "engagement", label: "Engagement" },
-  { id: "cocktail", label: "Cocktail" },
-  { id: "vidaai", label: "Vidaai" },
-  { id: "destination", label: "Destination" },
-];
 
 const OTHER_EVENT_TYPES = [
   { id: "engagement", label: "Engagement" },
@@ -347,31 +296,26 @@ const OTHER_EVENT_TYPES = [
 
 const getDefaultConfigForOther = (eventId) => ({
   type: eventId,
-  subtypes: [
-    { id: "o-planner", label: "Planner", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
-    { id: "o-decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
-    { id: "o-photo", label: "Photo", icon: <Camera size={18} />, gradient: "from-pink-400 to-rose-500" },
-    { id: "o-catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
-    { id: "o-venue", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
-    { id: "o-music", label: "Music", icon: <Music size={18} />, gradient: "from-purple-400 to-violet-500" },
+  quickFilters: [{ id: "all", label: "All" }],
+  categories: [
+    { id: "planners", label: "Planner", icon: <Lightbulb size={18} />, gradient: "from-sky-400 to-blue-500" },
+    { id: "decor", label: "Decor", icon: <Palette size={18} />, gradient: "from-teal-400 to-cyan-500" },
+    { id: "photographers", label: "Photo", icon: <Camera size={18} />, gradient: "from-pink-400 to-rose-500" },
+    { id: "catering", label: "Catering", icon: <Utensils size={18} />, gradient: "from-red-400 to-orange-500" },
+    { id: "venues", label: "Venues", icon: <Building2 size={18} />, gradient: "from-slate-400 to-gray-500" },
   ],
 });
 
-const WEDDING_SECTION_HEADINGS = [
-  "Trending Wedding Vendors Near You",
-  "Most Booked Wedding Planners",
-  "Trending Wedding Photographers",
-  "Top Bridal Makeup Artists in Your City",
-  "Popular Wedding Venues Near You",
-  "Stunning Wedding Decor Ideas & Experts",
-  "Most Loved Caterers (Top Rated)",
-  "Best DJs & Entertainment for Weddings",
-  "Trending Bridal & Groom Wear Designers",
-  "Premium & Luxury Wedding Services",
-  "Budget-Friendly Wedding Vendors",
-  "Viral Wedding Reels (Must Watch)",
-  "Couples' Favorite Picks",
-  "Destination Wedding Specialists",
+const EVENT_SECTION_HEADINGS = [
+  "Trending Vendors Near You",
+  "Most Booked Experts",
+  "Trending Inspiration",
+  "Top Rated in Your City",
+  "Popular Venues Near You",
+  "Stunning Decor Ideas",
+  "Most Loved Services",
+  "Viral Reels (Must Watch)",
+  "Users' Favorite Picks",
   "Perfect Matches For You",
 ];
 
@@ -452,7 +396,7 @@ const recordView = async (reelId) => {
 
 const toggleLike = async (reelId, action) => {
   try {
-    const [res, res2] = await Promise.all([
+    const [res] = await Promise.all([
       fetch(`/api/reels/${reelId}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -464,21 +408,16 @@ const toggleLike = async (reelId, action) => {
         body: JSON.stringify({ reelId }),
       }),
     ]);
-
-    console.log({ res, res2 });
-
     if (!res.ok) throw new Error("Like API failed");
-
     return await res.json();
   } catch (err) {
-    console.error("toggleLike error:", err);
     return null;
   }
 };
 
 const toggleSave = async (reelId, action) => {
   try {
-    const [res, res2] = await Promise.all([
+    const [res] = await Promise.all([
       fetch(`/api/reels/${reelId}/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -490,14 +429,9 @@ const toggleSave = async (reelId, action) => {
         body: JSON.stringify({ reelId }),
       }),
     ]);
-
-    console.log({ res, res2 });
-
     if (!res.ok) throw new Error("Save API failed");
-
     return await res.json();
   } catch (err) {
-    console.error("toggleSave error:", err);
     return null;
   }
 };
@@ -535,7 +469,7 @@ const normalizeReel = (reel) => ({
   description: reel.description || "",
   category: reel.category || "",
   type: reel.type || "",
-  subtype: reel.subtype || "",
+  subType: reel.subType || reel.subtype || "",
   nestedType: reel.nestedType || "",
   viewCount: reel.viewCount || 0,
   likeCount: reel.likeCount || 0,
@@ -632,18 +566,17 @@ const FullPageSkeleton = () => (
 const DesktopSidebar = ({
   config,
   eventLabel,
-  activeSubtype,
-  activeNested,
-  onSubtypeClick,
-  onNestedClick,
+  activeCategory,
+  activeSubcategory,
+  onCategoryClick,
+  onSubcategoryClick,
   onChangeEvent,
-  weddingQuickFilter,
-  onWeddingQuickFilterClick,
-  isWeddingType,
+  activeSubType,
+  onSubTypeClick,
 }) => (
   <aside
     style={{ top: DESKTOP_TOP_OFFSET, height: `calc(100vh - ${DESKTOP_TOP_OFFSET}px)` }}
-    className="w-[256px] xl:w-[272px] 2xl:w-[288px] border-r border-rose-100/60 dark:border-stone-800 bg-white dark:bg-stone-950 sticky overflow-y-auto no-scrollbar"
+    className="w-[256px] xl:w-[272px] 2xl:w-[288px] border-r border-rose-100/60 dark:border-stone-800 bg-white dark:bg-stone-950 sticky overflow-y-auto"
   >
     <div className="p-4 xl:p-5 border-b border-rose-100/50 dark:border-stone-800">
       <button onClick={onChangeEvent} className="w-full text-left group">
@@ -663,15 +596,19 @@ const DesktopSidebar = ({
       </button>
     </div>
 
-    {isWeddingType && (
+    {config.quickFilters && config.quickFilters.length > 0 && (
       <div className="p-4 xl:p-5 border-b border-rose-100/50 dark:border-stone-800">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Wedding Moments</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Moments & Styles</p>
         <div className="flex flex-wrap gap-1.5">
-          {WEDDING_QUICK_FILTERS.map((f) => (
+          {config.quickFilters.map((f) => (
             <button
               key={f.id}
-              onClick={() => onWeddingQuickFilterClick(f.id)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${weddingQuickFilter === f.id ? "bg-rose-500 text-white shadow-sm" : "bg-rose-50/60 dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:bg-rose-100 dark:hover:bg-stone-800"}`}
+              onClick={() => onSubTypeClick(f.id)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                activeSubType === f.id
+                  ? "bg-rose-500 text-white shadow-sm"
+                  : "bg-rose-50/60 dark:bg-stone-900 text-stone-500 dark:text-stone-400 hover:bg-rose-100 dark:hover:bg-stone-800"
+              }`}
             >
               {f.label}
             </button>
@@ -684,37 +621,50 @@ const DesktopSidebar = ({
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Categories</p>
       <div className="space-y-0.5">
         <button
-          onClick={() => onSubtypeClick(null)}
-          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${!activeSubtype ? "bg-rose-500 text-white shadow-sm" : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"}`}
+          onClick={() => onCategoryClick(null)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${
+            !activeCategory
+              ? "bg-rose-500 text-white shadow-sm"
+              : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"
+          }`}
         >
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${!activeSubtype ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"}`}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+              !activeCategory ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"
+            }`}
           >
-            <Sparkles size={14} className={!activeSubtype ? "text-white" : "text-stone-400"} />
+            <Sparkles size={14} className={!activeCategory ? "text-white" : "text-stone-400"} />
           </div>
           <span className="font-semibold text-[13px]">All</span>
         </button>
-        {config.subtypes.map((subtype) => {
-          const isActive = activeSubtype === subtype.id;
+
+        {config.categories.map((category) => {
+          const isActive = activeCategory === category.id;
           return (
-            <div key={subtype.id}>
+            <div key={category.id}>
               <button
-                onClick={() => onSubtypeClick(subtype.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${isActive ? "bg-rose-50 dark:bg-stone-900 text-rose-700 dark:text-rose-300" : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"}`}
+                onClick={() => onCategoryClick(category.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left ${
+                  isActive
+                    ? "bg-rose-50 dark:bg-stone-900 text-rose-700 dark:text-rose-300"
+                    : "text-stone-600 dark:text-stone-400 hover:bg-rose-50/50 dark:hover:bg-stone-900"
+                }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-rose-100 dark:bg-stone-800" : "bg-stone-100/80 dark:bg-stone-800/60"}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    isActive ? "bg-rose-100 dark:bg-stone-800" : "bg-stone-100/80 dark:bg-stone-800/60"
+                  }`}
                 >
                   <span
                     className={isActive ? "text-rose-600 dark:text-rose-300" : "text-stone-400 dark:text-stone-500"}
                   >
-                    {subtype.icon}
+                    {category.icon}
                   </span>
                 </div>
                 <span className={`font-medium text-[13px] flex-1 truncate ${isActive ? "font-semibold" : ""}`}>
-                  {subtype.label}
+                  {category.label}
                 </span>
-                {subtype.nestedTypes && (
+                {category.subcategories && (
                   <ChevronRight
                     size={13}
                     className={`transition-transform shrink-0 ${isActive ? "rotate-90 text-rose-400" : "text-stone-300"}`}
@@ -722,7 +672,7 @@ const DesktopSidebar = ({
                 )}
               </button>
               <AnimatePresence>
-                {isActive && subtype.nestedTypes?.length > 0 && (
+                {isActive && category.subcategories?.length > 0 && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
@@ -731,13 +681,17 @@ const DesktopSidebar = ({
                     className="overflow-hidden"
                   >
                     <div className="pl-[52px] pr-2 pt-1 pb-1 space-y-0.5">
-                      {subtype.nestedTypes.map((nested) => (
+                      {category.subcategories.map((subcat) => (
                         <button
-                          key={nested.id}
-                          onClick={() => onNestedClick(nested.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${activeNested === nested.id ? "bg-rose-500 text-white" : "text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:bg-rose-50/60 dark:hover:bg-stone-800"}`}
+                          key={subcat.id}
+                          onClick={() => onSubcategoryClick(subcat.id)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
+                            activeSubcategory === subcat.id
+                              ? "bg-rose-500 text-white"
+                              : "text-stone-500 dark:text-stone-400 hover:text-rose-600 hover:bg-rose-50/60 dark:hover:bg-stone-800"
+                          }`}
                         >
-                          {nested.label}
+                          {subcat.label}
                         </button>
                       ))}
                     </div>
@@ -752,17 +706,17 @@ const DesktopSidebar = ({
   </aside>
 );
 
-const DesktopHero = ({ eventLabel, activeSubtypeData, activeNested }) => (
-  <div className="rounded-2xl px-6 xl:px-7 py-5 xl:py-6 bg-gradient-to-r from-rose-50/80 via-amber-50/40 to-violet-50/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-900 border border-rose-100/50 dark:border-stone-800 mt-14">
+const DesktopHero = ({ eventLabel, activeCategoryData, activeSubcategory }) => (
+  <div className="rounded-2xl px-6 xl:px-7 py-5 xl:py-6 bg-gradient-to-r from-rose-50/80 via-amber-50/40 to-violet-50/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-900 border border-rose-100/50 dark:border-stone-800 mt-18">
     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/70 dark:bg-stone-800 text-[10px] font-semibold uppercase tracking-[0.1em] text-rose-500 mb-3">
       <Sparkles size={10} /> Curated for you
     </div>
     <h1 className="text-2xl xl:text-[28px] font-bold tracking-tight text-stone-800 dark:text-stone-100">
-      {activeSubtypeData ? activeSubtypeData.label : eventLabel} Ideas
+      {activeCategoryData ? activeCategoryData.label : eventLabel} Ideas
     </h1>
     <p className="mt-1.5 text-stone-500 dark:text-stone-400 text-[13px] max-w-xl leading-relaxed">
-      {activeNested
-        ? `Exploring ${activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || ""} in ${activeSubtypeData?.label || eventLabel}.`
+      {activeSubcategory
+        ? `Exploring ${activeCategoryData?.subcategories?.find((n) => n.id === activeSubcategory)?.label || ""} in ${activeCategoryData?.label || eventLabel}.`
         : `Discover trending vendors, inspiration reels and top picks for your ${eventLabel.toLowerCase()}.`}
     </p>
   </div>
@@ -777,13 +731,11 @@ const ReelCard = ({ item, idx, onClick }) => (
     className="cursor-pointer group"
   >
     <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200/60 dark:ring-stone-700/40 group-hover:ring-rose-300/60 dark:group-hover:ring-rose-500/30 group-hover:shadow-lg group-hover:shadow-rose-100/40 transition-all duration-300">
-      {/* <img
+      <SmartMedia
         src={item.thumbnail}
         alt={item.title}
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        loading="lazy"
-      /> */}
-      <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
       {item.tags?.[0] && (
         <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-white/90 backdrop-blur-sm rounded-md text-[9px] font-semibold uppercase tracking-wide flex items-center gap-1 text-stone-700">
@@ -825,13 +777,11 @@ const FeaturedReelCard = ({ item, idx, onClick }) => (
     className="cursor-pointer group"
   >
     <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 ring-1 ring-rose-200/40 dark:ring-rose-800/30 group-hover:ring-rose-300 dark:group-hover:ring-rose-500/40 group-hover:shadow-xl group-hover:shadow-rose-100/50 transition-all duration-300">
-              {/* <img
-                src={item.thumbnail}
-                alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                loading="lazy"
-              /> */}
-      <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+      <SmartMedia
+        src={item.thumbnail}
+        alt={item.title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-rose-500/5" />
       {item.tags?.[0] && (
         <div className="absolute top-3 left-3 px-2.5 py-1 bg-gradient-to-r from-rose-500 to-pink-500 rounded-lg text-[9px] font-bold uppercase tracking-wide text-white shadow-sm flex items-center gap-1">
@@ -1037,23 +987,32 @@ const SearchModalComponent = ({
                 onClick={() => handleSearchResultClick(result)}
                 className="w-full flex items-center gap-3.5 px-5 py-3 hover:bg-rose-50/50 dark:hover:bg-stone-800 transition-colors text-left"
               >
-                <span className="text-base shrink-0">
-                  {result.type === "reel"
-                    ? "🎬"
-                    : result.type === "event"
-                      ? "🎉"
-                      : result.type === "subtype"
-                        ? "📌"
-                        : "🏢"}
-                </span>
+                <div className="shrink-0 flex items-center justify-center w-10 h-12 rounded-lg bg-stone-50 dark:bg-stone-800/50 overflow-hidden relative border border-stone-100 dark:border-stone-700/50">
+                  {result.type === "reel" && result.reel?.thumbnail ? (
+                    <>
+                      <SmartMedia
+                        src={result.reel.thumbnail}
+                        alt={result.label}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                        <Play size={12} className="text-white fill-white opacity-80" />
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-lg">
+                      {result.type === "event" ? "🎉" : result.type === "category" ? "📌" : "🏢"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-stone-800 dark:text-stone-100 truncate">
                     {result.label}
                   </p>
-                  <p className="text-[11px] text-stone-400 truncate">{result.sublabel}</p>
+                  <p className="text-[11px] text-stone-400 truncate mt-0.5">{result.sublabel}</p>
                 </div>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium capitalize shrink-0 ${result.type === "reel" ? "bg-emerald-50 text-emerald-600" : result.type === "event" ? "bg-rose-50 text-rose-600" : "bg-stone-100 text-stone-500"}`}
+                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium capitalize shrink-0 ${result.type === "reel" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : result.type === "event" ? "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400" : "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400"}`}
                 >
                   {result.type}
                 </span>
@@ -1071,15 +1030,17 @@ const SearchModalComponent = ({
         <div className="px-5 py-5">
           <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.12em] mb-3">Quick Search</p>
           <div className="flex flex-wrap gap-1.5">
-            {["Wedding", "Birthday", "Anniversary", "DJ", "Catering", "Venues", "Decor", "Photographers"].map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSearchQuery(tag)}
-                className="text-[12px] px-3 py-1.5 bg-rose-50/60 dark:bg-stone-800 hover:bg-rose-100 dark:hover:bg-stone-700 rounded-lg text-stone-600 dark:text-stone-400 transition-colors font-medium"
-              >
-                {tag}
-              </button>
-            ))}
+            {["Wedding", "Birthday", "Anniversary", "Corporate", "Catering", "Venues", "Decor", "Photographers"].map(
+              (tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSearchQuery(tag)}
+                  className="text-[12px] px-3 py-1.5 bg-rose-50/60 dark:bg-stone-800 hover:bg-rose-100 dark:hover:bg-stone-700 rounded-lg text-stone-600 dark:text-stone-400 transition-colors font-medium"
+                >
+                  {tag}
+                </button>
+              ),
+            )}
           </div>
         </div>
       ) : null}
@@ -1366,7 +1327,6 @@ const BookingDrawer = ({ item, onClose }) => {
       >
         <div className="px-6 py-4 flex items-center gap-3 border-b border-stone-100 dark:border-stone-800">
           <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-stone-100">
-            {/* <img src={item.thumbnail} alt="" className="w-full h-full object-cover" /> */}
             <SmartMedia src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
@@ -1466,6 +1426,7 @@ const BookingDrawer = ({ item, onClose }) => {
 
 const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
   const router = useRouter();
+  const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
   const [reels, setReels] = useState(initialReels);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isLiked, setIsLiked] = useState(false);
@@ -1520,6 +1481,7 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
       document.body.style.overflow = "";
     };
   }, []);
+
   useEffect(() => {
     return () => {
       if (videoRef.current) {
@@ -1813,7 +1775,11 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                     )}
                   </>
                 ) : (
-                  <SmartMedia src={currentReel.thumbnail} alt={currentReel.title} className="w-full h-full object-cover" />
+                  <SmartMedia
+                    src={currentReel.thumbnail}
+                    alt={currentReel.title}
+                    className="w-full h-full object-cover"
+                  />
                 )}
               </motion.div>
             </AnimatePresence>
@@ -1864,12 +1830,11 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
           <div className="p-6 space-y-5">
             <div className="flex items-center gap-3 cursor-pointer" onClick={handleSeeProfile}>
               <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-rose-200/60 bg-stone-200 shrink-0">
-                {/* <img
+                <SmartMedia
                   src={vendorProfile?.vendorAvatar || currentReel.thumbnail}
                   alt=""
                   className="w-full h-full object-cover"
-                /> */}
-                <SmartMedia src={vendorProfile?.vendorAvatar || currentReel.thumbnail} alt="" className="w-full h-full object-cover" />
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -2033,7 +1998,6 @@ const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNo
                       onClick={() => loadRelatedIntoFeed(rr)}
                       className="relative aspect-[9/16] rounded-xl overflow-hidden ring-1 ring-stone-200/50 dark:ring-stone-700 hover:ring-rose-300 transition-all"
                     >
-                      {/* <img src={rr.thumbnail} alt="" className="w-full h-full object-cover" /> */}
                       <SmartMedia src={rr.thumbnail} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       <div className="absolute bottom-1.5 left-1.5 right-1.5">
@@ -2183,8 +2147,36 @@ export default function IdeasDesktopPage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  const urlType = searchParams.get("type") || null;
+  const urlCategory = searchParams.get("category") || null;
+  const urlSubcategory = searchParams.get("subcategory") || null;
+  const urlSort = searchParams.get("sort") || "relevance";
+  const urlRating = searchParams.get("rating") ? parseFloat(searchParams.get("rating")) : null;
+  const urlLocation = searchParams.get("location") || null;
+  const urlReel = searchParams.get("reel") || null;
+  const urlSearch = searchParams.get("q") || "";
+  const urlSubType = searchParams.get("subType") || searchParams.get("wf") || "all";
+
+  const [isDirectReelLoading, setIsDirectReelLoading] = useState(!!urlReel);
+
   const { user, isLoaded } = useUser();
   const [userInteractions, setUserInteractions] = useState({ liked: new Set(), saved: new Set() });
+
+  useEffect(() => {
+    if (urlReel) {
+      setIsNavbarVisible(false);
+      fetchReelById(urlReel).then((raw) => {
+        if (raw) {
+          const reel = normalizeReel(raw);
+          setReelsViewerData({ reels: [reel], initialIndex: 0 });
+        } else {
+          // Fallback if reel not found
+          setIsNavbarVisible(true);
+        }
+        setIsDirectReelLoading(false);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -2206,16 +2198,6 @@ export default function IdeasDesktopPage() {
     fetchInteractions();
   }, [isLoaded, user]);
 
-  const urlType = searchParams.get("type") || null;
-  const urlSubtype = searchParams.get("subtype") || null;
-  const urlNested = searchParams.get("nested") || null;
-  const urlSort = searchParams.get("sort") || "relevance";
-  const urlRating = searchParams.get("rating") ? parseFloat(searchParams.get("rating")) : null;
-  const urlLocation = searchParams.get("location") || null;
-  const urlReel = searchParams.get("reel") || null;
-  const urlSearch = searchParams.get("q") || "";
-  const urlQuickFilter = searchParams.get("wf") || "all";
-
   const [eventType, setEventType] = useState(urlType);
   const [eventLabel, setEventLabel] = useState(() => {
     if (!urlType) return "";
@@ -2224,9 +2206,12 @@ export default function IdeasDesktopPage() {
     const other = OTHER_EVENT_TYPES.find((e) => e.id === urlType);
     return other ? other.label : urlType.charAt(0).toUpperCase() + urlType.slice(1);
   });
+
   const [showModal, setShowModal] = useState(!urlType);
-  const [activeSubtype, setActiveSubtype] = useState(urlSubtype);
-  const [activeNested, setActiveNested] = useState(urlNested);
+  const [activeCategory, setActiveCategory] = useState(urlCategory);
+  const [activeSubcategory, setActiveSubcategory] = useState(urlSubcategory);
+  const [activeSubType, setActiveSubType] = useState(urlSubType);
+
   const [reelsViewerData, setReelsViewerData] = useState(null);
   const [drawerItem, setDrawerItem] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -2236,7 +2221,7 @@ export default function IdeasDesktopPage() {
     priceRange: null,
     location: urlLocation,
   });
-  const [weddingQuickFilter, setWeddingQuickFilter] = useState(urlQuickFilter);
+
   const [isSearchOpen, setIsSearchOpen] = useState(!!urlSearch);
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [searchResults, setSearchResults] = useState([]);
@@ -2254,14 +2239,14 @@ export default function IdeasDesktopPage() {
   const getURLParams = useCallback(() => {
     const params = {};
     if (eventType) params.type = eventType;
-    if (activeSubtype) params.subtype = activeSubtype;
-    if (activeNested) params.nested = activeNested;
+    if (activeCategory) params.category = activeCategory;
+    if (activeSubcategory) params.subcategory = activeSubcategory;
+    if (activeSubType && activeSubType !== "all") params.subType = activeSubType;
     if (filterState.sort && filterState.sort !== "relevance") params.sort = filterState.sort;
     if (filterState.minRating) params.rating = String(filterState.minRating);
     if (filterState.location) params.location = filterState.location;
-    if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all") params.wf = weddingQuickFilter;
     return params;
-  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState]);
 
   const syncURL = useCallback(
     (extra = {}) => {
@@ -2277,42 +2262,11 @@ export default function IdeasDesktopPage() {
   useEffect(() => {
     if (showModal) return;
     syncURL();
-  }, [eventType, activeSubtype, activeNested, filterState, weddingQuickFilter, showModal, syncURL]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState, showModal, syncURL]);
+
   useEffect(() => {
     setRecentlyViewedReels(getRecentlyViewed());
   }, [reelsViewerData]);
-
-  useEffect(() => {
-    if (pendingReelIdRef.current && initialLoadDone && !reelsViewerData) {
-      const reelId = pendingReelIdRef.current;
-      pendingReelIdRef.current = null;
-      let foundReel = null;
-      for (const section of carouselSections) {
-        const match = section.items.find((r) => r._id === reelId);
-        if (match) {
-          foundReel = match;
-          break;
-        }
-      }
-      if (foundReel) {
-        const allReels = carouselSections.flatMap((s) => s.items);
-        const uniqueMap = new Map();
-        allReels.forEach((r) => {
-          if (!uniqueMap.has(r._id)) uniqueMap.set(r._id, r);
-        });
-        const uniqueReels = Array.from(uniqueMap.values());
-        const idx = uniqueReels.findIndex((r) => r._id === reelId);
-        setReelsViewerData({ reels: uniqueReels, initialIndex: Math.max(0, idx) });
-      } else {
-        fetchReelById(reelId).then((raw) => {
-          if (raw) {
-            const reel = normalizeReel(raw);
-            setReelsViewerData({ reels: [reel], initialIndex: 0 });
-          }
-        });
-      }
-    }
-  }, [initialLoadDone, reelsViewerData, carouselSections]);
 
   useEffect(() => {
     if (showModal || !eventType) {
@@ -2327,27 +2281,27 @@ export default function IdeasDesktopPage() {
     if (!eventType) return null;
     return EVENT_CONFIGS[eventType] || getDefaultConfigForOther(eventType);
   }, [eventType]);
-  const activeSubtypeData = useMemo(() => {
-    if (!config || !activeSubtype) return null;
-    return config.subtypes.find((s) => s.id === activeSubtype) || null;
-  }, [config, activeSubtype]);
-  const getWeddingHeading = useCallback(
-    (index) => WEDDING_SECTION_HEADINGS[index % WEDDING_SECTION_HEADINGS.length],
-    [],
-  );
+
+  const activeCategoryData = useMemo(() => {
+    if (!config || !activeCategory) return null;
+    return config.categories.find((s) => s.id === activeCategory) || null;
+  }, [config, activeCategory]);
+
+  const getDynamicHeading = useCallback((index) => EVENT_SECTION_HEADINGS[index % EVENT_SECTION_HEADINGS.length], []);
 
   useEffect(() => {
     if (!eventType || !config) return;
     const version = ++fetchVersionRef.current;
     let cancelled = false;
+
     const loadReels = async () => {
       setIsLoadingCarousels(true);
       const baseParams = { type: config.type || eventType, isActive: "true", limit: 50 };
-      if (activeSubtype) baseParams.subtype = activeSubtype;
-      if (activeNested) baseParams.nestedType = activeNested;
+      if (activeCategory) baseParams.category = activeCategory;
+      if (activeSubcategory) baseParams.subcategory = activeSubcategory;
+      if (activeSubType && activeSubType !== "all") baseParams.subType = activeSubType;
       if (filterState.location) baseParams.city = filterState.location;
-      if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all")
-        baseParams.tag = weddingQuickFilter;
+
       if (filterState.sort === "trending") {
         baseParams.sortBy = "viewCount";
         baseParams.sortOrder = "desc";
@@ -2361,59 +2315,65 @@ export default function IdeasDesktopPage() {
         baseParams.sortBy = "priority";
         baseParams.sortOrder = "desc";
       }
+
       if (filterState.minRating) baseParams.minPriority = Math.round(((filterState.minRating - 3.5) / 1.5) * 100);
+
       try {
         const [mainResult, featuredResult, trendingResult] = await Promise.all([
           fetchReels(baseParams),
-          fetchFeaturedReels({ limit: 15 }),
-          fetchTrendingReels({ limit: 15 }),
+          fetchFeaturedReels({ limit: 15, type: eventType }),
+          fetchTrendingReels({ limit: 15, type: eventType }),
         ]);
+
         if (cancelled || version !== fetchVersionRef.current) return;
+
         const allReels = (mainResult.data || []).map(normalizeReel);
         const featuredReels = (featuredResult.reels || []).map(normalizeReel);
         const tReels = (trendingResult.reels || []).map(normalizeReel);
+
         setTrendingReels(tReels);
         setPaginationInfo(mainResult.pagination || null);
         const sections = [];
         let headingIdx = 0;
-        const isWedding = eventType === "wedding";
-        if (activeSubtype) {
-          const subtypeLabel = activeSubtypeData?.label || activeSubtype;
-          if (activeNested) {
-            const nestedLabel =
-              activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested;
+
+        if (activeCategory) {
+          const categoryLabel = activeCategoryData?.label || activeCategory;
+          if (activeSubcategory) {
+            const subcategoryLabel =
+              activeCategoryData?.subcategories?.find((n) => n.id === activeSubcategory)?.label || activeSubcategory;
             const half = Math.ceil(allReels.length / 2);
             if (allReels.length > 0) {
               sections.push({
-                id: `${activeNested}-top`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `${nestedLabel} — Top Picks`,
+                id: `${activeSubcategory}-top`,
+                title: `${subcategoryLabel} — Top Picks`,
                 items: allReels.slice(0, half),
               });
               if (allReels.length > half)
                 sections.push({
-                  id: `${activeNested}-more`,
-                  title: isWedding ? getWeddingHeading(headingIdx++) : `More ${nestedLabel}`,
+                  id: `${activeSubcategory}-more`,
+                  title: `More ${subcategoryLabel}`,
                   items: allReels.slice(half),
                 });
             }
           } else if (allReels.length > 0) {
             if (allReels.length > 15) {
               sections.push({
-                id: `${activeSubtype}-top`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${subtypeLabel}`,
+                id: `${activeCategory}-top`,
+                title: `Top ${categoryLabel}`,
                 items: allReels.slice(0, 15),
               });
               sections.push({
-                id: `${activeSubtype}-more`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `More ${subtypeLabel}`,
+                id: `${activeCategory}-more`,
+                title: `More ${categoryLabel}`,
                 items: allReels.slice(15),
               });
-            } else
+            } else {
               sections.push({
-                id: `${activeSubtype}-main`,
-                title: isWedding ? getWeddingHeading(headingIdx++) : `${subtypeLabel} Reels`,
+                id: `${activeCategory}-main`,
+                title: `${categoryLabel} Reels`,
                 items: allReels,
               });
+            }
           }
         } else {
           const categoryGroups = {};
@@ -2426,43 +2386,47 @@ export default function IdeasDesktopPage() {
           if (entries.length > 1) {
             entries.forEach(([cat, items]) => {
               const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/-/g, " ");
-              sections.push({ id: `cat-${cat}`, title: isWedding ? getWeddingHeading(headingIdx++) : label, items });
+              sections.push({ id: `cat-${cat}`, title: getDynamicHeading(headingIdx++), items });
             });
           } else if (allReels.length > 0) {
             if (allReels.length > 20) {
               sections.push({
                 id: "all-top",
-                title: isWedding ? getWeddingHeading(headingIdx++) : `Top ${eventLabel}`,
+                title: `Top ${eventLabel}`,
                 items: allReels.slice(0, 15),
               });
               sections.push({
                 id: "all-more",
-                title: isWedding ? getWeddingHeading(headingIdx++) : `Explore More`,
+                title: `Explore More`,
                 items: allReels.slice(15),
               });
-            } else
+            } else {
               sections.push({
                 id: "all-reels",
-                title: isWedding ? getWeddingHeading(headingIdx++) : `${eventLabel} Reels`,
+                title: `${eventLabel} Reels`,
                 items: allReels,
               });
+            }
           }
         }
+
         const pinnedReels = allReels.filter((r) => r.isPinned || r.isSponsored);
         if (pinnedReels.length > 0)
           sections.unshift({
             id: "sponsored",
-            title: isWedding ? "Premium & Luxury Wedding Services" : "Sponsored",
+            title: "Premium Services",
             items: pinnedReels,
           });
+
         if (featuredReels.length > 0)
           sections.push({
             id: "featured",
-            title: isWedding ? "Couples' Favorite Picks" : "Featured",
+            title: "Couples' Favorite Picks",
             items: featuredReels,
           });
-        if (tReels.length > 0)
-          sections.push({ id: "trending", title: isWedding ? "Viral Wedding Reels" : "Trending Now", items: tReels });
+
+        if (tReels.length > 0) sections.push({ id: "trending", title: "Trending Now", items: tReels });
+
         setCarouselSections(sections);
         setInitialLoadDone(true);
       } catch {
@@ -2480,14 +2444,14 @@ export default function IdeasDesktopPage() {
     };
   }, [
     eventType,
-    activeSubtype,
-    activeNested,
+    activeCategory,
+    activeSubcategory,
     filterState,
-    weddingQuickFilter,
+    activeSubType,
     config,
-    activeSubtypeData,
+    activeCategoryData,
     eventLabel,
-    getWeddingHeading,
+    getDynamicHeading,
   ]);
 
   useEffect(() => {
@@ -2508,21 +2472,23 @@ export default function IdeasDesktopPage() {
           sublabel: [r.vendorName, r.category, r.city].filter(Boolean).join(" · "),
           reel: normalizeReel(r),
           eventId: r.type,
-          subtypeId: r.subtype,
+          categoryId: r.category,
         }));
+
         const localResults = [];
         Object.entries(EVENT_CONFIGS).forEach(([eventKey, cfg]) => {
           const eLabel = eventKey.charAt(0).toUpperCase() + eventKey.slice(1);
           if (eLabel.toLowerCase().includes(searchQuery.toLowerCase()))
             localResults.push({ type: "event", label: eLabel, sublabel: "Event Category", eventId: eventKey });
-          cfg.subtypes?.forEach((sub) => {
-            if (sub.label.toLowerCase().includes(searchQuery.toLowerCase()))
+
+          cfg.categories?.forEach((cat) => {
+            if (cat.label.toLowerCase().includes(searchQuery.toLowerCase()))
               localResults.push({
-                type: "subtype",
-                label: sub.label,
+                type: "category",
+                label: cat.label,
                 sublabel: `${eLabel} › Service`,
                 eventId: eventKey,
-                subtypeId: sub.id,
+                categoryId: cat.id,
               });
           });
         });
@@ -2541,6 +2507,10 @@ export default function IdeasDesktopPage() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setIsSearchOpen(true);
+      }
+      if (e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
       }
       if (e.key === "Escape") setIsSearchOpen(false);
     };
@@ -2567,42 +2537,43 @@ export default function IdeasDesktopPage() {
       setEventType(result.eventId);
       setEventLabel(result.eventId.charAt(0).toUpperCase() + result.eventId.slice(1));
       setShowModal(false);
-      setActiveSubtype(null);
-      setActiveNested(null);
-      setWeddingQuickFilter("all");
+      setActiveCategory(null);
+      setActiveSubcategory(null);
+      setActiveSubType("all");
       setInitialLoadDone(false);
     }
-    if (result.subtypeId) setActiveSubtype(result.subtypeId);
+    if (result.categoryId) setActiveCategory(result.categoryId);
   };
 
   const handleEventSelect = (type, label) => {
     setEventType(type);
     setEventLabel(label);
     setShowModal(false);
-    setActiveSubtype(null);
-    setActiveNested(null);
-    setWeddingQuickFilter("all");
+    setActiveCategory(null);
+    setActiveSubcategory(null);
+    setActiveSubType("all");
     setInitialLoadDone(false);
   };
 
-  const handleSubtypeClick = (subtypeId) => {
-    if (!subtypeId || activeSubtype === subtypeId) {
-      setActiveSubtype(null);
-      setActiveNested(null);
+  const handleCategoryClick = (categoryId) => {
+    if (!categoryId || activeCategory === categoryId) {
+      setActiveCategory(null);
+      setActiveSubcategory(null);
       setInitialLoadDone(false);
       return;
     }
-    setActiveSubtype(subtypeId);
-    setActiveNested(null);
+    setActiveCategory(categoryId);
+    setActiveSubcategory(null);
     setInitialLoadDone(false);
   };
 
-  const handleNestedClick = (nestedId) => {
-    setActiveNested(activeNested === nestedId ? null : nestedId);
+  const handleSubcategoryClick = (subcategoryId) => {
+    setActiveSubcategory(activeSubcategory === subcategoryId ? null : subcategoryId);
     setInitialLoadDone(false);
   };
-  const handleWeddingQuickFilterClick = (filterId) => {
-    setWeddingQuickFilter(filterId);
+
+  const handleSubTypeClick = (filterId) => {
+    setActiveSubType(filterId);
     setInitialLoadDone(false);
   };
 
@@ -2613,6 +2584,7 @@ export default function IdeasDesktopPage() {
     },
     [setIsNavbarVisible],
   );
+
   const handleBookNow = (item) => {
     setDrawerItem(item);
     setIsNavbarVisible(false);
@@ -2657,18 +2629,12 @@ export default function IdeasDesktopPage() {
     filterState.priceRange,
     filterState.location,
   ].filter(Boolean).length;
+
   const isWeddingType = eventType === "wedding";
 
   return (
     <div className="min-h-screen bg-[#faf8f5] dark:bg-stone-950 text-stone-800 dark:text-stone-100">
       <style jsx global>{`
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
         @keyframes shimmer {
           0% {
             background-position: 200% 0;
@@ -2682,60 +2648,61 @@ export default function IdeasDesktopPage() {
         <DesktopSidebar
           config={config}
           eventLabel={eventLabel}
-          activeSubtype={activeSubtype}
-          activeNested={activeNested}
-          onSubtypeClick={handleSubtypeClick}
-          onNestedClick={handleNestedClick}
+          activeCategory={activeCategory}
+          activeSubcategory={activeSubcategory}
+          onCategoryClick={handleCategoryClick}
+          onSubcategoryClick={handleSubcategoryClick}
           onChangeEvent={() => {
             setShowModal(true);
             setEventType(null);
-            setActiveSubtype(null);
-            setActiveNested(null);
-            setWeddingQuickFilter("all");
+            setActiveCategory(null);
+            setActiveSubcategory(null);
+            setActiveSubType("all");
             setInitialLoadDone(false);
             window.history.replaceState(null, "", pathname);
           }}
-          weddingQuickFilter={weddingQuickFilter}
-          onWeddingQuickFilterClick={handleWeddingQuickFilterClick}
+          activeSubType={activeSubType}
+          onSubTypeClick={handleSubTypeClick}
           isWeddingType={isWeddingType}
         />
         <main className="flex-1 min-w-0">
           <div
             style={{ top: DESKTOP_TOP_OFFSET }}
-            className="sticky z-40 border-b border-rose-100/50 dark:border-stone-800 bg-white dark:bg-stone-950/85 backdrop-blur-xl"
+            className="sticky !z-20 border-b border-rose-100/50 dark:border-stone-800 bg-white dark:bg-stone-950/85 backdrop-blur-xl"
           >
             <div className="px-5 xl:px-7 2xl:px-8 py-3 flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-[13px]">
                   <button
                     onClick={() => {
-                      setActiveSubtype(null);
-                      setActiveNested(null);
+                      setActiveCategory(null);
+                      setActiveSubcategory(null);
                       setInitialLoadDone(false);
                     }}
                     className="text-stone-400 font-medium hover:text-rose-500 transition-colors"
                   >
                     {eventLabel}
                   </button>
-                  {activeSubtypeData && (
+                  {activeCategoryData && (
                     <>
                       <ChevronRight size={12} className="text-stone-300" />
                       <button
                         onClick={() => {
-                          setActiveNested(null);
+                          setActiveSubcategory(null);
                           setInitialLoadDone(false);
                         }}
                         className="text-stone-600 dark:text-stone-300 font-medium hover:text-rose-500 transition-colors"
                       >
-                        {activeSubtypeData.label}
+                        {activeCategoryData.label}
                       </button>
                     </>
                   )}
-                  {activeNested && (
+                  {activeSubcategory && (
                     <>
                       <ChevronRight size={12} className="text-stone-300" />
                       <span className="text-stone-800 dark:text-stone-100 font-semibold">
-                        {activeSubtypeData?.nestedTypes?.find((n) => n.id === activeNested)?.label || activeNested}
+                        {activeCategoryData?.subcategories?.find((n) => n.id === activeSubcategory)?.label ||
+                          activeSubcategory}
                       </span>
                     </>
                   )}
@@ -2776,7 +2743,11 @@ export default function IdeasDesktopPage() {
 
           <div className="px-5 xl:px-7 2xl:px-8 py-6">
             <div className="max-w-[1580px] space-y-7">
-              <DesktopHero eventLabel={eventLabel} activeSubtypeData={activeSubtypeData} activeNested={activeNested} />
+              <DesktopHero
+                eventLabel={eventLabel}
+                activeCategoryData={activeCategoryData}
+                activeSubcategory={activeSubcategory}
+              />
 
               {activeFilterCount > 0 && (
                 <div className="flex gap-1.5 flex-wrap">
@@ -2813,9 +2784,14 @@ export default function IdeasDesktopPage() {
                 </div>
               )}
 
-              {isLoadingCarousels && !initialLoadDone && <FullPageSkeleton />}
-
-              {initialLoadDone && (
+              {isDirectReelLoading ? (
+                <div className="flex flex-col items-center justify-center py-32">
+                  <Loader2 size={32} className="animate-spin text-rose-400 mb-4" />
+                  <p className="text-stone-400 text-sm font-medium">Loading Reel...</p>
+                </div>
+              ) : isLoadingCarousels && !initialLoadDone ? (
+                <FullPageSkeleton />
+              ) : initialLoadDone ? (
                 <div className="space-y-7">
                   {carouselSections.length > 0 ? (
                     carouselSections.map((section) =>
@@ -2875,11 +2851,11 @@ export default function IdeasDesktopPage() {
                       onClick={async () => {
                         const nextPage = (paginationInfo.page || 1) + 1;
                         const params = { type: config.type || eventType, isActive: "true", limit: 50, page: nextPage };
-                        if (activeSubtype) params.subtype = activeSubtype;
-                        if (activeNested) params.nestedType = activeNested;
+                        if (activeCategory) params.category = activeCategory;
+                        if (activeSubcategory) params.subcategory = activeSubcategory;
                         if (filterState.location) params.city = filterState.location;
-                        if (eventType === "wedding" && weddingQuickFilter && weddingQuickFilter !== "all")
-                          params.tag = weddingQuickFilter;
+                        if (activeSubType && activeSubType !== "all") params.subType = activeSubType;
+
                         if (filterState.sort === "trending") {
                           params.sortBy = "viewCount";
                           params.sortOrder = "desc";
@@ -2917,7 +2893,7 @@ export default function IdeasDesktopPage() {
                     />
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </main>
