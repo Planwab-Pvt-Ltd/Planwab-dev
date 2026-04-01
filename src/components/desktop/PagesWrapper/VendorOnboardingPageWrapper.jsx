@@ -229,7 +229,8 @@ const VendorProfileOnboardingPageWrapper = () => {
         [parent]: { ...prev[parent], [child]: value },
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      const sanitized = name === "username" ? value.replace(/[^a-zA-Z0-9_-]/g, "") : value;
+    setFormData((prev) => ({ ...prev, [name]: sanitized }));
     }
   };
 
@@ -299,6 +300,14 @@ const VendorProfileOnboardingPageWrapper = () => {
         setError("Please fill all required fields");
         return false;
       }
+      if (!profilePicture) {
+        setError("Profile picture is required");
+        return false;
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+    setError("Username can only contain letters, numbers, hyphens (-) and underscores (_). No spaces or special characters.");
+    return false;
+  }
     }
     if (currentStep === 3) {
       if (formData.password.length < 6) {
