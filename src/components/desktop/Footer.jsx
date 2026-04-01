@@ -5,10 +5,6 @@ import { MapPin, Mail, Phone, Instagram, Linkedin, Facebook, ArrowRight } from "
 import Link from "next/link";
 
 const SeoFooterLinks = () => {
-  const BASE_URL =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://planwab.com";
 
   // Vendor Data
   const categories = [
@@ -63,7 +59,7 @@ const SeoFooterLinks = () => {
             {categories.map((cat) => (
               <a
                 key={cat.id}
-                href={`${BASE_URL}/vendors/marketplace/${cat.id}`}
+                href={`/vendors/marketplace/${cat.id}`}
                 className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
               >
                 {cat.label}
@@ -82,7 +78,7 @@ const SeoFooterLinks = () => {
               cities.map((city) => (
                 <a
                   key={`${cat.id}-${city}`}
-                  href={`${BASE_URL}/vendors/marketplace/${cat.id}?cities=${city.replace(
+                  href={`/vendors/marketplace/${cat.id}?cities=${city.replace(
                     " ",
                     "+"
                   )}`}
@@ -104,7 +100,7 @@ const SeoFooterLinks = () => {
             {ideaEvents.map((event) => (
               <a
                 key={event.id}
-                href={`${BASE_URL}/ideas?type=${event.id}`}
+                href={`/ideas?type=${event.id}`}
                 className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
               >
                 {event.label}
@@ -122,7 +118,7 @@ const SeoFooterLinks = () => {
             {ideaCategories.map((cat) => (
               <a
                 key={cat.id}
-                href={`${BASE_URL}/ideas?type=wedding&category=${cat.id}`}
+                href={`/ideas?type=wedding&category=${cat.id}`}
                 className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
               >
                 {cat.label}
@@ -140,7 +136,7 @@ const SeoFooterLinks = () => {
             {ideaMoments.map((moment) => (
               <a
                 key={moment.id}
-                href={`${BASE_URL}/ideas?type=wedding&subType=${moment.id}`}
+                href={`/ideas?type=wedding&subType=${moment.id}`}
                 className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
               >
                 {moment.label}
@@ -156,43 +152,43 @@ const SeoFooterLinks = () => {
           </h4>
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             <a
-              href={`${BASE_URL}/vendors/marketplace?sortBy=price-asc`}
+              href={`/vendors/marketplace?sortBy=price-asc`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Budget Vendors in India
             </a>
             <a
-              href={`${BASE_URL}/vendors/marketplace?sortBy=price-desc`}
+              href={`/vendors/marketplace?sortBy=price-desc`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Premium Vendors in India
             </a>
             <a
-              href={`${BASE_URL}/vendors/marketplace?sortBy=bookings`}
+              href={`/vendors/marketplace?sortBy=bookings`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Most Popular Vendors
             </a>
             <a
-              href={`${BASE_URL}/vendors/marketplace?sortBy=newest`}
+              href={`/vendors/marketplace?sortBy=newest`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Newly Added Vendors
             </a>
             <a
-              href={`${BASE_URL}/vendors/marketplace?sortBy=reviews`}
+              href={`/vendors/marketplace?sortBy=reviews`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Most Reviewed Vendors
             </a>
             <a
-              href={`${BASE_URL}/vendors/marketplace?maxPrice=50000`}
+              href={`/vendors/marketplace?maxPrice=50000`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Vendors Under ₹50,000
             </a>
             <a
-              href={`${BASE_URL}/vendors/marketplace?minRating=4`}
+              href={`/vendors/marketplace?minRating=4`}
               className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
             >
               Top Rated Vendors (4★+)
@@ -210,7 +206,7 @@ const SeoFooterLinks = () => {
               (event) => (
                 <a
                   key={event}
-                  href={`${BASE_URL}/events/${event}`}
+                  href={`/events/${event}`}
                   className="text-sm text-gray-600 hover:text-[#C33765] transition-colors"
                 >
                   {event.charAt(0).toUpperCase() + event.slice(1)} Planning

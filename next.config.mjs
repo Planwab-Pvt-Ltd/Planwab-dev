@@ -24,6 +24,9 @@ const nextConfig = {
       { protocol: "https", hostname: "**.b-cdn.net" },
       { protocol: "https", hostname: "ik.imagekit.io" },
       { protocol: "https", hostname: "img.clerk.com" },
+      { protocol: "https", hostname: "www.theweddingcompany.com" },
+      { protocol: "https", hostname: "cdn.theweddingcompany.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
 

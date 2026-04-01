@@ -7,17 +7,61 @@ import Link from "next/link";
 
 // --- 1. DATA ---
 const QUICK_LINKS = [
-  { label: "Venues", key: "venues", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429853/venueQS_jopgvy.png` },
-  { label: "Makeup", key: "makeup", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429875/makeupQS_ndqqgp.png` },
-  { label: "Photo", key: "photographers", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429887/photographerQS_gum5la.png` },
-  { label: "Mehndi", key: "mehendi", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429879/mehndiQS_xymdoq.png` },
-  { label: "Decor", key: "decor", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429865/decorQS_dm66uo.png` },
-  { label: "Catering", key: "catering", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429861/caterorQS_kf3up5.png` },
-  { label: "DJ & Music", key: "djs", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429872/djQS_jpgyjf.png` },
-  { label: "Cakes", key: "cake", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429857/cakesQS_nmqtvp.png` },
-  { label: "Pandit", key: "pandit", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429883/panditQS_zyo3xh.png` },
-  { label: "Dhol", key: "dhol", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429868/dholQS_o7jy79.png` },
-  { label: "Planner", key: "planners", src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429850/plannerQS_ghzthx.png` },
+  {
+    label: "Venues",
+    key: "venues",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429853/venueQS_jopgvy.png`,
+  },
+  {
+    label: "Makeup",
+    key: "makeup",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429875/makeupQS_ndqqgp.png`,
+  },
+  {
+    label: "Photo",
+    key: "photographers",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429887/photographerQS_gum5la.png`,
+  },
+  {
+    label: "Mehndi",
+    key: "mehendi",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429879/mehndiQS_xymdoq.png`,
+  },
+  {
+    label: "Decor",
+    key: "decor",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429865/decorQS_dm66uo.png`,
+  },
+  {
+    label: "Catering",
+    key: "catering",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429861/caterorQS_kf3up5.png`,
+  },
+  {
+    label: "DJ & Music",
+    key: "djs",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429872/djQS_jpgyjf.png`,
+  },
+  {
+    label: "Cakes",
+    key: "cake",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429857/cakesQS_nmqtvp.png`,
+  },
+  {
+    label: "Pandit",
+    key: "pandit",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429883/panditQS_zyo3xh.png`,
+  },
+  {
+    label: "Dhol",
+    key: "dhol",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429868/dholQS_o7jy79.png`,
+  },
+  {
+    label: "Planner",
+    key: "planners",
+    src: `https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429850/plannerQS_ghzthx.png`,
+  },
 ];
 
 // --- 2. HELPER HOOKS ---
@@ -95,13 +139,11 @@ const QuickServices = ({ category }) => {
     <section className="relative px-4 py-4 pt-1 mt-2 mb-4 bg-transparent rounded-2xl">
       {/* Background Pattern Left - Decorative */}
       <div className="absolute left-0 top-0 z-0 w-[200px] -translate-x-1/2 md:w-[400px] pointer-events-none">
-        <SmartMedia
+        <img
           src={`${BASE_URL}/images/HomePage/new/big-mandala.webp`}
-          type="image"
-          alt="" // Empty alt for decorative images
+          alt=""
           className="aspect-square w-full h-full opacity-50"
           width={400}
-          useSkeleton={false}
           height={400}
           loading="lazy"
         />
@@ -109,13 +151,11 @@ const QuickServices = ({ category }) => {
 
       {/* Background Pattern Right - Decorative */}
       <div className="absolute right-0 top-0 z-0 w-[200px] translate-x-1/2 md:w-[400px] pointer-events-none">
-        <SmartMedia
+        <img
           src={`${BASE_URL}/images/HomePage/new/big-mandala.webp`}
-          type="image"
           alt=""
           className="aspect-square w-full h-full opacity-50"
           width={400}
-          useSkeleton={false}
           height={400}
           loading="lazy"
         />
