@@ -94,7 +94,8 @@ export async function POST(request) {
       password,
       vendorAvatar,
       vendorCoverImage,
-      bio,
+      bio, 
+      createdBy,
     } = body;
 
     if (
@@ -104,7 +105,8 @@ export async function POST(request) {
       !category ||
       !password ||
       !vendorAvatar ||
-      !bio
+      !bio ||
+      !createdBy
     ) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
     }
@@ -127,6 +129,7 @@ export async function POST(request) {
       category,
       username,
       password: hashedPassword,
+      createdBy,
       trust: 0,
       highlights: [],
       posts: [],
@@ -136,11 +139,18 @@ export async function POST(request) {
     const profileData = profile.toObject();
     delete profileData.password;
 
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkId: createdBy },
+      { $addToSet: { createdProfiles: profile._id.toString() } },
+      { new: true }
+    );
+
     return NextResponse.json(
       {
         success: true,
         message: "Vendor profile created successfully",
         data: profileData,
+        userLinked: !!updatedUser,
       },
       { status: 201 }
     );

@@ -9,6 +9,7 @@ import Link from "next/link";
 import {
   Calendar,
   MapPin,
+  SlidersHorizontal,
   ChevronRight,
   ChevronLeft,
   Star,
@@ -872,6 +873,10 @@ export default function UserProfilePageWrapper() {
   const [subscription, setSubscription] = useState(null);
   const [orders, setOrders] = useState([]);
   const [lists, setLists] = useState(EMPTY_LISTS);
+
+  const [createdProfilesData, setCreatedProfilesData] = useState([]);
+  const [fetchingProfiles, setFetchingProfiles] = useState(true);
+
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -895,6 +900,45 @@ export default function UserProfilePageWrapper() {
     pincode: "",
     state: "",
   });
+
+  const fetchVendorProfile = async (id) => {
+    try {
+      const res = await fetch(`/api/vendor/profile/lists?id=${id}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data || json.vendor || json;
+    } catch {
+      return null;
+    }
+  };
+
+  const fetchLinkedProfiles = useCallback(async (userId) => {
+    setFetchingProfiles(true);
+    try {
+      const res = await fetch(`/api/vendor/profile/created-by?userId=${userId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      
+      if (json.success && json.data?.profiles?.length > 0) {
+        const profilePromises = json.data.profiles.map((id) => fetchVendorProfile(id));
+        const profiles = (await Promise.all(profilePromises)).filter(Boolean);
+        setCreatedProfilesData(profiles);
+      }
+    } catch (e) {
+      console.error("Failed to fetch linked profiles", e);
+    } finally {
+      setFetchingProfiles(false);
+    }
+  }, []);
+
+  const handleSimilarprofileClick = (profile) => {
+    const backTo = encodeURIComponent(window.location.href);
+    if (profile?.vendorId) {
+      router.push(`/vendor/${profile.category}/${profile.vendorId}/profile?backTo=${backTo}`);
+    } else {
+      router.push(`/vendor/${profile.category}/profile/${profile.username}?backTo=${backTo}`);
+    }
+  };
 
   useEffect(() => {
     const t = searchParams.get("tab");
@@ -975,7 +1019,10 @@ export default function UserProfilePageWrapper() {
     if (!user?.id) return;
     let cancelled = false;
     (async () => {
-      await fetchAllData(user.id);
+      await Promise.all([
+        fetchAllData(user.id),
+        fetchLinkedProfiles(user.id)
+      ]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
@@ -1286,8 +1333,32 @@ export default function UserProfilePageWrapper() {
                   Since {memberSince}
                 </span>
               )}
+
             </div>
           </div>
+        </div>
+        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
+          {createdProfilesData.length > 0 && (
+            <button
+              onClick={() => {
+                if (createdProfilesData.length === 1) {
+                  handleSimilarprofileClick(createdProfilesData[0]);
+                } else {
+                  const el = document.getElementById("linked-profiles-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="flex-1 py-2.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+            >
+              <Store size={14} /> Open Profile
+            </button>
+          )}
+          <Link
+            href="/vendor/onboarding"
+            className="flex-1 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform shadow-sm"
+          >
+            <Store size={14} /> Create Profile
+          </Link>
         </div>
       </motion.div>
 
@@ -1376,6 +1447,108 @@ export default function UserProfilePageWrapper() {
             ))}
           </div>
         </motion.div>
+
+        {/* --- NEW: Linked Profiles Section --- */}
+        {createdProfilesData.length > 0 && (
+          <motion.section
+            id="linked-profiles-section"
+            custom={2.5}
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+            className="mt-6"
+          >
+            <div className="px-5 mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-[14px] font-bold text-gray-900 dark:text-white">Linked Profiles</h2>
+                <p className="text-[10px] text-gray-400 mt-0.5">Manage your vendor accounts</p>
+              </div>
+              <Link
+                href="/vendor/onboarding"
+                className="text-[10px] text-violet-600 font-bold bg-violet-50 dark:bg-violet-900/20 px-3 py-1.5 rounded-full flex items-center gap-1"
+              >
+                + Create
+              </Link>
+            </div>
+
+            <ScrollCarousel>
+              {createdProfilesData.map((profile) => (
+                <div
+                  key={profile._id}
+                  className="min-w-[260px] w-[260px] shrink-0 snap-start block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-3.5 shadow-sm shadow-black/[0.03]"
+                >
+                  <div
+                    className="h-20 rounded-xl relative mb-10"
+                    style={{
+                      background: profile.vendorCoverImage
+                        ? `url(${profile.vendorCoverImage}) center/cover`
+                        : "linear-gradient(135deg,#ede9fe,#fce7f3,#e0e7ff)",
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/10 rounded-xl" />
+                    <div className="absolute -bottom-6 left-3 p-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+                      <SmartMedia
+                        src={profile.vendorAvatar || "/placeholder.jpg"}
+                        alt={profile.vendorBusinessName || profile.username}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="px-1">
+                    <h3 className="font-bold text-[14px] text-gray-900 dark:text-white truncate">
+                      {profile.vendorBusinessName || profile.username || "Vendor"}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1.5 mb-4">
+                      {profile.category && (
+                        <p className="text-[9px] font-semibold text-violet-600 capitalize bg-violet-50 dark:bg-violet-900/30 px-1.5 py-0.5 rounded">
+                          {profile.category}
+                        </p>
+                      )}
+                      {profile.location?.city && (
+                        <p className="text-[9px] text-gray-500 flex items-center gap-1">
+                          <MapPin size={8} /> {profile.location.city}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl mb-4">
+                      <div className="text-center">
+                        <p className="text-[12px] font-bold text-gray-900 dark:text-white">{profile.postsCount ?? 0}</p>
+                        <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Posts</p>
+                      </div>
+                      <div className="text-center border-l border-r border-gray-200 dark:border-gray-700">
+                        <p className="text-[12px] font-bold text-gray-900 dark:text-white">{profile.reelsCount ?? 0}</p>
+                        <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Reels</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400">{profile.trust ?? 0}</p>
+                        <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Trust</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => handleSimilarprofileClick(profile)}
+                        className="flex-1 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
+                      >
+                        <Eye size={13} /> View
+                      </button>
+                      <Link
+                        href="/admin/vendors"
+                        className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
+                      >
+                        <SlidersHorizontal size={13} /> Dashboard
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </ScrollCarousel>
+          </motion.section>
+        )}
 
         <motion.section custom={3} initial="hidden" animate="visible" variants={sectionVariants} className="px-5">
           <div className="flex items-center justify-between mb-3">

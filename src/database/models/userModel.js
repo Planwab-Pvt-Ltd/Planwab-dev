@@ -27,6 +27,8 @@ const UserSchema = new Schema(
       },
     },
 
+    createdProfiles: { type: [String], default: [] },
+
     creditBalance: { type: Number, default: 10 },
     vendorDetails: { type: Object, default: null },
     likedVendors: { type: [String], default: [] },
@@ -37,5 +39,5 @@ const UserSchema = new Schema(
   { timestamps: true }
 );
 
-const User = model("User", UserSchema);
+const User = models.User || model("User", UserSchema);
 export default User;

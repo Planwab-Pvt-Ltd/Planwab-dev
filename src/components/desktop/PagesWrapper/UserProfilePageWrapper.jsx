@@ -268,7 +268,11 @@ const VendorCard = memo(({ vendor }) => {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           /> */}
-          <SmartMedia src={img} alt={vendor.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <SmartMedia
+            src={img}
+            alt={vendor.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between">
             {vendor.isVerified && (
@@ -343,7 +347,11 @@ const ReelCard = memo(({ reel }) => {
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           /> */}
-          <SmartMedia src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <SmartMedia
+            src={thumb}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
             {category && (
@@ -418,7 +426,11 @@ const ReelCardVP = memo(({ reel }) => {
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           /> */}
-          <SmartMedia src={thumb} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <SmartMedia
+            src={thumb}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-14 h-14 bg-white/15 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300">
@@ -489,7 +501,11 @@ const VProfileCard = memo(({ profile }) => {
             className="w-14 h-14 rounded-xl border-[3px] border-white dark:border-gray-900 object-cover shadow-lg"
             loading="lazy"
           /> */}
-          <SmartMedia src={img} alt={name} className="w-14 h-14 rounded-xl border-[3px] border-white dark:border-gray-900 object-cover shadow-lg" />
+          <SmartMedia
+            src={img}
+            alt={name}
+            className="w-14 h-14 rounded-xl border-[3px] border-white dark:border-gray-900 object-cover shadow-lg"
+          />
           <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate mt-2.5 group-hover:text-violet-600 transition-colors">
             {name}
           </h3>
@@ -621,7 +637,11 @@ const BlogCard = memo(({ blog }) => {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           /> */}
-          <SmartMedia src={img} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <SmartMedia
+            src={img}
+            alt={blog.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
           {blog.category && (
             <span className="absolute top-2.5 left-2.5 text-[10px] bg-violet-600/90 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full font-bold">
               {blog.category}
@@ -950,6 +970,9 @@ export default function UserProfilePageWrapper() {
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
 
+  const [createdProfilesData, setCreatedProfilesData] = useState([]);
+  const [fetchingProfiles, setFetchingProfiles] = useState(true);
+
   const [activeSection, setActiveSection] = useState(() => {
     const s = searchParams.get("section");
     return s && SIDEBAR_TABS.some((t) => t.id === s) ? s : "overview";
@@ -970,6 +993,36 @@ export default function UserProfilePageWrapper() {
     pincode: "",
     state: "",
   });
+
+  const fetchVendorProfile = async (id) => {
+    try {
+      const res = await fetch(`/api/vendor/profile/lists?id=${id}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data || json.vendor || json;
+    } catch {
+      return null;
+    }
+  };
+
+  const fetchLinkedProfiles = useCallback(async (userId) => {
+    setFetchingProfiles(true);
+    try {
+      const res = await fetch(`/api/vendor/profile/created-by?userId=${userId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+
+      if (json.success && json.data?.profiles?.length > 0) {
+        const profilePromises = json.data.profiles.map((id) => fetchVendorProfile(id));
+        const profiles = (await Promise.all(profilePromises)).filter(Boolean);
+        setCreatedProfilesData(profiles);
+      }
+    } catch (e) {
+      console.error("Failed to fetch linked profiles", e);
+    } finally {
+      setFetchingProfiles(false);
+    }
+  }, []);
 
   useEffect(() => {
     const s = searchParams.get("section");
@@ -1067,13 +1120,22 @@ export default function UserProfilePageWrapper() {
     if (!user?.id) return;
     let cancelled = false;
     (async () => {
-      await fetchAllData(user.id);
+      await Promise.all([fetchAllData(user.id), fetchLinkedProfiles(user.id)]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [user?.id, fetchAllData]);
+
+  const handleSimilarprofileClick = (profile) => {
+    const backTo = encodeURIComponent(window.location.href);
+    if (profile?.vendorId) {
+      router.push(`/vendor/${profile.category}/${profile.vendorId}/profile?backTo=${backTo}`);
+    } else {
+      router.push(`/vendor/${profile.category}/profile/${profile.username}?backTo=${backTo}`);
+    }
+  };
 
   const refreshLists = useCallback(async () => {
     if (!user?.id || refreshing) return;
@@ -1110,46 +1172,49 @@ export default function UserProfilePageWrapper() {
     }
   }, [user?.id, refreshing, showToast]);
 
-  const removeFromList = useCallback(async (listPath, item) => {
-  const itemId = String(item._id || item.reelId || item.postId);
-  const vpId = item.vendorProfileId ? String(item.vendorProfileId) : undefined;
+  const removeFromList = useCallback(
+    async (listPath, item) => {
+      const itemId = String(item._id || item.reelId || item.postId);
+      const vpId = item.vendorProfileId ? String(item.vendorProfileId) : undefined;
 
-  setLists(prev => {
-    const next = JSON.parse(JSON.stringify(prev));
-    const parts = listPath.split(".");
-    let target = next;
-    for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
-    const key = parts[parts.length - 1];
-    target[key] = target[key].filter(i => {
-      const id = String(i._id || i.reelId || i.postId);
-      return id !== itemId;
-    });
-    return next;
-  });
+      setLists((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        const parts = listPath.split(".");
+        let target = next;
+        for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
+        const key = parts[parts.length - 1];
+        target[key] = target[key].filter((i) => {
+          const id = String(i._id || i.reelId || i.postId);
+          return id !== itemId;
+        });
+        return next;
+      });
 
-  try {
-    const res = await fetch("/api/user/removeFromList", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user.id,
-        listType: listPath,
-        itemId,
-        vendorProfileId: vpId,
-      }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      showToast(data.message || "Removed");
-    } else {
-      refreshLists();
-      showToast(data.error || "Failed to remove", "error");
-    }
-  } catch {
-    refreshLists();
-    showToast("Something went wrong", "error");
-  }
-}, [user?.id, showToast, refreshLists]);
+      try {
+        const res = await fetch("/api/user/removeFromList", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            listType: listPath,
+            itemId,
+            vendorProfileId: vpId,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || "Removed");
+        } else {
+          refreshLists();
+          showToast(data.error || "Failed to remove", "error");
+        }
+      } catch {
+        refreshLists();
+        showToast("Something went wrong", "error");
+      }
+    },
+    [user?.id, showToast, refreshLists],
+  );
 
   const handleSaveProfile = async () => {
     if (!user?.id) return;
@@ -1201,6 +1266,14 @@ export default function UserProfilePageWrapper() {
     }),
     [lists],
   );
+
+  const dynamicSidebarTabs = useMemo(() => {
+    const tabs = [...SIDEBAR_TABS];
+    if (createdProfilesData.length > 0) {
+      tabs.splice(1, 0, { id: "linked-profiles", label: "Linked Profiles", icon: Store });
+    }
+    return tabs;
+  }, [createdProfilesData.length]);
 
   const vpSubCounts = useMemo(
     () => ({
@@ -1319,7 +1392,11 @@ export default function UserProfilePageWrapper() {
                 alt={displayName}
                 className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 dark:ring-gray-800"
               /> */}
-              <SmartMedia src={user.imageUrl} alt={displayName} className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 dark:ring-gray-800" />
+              <SmartMedia
+                src={user.imageUrl}
+                alt={displayName}
+                className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 dark:ring-gray-800"
+              />
               <div className="flex-1 min-w-0">
                 <h2 className="font-semibold text-gray-900 dark:text-white truncate">{displayName}</h2>
                 <PlanBadge plan={currentPlan} />
@@ -1327,7 +1404,7 @@ export default function UserProfilePageWrapper() {
             </div>
           </div>
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {SIDEBAR_TABS.map((t) => (
+            {dynamicSidebarTabs.map((t) => (
               <SidebarItem
                 key={t.id}
                 icon={t.icon}
@@ -1339,13 +1416,19 @@ export default function UserProfilePageWrapper() {
                     ? pendingCount
                     : t.id === "collection" && totalSaved > 0
                       ? totalSaved
-                      : null
+                      : t.id === "linked-profiles" && createdProfilesData.length > 0
+                        ? createdProfilesData.length
+                        : null
                 }
               />
             ))}
           </nav>
           <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-1">
-            <SidebarItem icon={HelpCircle} label="Help & Support" onClick={() => window.open("/about/contact", "_blank")} />
+            <SidebarItem
+              icon={HelpCircle}
+              label="Help & Support"
+              onClick={() => window.open("/about/contact", "_blank")}
+            />
             <SidebarItem icon={LogOut} label="Sign Out" isDestructive onClick={() => signOut({ redirectUrl: "/" })} />
             <p className="text-[10px] text-gray-300 dark:text-gray-700 text-center mt-4">v2.9.0</p>
           </div>
@@ -1370,12 +1453,38 @@ export default function UserProfilePageWrapper() {
                       </h1>
                       <p className="text-gray-500 mt-1">Here&apos;s what&apos;s happening with your account</p>
                     </div>
-                    <button
-                      onClick={() => setEditOpen(true)}
-                      className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-violet-600 dark:hover:bg-violet-600 dark:hover:text-white transition-colors flex items-center gap-2"
-                    >
-                      <Edit3 size={16} /> Edit Profile
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {/* NEW BUTTON FOR EXISTING PROFILES */}
+                      {createdProfilesData.length > 0 && (
+                        <button
+                          onClick={() => {
+                            if (createdProfilesData.length === 1) {
+                              handleSimilarprofileClick(createdProfilesData[0]);
+                            } else {
+                              handleSection("linked-profiles");
+                            }
+                          }}
+                          className="px-5 py-2.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-xl font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors flex items-center gap-2"
+                        >
+                          <Store size={16} /> Open Profile
+                        </button>
+                      )}
+
+                      <Link
+        href="/vendor/onboarding"
+        className="px-5 py-2.5 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-lg shadow-violet-200 dark:shadow-violet-900/30"
+      >
+        <Store size={16} /> Create Profile
+      </Link>
+
+                      {/* Existing Edit Button */}
+                      <button
+                        onClick={() => setEditOpen(true)}
+                        className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-violet-600 dark:hover:bg-violet-600 dark:hover:text-white transition-colors flex items-center gap-2"
+                      >
+                        <Edit3 size={16} /> Edit Profile
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-4 gap-5">
@@ -1599,6 +1708,114 @@ export default function UserProfilePageWrapper() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeSection === "linked-profiles" && createdProfilesData.length > 0 && (
+                <motion.div
+                  key="lp"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Linked Profiles</h1>
+                      <p className="text-gray-500 mt-1">Vendor profiles created and managed by you.</p>
+                    </div>
+                    <Link
+                      href="/vendor/onboarding"
+                      className="px-5 py-2.5 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-lg shadow-violet-200 dark:shadow-violet-900/30"
+                    >
+                      <Store size={16} /> Create New Profile
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {createdProfilesData.map((profile) => (
+                      <div
+                        key={profile._id}
+                        className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-xl hover:border-gray-200 transition-all duration-300"
+                      >
+                        {/* Embedded VProfileCard UI equivalent for direct integration */}
+                        <div
+                          className="h-24 rounded-xl relative mb-12"
+                          style={{
+                            background: profile.vendorCoverImage
+                              ? `url(${profile.vendorCoverImage}) center/cover`
+                              : "linear-gradient(135deg,#ede9fe,#fce7f3,#e0e7ff)",
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-black/10 rounded-xl" />
+                          <div className="absolute -bottom-8 left-4 p-1 bg-white dark:bg-gray-900 rounded-2xl">
+                            <SmartMedia
+                              src={profile.vendorAvatar || "/placeholder.jpg"}
+                              alt={profile.vendorBusinessName || profile.username}
+                              className="w-16 h-16 rounded-xl object-cover"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="px-2 flex-1">
+                          <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate">
+                            {profile.vendorBusinessName || profile.username || "Vendor"}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1 mb-4">
+                            {profile.category && (
+                              <p className="text-xs font-semibold text-violet-600 capitalize bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded">
+                                {profile.category}
+                              </p>
+                            )}
+                            {profile.location?.city && (
+                              <p className="text-xs text-gray-500 flex items-center gap-1">
+                                <MapPin size={10} /> {profile.location.city}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Stats Row */}
+                          <div className="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl mb-6">
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                {profile.postsCount ?? 0}
+                              </p>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Posts</p>
+                            </div>
+                            <div className="text-center border-l border-r border-gray-200 dark:border-gray-700">
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                {profile.reelsCount ?? 0}
+                              </p>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Reels</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                {profile.trust ?? 0}
+                              </p>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Trust</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3 mt-auto px-2">
+                          <button
+                            onClick={() => handleSimilarprofileClick(profile)}
+                            className="flex-1 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-bold hover:bg-violet-600 dark:hover:bg-violet-600 dark:hover:text-white transition-colors flex justify-center items-center gap-2"
+                          >
+                            <Eye size={16} /> View
+                          </button>
+                          <Link
+                            href="/admin/vendors"
+                            className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex justify-center items-center gap-2"
+                          >
+                            <SlidersHorizontal size={16} /> Dashboard
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
@@ -1891,9 +2108,7 @@ export default function UserProfilePageWrapper() {
                                         ])}
                                         itemClass="w-[200px]"
                                         renderItem={(p) => <PostCard post={p} />}
-                                        onRemove={(p) =>
-                                          removeFromList("vendorProfiles.posts.liked", p)
-                                        }
+                                        onRemove={(p) => removeFromList("vendorProfiles.posts.liked", p)}
                                       />
                                       <HCarousel
                                         label="Saved Posts"
@@ -1906,9 +2121,7 @@ export default function UserProfilePageWrapper() {
                                         ])}
                                         itemClass="w-[200px]"
                                         renderItem={(p) => <PostCard post={p} />}
-                                        onRemove={(p) =>
-                                          removeFromList("vendorProfiles.posts.watchlist", p)
-                                        }
+                                        onRemove={(p) => removeFromList("vendorProfiles.posts.watchlist", p)}
                                       />
                                     </motion.div>
                                   )}
@@ -1932,9 +2145,7 @@ export default function UserProfilePageWrapper() {
                                         ])}
                                         itemClass="w-[170px]"
                                         renderItem={(r) => <ReelCardVP reel={r} />}
-                                        onRemove={(r) =>
-                                          removeFromList("reels.likedVendorProfileReels", r)
-                                        }
+                                        onRemove={(r) => removeFromList("reels.likedVendorProfileReels", r)}
                                       />
                                       <HCarousel
                                         label="Saved Vendor Reels"
@@ -1948,9 +2159,7 @@ export default function UserProfilePageWrapper() {
                                         ])}
                                         itemClass="w-[170px]"
                                         renderItem={(r) => <ReelCardVP reel={r} />}
-                                        onRemove={(r) =>
-                                          removeFromList("reels.watchlistVendorProfileReels", r)
-                                        }
+                                        onRemove={(r) => removeFromList("reels.watchlistVendorProfileReels", r)}
                                       />
                                     </motion.div>
                                   )}
@@ -2200,16 +2409,16 @@ export default function UserProfilePageWrapper() {
                     </div>
                     <div className="space-y-6">
                       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex flex-col items-center">
-                          {/* <img
+                        {/* <img
                             src={user.imageUrl}
                             alt={displayName}
                             className="w-24 h-24 rounded-2xl object-cover mb-4 ring-4 ring-gray-100 dark:ring-gray-800"
                           /> */}
-                          <SmartMedia
-                            src={user.imageUrl}
-                            alt={displayName}
-                            className="w-24 h-24 rounded-2xl object-cover mb-4 ring-4 ring-gray-100 dark:ring-gray-800"
-                          />
+                        <SmartMedia
+                          src={user.imageUrl}
+                          alt={displayName}
+                          className="w-24 h-24 rounded-2xl object-cover mb-4 ring-4 ring-gray-100 dark:ring-gray-800"
+                        />
                         <p className="font-semibold text-gray-900 dark:text-white">{displayName}</p>
                         <p className="text-sm text-gray-500 text-center mt-1">Manage your photo in Clerk settings</p>
                       </div>

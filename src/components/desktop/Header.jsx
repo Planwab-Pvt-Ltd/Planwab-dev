@@ -291,7 +291,7 @@ const ProfileDropdown = ({ isOpen }) => {
     { icon: Settings, label: "Settings", href: "/user/profile?section=settings" },
   ];
   if (isAdmin) {
-    menuItems.push({ icon: LucideLayoutDashboard, label: "Admin Dashboard", href: "/admin/vendors" });
+    menuItems.push({ icon: LucideLayoutDashboard, label: "Admin Dashboard", href: "/admin/dashboard" });
   }
   return (
     <div className="absolute !z-60 top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2 px-2">
