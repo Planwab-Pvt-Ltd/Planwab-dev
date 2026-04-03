@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Calendar,
+  Video,
   MapPin,
   SlidersHorizontal,
   ChevronRight,
@@ -129,13 +130,7 @@ const VendorCard = memo(({ vendor }) => {
       >
         <div className="h-[100px] bg-gray-50 dark:bg-gray-800 relative overflow-hidden">
           {/* <img src={img} alt={vendor.name} className="w-full h-full object-cover" loading="lazy" /> */}
-          <SmartMedia
-            src={img}
-            alt={vendor.name}
-            width={160}
-            height={100}
-            className="w-full h-full object-cover"
-          />
+          <SmartMedia src={img} alt={vendor.name} width={160} height={100} className="w-full h-full object-cover" />
           <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
             {vendor.isVerified && (
               <span className="flex items-center gap-0.5 text-[8px] bg-emerald-500/90 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-bold">
@@ -368,19 +363,19 @@ const VProfileCard = memo(({ profile }) => {
           <div className="absolute inset-0 bg-black/10" />
         </div>
         <div className="px-3 pb-3 -mt-5 relative">
-            {/* <img
+          {/* <img
               src={img}
               alt={name}
               className="w-11 h-11 rounded-xl border-[2.5px] border-white dark:border-gray-900 object-cover shadow-md"
               loading="lazy"
             /> */}
-            <SmartMedia
-              src={img}
-              alt={name}
-              width={44}
-              height={44}
-              className="w-11 h-11 rounded-xl border-[2.5px] border-white dark:border-gray-900 object-cover shadow-md"
-              />
+          <SmartMedia
+            src={img}
+            alt={name}
+            width={44}
+            height={44}
+            className="w-11 h-11 rounded-xl border-[2.5px] border-white dark:border-gray-900 object-cover shadow-md"
+          />
           <p className="font-bold text-[11px] text-gray-900 dark:text-white truncate mt-1.5">{name}</p>
           <div className="flex items-center gap-1 mt-0.5">
             {cat && <p className="text-[9px] text-gray-400 capitalize">{cat}</p>}
@@ -435,13 +430,13 @@ const PostCard = memo(({ post }) => {
       >
         <div className="aspect-square bg-gray-50 dark:bg-gray-800 relative overflow-hidden">
           {/* <img src={thumb || "/placeholder.jpg"} alt="" className="w-full h-full object-cover" loading="lazy" /> */}
-           <div className="relative w-full h-full">
+          <div className="relative w-full h-full">
             {videoThumb?.loading && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-300 dark:bg-gray-600">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-700 dark:text-gray-200" />
               </div>
             )}
-          
+
             <MediaRenderer
               src={videoThumb?.thumbnail || "/placeholder.jpg"}
               alt={vendor || videoThumb?.error}
@@ -510,12 +505,7 @@ const BlogCard = memo(({ blog }) => {
       >
         <div className="h-[100px] bg-gray-50 dark:bg-gray-800 relative overflow-hidden">
           {/* <img src={img} alt={blog.title} className="w-full h-full object-cover" loading="lazy" /> */}
-          <SmartMedia
-            src={img}
-            alt={blog.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <SmartMedia src={img} alt={blog.title} className="w-full h-full object-cover" loading="lazy" />
           {blog.category && (
             <span className="absolute top-2 left-2 text-[7px] bg-violet-600/90 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-bold">
               {blog.category}
@@ -529,7 +519,9 @@ const BlogCard = memo(({ blog }) => {
           {excerpt && <p className="text-[9px] text-gray-400 line-clamp-1 mt-1">{excerpt}</p>}
           <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-1.5">
-              {authorPhoto && <SmartMedia src={authorPhoto} alt={authorName} className="w-4 h-4 rounded-full object-cover" />}
+              {authorPhoto && (
+                <SmartMedia src={authorPhoto} alt={authorName} className="w-4 h-4 rounded-full object-cover" />
+              )}
               <div>
                 {authorName && <p className="text-[8px] text-gray-500 font-medium">{authorName}</p>}
                 {blog.readTime && <p className="text-[7px] text-gray-300">{blog.readTime}</p>}
@@ -877,6 +869,12 @@ export default function UserProfilePageWrapper() {
   const [createdProfilesData, setCreatedProfilesData] = useState([]);
   const [fetchingProfiles, setFetchingProfiles] = useState(true);
 
+  const [scheduledMeets, setScheduledMeets] = useState([]);
+  const [fetchingMeets, setFetchingMeets] = useState(true);
+  const [cancellingMeetId, setCancellingMeetId] = useState(null);
+
+  const [vpSubTab, setVpSubTab] = useState(() => searchParams.get("sub") || "profiles");
+
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -884,11 +882,13 @@ export default function UserProfilePageWrapper() {
   const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
 
+  const [isLinkedProfilesExpanded, setIsLinkedProfilesExpanded] = useState(false);
+  const [isScheduledMeetsExpanded, setIsScheduledMeetsExpanded] = useState(false);
+
   const [activeTab, setActiveTab] = useState(() => {
     const t = searchParams.get("tab");
     return t && COLLECTION_TABS.some((x) => x.id === t) ? t : "vendors";
   });
-  const [vpSubTab, setVpSubTab] = useState("profiles");
   const [collectionSearch, setCollectionSearch] = useState("");
 
   const [editForm, setEditForm] = useState({
@@ -918,7 +918,7 @@ export default function UserProfilePageWrapper() {
       const res = await fetch(`/api/vendor/profile/created-by?userId=${userId}`);
       if (!res.ok) return;
       const json = await res.json();
-      
+
       if (json.success && json.data?.profiles?.length > 0) {
         const profilePromises = json.data.profiles.map((id) => fetchVendorProfile(id));
         const profiles = (await Promise.all(profilePromises)).filter(Boolean);
@@ -930,6 +930,45 @@ export default function UserProfilePageWrapper() {
       setFetchingProfiles(false);
     }
   }, []);
+
+  const fetchScheduledMeets = useCallback(async (userId) => {
+    setFetchingMeets(true);
+    try {
+      const res = await fetch(`/api/user/schedule-meet?userId=${userId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success) {
+        setScheduledMeets(json.data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch meets", e);
+    } finally {
+      setFetchingMeets(false);
+    }
+  }, []);
+
+  const handleCancelMeet = async (meetId, e) => {
+    e.stopPropagation();
+    setCancellingMeetId(meetId);
+    try {
+      const res = await fetch("/api/user/schedule-meet?userId=" + user.id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meetId, status: "cancelled" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setScheduledMeets((prev) => prev.filter((m) => m._id !== meetId));
+        showToast("Meeting cancelled successfully");
+      } else {
+        showToast(data.error || "Failed to cancel", "error");
+      }
+    } catch (err) {
+      showToast("Network error", "error");
+    } finally {
+      setCancellingMeetId(null);
+    }
+  };
 
   const handleSimilarprofileClick = (profile) => {
     const backTo = encodeURIComponent(window.location.href);
@@ -952,6 +991,16 @@ export default function UserProfilePageWrapper() {
       setCollectionSearch("");
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", tabId);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router, pathname],
+  );
+
+  const handleSubTabChange = useCallback(
+    (subId) => {
+      setVpSubTab(subId);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("sub", subId);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [searchParams, router, pathname],
@@ -1019,16 +1068,51 @@ export default function UserProfilePageWrapper() {
     if (!user?.id) return;
     let cancelled = false;
     (async () => {
-      await Promise.all([
-        fetchAllData(user.id),
-        fetchLinkedProfiles(user.id)
-      ]);
+      await Promise.all([fetchAllData(user.id), fetchLinkedProfiles(user.id), fetchScheduledMeets(user.id)]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [user?.id, fetchAllData]);
+
+  // --- SCROLL, AUTO-EXPAND, AND TAB SYNC ---
+  useEffect(() => {
+    if (loading || fetchingProfiles || fetchingMeets) return;
+
+    const section = searchParams.get("section");
+    const tab = searchParams.get("tab");
+    const sub = searchParams.get("sub");
+
+    // 1. Handle Tab & SubTab Syncing
+    if (tab && COLLECTION_TABS.some((x) => x.id === tab)) {
+      setActiveTab(tab);
+      if (sub) setVpSubTab(sub);
+
+      // If no specific section is targeted, but a tab is, scroll to collections
+      if (!section) {
+        setTimeout(() => {
+          const el = document.getElementById("collections-section");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 400);
+      }
+    }
+
+    // 2. Handle Section Scrolling and Auto-Expanding
+    if (section) {
+      if (section === "linked-profiles") setIsLinkedProfilesExpanded(true);
+      if (section === "scheduled-meets") setIsScheduledMeetsExpanded(true);
+
+      setTimeout(() => {
+        const el = document.getElementById(`${section}-section`);
+        if (el) {
+          // Adjust scroll position slightly to account for fixed headers if necessary
+          const y = el.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 500); // 500ms delay ensures DOM paints and animations finish before scrolling
+    }
+  }, [searchParams, loading, fetchingProfiles, fetchingMeets]);
 
   const refreshLists = useCallback(async () => {
     if (!user?.id || refreshing) return;
@@ -1065,46 +1149,49 @@ export default function UserProfilePageWrapper() {
     }
   }, [user?.id, refreshing, showToast]);
 
-  const removeFromList = useCallback(async (listPath, item) => {
-  const itemId = String(item._id || item.reelId || item.postId);
-  const vpId = item.vendorProfileId ? String(item.vendorProfileId) : undefined;
+  const removeFromList = useCallback(
+    async (listPath, item) => {
+      const itemId = String(item._id || item.reelId || item.postId);
+      const vpId = item.vendorProfileId ? String(item.vendorProfileId) : undefined;
 
-  setLists(prev => {
-    const next = JSON.parse(JSON.stringify(prev));
-    const parts = listPath.split(".");
-    let target = next;
-    for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
-    const key = parts[parts.length - 1];
-    target[key] = target[key].filter(i => {
-      const id = String(i._id || i.reelId || i.postId);
-      return id !== itemId;
-    });
-    return next;
-  });
+      setLists((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        const parts = listPath.split(".");
+        let target = next;
+        for (let i = 0; i < parts.length - 1; i++) target = target[parts[i]];
+        const key = parts[parts.length - 1];
+        target[key] = target[key].filter((i) => {
+          const id = String(i._id || i.reelId || i.postId);
+          return id !== itemId;
+        });
+        return next;
+      });
 
-  try {
-    const res = await fetch("/api/user/removeFromList", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user.id,
-        listType: listPath,
-        itemId,
-        vendorProfileId: vpId,
-      }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      showToast(data.message || "Removed");
-    } else {
-      refreshLists();
-      showToast(data.error || "Failed to remove", "error");
-    }
-  } catch {
-    refreshLists();
-    showToast("Something went wrong", "error");
-  }
-}, [user?.id, showToast, refreshLists]);
+      try {
+        const res = await fetch("/api/user/removeFromList", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            listType: listPath,
+            itemId,
+            vendorProfileId: vpId,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || "Removed");
+        } else {
+          refreshLists();
+          showToast(data.error || "Failed to remove", "error");
+        }
+      } catch {
+        refreshLists();
+        showToast("Something went wrong", "error");
+      }
+    },
+    [user?.id, showToast, refreshLists],
+  );
 
   const handleSaveProfile = async () => {
     if (!user?.id) return;
@@ -1293,7 +1380,7 @@ export default function UserProfilePageWrapper() {
               alt={displayName}
               className="w-[58px] h-[58px] rounded-full object-cover ring-[3px] ring-gray-100 dark:ring-gray-800"
             /> */}
-            <SmartMedia 
+            <SmartMedia
               src={user.imageUrl}
               alt={displayName}
               className="w-[58px] h-[58px] rounded-full object-cover ring-[3px] ring-gray-100 dark:ring-gray-800"
@@ -1333,7 +1420,6 @@ export default function UserProfilePageWrapper() {
                   Since {memberSince}
                 </span>
               )}
-
             </div>
           </div>
         </div>
@@ -1435,7 +1521,13 @@ export default function UserProfilePageWrapper() {
                 ic: "text-violet-600",
               },
               { label: "Reels", icon: Film, href: "/ideas", bg: "bg-pink-50 dark:bg-pink-900/20", ic: "text-pink-600" },
-              { label: "Blogs", icon: BookOpen, href: "/about/blogs", bg: "bg-sky-50 dark:bg-sky-900/20", ic: "text-sky-600" },
+              {
+                label: "Blogs",
+                icon: BookOpen,
+                href: "/about/blogs",
+                bg: "bg-sky-50 dark:bg-sky-900/20",
+                ic: "text-sky-600",
+              },
             ].map((a) => (
               <Link key={a.label} href={a.href}>
                 <motion.div whileTap={{ scale: 0.95 }} className={`flex items-center gap-2 p-3 rounded-xl ${a.bg}`}>
@@ -1448,107 +1540,302 @@ export default function UserProfilePageWrapper() {
           </div>
         </motion.div>
 
-        {/* --- NEW: Linked Profiles Section --- */}
-        {createdProfilesData.length > 0 && (
-          <motion.section
-            id="linked-profiles-section"
-            custom={2.5}
-            initial="hidden"
-            animate="visible"
-            variants={sectionVariants}
-            className="mt-6"
+        {/* --- Linked Profiles Section --- */}
+        <motion.section
+          id="linked-profiles-section"
+          custom={2.5}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+          className="mt-6"
+        >
+          {/* Clickable Header */}
+          <div
+            className="px-5 mb-3 flex items-center justify-between cursor-pointer group"
+            onClick={() => setIsLinkedProfilesExpanded(!isLinkedProfilesExpanded)}
           >
-            <div className="px-5 mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="text-[14px] font-bold text-gray-900 dark:text-white">Linked Profiles</h2>
-                <p className="text-[10px] text-gray-400 mt-0.5">Manage your vendor accounts</p>
-              </div>
-              <Link
-                href="/vendor/onboarding"
-                className="text-[10px] text-violet-600 font-bold bg-violet-50 dark:bg-violet-900/20 px-3 py-1.5 rounded-full flex items-center gap-1"
-              >
-                + Create
-              </Link>
+            <div>
+              <h2 className="text-[14px] font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                Linked Profiles
+                <motion.div animate={{ rotate: isLinkedProfilesExpanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronRight
+                    size={14}
+                    className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                  />
+                </motion.div>
+              </h2>
+              <p className="text-[10px] text-gray-400 mt-0.5">Manage your vendor accounts</p>
             </div>
 
-            <ScrollCarousel>
-              {createdProfilesData.map((profile) => (
-                <div
-                  key={profile._id}
-                  className="min-w-[260px] w-[260px] shrink-0 snap-start block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-3.5 shadow-sm shadow-black/[0.03]"
-                >
-                  <div
-                    className="h-20 rounded-xl relative mb-10"
-                    style={{
-                      background: profile.vendorCoverImage
-                        ? `url(${profile.vendorCoverImage}) center/cover`
-                        : "linear-gradient(135deg,#ede9fe,#fce7f3,#e0e7ff)",
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-black/10 rounded-xl" />
-                    <div className="absolute -bottom-6 left-3 p-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-                      <SmartMedia
-                        src={profile.vendorAvatar || "/placeholder.jpg"}
-                        alt={profile.vendorBusinessName || profile.username}
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                    </div>
-                  </div>
+            <Link
+              href="/vendor/onboarding"
+              onClick={(e) => e.stopPropagation()} // Prevent collapsing when clicking the create button
+              className="text-[10px] text-violet-600 font-bold bg-violet-50 dark:bg-violet-900/20 px-3 py-1.5 rounded-full flex items-center gap-1 active:scale-95 transition-transform"
+            >
+              <Store size={12} /> Create
+            </Link>
+          </div>
 
-                  <div className="px-1">
-                    <h3 className="font-bold text-[14px] text-gray-900 dark:text-white truncate">
-                      {profile.vendorBusinessName || profile.username || "Vendor"}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1.5 mb-4">
-                      {profile.category && (
-                        <p className="text-[9px] font-semibold text-violet-600 capitalize bg-violet-50 dark:bg-violet-900/30 px-1.5 py-0.5 rounded">
-                          {profile.category}
-                        </p>
-                      )}
-                      {profile.location?.city && (
-                        <p className="text-[9px] text-gray-500 flex items-center gap-1">
-                          <MapPin size={8} /> {profile.location.city}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-1 bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl mb-4">
-                      <div className="text-center">
-                        <p className="text-[12px] font-bold text-gray-900 dark:text-white">{profile.postsCount ?? 0}</p>
-                        <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Posts</p>
-                      </div>
-                      <div className="text-center border-l border-r border-gray-200 dark:border-gray-700">
-                        <p className="text-[12px] font-bold text-gray-900 dark:text-white">{profile.reelsCount ?? 0}</p>
-                        <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Reels</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400">{profile.trust ?? 0}</p>
-                        <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">Trust</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <button
-                        onClick={() => handleSimilarprofileClick(profile)}
-                        className="flex-1 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
+          <AnimatePresence initial={false}>
+            {isLinkedProfilesExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="overflow-hidden"
+              >
+                {fetchingProfiles ? (
+                  <ScrollCarousel>
+                    {[1, 2].map((i) => (
+                      <Shimmer key={i} className="min-w-[260px] w-[260px] h-[160px] rounded-2xl shrink-0" />
+                    ))}
+                  </ScrollCarousel>
+                ) : createdProfilesData.length > 0 ? (
+                  <ScrollCarousel>
+                    {createdProfilesData.map((profile) => (
+                      <div
+                        key={profile._id}
+                        className="min-w-[260px] w-[260px] shrink-0 snap-start block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-3.5 shadow-sm shadow-black/[0.03]"
                       >
-                        <Eye size={13} /> View
-                      </button>
-                      <Link
-                        href="/admin/vendors"
-                        className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
-                      >
-                        <SlidersHorizontal size={13} /> Dashboard
-                      </Link>
+                        <div
+                          className="h-20 rounded-xl relative mb-10"
+                          style={{
+                            background: profile.vendorCoverImage
+                              ? `url(${profile.vendorCoverImage}) center/cover`
+                              : "linear-gradient(135deg,#ede9fe,#fce7f3,#e0e7ff)",
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-black/10 rounded-xl" />
+                          <div className="absolute -bottom-6 left-3 p-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+                            <SmartMedia
+                              src={profile.vendorAvatar || "/placeholder.jpg"}
+                              alt={profile.vendorBusinessName || profile.username}
+                              width={48}
+                              height={48}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="px-1">
+                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white truncate">
+                            {profile.vendorBusinessName || profile.username || "Vendor"}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1.5 mb-4">
+                            {profile.category && (
+                              <p className="text-[9px] font-semibold text-violet-600 capitalize bg-violet-50 dark:bg-violet-900/30 px-1.5 py-0.5 rounded">
+                                {profile.category}
+                              </p>
+                            )}
+                            {profile.location?.city && (
+                              <p className="text-[9px] text-gray-500 flex items-center gap-1">
+                                <MapPin size={8} /> {profile.location.city}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1 bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl mb-4">
+                            <div className="text-center">
+                              <p className="text-[12px] font-bold text-gray-900 dark:text-white">
+                                {profile.postsCount ?? 0}
+                              </p>
+                              <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                Posts
+                              </p>
+                            </div>
+                            <div className="text-center border-l border-r border-gray-200 dark:border-gray-700">
+                              <p className="text-[12px] font-bold text-gray-900 dark:text-white">
+                                {profile.reelsCount ?? 0}
+                              </p>
+                              <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                Reels
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400">
+                                {profile.trust ?? 0}
+                              </p>
+                              <p className="text-[8px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">
+                                Trust
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5">
+                            <button
+                              onClick={() => handleSimilarprofileClick(profile)}
+                              className="flex-1 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
+                            >
+                              <Eye size={13} /> View
+                            </button>
+                            <Link
+                              href="/admin/vendors"
+                              className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
+                            >
+                              <SlidersHorizontal size={13} /> Dashboard
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollCarousel>
+                ) : (
+                  <div className="mx-5 py-8 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-center flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
+                      <Store size={18} className="text-gray-300 dark:text-gray-600" />
                     </div>
+                    <p className="text-[12px] text-gray-400 font-medium max-w-[200px] leading-relaxed">
+                      You haven't created any vendor profiles yet.
+                    </p>
+                    <Link
+                      href="/vendor/onboarding"
+                      className="mt-3 text-[11px] font-bold text-violet-600 hover:text-violet-700 transition-colors"
+                    >
+                      Get Started →
+                    </Link>
                   </div>
-                </div>
-              ))}
-            </ScrollCarousel>
-          </motion.section>
-        )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.section>
+
+        {/* --- Scheduled Meets Section --- */}
+        <motion.section
+          id="scheduled-meets-section"
+          custom={2.8}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+          className="mt-6"
+        >
+          {/* Clickable Header */}
+          <div
+            className="px-5 mb-3 flex items-center justify-between cursor-pointer group"
+            onClick={() => setIsScheduledMeetsExpanded(!isScheduledMeetsExpanded)}
+          >
+            <div>
+              <h2 className="text-[14px] font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                Scheduled Meets
+                <motion.div animate={{ rotate: isScheduledMeetsExpanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronRight
+                    size={14}
+                    className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                  />
+                </motion.div>
+              </h2>
+              <p className="text-[10px] text-gray-400 mt-0.5">Your active vendor meetings</p>
+            </div>
+            {scheduledMeets.length > 0 && (
+              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md">
+                {scheduledMeets.length} Active
+              </span>
+            )}
+          </div>
+
+          <AnimatePresence initial={false}>
+            {isScheduledMeetsExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="overflow-hidden"
+              >
+                {fetchingMeets ? (
+                  <ScrollCarousel>
+                    {[1, 2].map((i) => (
+                      <Shimmer key={i} className="min-w-[260px] w-[260px] h-[130px] rounded-2xl shrink-0" />
+                    ))}
+                  </ScrollCarousel>
+                ) : scheduledMeets.length > 0 ? (
+                  <ScrollCarousel>
+                    {scheduledMeets.map((meet) => {
+                      const profile = meet.profileId;
+                      const vendorName = profile?.vendorBusinessName || profile?.username || "Vendor";
+
+                      return (
+                        <div
+                          key={meet._id}
+                          onClick={() => {
+                            if (!profile) return;
+                            if (profile.vendorId) {
+                              router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
+                            } else {
+                              router.push(`/vendor/${profile.category}/profile/${profile.username}`);
+                            }
+                          }}
+                          className="min-w-[280px] w-[280px] shrink-0 snap-start block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm shadow-black/[0.03] cursor-pointer hover:border-gray-200 dark:hover:border-gray-700 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <SmartMedia
+                                src={profile?.vendorAvatar || "/placeholder.jpg"}
+                                alt={vendorName}
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-gray-800"
+                              />
+                              <div>
+                                <h3 className="font-bold text-[13px] text-gray-900 dark:text-white truncate max-w-[120px]">
+                                  {vendorName}
+                                </h3>
+                                <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 capitalize">
+                                  {meet.eventType === "Others" ? meet.otherEventType : meet.eventType}
+                                </p>
+                              </div>
+                            </div>
+                            <StatusBadge status={meet.status.toUpperCase()} />
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
+                              <Clock size={12} className="text-gray-400" />
+                              {new Date(meet.scheduledDate).toLocaleDateString("en-IN", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                            <button
+                              disabled={cancellingMeetId === meet._id}
+                              onClick={(e) => handleCancelMeet(meet._id, e)}
+                              className="text-[10px] text-red-500 font-bold bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg active:scale-95 transition-transform flex items-center gap-1 disabled:opacity-50 hover:bg-red-100 dark:hover:bg-red-900/40"
+                            >
+                              {cancellingMeetId === meet._id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                "Cancel"
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </ScrollCarousel>
+                ) : (
+                  <div className="mx-5 py-8 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-center flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-3">
+                      <Video size={18} className="text-gray-300 dark:text-gray-600" />
+                    </div>
+                    <p className="text-[12px] text-gray-400 font-medium max-w-[200px] leading-relaxed">
+                      You have no active scheduled meetings.
+                    </p>
+                    <Link
+                      href="/vendors/marketplace"
+                      className="mt-3 text-[11px] font-bold text-violet-600 hover:text-violet-700 transition-colors"
+                    >
+                      Browse Vendors →
+                    </Link>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.section>
 
         <motion.section custom={3} initial="hidden" animate="visible" variants={sectionVariants} className="px-5">
           <div className="flex items-center justify-between mb-3">
@@ -1653,7 +1940,13 @@ export default function UserProfilePageWrapper() {
           )}
         </motion.section>
 
-        <motion.section custom={4} initial="hidden" animate="visible" variants={sectionVariants}>
+        <motion.section
+          id="collections-section"
+          custom={4}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+        >
           <div className="px-5 mb-3 flex items-center justify-between">
             <div>
               <h2 className="text-[14px] font-bold text-gray-900 dark:text-white">My Collection</h2>
@@ -1769,7 +2062,7 @@ export default function UserProfilePageWrapper() {
                   />
                 ) : (
                   <>
-                    <SubTabBar tabs={vpSubs} active={vpSubTab} onChange={setVpSubTab} />
+                    <SubTabBar tabs={vpSubs} active={vpSubTab} onChange={handleSubTabChange} />
                     <AnimatePresence mode="wait">
                       {vpSubTab === "profiles" && (
                         <motion.div
@@ -2324,7 +2617,7 @@ export default function UserProfilePageWrapper() {
 
               <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 pb-8">
                 <motion.button
-                  whileTap={{ scale: 0.97 }} 
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => window.open("/about/contact", "_blank")}
                   className="w-full py-3.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl text-[13px] font-semibold flex items-center justify-center gap-2"
                 >

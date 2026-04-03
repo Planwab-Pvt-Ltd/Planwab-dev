@@ -53,6 +53,8 @@ import {
   Zap,
   ExternalLink,
   BarChart3,
+  Video,
+  CalendarX,
 } from "lucide-react";
 import { useVideoThumbnail } from "../../../lib/video-thumbnail";
 import SmartMedia from "../SmartMediaLoader";
@@ -973,9 +975,14 @@ export default function UserProfilePageWrapper() {
   const [createdProfilesData, setCreatedProfilesData] = useState([]);
   const [fetchingProfiles, setFetchingProfiles] = useState(true);
 
+  const [scheduledMeets, setScheduledMeets] = useState([]);
+  const [fetchingMeets, setFetchingMeets] = useState(true);
+  const [cancellingMeetId, setCancellingMeetId] = useState(null);
+
   const [activeSection, setActiveSection] = useState(() => {
     const s = searchParams.get("section");
-    return s && SIDEBAR_TABS.some((t) => t.id === s) ? s : "overview";
+    const validSections = [...SIDEBAR_TABS.map((t) => t.id), "linked-profiles", "scheduled-meets"];
+    return s && validSections.includes(s) ? s : "overview";
   });
   const [activeCollTab, setActiveCollTab] = useState(() => {
     const t = searchParams.get("tab");
@@ -1024,12 +1031,67 @@ export default function UserProfilePageWrapper() {
     }
   }, []);
 
+  const fetchScheduledMeets = useCallback(async (userId) => {
+    setFetchingMeets(true);
+    try {
+      const res = await fetch(`/api/user/schedule-meet?userId=${userId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success) {
+        setScheduledMeets(json.data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch scheduled-meets", e);
+    } finally {
+      setFetchingMeets(false);
+    }
+  }, []);
+
+  const handleCancelMeet = async (meetId, e) => {
+    e.stopPropagation();
+    setCancellingMeetId(meetId);
+    try {
+      const res = await fetch("/api/user/schedule-meet?userId=" + user.id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meetId, status: "cancelled" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setScheduledMeets((prev) => prev.filter((m) => m._id !== meetId));
+        showToast("Meeting cancelled successfully");
+      } else {
+        showToast(data.error || "Failed to cancel", "error");
+      }
+    } catch (err) {
+      showToast("Network error", "error");
+    } finally {
+      setCancellingMeetId(null);
+    }
+  };
+
   useEffect(() => {
+    // If loading is active, wait before resolving parameters
+    if (loading || fetchingProfiles || fetchingMeets) return;
+
     const s = searchParams.get("section");
     const t = searchParams.get("tab");
-    if (s && SIDEBAR_TABS.some((x) => x.id === s) && s !== activeSection) setActiveSection(s);
-    if (t && COLLECTION_TABS_DEF.some((x) => x.id === t) && t !== activeCollTab) setActiveCollTab(t);
-  }, [searchParams]);
+
+    // Map section names to valid IDs
+    let mappedSection = s;
+    if (s === "scheduled-meets") mappedSection = "scheduled-meets";
+
+    // Validate against all possible tabs
+    const validSections = [...SIDEBAR_TABS.map((x) => x.id), "linked-profiles", "scheduled-meets"];
+
+    if (mappedSection && validSections.includes(mappedSection)) {
+      if (mappedSection !== activeSection) setActiveSection(mappedSection);
+    }
+
+    if (t && COLLECTION_TABS_DEF.some((x) => x.id === t) && t !== activeCollTab) {
+      setActiveCollTab(t);
+    }
+  }, [searchParams, loading, fetchingProfiles, fetchingMeets, activeSection, activeCollTab]);
 
   const updateURL = useCallback(
     (section, tab) => {
@@ -1120,13 +1182,13 @@ export default function UserProfilePageWrapper() {
     if (!user?.id) return;
     let cancelled = false;
     (async () => {
-      await Promise.all([fetchAllData(user.id), fetchLinkedProfiles(user.id)]);
+      await Promise.all([fetchAllData(user.id), fetchLinkedProfiles(user.id), fetchScheduledMeets(user.id)]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user?.id, fetchAllData]);
+  }, [user?.id, fetchAllData, fetchLinkedProfiles, fetchScheduledMeets]);
 
   const handleSimilarprofileClick = (profile) => {
     const backTo = encodeURIComponent(window.location.href);
@@ -1272,8 +1334,11 @@ export default function UserProfilePageWrapper() {
     if (createdProfilesData.length > 0) {
       tabs.splice(1, 0, { id: "linked-profiles", label: "Linked Profiles", icon: Store });
     }
+    if (scheduledMeets.length > 0) {
+      tabs.splice(1, 0, { id: "scheduled-meets", label: "Scheduled Meets", icon: Calendar });
+    }
     return tabs;
-  }, [createdProfilesData.length]);
+  }, [createdProfilesData.length, scheduledMeets.length]);
 
   const vpSubCounts = useMemo(
     () => ({
@@ -1418,7 +1483,9 @@ export default function UserProfilePageWrapper() {
                       ? totalSaved
                       : t.id === "linked-profiles" && createdProfilesData.length > 0
                         ? createdProfilesData.length
-                        : null
+                        : t.id === "scheduled-meets" && scheduledMeets.length > 0
+                          ? scheduledMeets.length
+                          : null
                 }
               />
             ))}
@@ -1471,11 +1538,20 @@ export default function UserProfilePageWrapper() {
                       )}
 
                       <Link
-        href="/vendor/onboarding"
-        className="px-5 py-2.5 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-lg shadow-violet-200 dark:shadow-violet-900/30"
-      >
-        <Store size={16} /> Create Profile
-      </Link>
+                        href="/vendor/onboarding"
+                        className="px-5 py-2.5 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-lg shadow-violet-200 dark:shadow-violet-900/30"
+                      >
+                        <Store size={16} /> Create Profile
+                      </Link>
+
+                      {/* {scheduledMeets.length > 0 && (
+                        <button
+                          onClick={() => handleSection("scheduled-meets")}
+                          className="px-5 py-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-xl font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-2"
+                        >
+                          <Video size={16} /> {scheduledMeets.length} Meets
+                        </button>
+                      )} */}
 
                       {/* Existing Edit Button */}
                       <button
@@ -1488,6 +1564,13 @@ export default function UserProfilePageWrapper() {
                   </div>
 
                   <div className="grid grid-cols-4 gap-5">
+                    <StatCard
+                      icon={Video}
+                      label="Active Meets"
+                      value={scheduledMeets.length}
+                      color="sky"
+                      onClick={() => handleSection("scheduled-meets")}
+                    />
                     <StatCard
                       icon={Coins}
                       label="Credits"
@@ -1817,6 +1900,113 @@ export default function UserProfilePageWrapper() {
                       </div>
                     ))}
                   </div>
+                </motion.div>
+              )}
+
+              {/* --- NEW SCHEDULED MEETS SECTION --- */}
+              {activeSection === "scheduled-meets" && (
+                <motion.div
+                  key="sm"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scheduled Meets</h1>
+                      <p className="text-gray-500 mt-1">Your upcoming video consultations with vendors.</p>
+                    </div>
+                  </div>
+
+                  {fetchingMeets ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {[1, 2, 3].map((i) => (
+                        <Shimmer key={i} className="h-40 rounded-2xl" />
+                      ))}
+                    </div>
+                  ) : scheduledMeets.length === 0 ? (
+                    <EmptyState
+                      icon={Video}
+                      title="No upcoming meetings"
+                      description="You haven't scheduled any video consultations with vendors yet."
+                      action={{ label: "Browse Vendors", href: "/vendors/marketplace" }}
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {scheduledMeets.map((meet) => {
+                        const profile = meet.profileId;
+                        const vendorName = profile?.vendorBusinessName || profile?.username || "Vendor";
+
+                        return (
+                          <div
+                            key={meet._id}
+                            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm hover:shadow-xl hover:border-gray-200 transition-all duration-300 flex flex-col h-full"
+                          >
+                            <div
+                              className="flex items-start justify-between cursor-pointer group"
+                              onClick={() => {
+                                if (!profile) return;
+                                if (profile.vendorId) {
+                                  router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
+                                } else {
+                                  router.push(`/vendor/${profile.category}/profile/${profile.username}`);
+                                }
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <SmartMedia
+                                  src={profile?.vendorAvatar || "/placeholder.jpg"}
+                                  alt={vendorName}
+                                  width={48}
+                                  height={48}
+                                  className="w-12 h-12 rounded-full object-cover border border-gray-100 dark:border-gray-800 group-hover:scale-105 transition-transform"
+                                />
+                                <div>
+                                  <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate max-w-[100px] group-hover:text-violet-600 transition-colors">
+                                    {vendorName}
+                                  </h3>
+                                  <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 capitalize mt-0.5">
+                                    {meet.eventType === "Others" ? meet.otherEventType : meet.eventType}
+                                  </p>
+                                </div>
+                              </div>
+                              <StatusBadge status={meet.status.toUpperCase()} />
+                            </div>
+
+                            <div className="mt-auto pt-5">
+                              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium">
+                                  <Clock size={14} className="text-gray-400" />
+                                  {new Date(meet.scheduledDate).toLocaleDateString("en-IN", {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+
+                              <button
+                                disabled={cancellingMeetId === meet._id}
+                                onClick={(e) => handleCancelMeet(meet._id, e)}
+                                className="w-full py-2.5 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                              >
+                                {cancellingMeetId === meet._id ? (
+                                  <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                  <X size={14} />
+                                )}
+                                {cancellingMeetId === meet._id ? "Cancelling..." : "Cancel Meeting"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </motion.div>
               )}
 

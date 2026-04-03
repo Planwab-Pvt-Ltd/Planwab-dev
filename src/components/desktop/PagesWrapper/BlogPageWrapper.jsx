@@ -613,7 +613,6 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
     category: "other",
     tags: "",
   });
-  const [imageTab, setImageTab] = useState("upload");
   const [imageUploading, setImageUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [uploadError, setUploadError] = useState("");
@@ -637,52 +636,78 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
     setUploadError("");
   }, [editingBlog, isOpen]);
 
-  const uploadToImageKit = async (file) => {
-    setImageUploading(true);
-    setUploadError("");
-    try {
-      const authRes = await fetch("/api/imagekit/auth");
-      const auth = await authRes.json();
-      if (!auth.signature) throw new Error("Auth failed");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("fileName", `blog_cover_${Date.now()}_${file.name}`);
-      fd.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY);
-      fd.append("signature", auth.signature);
-      fd.append("expire", auth.expire);
-      fd.append("token", auth.token);
-      fd.append("folder", "/planwab/blogs");
-      const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", { method: "POST", body: fd });
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadJson.message || "Upload failed");
-      setForm((f) => ({ ...f, coverImage: uploadJson.url }));
-      setImagePreview(uploadJson.url);
-    } catch (err) {
-      setUploadError(err.message || "Upload failed. Try a URL instead.");
-    } finally {
-      setImageUploading(false);
-    }
+  // Reusable ImageKit upload logic (matching VendorProfileOnboarding)
+  const uploadImageToImageKit = async (file, folder = "/planwab/blogs") => {
+    const authRes = await fetch("/api/imagekit/auth");
+    const authData = await authRes.json();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY);
+    formData.append("signature", authData.signature);
+    formData.append("expire", authData.expire);
+    formData.append("token", authData.token);
+    formData.append("fileName", `blog_cover_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split(".").pop()}`);
+    formData.append("folder", folder);
+    
+    const res = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+    
+    if (!res.ok) throw new Error("Image upload failed");
+    const data = await res.json();
+    return data.url;
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
     if (!file.type.startsWith("image/")) {
-      setUploadError("Please select an image file.");
+      setUploadError("Please select a valid image file.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       setUploadError("Image must be under 5 MB.");
       return;
     }
-    setImagePreview(URL.createObjectURL(file));
-    uploadToImageKit(file);
+
+    // Show instant local preview while uploading
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    setImageUploading(true);
+    setUploadError("");
+
+    try {
+      // Upload to ImageKit and get real URL
+      const url = await uploadImageToImageKit(file);
+      setForm((f) => ({ ...f, coverImage: url }));
+      // Set the final preview to the actual hosted image
+      setImagePreview(url); 
+    } catch (err) {
+      setUploadError("Failed to upload cover image. Please try again.");
+      setImagePreview("");
+      setForm((f) => ({ ...f, coverImage: "" }));
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) handleFileChange({ target: { files: [file] } });
+  };
+
+  const removeCoverImage = (e) => {
+    e.stopPropagation();
+    setImagePreview("");
+    setForm((f) => ({ ...f, coverImage: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = (e) => {
@@ -759,107 +784,69 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
               </select>
             </div>
 
-            <div>
+           <div>
               <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
                 Cover Image <span className="font-normal text-slate-400">(optional)</span>
               </label>
-              <div className="flex rounded-xl p-1 mb-3 w-fit gap-1 bg-slate-100 dark:bg-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setImageTab("upload")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${imageTab === "upload" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
-                >
-                  <Upload size={12} /> Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageTab("url")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${imageTab === "url" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
-                >
-                  <Link size={12} /> URL
-                </button>
-              </div>
-
-              {imageTab === "upload" ? (
-                <div>
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handleDrop}
-                    onClick={() => !imageUploading && fileInputRef.current?.click()}
-                    className={`relative border-2 border-dashed rounded-xl transition-all cursor-pointer ${imageUploading ? "border-blue-300 dark:border-blue-500/50 bg-blue-50 dark:bg-blue-500/10" : "border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500/50 bg-slate-50 dark:bg-slate-900"}`}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileChange}
+              
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => !imageUploading && !imagePreview && fileInputRef.current?.click()}
+                className={`relative border-2 border-dashed rounded-xl transition-all cursor-pointer overflow-hidden ${imageUploading ? "border-blue-300 dark:border-blue-500/50 bg-blue-50 dark:bg-blue-500/10" : imagePreview ? "border-transparent bg-slate-50 dark:bg-slate-900" : "border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500/50 bg-slate-50 dark:bg-slate-900"}`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={imageUploading}
+                />
+                
+                {imagePreview ? (
+                  <div className="relative group w-full h-40">
+                    <img
+                      src={imagePreview}
+                      className="w-full h-full object-cover"
+                      alt="Cover Preview"
                     />
-                    {imagePreview && !imageUploading ? (
-                      <div className="relative">
-                        {/* <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-xl" /> */}
-                        <SmartMedia
-                          src={imagePreview}
-                          className="w-full h-40 object-cover rounded-xl"
-                          alt="Preview"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setImagePreview("");
-                            setForm((f) => ({ ...f, coverImage: "" }));
-                          }}
-                          className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-50 transition-colors"
-                        >
-                          <X size={13} className="text-slate-600" />
-                        </button>
+                    {imageUploading && (
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div className="text-center flex flex-col items-center">
+                          <Loader2 size={28} className="text-white animate-spin mb-2" />
+                          <p className="text-white text-xs font-semibold">Uploading...</p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="py-8 flex flex-col items-center justify-center gap-2 text-center px-4">
-                        {imageUploading ? (
-                          <>
-                            <Loader2 size={28} className="text-blue-500 animate-spin" />
-                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Uploading...</p>
-                          </>
-                        ) : (
-                          <>
-                            <ImageIcon size={28} className="text-slate-400 dark:text-slate-500" />
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                              Drop or <span className="text-blue-500">browse</span>
-                            </p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">PNG, JPG, WEBP — max 5 MB</p>
-                          </>
-                        )}
+                    )}
+                    {!imageUploading && (
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center z-10">
+                         <button
+                            type="button"
+                            onClick={removeCoverImage}
+                            className="bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full shadow-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <p className="text-white text-xs font-medium mt-2">Click to remove</p>
                       </div>
                     )}
                   </div>
-                  {uploadError && (
-                    <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
-                      <AlertTriangle size={11} /> {uploadError}
+                ) : (
+                  <div className="py-8 flex flex-col items-center justify-center gap-2 text-center px-4">
+                    <ImageIcon size={28} className="text-slate-400 dark:text-slate-500" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                      Drop or <span className="text-blue-500">browse</span> to upload cover
                     </p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <input
-                    type="url"
-                    value={form.coverImage}
-                    onChange={(e) => {
-                      setForm((f) => ({ ...f, coverImage: e.target.value }));
-                      setImagePreview(e.target.value);
-                    }}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-4 py-3 rounded-xl border outline-none transition-all text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-400 dark:focus:border-blue-500"
-                  />
-                  {imagePreview && (
-                    <SmartMedia
-                      src={imagePreview}
-                      className="w-full h-32 object-cover rounded-xl border border-slate-100 dark:border-slate-600"
-                      alt="Preview"
-                    />
-                  )}
-                </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">PNG, JPG, WEBP — max 5 MB</p>
+                  </div>
+                )}
+              </div>
+              
+              {uploadError && (
+                <p className="mt-2 text-xs font-medium text-red-500 flex items-center gap-1.5">
+                  <AlertTriangle size={12} /> {uploadError}
+                </p>
               )}
             </div>
 
