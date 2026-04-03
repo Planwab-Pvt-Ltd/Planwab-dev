@@ -30,6 +30,15 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
   }
 
+  const EXCLUDED_ROUTES = [
+  "/sign-in",
+  "/sign-up",
+  ];
+
+const isExcludedRoute = EXCLUDED_ROUTES.some((route) =>
+  pathname.startsWith(route)
+);
+
   // 3. Device Detection
   const { device } = userAgent(req);
   const isMobile = device.type === "mobile";
@@ -47,7 +56,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   // 5. ADAPTIVE REWRITE FOR MOBILE
   if (isMobile) {
-    if (!isMobilePath) {
+    if (!isMobilePath && !isExcludedRoute) {
       // FIX: Prevent rewriting "/" to "/m/" to avoid Next.js 308 trailing slash redirects
       url.pathname = pathname === "/" ? "/m" : `/m${pathname}`;
       

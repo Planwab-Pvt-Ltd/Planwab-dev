@@ -7,6 +7,7 @@ import { useUser, SignInButton } from "@clerk/clerk-react";
 import {
   Search,
   Calendar,
+  ImageIcon,
   User,
   Tag,
   Heart,
@@ -235,6 +236,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
   const [imagePreview, setImagePreview] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (editingBlog) {
@@ -253,47 +255,69 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
     }
   }, [editingBlog, isOpen]);
 
-  const uploadToImageKit = async (file) => {
+  const uploadImageToImageKit = async (file) => {
+    const authRes = await fetch("/api/imagekit/auth");
+    const authData = await authRes.json();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY);
+    formData.append("signature", authData.signature);
+    formData.append("expire", authData.expire);
+    formData.append("token", authData.token);
+    formData.append("fileName", `blog_cover_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split(".").pop()}`);
+    formData.append("folder", "/planwab/blogs");
+    
+    const res = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+    
+    if (!res.ok) throw new Error("Image upload failed");
+    const data = await res.json();
+    return data.url;
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image must be under 5 MB.");
+      return;
+    }
+
+    // Show instant local preview while uploading
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
     setImageUploading(true);
     setUploadError("");
+
     try {
-      const authRes = await fetch("/api/imagekit/auth");
-      const auth = await authRes.json();
-      if (!auth.signature) throw new Error("Auth failed");
-
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("fileName", `blog_cover_${Date.now()}`);
-      fd.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY);
-      fd.append("signature", auth.signature);
-      fd.append("expire", auth.expire);
-      fd.append("token", auth.token);
-      fd.append("folder", "/planwab/blogs");
-
-      const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
-        method: "POST",
-        body: fd,
-      });
-
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadJson.message || "Upload failed");
-
-      setForm((f) => ({ ...f, coverImage: uploadJson.url }));
-      setImagePreview(uploadJson.url);
+      const url = await uploadImageToImageKit(file);
+      setForm((f) => ({ ...f, coverImage: url }));
+      setImagePreview(url); // Set the final preview to the hosted image
     } catch (err) {
-      setUploadError(err.message || "Upload failed.");
+      setUploadError("Failed to upload cover image. Please try again.");
+      setImagePreview("");
+      setForm((f) => ({ ...f, coverImage: "" }));
     } finally {
       setImageUploading(false);
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) return setUploadError("Please select an image.");
-      if (file.size > 5 * 1024 * 1024) return setUploadError("Image must be under 5MB.");
-      uploadToImageKit(file);
-    }
+  const removeCoverImage = (e) => {
+    e.stopPropagation();
+    setImagePreview("");
+    setForm((f) => ({ ...f, coverImage: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = (e) => {
@@ -319,6 +343,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
         transition={{ type: "spring", damping: 30, stiffness: 250 }}
         className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex flex-col"
       >
+        {/* Sticky Header */}
         <div className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 px-4 h-14 flex items-center justify-between shrink-0">
           <button
             onClick={onClose}
@@ -331,7 +356,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
           </span>
           <button
             onClick={handleSubmit}
-            disabled={loading || imageUploading || !form.title.trim()}
+            disabled={loading || imageUploading || !form.title.trim() || !form.content.trim()}
             className="h-9 px-5 bg-blue-500 text-white rounded-full font-bold text-xs shadow-lg active:scale-95 disabled:opacity-30 transition-all flex items-center gap-2"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -339,44 +364,62 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
           </button>
         </div>
 
+        {/* Scrollable Form Body */}
         <form className="flex-1 overflow-y-auto px-5 py-6 space-y-6 pb-32">
+          
+          {/* Cover Image Upload */}
           <div className="relative">
             <div
+              onClick={() => !imageUploading && !imagePreview && fileInputRef.current?.click()}
               className={`relative aspect-[16/10] bg-slate-50 dark:bg-slate-800 rounded-2xl overflow-hidden border-2 border-dashed transition-all ${imagePreview ? "border-transparent" : "border-slate-200 dark:border-slate-700"}`}
             >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={imageUploading}
+              />
+              
               {imagePreview ? (
                 <>
-                  <MediaRenderer src={imagePreview} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagePreview("");
-                      setForm((f) => ({ ...f, coverImage: "" }));
-                    }}
-                    className="absolute top-3 right-3 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white active:scale-90 transition-transform"
-                  >
-                    <X size={18} />
-                  </button>
+                  <img src={imagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
+                  
+                  {imageUploading && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
+                      <div className="text-center flex flex-col items-center">
+                        <Loader2 size={24} className="text-white animate-spin mb-2" />
+                        <p className="text-white text-[10px] font-semibold">Uploading...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!imageUploading && (
+                    <button
+                      type="button"
+                      onClick={removeCoverImage}
+                      className="absolute top-3 right-3 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white active:scale-90 transition-transform z-20"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </>
               ) : (
-                <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
+                <div className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
                   <div className="w-14 h-14 bg-white dark:bg-slate-700 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                    {imageUploading ? (
-                      <Loader2 size={24} className="animate-spin text-blue-500" />
-                    ) : (
-                      <ImagePlus size={24} className="text-blue-500" />
-                    )}
+                    <ImageIcon size={24} className="text-blue-500" />
                   </div>
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    {imageUploading ? "Uploading..." : "Add Cover Image"}
+                    Add Cover Image
                   </span>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                </label>
+                </div>
               )}
             </div>
             {uploadError && <p className="mt-2 text-center text-red-500 text-xs font-medium">{uploadError}</p>}
           </div>
 
+          {/* Title & Categories */}
           <div className="space-y-4">
             <textarea
               placeholder="Article title..."
@@ -394,7 +437,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
                     key={cat.id}
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, category: cat.id }))}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${form.category === cat.id ? "bg-blue-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"}`}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${form.category === cat.id ? "bg-blue-500 text-white shadow-md shadow-blue-500/30" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"}`}
                   >
                     <Icon size={12} />
                     {cat.name}
@@ -404,6 +447,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
             </div>
           </div>
 
+          {/* Excerpt */}
           <textarea
             placeholder="Write a short excerpt..."
             rows={2}
@@ -414,6 +458,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
 
           <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />
 
+          {/* Content */}
           <textarea
             placeholder="Write your article content..."
             rows={12}
@@ -422,6 +467,7 @@ const BlogFormModal = ({ isOpen, onClose, onSubmit, editingBlog, loading }) => {
             className="w-full text-base placeholder:text-slate-300 dark:placeholder:text-slate-600 border-none focus:ring-0 p-0 resize-none leading-relaxed text-slate-700 dark:text-slate-300 bg-transparent"
           />
 
+          {/* Tags */}
           <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5">
             <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">
               <Tag size={12} className="text-blue-500" /> Tags (comma separated)

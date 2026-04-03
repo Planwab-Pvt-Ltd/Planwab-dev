@@ -35,6 +35,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+
 ```
 Planwab-dev
 ├─ .dockerignore
@@ -71,6 +72,8 @@ Planwab-dev
 │  │  ├─ (desktop)
 │  │  │  ├─ (admin)
 │  │  │  │  └─ admin
+│  │  │  │     ├─ blogs
+│  │  │  │     │  └─ page.jsx
 │  │  │  │     ├─ dashboard
 │  │  │  │     │  └─ page.jsx
 │  │  │  │     ├─ events
@@ -95,7 +98,10 @@ Planwab-dev
 │  │  │  │  ├─ about
 │  │  │  │  │  ├─ blogs
 │  │  │  │  │  │  ├─ loading.js
-│  │  │  │  │  │  └─ page.jsx
+│  │  │  │  │  │  ├─ page.jsx
+│  │  │  │  │  │  └─ [id]
+│  │  │  │  │  │     ├─ loading.js
+│  │  │  │  │  │     └─ page.jsx
 │  │  │  │  │  ├─ contact
 │  │  │  │  │  │  ├─ loading.js
 │  │  │  │  │  │  └─ page.jsx
@@ -182,7 +188,10 @@ Planwab-dev
 │  │  │     │  ├─ about
 │  │  │     │  │  ├─ blogs
 │  │  │     │  │  │  ├─ loading.js
-│  │  │     │  │  │  └─ page.jsx
+│  │  │     │  │  │  ├─ page.jsx
+│  │  │     │  │  │  └─ [id]
+│  │  │     │  │  │     ├─ loading.js
+│  │  │     │  │  │     └─ page.jsx
 │  │  │     │  │  ├─ contact
 │  │  │     │  │  │  ├─ loading.js
 │  │  │     │  │  │  └─ page.jsx
@@ -253,8 +262,18 @@ Planwab-dev
 │  │  │     └─ page.js
 │  │  ├─ api
 │  │  │  ├─ admin
-│  │  │  │  └─ dashboard
-│  │  │  │     ├─ charts
+│  │  │  │  ├─ blogs
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ dashboard
+│  │  │  │  │  ├─ charts
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  └─ route.js
+│  │  │  │  └─ newsletter
+│  │  │  │     └─ route.js
+│  │  │  ├─ blogs
+│  │  │  │  ├─ route.js
+│  │  │  │  └─ [id]
+│  │  │  │     ├─ interact
 │  │  │  │     │  └─ route.js
 │  │  │  │     └─ route.js
 │  │  │  ├─ contact
@@ -267,6 +286,8 @@ Planwab-dev
 │  │  │  ├─ leads
 │  │  │  │  └─ route.js
 │  │  │  ├─ media
+│  │  │  │  └─ route.js
+│  │  │  ├─ newsletter
 │  │  │  │  └─ route.js
 │  │  │  ├─ orders
 │  │  │  │  └─ route.js
@@ -312,9 +333,15 @@ Planwab-dev
 │  │  │  │     └─ view
 │  │  │  │        └─ route.js
 │  │  │  ├─ user
+│  │  │  │  ├─ created-profiles
+│  │  │  │  │  └─ route.js
 │  │  │  │  ├─ interactionsLists
 │  │  │  │  │  └─ route.js
+│  │  │  │  ├─ list
+│  │  │  │  │  └─ route.js
 │  │  │  │  ├─ me
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ removeFromList
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ route.js
 │  │  │  │  ├─ status
@@ -327,7 +354,9 @@ Planwab-dev
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ toggle-reel-watchlist
 │  │  │  │  │  └─ route.js
-│  │  │  │  └─ toggle-watchlist
+│  │  │  │  ├─ toggle-watchlist
+│  │  │  │  │  └─ route.js
+│  │  │  │  └─ updatedittab
 │  │  │  │     └─ route.js
 │  │  │  ├─ vendor
 │  │  │  │  ├─ add
@@ -338,6 +367,8 @@ Planwab-dev
 │  │  │  │  │  └─ [id]
 │  │  │  │  │     └─ route.js
 │  │  │  │  ├─ profile
+│  │  │  │  │  ├─ created-by
+│  │  │  │  │  │  └─ route.js
 │  │  │  │  │  ├─ highlights
 │  │  │  │  │  │  └─ route.js
 │  │  │  │  │  ├─ interactions
@@ -410,6 +441,9 @@ Planwab-dev
 │  ├─ components
 │  │  ├─ desktop
 │  │  │  ├─ admin
+│  │  │  │  ├─ blogs
+│  │  │  │  │  ├─ AllBlogs.jsx
+│  │  │  │  │  └─ ViewBlogTab.jsx
 │  │  │  │  ├─ DashboardStatsCard.jsx
 │  │  │  │  ├─ events
 │  │  │  │  │  ├─ AddEvent.jsx
@@ -442,7 +476,9 @@ Planwab-dev
 │  │  │  │  │  └─ ViewReelTab.jsx
 │  │  │  │  ├─ Sidebar.jsx
 │  │  │  │  ├─ users
-│  │  │  │  │  └─ AllUsers.jsx
+│  │  │  │  │  ├─ AllUsers.jsx
+│  │  │  │  │  ├─ EditUserTab.jsx
+│  │  │  │  │  └─ ViewUserTab.jsx
 │  │  │  │  ├─ vendor-profiles
 │  │  │  │  │  ├─ AllVendorProfiles.jsx
 │  │  │  │  │  └─ ViewVendorProfileTab.jsx
@@ -491,6 +527,7 @@ Planwab-dev
 │  │  │  │  ├─ PricingPageWrapper.jsx
 │  │  │  │  ├─ SignInPageWrapper.jsx
 │  │  │  │  ├─ SignUpPageWrapper.jsx
+│  │  │  │  ├─ SingleBlogPageWrapper.jsx
 │  │  │  │  ├─ TrackingProposalsPagewrapper.jsx
 │  │  │  │  ├─ UserBookingsPageWrapper.jsx
 │  │  │  │  ├─ UserProfilePageWrapper.jsx
@@ -507,6 +544,7 @@ Planwab-dev
 │  │  │  ├─ ui
 │  │  │  │  ├─ Charts
 │  │  │  │  │  ├─ BirthdayBookingChart.jsx
+│  │  │  │  │  ├─ BlogsNewsletterChart.jsx
 │  │  │  │  │  ├─ card.jsx
 │  │  │  │  │  ├─ chart.jsx
 │  │  │  │  │  ├─ LeadsChart.jsx
@@ -613,6 +651,7 @@ Planwab-dev
 │  │  │  │  ├─ PricingPageWrapper.jsx
 │  │  │  │  ├─ SignInPageWrapper.jsx
 │  │  │  │  ├─ SignUpPageWrapper.jsx
+│  │  │  │  ├─ SingleBlogPageWrapper.jsx
 │  │  │  │  ├─ TrackingProposalsPagewrapper.jsx
 │  │  │  │  ├─ UserBookingsPageWrapper.jsx
 │  │  │  │  ├─ UserProfilePageWrapper.jsx
@@ -663,9 +702,11 @@ Planwab-dev
 │  │  │  └─ UserActions.js
 │  │  ├─ models
 │  │  │  ├─ BirthdayBooking.js
+│  │  │  ├─ BlogModel.js
 │  │  │  ├─ ContactUsModel.js
 │  │  │  ├─ DetailsBookingRequestModel.js
 │  │  │  ├─ LeadsModel.js
+│  │  │  ├─ NewsletterModel.js
 │  │  │  ├─ Orders.js
 │  │  │  ├─ PlannedEvent.js
 │  │  │  ├─ PlannedToolEvent.js

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import ReactDOM from "react-dom/client";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useTransform, LayoutGroup } from "framer-motion";
 import {
   ArrowLeft,
@@ -11418,6 +11419,461 @@ const ReelCard = ({ reel, index, onSelect }) => {
   );
 };
 
+const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn }) => {
+  const [view, setView] = useState("options"); // 'options', 'meetsList', or 'schedule'
+  const [loading, setLoading] = useState(false);
+  const [loadingMeets, setLoadingMeets] = useState(false);
+  const [existingMeets, setExistingMeets] = useState([]);
+  
+  const router = useRouter();
+  const { user } = useUser();
+
+  const [formData, setFormData] = useState({
+    scheduledDate: "",
+    eventType: "Wedding",
+    otherEventType: "",
+  });
+
+  const [isLiveActive, setIsLiveActive] = useState(false);
+
+  useEffect(() => {
+    const checkLiveStatus = () => {
+      // 1. Get the current date/time
+      const now = new Date();
+      
+      // 2. Convert current time strictly to IST string, then parse it back to a date object
+      // This ensures that no matter where the user is in the world, the logic evaluates against India time.
+      const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+      const istDate = new Date(istString);
+      
+      const day = istDate.getDay(); // 0 is Sunday, 1-6 is Mon-Sat
+      const hour = istDate.getHours(); // 0-23
+      
+      // Active if it's NOT Sunday (day !== 0) AND between 10:00 AM (10) and 9:59 PM (hour < 22)
+      // The moment the clock strikes 22:00 (10:00 PM), it will become false.
+      setIsLiveActive(day !== 0 && hour >= 10 && hour < 22);
+    };
+    
+    checkLiveStatus();
+    // Check every minute to automatically update the UI without needing a refresh
+    const interval = setInterval(checkLiveStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!isOpen) return null;
+
+  const handleJoinLive = () => {
+    onClose();
+    window.open(`https://meet.google.com/uon-sbuw-equ`, "_blank");
+  };
+
+ const fetchScheduledMeets = async () => {
+    if (!user || !user?.id) return;
+    setLoadingMeets(true);
+    try {
+      const res = await fetch("/api/user/schedule-meet?userId=" + user.id);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setExistingMeets(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch meets:", error);
+    } finally {
+      setLoadingMeets(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      fetchScheduledMeets();
+    }
+  }, [isOpen, user?.id]);
+
+  const handleScheduleOptionClick = () => {
+    if (!user || !user?.id) {
+      onClose();
+      requireSignIn("Please sign in to schedule your meeting");
+      return;
+    }
+
+    // Instantly switch view based on pre-fetched data
+    if (existingMeets.length > 0) {
+      setView("meetsList");
+    } else {
+      setView("schedule");
+    }
+  };
+
+  // --- Submit New Meet ---
+  const handleScheduleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!user || !user?.id) {
+      setLoading(false);
+      onClose(); 
+      requireSignIn("Please sign in to schedule your meeting"); 
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/user/schedule-meet", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profileId: vendor,
+          scheduledDate: formData.scheduledDate,
+          eventType: formData.eventType,
+          otherEventType: formData.otherEventType,
+          url: "https://meet.google.com/uon-sbuw-equ",
+          pageUrl: window.location.href,
+          userDetails: {
+            firstName: user?.firstName || "",
+            lastName: user?.lastName || "",
+            email: user?.primaryEmailAddress?.emailAddress || "",
+            imageUrl: user?.imageUrl || "",
+          },
+          userId: user?.id,
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403 || res.redirected) {
+        setLoading(false);
+        onClose(); 
+        requireSignIn("Please sign in to schedule your meeting"); 
+        return;
+      }
+
+      const contentType = res.headers.get("content-type");
+      let data;
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        setLoading(false);
+        onClose(); 
+        requireSignIn("Please sign in to schedule your meeting"); 
+        return;
+      }
+      
+      if (!data.success && data.error === "Unauthorized") {
+        setLoading(false);
+        onClose(); 
+        requireSignIn("Please sign in to schedule your meeting"); 
+        return;
+      }
+    
+      if (data.success) {
+        showUIConfirmation("Meeting scheduled successfully!", "success");
+        await fetchScheduledMeets();
+        setTimeout(() => {
+          setView("meetsList");
+          setFormData({ scheduledDate: "", eventType: "Wedding", otherEventType: "" });
+        }, 500);
+      } else {
+        showUIConfirmation(data.error || "Failed to schedule", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showUIConfirmation("Network error. Please try again.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper for formatting date
+  const formatDateTime = (dateString) => {
+    const options = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+      />
+
+      {/* Right Drawer */}
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="relative w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col"
+      >
+        <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <AnimatePresence mode="wait">
+            
+            {/* VIEW 1: OPTIONS */}
+            {view === "options" && (
+              <motion.div
+                key="options"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Meet Vendor</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Connect with {vendor?.name}</p>
+                  </div>
+                  <button onClick={onClose} className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="grid gap-4 mt-6">
+                  <button
+                    onClick={handleJoinLive} 
+                    disabled={!isLiveActive}
+                    className="w-full flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50 hover:shadow-md hover:scale-[1.02] transition-all text-left group"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                      <Video size={20} className="text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Join Live Meet
+                       {isLiveActive && (
+                         <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+                        </span>
+                       )}
+                      </h4>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">Talk instantly with our category expert</p>
+                      {/* ADDED SAT-SUN INFO */}
+                      <p className="text-[10px] font-bold text-blue-600/80 dark:text-blue-400/80 uppercase tracking-widest flex items-center gap-1">
+                        <Clock size={10} /> Sat-Sun off • 10 AM - 9 PM
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleScheduleOptionClick}
+                    disabled={loadingMeets}
+                    className="w-full flex items-center gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:shadow-md hover:scale-[1.02] transition-all text-left relative"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-200 dark:border-slate-600">
+                      {loadingMeets ? <Loader2 size={20} className="animate-spin text-slate-400" /> : <Calendar size={20} className="text-slate-600 dark:text-slate-400" />}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">Schedule Meeting</h4>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">Pick a time that works best for you</p>
+                    </div>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+           {/* VIEW 2: EXISTING MEETS LIST */}
+            {view === "meetsList" && (
+              <motion.div
+                key="meetsList"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <button onClick={() => setView("options")} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <ArrowLeft size={18} />
+                  </button>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Your Scheduled Meets</h3>
+                    <p className="text-[12px] text-slate-500 font-medium mt-0.5">{existingMeets.length}/5 Active Schedules</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {existingMeets.map((meet) => {
+                    const profile = meet.profileId; // Extracted populated profile data
+
+                    return (
+                      <div key={meet._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col gap-4">
+                        
+                        {/* Vendor Info Section (Clickable for Redirect) */}
+                        <div 
+                          onClick={() => {
+                            if (!profile) return;
+                            onClose(); // Close drawer before navigating
+                            if (profile.vendorId) {
+                              router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
+                            } else {
+                              router.push(`/vendor/${profile.category}/profile/${profile.username}`);
+                            }
+                          }}
+                          className="flex items-center gap-3 cursor-pointer group"
+                        >
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shrink-0">
+                            <img 
+                              src={profile?.vendorAvatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"} 
+                              alt={profile?.username} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              @{profile?.username || "vendor"}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                              {profile?.category || "Vendor"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Meeting Details Section */}
+                        <div className="flex items-start justify-between border-t border-slate-200 dark:border-slate-700/50 pt-3">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[14px] text-slate-900 dark:text-white">
+                                {meet.eventType === "Others" ? meet.otherEventType : meet.eventType}
+                              </span>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                meet.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              }`}>
+                                {meet.status}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[12px] text-slate-500 dark:text-slate-400 font-medium">
+                              <Clock size={13} />
+                              {formatDateTime(meet.scheduledDate)}
+                            </div>
+                          </div>
+                        </div>
+                        
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 5 Limit UI (Remains unchanged) */}
+                {existingMeets.length >= 5 ? (
+                  <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-2xl flex items-start gap-3">
+                    <AlertCircle size={18} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-sm font-bold text-red-800 dark:text-red-300">Schedule Limit Reached</h5>
+                      <p className="text-[12px] text-red-600 dark:text-red-400 mt-1">You have reached the maximum limit of 5 active scheduled meetings. Please attend or cancel existing ones to create new schedules.</p>
+                    </div>
+                  </div>
+                ) : (
+                    <div className="mt-4 sm:mt-6 flex flex-col items-center gap-[4px]">
+                  <button
+                  onClick={() => setView("schedule")}
+                  className="w-full mt-4 sm:mt-6 py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl font-bold text-[13px] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <Calendar size={16} />
+                  Create Another Schedule
+                </button>
+                  <Link 
+                  href={`/user/profile?section=scheduled-meets`}
+                  className="w-full mt-4 sm:mt-6 py-4 border-2 bg-gray-200 dark:bg-gray-800 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl font-bold text-[13px] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <Calendar size={16} />
+                  Manage Schedules
+                </Link>
+                </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* VIEW 3: SCHEDULE FORM */}
+            {view === "schedule" && (
+              <motion.div
+                key="schedule"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <button 
+                    onClick={() => existingMeets.length > 0 ? setView("meetsList") : setView("options")} 
+                    className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">Schedule Meeting</h3>
+                </div>
+
+                <form onSubmit={handleScheduleSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Select Date & Time</label>
+                    <div className="relative">
+                      <input
+                        type="datetime-local"
+                        required
+                        value={formData.scheduledDate}
+                        onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Event Type</label>
+                    <div className="relative">
+                      <select
+                        value={formData.eventType}
+                        onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
+                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white appearance-none focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      >
+                        <option value="Wedding">Wedding</option>
+                        <option value="Anniversary">Anniversary</option>
+                        <option value="Birthday">Birthday</option>
+                        <option value="Others">Others</option>
+                      </select>
+                      <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {formData.eventType === "Others" && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="space-y-2 overflow-hidden"
+                      >
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Specify Event</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Corporate Event"
+                          value={formData.otherEventType}
+                          onChange={(e) => setFormData({ ...formData, otherEventType: e.target.value })}
+                          className="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 mt-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold flex items-center justify-center shadow-lg transition-transform hover:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100 cursor-pointer"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : "Confirm Schedule"}
+                  </button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendor }) => {
   const { id, category } = useParams();
   const router = useRouter();
@@ -11470,6 +11926,8 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [showBookingDrawer, setShowBookingDrawer] = useState(false);
   const [showReviewsDrawer, setShowReviewsDrawer] = useState(false);
   const [showContactDrawer, setShowContactDrawer] = useState(false);
+  const [showMeetDrawer, setShowMeetDrawer] = useState(false);
+  const [isLiveActive, setIsLiveActive] = useState(false);
   const [showProfilePicture, setShowProfilePicture] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -11537,6 +11995,30 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const initialFetchDoneRef = useRef(false);
   const onboardingHandledRef = useRef(false);
   const stickyTabsRef = useRef(null);
+
+    useEffect(() => {
+    const checkLiveStatus = () => {
+      // 1. Get the current date/time
+      const now = new Date();
+      
+      // 2. Convert current time strictly to IST string, then parse it back to a date object
+      // This ensures that no matter where the user is in the world, the logic evaluates against India time.
+      const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+      const istDate = new Date(istString);
+      
+      const day = istDate.getDay(); // 0 is Sunday, 1-6 is Mon-Sat
+      const hour = istDate.getHours(); // 0-23
+      
+      // Active if it's NOT Sunday (day !== 0) AND between 10:00 AM (10) and 9:59 PM (hour < 22)
+      // The moment the clock strikes 22:00 (10:00 PM), it will become false.
+      setIsLiveActive(day !== 0 && hour >= 10 && hour < 22);
+    };
+    
+    checkLiveStatus();
+    // Check every minute to automatically update the UI without needing a refresh
+    const interval = setInterval(checkLiveStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14504,19 +14986,34 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                     transition={{ delay: 0.3, duration: 0.4 }}
                     className="flex items-center gap-2 mb-4"
                   >
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      whileHover={{ scale: 1.02 }}
-                      onClick={() => setShowContactDrawer(true)}
-                      className="px-5 py-2.5 rounded-full font-semibold text-[13px] text-white flex items-center gap-2 transition-all duration-300 cursor-pointer"
-                      style={{
-                        background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                        boxShadow: `0 4px 16px -4px rgba(${categoryColor.rgb}, 0.4)`,
-                      }}
-                    >
-                      <MessageCircle size={16} />
-                      Contact
-                    </motion.button>
+                {/* Meet Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => {
+                      if (!isSignedIn) {
+                        requireSignIn("Please sign in to schedule a meet");
+                        return;
+                      }
+                      setShowMeetDrawer(true);
+                    }}
+                    className="px-5 py-2.5 rounded-full font-semibold text-[13px] text-white flex items-center gap-2 transition-all duration-300 cursor-pointer overflow-hidden relative"
+                    style={{
+                      background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                      boxShadow: `0 4px 16px -4px rgba(${categoryColor.rgb}, 0.4)`,
+                    }}
+                  >
+                    <Video size={16} />
+                    <span>Meet</span>
+                    
+                    {/* Conditionally render the Live badge */}
+                    {isLiveActive && (
+                      <span className="flex items-center gap-1 text-[9px] uppercase tracking-widest text-white/90 font-bold ml-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        Live
+                      </span>
+                    )}
+                  </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       whileHover={{ scale: 1.02 }}
@@ -15335,6 +15832,18 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             onSuccess={() => setIsVerified(true)}
             vendorId={id}
             vendorName={vendor?.name}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showMeetDrawer && (
+          <MeetDrawer
+            isOpen={showMeetDrawer}
+            onClose={() => setShowMeetDrawer(false)}
+            vendor={profile._id}
+            showUIConfirmation={showUIConfirmation}
+            requireSignIn={requireSignIn}
           />
         )}
       </AnimatePresence>
