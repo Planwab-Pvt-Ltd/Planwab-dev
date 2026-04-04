@@ -173,7 +173,7 @@ export default function HowItWorksSection({buttonColor}) {
                         }}
                         transition={{ duration: 0.3 }}
                       >
-                        <step.icon className="w-5 h-5" />
+                        <step.icon className="w-5 h-5 text-cyan-500 sm:text-current" />
                       </motion.div>
                       <div>
                         <h3 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">

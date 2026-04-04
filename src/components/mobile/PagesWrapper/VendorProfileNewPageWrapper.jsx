@@ -10987,24 +10987,39 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
 
   const [isLiveActive, setIsLiveActive] = useState(false);
 
-  useEffect(() => {
-    const checkLiveStatus = () => {
-      const now = new Date();
-      const day = now.getDay();
-      const hour = now.getHours();
-      setIsLiveActive(day !== 0 && hour >= 10 && hour < 22);
-    };
-    checkLiveStatus();
-    const interval = setInterval(checkLiveStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
   if (!isOpen) return null;
 
   const handleJoinLive = () => {
+  const now = new Date();
+
+  // Get local day (0 = Sunday, 6 = Saturday)
+  const day = now.getDay();
+
+  // Get current time in minutes for easy comparison
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // Schedule: Mon–Sat, 9:00 AM – 8:00 PM
+  const START = 9 * 60;  // 9:00 AM
+  const END = 20 * 60;   // 8:00 PM
+
+  const isWorkingDay = day >= 1 && day <= 6;
+  const isWithinTime = currentMinutes >= START && currentMinutes <= END;
+
+  if (!isWorkingDay || !isWithinTime) {
     onClose();
-    window.open(`https://meet.google.com/uon-sbuw-equ`, "_blank");
-  };
+    showUIConfirmation(
+      "Live meetings are available Mon–Sat, 9 AM – 8 PM",
+      "error",
+      AlertCircle
+    );
+    return;
+  }
+
+  // ✅ Allowed → proceed
+  onClose();
+  window.open(`https://meet.google.com/uon-sbuw-equ`, "_blank");
+};
+
 
   const fetchScheduledMeets = async () => {
     if (!user || !user?.id) return;
@@ -11180,8 +11195,7 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
               <div className="grid gap-3.5 sm:gap-4 mt-2">
                 <button
                   onClick={handleJoinLive}
-                  disabled={!isLiveActive} // Disable if outside of hours
-                  className={`w-full flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50 transition-all text-left group ${!isLiveActive ? "opacity-60 cursor-not-allowed grayscale-[40%]" : "hover:shadow-md hover:scale-[1.02]"}`}
+                  className={`w-full flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50 transition-all text-left group opacity-60 cursor-not-allowed grayscale-[40%]`}
                 >
                   <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 shadow-sm mt-1">
                     <Video size={20} className="text-blue-600 dark:text-blue-400" />
@@ -11189,23 +11203,19 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       Join Live Meet
-                      {isLiveActive && (
                         <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
                           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
                         </span>
-                      )}
                     </h4>
                     <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">
                       Talk instantly with our category expert
                     </p>
 
                     {/* Conditionally style and change the info text based on active status */}
-                    <p
-                      className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5 ${isLiveActive ? "text-blue-600/80 dark:text-blue-400/80" : "text-red-500 dark:text-red-400"}`}
-                    >
-                      <Clock size={10} />
-                      {isLiveActive ? "Mon-Sat • 10 AM - 10 PM" : "Currently Offline (Mon-Sat • 10 AM - 10 PM)"}
-                    </p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ...`}>
+  <Clock size={10} />
+ {`Availablility: Mon-Sat, (9 AM - 8 PM)`}
+</p>
                   </div>
                 </button>
 
@@ -11596,22 +11606,6 @@ const VendorProfileNewPageWrapper = ({
   const initialFetchDoneRef = useRef(false);
   const onboardingHandledRef = useRef(false);
   const stickyTabsRef = useRef(null);
-
-   useEffect(() => {
-    const checkLiveStatus = () => {
-      const now = new Date();
-      const day = now.getDay(); // 0 is Sunday, 1-6 is Mon-Sat
-      const hour = now.getHours(); // 0-23
-
-      // Active if it's NOT Sunday (day !== 0) AND between 10:00 (10) and 21:59 (21)
-      setIsLiveActive(day !== 0 && hour >= 10 && hour < 22);
-    };
-
-    checkLiveStatus();
-    // Optional: Check every minute to automatically update without refresh
-    const interval = setInterval(checkLiveStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15162,12 +15156,10 @@ const VendorProfileNewPageWrapper = ({
                   <div className="flex items-center gap-1.5">
                     <span>Meet</span>
                     {/* Minimized Live Indicator */}
-                     {isLiveActive && (
-                      <span className="flex items-center gap-1 text-[8px] uppercase tracking-widest text-blue-500 font-semibold opacity-70 mt-0.5">
+                     <span className="flex items-center gap-1 text-[8px] uppercase tracking-widest text-blue-500 font-semibold opacity-70 mt-0.5">
                         <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
                         Live
                       </span>
-                    )}
                   </div>
                 </motion.button>
               </motion.div>

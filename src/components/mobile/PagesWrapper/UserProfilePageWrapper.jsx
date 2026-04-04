@@ -971,7 +971,10 @@ export default function UserProfilePageWrapper() {
   };
 
   const handleSimilarprofileClick = (profile) => {
-    const backTo = encodeURIComponent(window.location.href);
+    const baseUrl = window.location.origin + window.location.pathname;
+    const backTo = encodeURIComponent(
+      `${baseUrl}?section=linked-profiles&tab=profiles`
+    );
     if (profile?.vendorId) {
       router.push(`/vendor/${profile.category}/${profile.vendorId}/profile?backTo=${backTo}`);
     } else {
@@ -1432,6 +1435,7 @@ export default function UserProfilePageWrapper() {
                 } else {
                   const el = document.getElementById("linked-profiles-section");
                   if (el) el.scrollIntoView({ behavior: "smooth" });
+                  setIsScheduledMeetsExpanded(true);
                 }
               }}
               className="flex-1 py-2.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
@@ -1669,12 +1673,12 @@ export default function UserProfilePageWrapper() {
                             >
                               <Eye size={13} /> View
                             </button>
-                            <Link
+                            {/* <Link
                               href="/admin/vendors"
                               className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-[11px] font-bold active:scale-[0.98] transition-transform flex justify-center items-center gap-1.5"
                             >
                               <SlidersHorizontal size={13} /> Dashboard
-                            </Link>
+                            </Link> */}
                           </div>
                         </div>
                       </div>
@@ -1760,10 +1764,14 @@ export default function UserProfilePageWrapper() {
                           key={meet._id}
                           onClick={() => {
                             if (!profile) return;
+                            const baseUrl = window.location.origin + window.location.pathname;
+                            const backTo = encodeURIComponent(
+                             `${baseUrl}?section=linked-profiles&tab=profiles`
+                           );
                             if (profile.vendorId) {
-                              router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
+                              router.push(`/vendor/${profile.category}/${profile.vendorId}/profile?backTo=${backTo}`);
                             } else {
-                              router.push(`/vendor/${profile.category}/profile/${profile.username}`);
+                              router.push(`/vendor/${profile.category}/profile/${profile.username}?backTo=${backTo}`);
                             }
                           }}
                           className="min-w-[280px] w-[280px] shrink-0 snap-start block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm shadow-black/[0.03] cursor-pointer hover:border-gray-200 dark:hover:border-gray-700 transition-colors"

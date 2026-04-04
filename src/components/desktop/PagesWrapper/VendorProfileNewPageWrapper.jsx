@@ -11359,29 +11359,42 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
     otherEventType: "",
   });
 
-  useEffect(() => {
-    const checkLiveStatus = () => {
-      // 1. Get the current date/time
-      const now = new Date();
-      
-      // 2. Convert current time strictly to IST string, then parse it back to a date object
-      // This ensures that no matter where the user is in the world, the logic evaluates against India time.
-      const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-      const istDate = new Date(istString);
-      
-      const day = istDate.getDay(); // 0 is Sunday, 1-6 is Mon-Sat
-      const hour = istDate.getHours(); // 0-23
-      
-      // Active if it's NOT Sunday (day !== 0) AND between 10:00 AM (10) and 9:59 PM (hour < 22)
-      // The moment the clock strikes 22:00 (10:00 PM), it will become false.
-      setIsLiveActive(day !== 0 && hour >= 10 && hour < 22);
-    };
-    
-    checkLiveStatus();
-    // Check every minute to automatically update the UI without needing a refresh
-    const interval = setInterval(checkLiveStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  // ✅ Single source of truth — change days/hours here only
+const LIVE_SCHEDULE = {
+  activeDays: [1, 2, 3, 4, 5, 6], // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  startHour: 10, // 10 AM (24hr)
+  endHour: 22,   // 10 PM (24hr)
+};
+
+useEffect(() => {
+  const checkLiveStatus = () => {
+    const now = new Date();
+
+    // Always evaluate against IST regardless of user's timezone
+    const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    const istDate = new Date(istString);
+
+    const day = istDate.getDay();    // 0 (Sun) – 6 (Sat)
+    const hour = istDate.getHours(); // 0 – 23
+
+    const isDayActive = LIVE_SCHEDULE.activeDays.includes(day);
+    const isHourActive = hour >= LIVE_SCHEDULE.startHour && hour < LIVE_SCHEDULE.endHour;
+
+    setIsLiveActive(isDayActive && isHourActive);
+  };
+
+  checkLiveStatus();
+  const interval = setInterval(checkLiveStatus, 60_000);
+  return () => clearInterval(interval);
+}, []);
+
+ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const firstDay = DAY_NAMES[LIVE_SCHEDULE.activeDays[0]];
+  const lastDay  = DAY_NAMES[LIVE_SCHEDULE.activeDays.at(-1)];
+
+  const fmt = (h) => h === 12 ? "12 PM" : h === 0 ? "12 AM" : h > 12 ? `${h - 12} PM` : `${h} AM`;
+
+  const label = `${firstDay}-${lastDay} • ${fmt(LIVE_SCHEDULE.startHour)} - ${fmt(LIVE_SCHEDULE.endHour)}`;
 
   if (!isOpen) return null;
 
@@ -11576,9 +11589,12 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
                       </h4>
                       <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">Talk instantly with our category expert</p>
                       {/* ADDED SAT-SUN INFO */}
-                      <p className="text-[10px] font-bold text-blue-600/80 dark:text-blue-400/80 uppercase tracking-widest flex items-center gap-1">
-                        <Clock size={10} /> Sat-Sun off • 10 AM - 9 PM
-                      </p>
+                       <p className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5 ${
+      isLiveActive ? "text-blue-600/80 dark:text-blue-400/80" : "text-red-500 dark:text-red-400"
+    }`}>
+      <Clock size={10} />
+      {isLiveActive ? label : `Currently Offline (${label})`}
+    </p>
                     </div>
                   </button>
 
@@ -11938,29 +11954,34 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   const onboardingHandledRef = useRef(false);
   const stickyTabsRef = useRef(null);
 
-    useEffect(() => {
-    const checkLiveStatus = () => {
-      // 1. Get the current date/time
-      const now = new Date();
-      
-      // 2. Convert current time strictly to IST string, then parse it back to a date object
-      // This ensures that no matter where the user is in the world, the logic evaluates against India time.
-      const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-      const istDate = new Date(istString);
-      
-      const day = istDate.getDay(); // 0 is Sunday, 1-6 is Mon-Sat
-      const hour = istDate.getHours(); // 0-23
-      
-      // Active if it's NOT Sunday (day !== 0) AND between 10:00 AM (10) and 9:59 PM (hour < 22)
-      // The moment the clock strikes 22:00 (10:00 PM), it will become false.
-      setIsLiveActive(day !== 0 && hour >= 10 && hour < 22);
-    };
-    
-    checkLiveStatus();
-    // Check every minute to automatically update the UI without needing a refresh
-    const interval = setInterval(checkLiveStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
+   // ✅ Single source of truth — change days/hours here only
+const LIVE_SCHEDULE = {
+  activeDays: [1, 2, 3, 4, 5, 6], // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  startHour: 10, // 10 AM (24hr)
+  endHour: 22,   // 10 PM (24hr)
+};
+
+useEffect(() => {
+  const checkLiveStatus = () => {
+    const now = new Date();
+
+    // Always evaluate against IST regardless of user's timezone
+    const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    const istDate = new Date(istString);
+
+    const day = istDate.getDay();    // 0 (Sun) – 6 (Sat)
+    const hour = istDate.getHours(); // 0 – 23
+
+    const isDayActive = LIVE_SCHEDULE.activeDays.includes(day);
+    const isHourActive = hour >= LIVE_SCHEDULE.startHour && hour < LIVE_SCHEDULE.endHour;
+
+    setIsLiveActive(isDayActive && isHourActive);
+  };
+
+  checkLiveStatus();
+  const interval = setInterval(checkLiveStatus, 60_000);
+  return () => clearInterval(interval);
+}, []);
 
   useEffect(() => {
     const handleScroll = () => {
