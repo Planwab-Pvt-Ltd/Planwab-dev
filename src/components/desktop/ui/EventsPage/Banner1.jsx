@@ -3,6 +3,7 @@
 import React from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import SmartMedia from "../../../mobile/SmartMediaLoader";
 
 const categoryData = {
     wedding: {
@@ -48,8 +49,12 @@ export default function Banner1() {
 
             <section
                 className="relative h-screen w-full bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: `url(${currentCategory.image})` }}
             >
+                <SmartMedia 
+                    src={currentCategory.image}
+                    alt={`${categoryKey} event`}
+                    className="absolute inset-0 w-full h-full object-cover opacity-90"
+                />
                 {/* Bottom Merging Gradient */}
                 <div className="absolute bottom-0 left-0 h-48 w-full bg-gradient-to-t from-white to-transparent dark:from-slate-900"></div>
 

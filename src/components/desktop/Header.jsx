@@ -127,7 +127,7 @@ const CategoryButton = ({ category, imageSrc, active }) => (
 const PlannerDropdown = ({ isOpen }) => {
   if (!isOpen) return null;
   return (
-    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-6 px-6 z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
+    <div className="absolute !z-60 top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-6 px-6 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
       <div className="text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
           <Star className="w-8 h-8 text-white" />
@@ -218,7 +218,7 @@ const LocationDropdown = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-4 z-50 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
+    <div className="absolute !z-60 top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-4 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
       <div className="px-4 pb-4 border-b border-gray-100 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
           <MapPin className="w-5 h-5 mr-2 text-blue-500" /> Select Your City
