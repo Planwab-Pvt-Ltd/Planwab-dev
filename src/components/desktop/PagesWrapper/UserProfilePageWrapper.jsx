@@ -1948,11 +1948,15 @@ export default function UserProfilePageWrapper() {
                               className="flex items-start justify-between cursor-pointer group"
                               onClick={() => {
                                 if (!profile) return;
-                                if (profile.vendorId) {
-                                  router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
-                                } else {
-                                  router.push(`/vendor/${profile.category}/profile/${profile.username}`);
-                                }
+                            const baseUrl = window.location.origin + window.location.pathname;
+                            const backTo = encodeURIComponent(
+                             `${baseUrl}?section=linked-profiles&tab=profiles`
+                           );
+                            if (profile.vendorId) {
+                              router.push(`/vendor/${profile.category}/${profile.vendorId}/profile?backTo=${backTo}`);
+                            } else {
+                              router.push(`/vendor/${profile.category}/profile/${profile.username}?backTo=${backTo}`);
+                            }
                               }}
                             >
                               <div className="flex items-center gap-3">
