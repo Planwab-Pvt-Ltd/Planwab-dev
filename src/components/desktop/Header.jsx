@@ -516,7 +516,7 @@ const SubNavigation = () => {
 
   const galleryLinks = [
     { label: "Vendor Gallery", href: "/gallery/vendors", icon: Images },
-    { label: "Profile Media", href: "/gallery/profile-media", icon: Camera },
+    { label: "Profile Media", href: "/vendors/Profile/explore", icon: Camera },
     { label: "Marketplace", href: "/gallery/marketplace", icon: Store },
   ];
 
