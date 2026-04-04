@@ -1435,7 +1435,7 @@ export default function UserProfilePageWrapper() {
                 } else {
                   const el = document.getElementById("linked-profiles-section");
                   if (el) el.scrollIntoView({ behavior: "smooth" });
-                  setIsScheduledMeetsExpanded(true);
+                  setIsLinkedProfilesExpanded(true);
                 }
               }}
               className="flex-1 py-2.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
