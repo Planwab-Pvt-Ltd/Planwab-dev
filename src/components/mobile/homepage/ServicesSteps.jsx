@@ -93,8 +93,8 @@ const ServicesSteps = () => {
           </div>
 
           {/* Feature List & Mobile Image */}
-          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-8">
-            <div className="flex w-full flex-col justify-center space-y-5">
+          <div className="flex flex-row items-center justify-between gap-6">
+            <div className="flex flex-1 flex-col justify-center space-y-5">
               {FEATURES.map((feature) => (
                 <div key={feature} className="flex items-center gap-3 lg:gap-4">
                   <div className={`flex-shrink-0 p-1 rounded-full bg-white/50 dark:bg-black/20`}>
@@ -106,7 +106,7 @@ const ServicesSteps = () => {
             </div>
 
             {/* Mobile Image - FIXED SRC */}
-            <div className="lg:hidden w-32 shrink-0 relative rotate-3 hover:rotate-0 transition-transform duration-300">
+          <div className="lg:hidden w-28 sm:w-32 shrink-0 relative rotate-3 hover:rotate-0 transition-transform duration-300">
               <div className="rounded-xl overflow-hidden shadow-lg border-2 border-white dark:border-gray-800">
                 <SmartMedia
                   // Changed to a stable Unsplash ID

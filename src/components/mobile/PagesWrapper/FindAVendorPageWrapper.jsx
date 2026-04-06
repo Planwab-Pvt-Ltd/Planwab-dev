@@ -29,6 +29,7 @@ import { useCartStore } from "../../../GlobalState/CartDataStore";
 import Link from "next/link";
 import SmartMedia from "../SmartMediaLoader";
 import { formatPrice } from "../../../lib/utils";
+import { ScrollCarousel } from "./IdeasPageWrapper";
 
 const HERO_CATEGORIES = [
   {
@@ -49,7 +50,8 @@ const HERO_CATEGORIES = [
     id: 3,
     name: "Decorators",
     key: "decor",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
+    image:
+      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
     count: "267",
   },
   {
@@ -63,7 +65,8 @@ const HERO_CATEGORIES = [
     id: 5,
     name: "Venues",
     key: "venues",
-    image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg",
+    image:
+      "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg",
     count: "476",
   },
   {
@@ -91,14 +94,16 @@ const HERO_CATEGORIES = [
     id: 9,
     name: "Florists",
     key: "florists",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
+    image:
+      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
     count: "0",
   },
   {
     id: 10,
     name: "Choreographers",
     key: "choreographers",
-    image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1767931666/pkg-lifestyle-events-management-vishnu-garden-delhi-event-organisers-j3dtzmp1pt_upqonu.jpg",
+    image:
+      "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1767931666/pkg-lifestyle-events-management-vishnu-garden-delhi-event-organisers-j3dtzmp1pt_upqonu.jpg",
     count: "0",
   },
 ];
@@ -126,7 +131,7 @@ function useHapticFeedback() {
   }, []);
 }
 
-const HeroCarousel = memo(() => {
+const HeroCarousel = memo(({ categoryCounts = {} }) => {
   const scrollRef = useRef(null);
   const haptic = useHapticFeedback();
   const router = useRouter();
@@ -192,43 +197,46 @@ const HeroCarousel = memo(() => {
         }}
         onMouseUp={() => setTimeout(() => setIsDragging(false), 100)}
       >
-        {HERO_CATEGORIES.map((item, index) => (
-          <motion.div
-            key={item.id}
-            onClick={() => handleCategoryClick(item)}
-            className="flex flex-col cursor-pointer group"
-            style={{ width: "110px" }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              delay: index * 0.05,
-              duration: 0.3,
-              ease: "easeOut",
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm transition-all duration-300">
-              <SmartMedia
-                src={item.image}
-                alt={item.name}
-                type="image"
-                className="w-full h-full object-cover grayscale-[0.2] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110 group-active:grayscale-0 group-active:scale-110"
-                prioirity={true}
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                <span className="text-white font-black text-sm tracking-wider text-center px-2 drop-shadow-md">
-                  {item.name}
-                </span>
+        {HERO_CATEGORIES.map((item, index) => {
+          const dynamicCount = categoryCounts[item.key] || item.count;
+          return (
+            <motion.div
+              key={item.id}
+              onClick={() => handleCategoryClick(item)}
+              className="flex flex-col cursor-pointer group"
+              style={{ width: "110px" }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{
+                delay: index * 0.05,
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm transition-all duration-300">
+                <SmartMedia
+                  src={item.image}
+                  alt={item.name}
+                  type="image"
+                  className="w-full h-full object-cover grayscale-[0.2] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110 group-active:grayscale-0 group-active:scale-110"
+                  prioirity={true}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <span className="text-white font-black text-sm tracking-wider text-center px-2 drop-shadow-md">
+                    {item.name}
+                  </span>
+                </div>
               </div>
-            </div>
-            <h3 className="text-xs font-semibold text-gray-900 leading-tight truncate">{item.name}</h3>
-            <div className="flex items-center gap-0.5 mt-0.5">
-              <span className="text-[11px] text-rose-500 font-medium">{item.count}</span>
-              <ChevronRight size={10} className="text-rose-500" />
-            </div>
-          </motion.div>
-        ))}
+              <h3 className="text-xs font-semibold text-gray-900 leading-tight truncate">{item.name}</h3>
+              <div className="flex items-center gap-0.5 mt-0.5">
+                <span className="text-[11px] text-rose-500 font-medium">{dynamicCount}</span>
+                <ChevronRight size={10} className="text-rose-500" />
+              </div>
+            </motion.div>
+          );
+        })}
         <div className="w-4 flex-shrink-0" />
       </motion.div>
       <div className="flex justify-center gap-1.5 mt-4">
@@ -236,8 +244,9 @@ const HeroCarousel = memo(() => {
           <motion.button
             key={index}
             onClick={() => scrollToPage(index)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${currentPage === index ? "bg-gray-400" : "bg-gray-200 hover:bg-gray-300"
-              }`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              currentPage === index ? "bg-gray-400" : "bg-gray-200 hover:bg-gray-300"
+            }`}
             animate={{
               width: currentPage === index ? 24 : 6,
             }}
@@ -295,7 +304,7 @@ const VendorCard = memo(({ vendor }) => {
 
   const inCart = useMemo(
     () => cartItems?.some((item) => (item._id || item.id) === vendorId) || false,
-    [cartItems, vendorId]
+    [cartItems, vendorId],
   );
 
   const handleCart = (e) => {
@@ -346,7 +355,7 @@ const VendorCard = memo(({ vendor }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       onClick={handleCardClick}
-      className="flex-shrink-0 w-44 bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 snap-center group"
+      className="flex-shrink-0 w-44 bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group snap-start"
     >
       <div className="relative h-28 bg-gray-100 overflow-hidden">
         <SmartMedia
@@ -407,8 +416,9 @@ const VendorCard = memo(({ vendor }) => {
           </div>
           <button
             onClick={handleCart}
-            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-90 ${inCart ? "bg-green-500 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
+            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-90 ${
+              inCart ? "bg-green-500 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
           >
             {inCart ? (
               <>
@@ -438,7 +448,7 @@ const ViewMoreCard = memo(({ title, count, icon: Icon, color, viewMoreurl }) => 
         haptic("medium");
         router.push(viewMoreurl);
       }}
-      className="flex-shrink-0 w-44 h-full rounded-xl overflow-hidden border-2 border-dashed border-gray-200 snap-center cursor-pointer transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] flex flex-col items-center justify-center min-h-[260px] group"
+      className="flex-shrink-0 w-44 h-full rounded-xl overflow-hidden border-2 border-dashed border-gray-200 cursor-pointer transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] flex flex-col items-center justify-center min-h-[260px] group snap-start"
     >
       <div
         className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
@@ -518,86 +528,47 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
     return Icon || Calendar;
   }, [Icon]);
 
-  const checkScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-
-    const newLeft = scrollLeft > 5;
-    const newRight = scrollLeft < scrollWidth - clientWidth - 5;
-
-    setCanScrollLeft((prev) => (prev !== newLeft ? newLeft : prev));
-    setCanScrollRight((prev) => (prev !== newRight ? newRight : prev));
-  }, []);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-
-    const ref = scrollRef.current;
-    if (ref) {
-      ref.addEventListener("scroll", checkScroll, { passive: true });
-    }
-
-    return () => {
-      window.removeEventListener("resize", checkScroll);
-      if (ref) {
-        ref.removeEventListener("scroll", checkScroll);
-      }
-    };
-  }, [checkScroll]);
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = direction === "left" ? -188 : 188;
-      scrollRef.current.scrollBy({
-        left: scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
-
   const viewMoreUrl = useMemo(() => {
     const baseUrl = "/vendors/marketplace";
     const params = new URLSearchParams();
     const t = title.toLowerCase();
 
-    if (t.includes('featured') || t.includes('handpicked')) {
-      params.set('featured', 'true');
-      params.set('sortBy', 'rating');
-    } else if (t.includes('venues')) {
-      params.set('categories', 'venues');
-      params.set('sortBy', 'price-desc');
-    } else if (t.includes('planners')) {
-      params.set('categories', 'planners');
-      params.set('sortBy', 'rating');
-    } else if (t.includes('photographers')) {
-      params.set('categories', 'photographers');
-      params.set('sortBy', 'rating');
-      params.set('minRating', '4');
-    } else if (t.includes('makeup')) {
-      params.set('categories', 'makeup');
-      params.set('sortBy', 'price-desc');
-    } else if (t.includes('mehendi')) {
-      params.set('categories', 'mehendi');
-      params.set('sortBy', 'rating');
-    } else if (t.includes('catering')) {
-      params.set('categories', 'catering');
-      params.set('sortBy', 'rating');
-    } else if (t.includes('dj') || t.includes('music')) {
-      params.set('categories', 'djs');
-      params.set('sortBy', 'rating');
-    } else if (t.includes('most booked') || t.includes('popular')) {
-      params.set('sortBy', 'bookings');
-    } else if (t.includes('trending')) {
-      params.set('sortBy', 'bookings');
-    } else if (t.includes('top rated')) {
-      params.set('sortBy', 'rating');
-      params.set('minRating', '4');
+    if (t.includes("featured") || t.includes("handpicked")) {
+      params.set("featured", "true");
+      params.set("sortBy", "rating");
+    } else if (t.includes("venues")) {
+      params.set("categories", "venues");
+      params.set("sortBy", "price-desc");
+    } else if (t.includes("planners")) {
+      params.set("categories", "planners");
+      params.set("sortBy", "rating");
+    } else if (t.includes("photographers")) {
+      params.set("categories", "photographers");
+      params.set("sortBy", "rating");
+      params.set("minRating", "4");
+    } else if (t.includes("makeup")) {
+      params.set("categories", "makeup");
+      params.set("sortBy", "price-desc");
+    } else if (t.includes("mehendi")) {
+      params.set("categories", "mehendi");
+      params.set("sortBy", "rating");
+    } else if (t.includes("catering")) {
+      params.set("categories", "catering");
+      params.set("sortBy", "rating");
+    } else if (t.includes("dj") || t.includes("music")) {
+      params.set("categories", "djs");
+      params.set("sortBy", "rating");
+    } else if (t.includes("most booked") || t.includes("popular")) {
+      params.set("sortBy", "bookings");
+    } else if (t.includes("trending")) {
+      params.set("sortBy", "bookings");
+    } else if (t.includes("top rated")) {
+      params.set("sortBy", "rating");
+      params.set("minRating", "4");
     }
 
-    if (vendors?.[0]?.category && !params.has('categories')) {
-      params.set('categories', vendors[0].category);
+    if (vendors?.[0]?.category && !params.has("categories")) {
+      params.set("categories", vendors[0].category);
     }
 
     const queryString = params.toString();
@@ -614,68 +585,15 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
         onViewAll={() => router.push(viewMoreUrl)}
       />
       <div className="relative">
-        <AnimatePresence>
-          {canScrollLeft && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute left-1 top-1/2 -translate-y-1/2 z-10"
-            >
-              <button
-                onClick={() => {
-                  scroll("left");
-                  haptic("light");
-                }}
-                className="w-8 h-8 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center hover:shadow-xl active:scale-90 transition-all"
-              >
-                <ChevronLeft size={16} className="text-gray-600" />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {canScrollRight && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute right-1 top-1/2 -translate-y-1/2 z-10"
-            >
-              <button
-                onClick={() => {
-                  scroll("right");
-                  haptic("light");
-                }}
-                className="w-8 h-8 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center hover:shadow-xl active:scale-90 transition-all"
-              >
-                <ChevronRight size={16} className="text-gray-600" />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <div
-          ref={scrollRef}
-          className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory scroll-smooth"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
+        <ScrollCarousel>
           {isLoading ? (
             [...Array(4)].map((_, i) => (
-              <motion.div
-                key={`skeleton-${i}`}
-                initial={{ opacity: 1 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0 }}
-              >
+              <motion.div key={`skeleton-${i}`} initial={{ opacity: 1 }} animate={{ opacity: 1 }}>
                 <VendorCardSkeleton />
               </motion.div>
             ))
           ) : vendors.length === 0 ? (
-            <div className="flex-shrink-0 w-44 h-[260px] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center px-4">
+            <div className="flex-shrink-0 w-44 h-[260px] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center px-4 snap-start">
               <ResolvedIcon size={32} className="text-gray-300 mb-2" style={{ color }} />
               <p className="text-xs font-medium text-gray-400">No vendors found</p>
             </div>
@@ -687,23 +605,25 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
+                  className="snap-start"
                 >
                   <VendorCard vendor={vendor} />
                 </motion.div>
               ))}
               {vendors.length > 0 && (
-                <ViewMoreCard
-                  title={title.split(" ").pop()}
-                  count={vendors.length * 10}
-                  icon={ResolvedIcon}
-                  color={color}
-                  viewMoreurl={viewMoreUrl}
-                />
+                <div className="snap-start h-full">
+                  <ViewMoreCard
+                    title={title.split(" ").pop()}
+                    count={vendors.length * 10}
+                    icon={ResolvedIcon}
+                    color={color}
+                    viewMoreurl={viewMoreUrl}
+                  />
+                </div>
               )}
             </>
           )}
-          <div className="w-1 flex-shrink-0" />
-        </div>
+        </ScrollCarousel>
       </div>
     </section>
   );
@@ -774,14 +694,17 @@ FloatingCart.displayName = "FloatingCart";
 const TrustStrip = memo(() => (
   <div className="bg-white px-4 pb-4 hover:z-10 relative">
     <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 border border-slate-200 dark:border-indigo-800/50 to-purple-50 dark:to-purple-900/40 rounded-[28px] p-6 lg:py-8 lg:px-12 flex flex-col items-center gap-6 shadow-xl dark:shadow-none hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] transition-all hover:-translate-y-1 duration-500">
-
       <div className="flex flex-col items-center gap-3 text-center group cursor-default w-full">
         <div className="w-12 h-12 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
           <Check className="text-indigo-500 dark:text-indigo-400" size={20} strokeWidth={3} />
         </div>
         <div>
-          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">100% Verified</h4>
-          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">Every vendor is manually checked</p>
+          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">
+            100% Verified
+          </h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">
+            Every vendor is manually checked
+          </p>
         </div>
       </div>
 
@@ -792,8 +715,12 @@ const TrustStrip = memo(() => (
           <Star className="text-amber-500 dark:text-amber-400" size={20} strokeWidth={3} />
         </div>
         <div>
-          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">Top Rated</h4>
-          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">Only the best in the industry</p>
+          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">
+            Top Rated
+          </h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">
+            Only the best in the industry
+          </p>
         </div>
       </div>
 
@@ -804,11 +731,14 @@ const TrustStrip = memo(() => (
           <Heart className="text-rose-500 dark:text-rose-400" size={20} strokeWidth={3} />
         </div>
         <div>
-          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">Loved by Couples</h4>
-          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">10,000+ happy weddings planned</p>
+          <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5 transition-colors">
+            Loved by Couples
+          </h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold max-w-[170px] mx-auto transition-colors">
+            10,000+ happy weddings planned
+          </p>
         </div>
       </div>
-
     </div>
   </div>
 ));
@@ -821,13 +751,23 @@ const ConciergeStrip = memo(() => (
           <Sparkles className="text-indigo-500 dark:text-indigo-400" size={26} />
         </div>
         <div>
-          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-2 transition-colors">Overwhelmed with choices?</h4>
-          <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold px-2 transition-colors">Our expert concierge is available 24/7 to help you structure your dream event.</p>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-2 transition-colors">
+            Overwhelmed with choices?
+          </h4>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold px-2 transition-colors">
+            Our expert concierge is available 24/7 to help you structure your dream event.
+          </p>
         </div>
       </div>
       <button
         className="bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white px-6 py-3.5 rounded-2xl font-black text-[11px] tracking-widest transition-all active:scale-95 shadow-md dark:shadow-none whitespace-nowrap w-full cursor-pointer"
-        onClick={() => { try { toast.success("Our team will contact you soon!"); } catch (e) { alert("Our team will contact you soon!"); } }}
+        onClick={() => {
+          try {
+            toast.success("Our team will contact you soon!");
+          } catch (e) {
+            alert("Our team will contact you soon!");
+          }
+        }}
       >
         GET FREE EXPERT HELP
       </button>
@@ -838,7 +778,6 @@ const ConciergeStrip = memo(() => (
 const PromoStrip = memo(() => (
   <div className="bg-white px-4 pb-4 hover:z-10 relative">
     <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 border border-slate-200 dark:border-indigo-800/50 to-purple-50 dark:to-purple-900/40 rounded-[28px] p-6 lg:py-8 lg:px-12 flex flex-col items-center text-center gap-6 shadow-xl dark:shadow-none hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] transition-all hover:-translate-y-1 duration-500">
-
       <div className="flex flex-col items-center gap-4 w-full">
         <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
           <Zap className="text-indigo-500 dark:text-indigo-400" size={26} />
@@ -846,9 +785,13 @@ const PromoStrip = memo(() => (
         <div>
           <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-2 flex flex-col items-center gap-2 transition-colors">
             Wedding Season Offer
-            <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] uppercase tracking-widest leading-none w-max mt-1">Limited Time</span>
+            <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] uppercase tracking-widest leading-none w-max mt-1">
+              Limited Time
+            </span>
           </h4>
-          <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold px-2 transition-colors">Save 25% on your first booking using the code below.</p>
+          <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold px-2 transition-colors">
+            Save 25% on your first booking using the code below.
+          </p>
         </div>
       </div>
 
@@ -857,14 +800,19 @@ const PromoStrip = memo(() => (
           className="bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 text-white w-full py-4 rounded-2xl font-black text-base tracking-widest transition-all active:scale-95 shadow-md dark:shadow-none cursor-pointer"
           onClick={() => {
             navigator.clipboard?.writeText("PLANWAB25");
-            try { toast.success("Code copied!"); } catch (e) { alert("Code copied!"); }
+            try {
+              toast.success("Code copied!");
+            } catch (e) {
+              alert("Code copied!");
+            }
           }}
         >
           PLANWAB25
         </button>
-        <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-widest font-bold mt-2.5 transition-colors">Click to copy</span>
+        <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-widest font-bold mt-2.5 transition-colors">
+          Click to copy
+        </span>
       </div>
-
     </div>
   </div>
 ));
@@ -896,6 +844,7 @@ export default function FindAVendorPageWrapper() {
   const [isLoadingCatering, setIsLoadingCatering] = useState(true);
   const [isLoadingMehendi, setIsLoadingMehendi] = useState(true);
   const [isLoadingVenues, setIsLoadingVenues] = useState(true);
+  const [categoryCounts, setCategoryCounts] = useState({});
 
   const filterValidVendors = (vendors) => {
     return vendors.filter((vendor) => vendor && (vendor._id || vendor.id) && vendor.name);
@@ -917,254 +866,69 @@ export default function FindAVendorPageWrapper() {
       const abortController = new AbortController();
       const { signal } = abortController;
 
-      const fetchPromises = [
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            featured: "true",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Featured vendors failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setFeaturedVendors(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching featured vendors:", err);
-              setFeaturedVendors([]);
-            }
-          })
+      const handleData = (data, categoryKey, setVendorsCallback) => {
+        if (data.success) {
+          setVendorsCallback(filterValidVendors(data.data || []));
+          if (categoryKey) {
+            setCategoryCounts(prev => ({
+              ...prev, 
+              [categoryKey]: data.pagination?.total || data.total || 0
+            }));
+          }
+        }
+      };
+
+     const fetchPromises = [
+        fetch(`/api/vendor?${new URLSearchParams({ featured: "true", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, null, setFeaturedVendors))
           .finally(() => setIsLoadingFeatured(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "planners",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Planners failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopPlanners(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching planners:", err);
-              setTopPlanners([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "planners", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "planners", setTopPlanners))
           .finally(() => setIsLoadingPlanners(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            sortBy: "bookings",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Most booked failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setMostBooked(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching most booked:", err);
-              setMostBooked([]);
-            }
-          })
+        // Most booked (generic, don't tie to a specific hero category)
+        fetch(`/api/vendor?${new URLSearchParams({ sortBy: "bookings", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, null, setMostBooked))
           .finally(() => setIsLoadingBooked(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "photographers",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Photographers failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopPhotographers(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching photographers:", err);
-              setTopPhotographers([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "photographers", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "photographers", setTopPhotographers))
           .finally(() => setIsLoadingPhotographers(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "makeup",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Makeup artists failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopMakeup(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching makeup artists:", err);
-              setTopMakeup([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "makeup", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "makeup", setTopMakeup))
           .finally(() => setIsLoadingMakeup(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            trending: "true",
-            sortBy: "views",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Trending vendors failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTrending(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching trending vendors:", err);
-              setTrending([]);
-            }
-          })
+        // Trending (generic)
+        fetch(`/api/vendor?${new URLSearchParams({ trending: "true", sortBy: "views", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, null, setTrending))
           .finally(() => setIsLoadingTrending(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "djs",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`DJs failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopDJs(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching DJs:", err);
-              setTopDJs([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "djs", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "djs", setTopDJs))
           .finally(() => setIsLoadingDJs(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "catering",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Catering failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopCatering(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching catering:", err);
-              setTopCatering([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "catering", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "catering", setTopCatering))
           .finally(() => setIsLoadingCatering(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "mehendi",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Mehendi failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopMehendi(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching mehendi:", err);
-              setTopMehendi([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "mehendi", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "mehendi", setTopMehendi))
           .finally(() => setIsLoadingMehendi(false)),
 
-        fetch(
-          `/api/vendor?${new URLSearchParams({
-            categories: "venues",
-            sortBy: "rating",
-            limit: "10",
-          }).toString()}`,
-          { signal }
-        )
-          .then((res) => {
-            if (!res.ok) throw new Error(`Venues failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data) => {
-            if (data.success) {
-              setTopVenues(filterValidVendors(data.data || []));
-            }
-          })
-          .catch((err) => {
-            if (err.name !== "AbortError") {
-              console.error("Error fetching venues:", err);
-              setTopVenues([]);
-            }
-          })
+        fetch(`/api/vendor?${new URLSearchParams({ categories: "venues", sortBy: "rating", limit: "10" }).toString()}`, { signal })
+          .then(res => res.json())
+          .then(data => handleData(data, "venues", setTopVenues))
           .finally(() => setIsLoadingVenues(false)),
       ];
 
@@ -1230,7 +994,7 @@ export default function FindAVendorPageWrapper() {
       </header>
       <div className="h-14" />
       <div className="pt-4 pb-4">
-        <HeroCarousel />
+        <HeroCarousel categoryCounts={categoryCounts} />
         <VendorCarousel
           title="Featured Vendors"
           subtitle="Handpicked by our experts"

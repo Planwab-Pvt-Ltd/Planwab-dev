@@ -55,6 +55,7 @@ import { useNavbarVisibilityStore } from "../../GlobalState/navbarVisibilityStor
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, useClerk, UserButton, useUser } from "@clerk/nextjs";
 import { useTheme } from "@/contexts/ThemeContext";
+import { set } from "mongoose";
 
 /* ─── Static Data ─── */
 
@@ -144,9 +145,9 @@ const VENDOR_CATEGORIES = [
 ];
 
 const GALLERY_LINKS = [
-  { label: "Vendor Gallery", href: "/gallery/vendors", icon: Images },
-  { label: "Profile Media", href: "/gallery/Profile/explore", icon: Camera },
-  { label: "Marketplace", href: "/gallery/marketplace", icon: Store },
+  { label: "Vendor Media", href: "/vendors/explore/events", icon: Images },
+  { label: "Profile Media", href: "/vendors/profiles/explore", icon: Camera },
+  { label: "Marketplace", href: "/vendors/marketplace", icon: Store },
 ];
 
 const BLOG_LINKS = [
@@ -238,11 +239,10 @@ const CategoryButton = memo(({ category, imageSrc, active, onClick, styles, src 
     {active ? (
       <>
         <div className="relative flex items-center justify-center z-10 shrink-0 pb-2">
-          <img
+          <SmartMedia
             src={imageSrc}
             alt={category}
             className={`object-contain ${category === "Anniversary" ? "w-7 h-9" : "w-10 h-15"}`}
-            loading="eager"
           />
         </div>
         <span className="whitespace-nowrap text-sm font-bold text-white z-10 truncate">{category}</span>
@@ -773,7 +773,7 @@ const MobileNavDrawer = memo(({ isOpen, onClose, pathname: currentPathname }) =>
                 {/* Gallery */}
                 <DrawerAccordionItem
                   icon={Images}
-                  label="Gallery"
+                  label="Explore"
                   isOpen={openAccordion === "gallery"}
                   onToggle={() => toggleAccordion("gallery")}
                   accentColor="blue"
@@ -1079,39 +1079,58 @@ const HeaderLogic = () => {
   const currentTab = useMemo(() => TABS_CONFIG.find((t) => t.id === activeTabId) || TABS_CONFIG[0], [activeTabId]);
   const isHomePage = pathname === "/m" || pathname === "/";
 
-  /* ── Swipe-left-anywhere to open drawer ── */
-  useEffect(() => {
-    let startX = 0;
-    let startY = 0;
-    let tracking = false;
+ useEffect(() => {
+  let startX = 0;
+  let startY = 0;
+  let startTarget = null;
 
-    const onTouchStart = (e) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      tracking = true;
-    };
+  const isInsideScrollable = (el) => {
+    while (el && el !== document.body) {
+      const style = window.getComputedStyle(el);
+      const overflowX = style.overflowX;
+      const isScrollable = (overflowX === "auto" || overflowX === "scroll") && el.scrollWidth > el.clientWidth;
+      if (isScrollable) return true;
+      el = el.parentElement;
+    }
+    return false;
+  };
 
-    const onTouchEnd = (e) => {
-      if (!tracking || isNavDrawerOpen) return;
-      tracking = false;
-      const deltaX = e.changedTouches[0].clientX - startX;
-      const deltaY = e.changedTouches[0].clientY - startY;
-      // Left swipe (negative deltaX), mostly horizontal, threshold 55px
-      if (deltaX < -55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-        setIsNavDrawerOpen(true);
-        haptic("medium");
-        setIsNavbarVisible(false);
-      }
-    };
+  const onTouchStart = (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTarget = e.target;
+  };
 
-    document.addEventListener("touchstart", onTouchStart, { passive: true });
-    document.addEventListener("touchend", onTouchEnd, { passive: true });
+  const onTouchEnd = (e) => {
+    if (isNavDrawerOpen) return;
 
-    return () => {
-      document.removeEventListener("touchstart", onTouchStart);
-      document.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [isNavDrawerOpen, haptic, setIsNavbarVisible]);
+    const deltaX = e.changedTouches[0].clientX - startX;
+    const deltaY = e.changedTouches[0].clientY - startY;
+
+    // Must start from right-edge 28px strip only
+    const screenWidth = window.innerWidth;
+    const startedFromRightEdge = startX >= screenWidth - 75;
+
+    if (
+      startedFromRightEdge &&
+      deltaX < -55 &&
+      Math.abs(deltaX) > Math.abs(deltaY) * 1.8 &&
+      !isInsideScrollable(startTarget)
+    ) {
+      setIsNavDrawerOpen(true);
+      setIsNavbarVisible(false);
+      haptic("medium");
+    }
+  };
+
+  document.addEventListener("touchstart", onTouchStart, { passive: true });
+  document.addEventListener("touchend", onTouchEnd, { passive: true });
+
+  return () => {
+    document.removeEventListener("touchstart", onTouchStart);
+    document.removeEventListener("touchend", onTouchEnd);
+  };
+}, [isNavDrawerOpen, haptic]);
 
   const buildMarketplaceUrl = useCallback(() => {
     const params = new URLSearchParams();

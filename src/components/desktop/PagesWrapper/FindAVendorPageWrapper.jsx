@@ -32,6 +32,7 @@ import SmartMedia from "../SmartMediaLoader";
 import { formatPrice } from "../../../lib/utils";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
+import { ScrollCarousel } from "./IdeasPageWrapper";
 
 const HERO_CATEGORIES = [
   { id: 1, name: "Makeup Artists", key: "makeup", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", count: "456", color: "#ec4899" },
@@ -264,7 +265,7 @@ const VendorCard = memo(({ vendor, user }) => {
   return (
     <motion.div 
       onClick={() => router.push(`/vendor/${vendor.category?.toLowerCase() || 'service'}/${vendorId}`)}
-      className="flex-shrink-0 w-64 bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group cursor-pointer"
+      className="flex-shrink-0 w-64 bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group cursor-pointer snap-start"
     >
       <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-800">
         <SmartMedia src={vendor?.defaultImage || vendor.images?.[0]} type="image" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -333,33 +334,8 @@ const VendorCard = memo(({ vendor, user }) => {
 });
 
 export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, color, isLoading }) => {
-  const scrollRef = useRef(null);
   const router = useRouter();
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
   const { user } = useUser();
-
-  const checkScroll = useCallback(() => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setShowLeft(scrollLeft > 10);
-      setShowRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, [checkScroll]);
-
-  const scroll = (dir) => {
-    if (scrollRef.current) {
-      // Increased scroll amount to move roughly 3 full cards (256px card + 24px gap = 280px per unit)
-      const scrollAmount = dir === 'left' ? -840 : 840;
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
 
   const viewMoreUrl = useMemo(() => {
     const base = '/vendors/marketplace';
@@ -417,59 +393,35 @@ export const VendorCarousel = memo(({ title, subtitle, vendors, icon: Icon, colo
       </div>
 
       <div className="relative">
-        <AnimatePresence>
-          {showLeft && (
-            <motion.button 
-              key="prev-btn"
-              initial={{ opacity: 0, x: 20, scale: 0.8 }} 
-              animate={{ opacity: 1, x: 0, scale: 1 }} 
-              exit={{ opacity: 0, x: 20, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => scroll('left')}
-              className="absolute -left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 hover:scale-110 active:scale-90 transition-all text-slate-900 dark:text-white group"
-            >
-              <ChevronLeft size={24} strokeWidth={3} className="group-hover:-translate-x-0.5 transition-transform" />
-            </motion.button>
-          )}
-          {showRight && (
-            <motion.button 
-              key="next-btn"
-              initial={{ opacity: 0, x: -20, scale: 0.8 }} 
-              animate={{ opacity: 1, x: 0, scale: 1 }} 
-              exit={{ opacity: 0, x: -20, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => scroll('right')}
-              className="absolute -right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 hover:scale-110 active:scale-90 transition-all text-slate-900 dark:text-white group"
-            >
-              <ChevronRight size={24} strokeWidth={3} className="group-hover:translate-x-0.5 transition-transform" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <div 
-          ref={scrollRef}
-          onScroll={checkScroll}
-          className="flex gap-6 overflow-x-auto no-scrollbar pb-8 px-2 snap-x"
-        >
+        <ScrollCarousel>
           {isLoading ? (
-            [...Array(5)].map((_, i) => <div key={i} className="flex-shrink-0 w-64 h-80 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-[32px]" />)
+            [...Array(5)].map((_, i) => (
+              <div key={`skeleton-${i}`} className="flex-shrink-0 w-64 h-80 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-[32px] snap-start" />
+            ))
           ) : (
             <>
-              {vendors.map((v) => <VendorCard key={v._id || v.id} vendor={v} user={user} />)}
-              <div onClick={() => router.push(viewMoreUrl)} className="flex-shrink-0 w-64 h-auto rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors">
-                <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
-                  <ArrowRight size={28} />
+              {vendors.map((v) => (
+                <div key={v._id || v.id} className="snap-start">
+                  <VendorCard vendor={v} user={user} />
                 </div>
-                <p className="font-black text-slate-800 dark:text-white text-sm transition-colors">View All</p>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {title}</p>
-              </div>
+              ))}
+              {vendors.length > 0 && (
+                <div onClick={() => router.push(viewMoreUrl)} className="flex-shrink-0 w-64 h-auto rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors snap-start">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
+                    <ArrowRight size={28} />
+                  </div>
+                  <p className="font-black text-slate-800 dark:text-white text-sm transition-colors">View All</p>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {title}</p>
+                </div>
+              )}
             </>
           )}
-        </div>
+        </ScrollCarousel>
       </div>
     </section>
   );
 });
+VendorCarousel.displayName = "VendorCarousel";
 
 const TrustStrip = memo(() => (
   <div className="py-4 px-2 hover:z-10 relative">
