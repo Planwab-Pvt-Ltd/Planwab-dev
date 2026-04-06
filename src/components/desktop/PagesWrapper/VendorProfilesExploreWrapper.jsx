@@ -45,6 +45,7 @@ import {
   FlameKindling,
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+import { ScrollCarousel } from "./IdeasPageWrapper";
 
 const CAROUSEL_SECTIONS = [
   { key: "venues", label: "Premium Venues", subtitle: "Grand stages for your event", icon: Building2, color: "#0ea5e9", apiCategory: "venues" },
@@ -365,63 +366,63 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
 
   return (
     <motion.div
-      whileHover={{ y: -6, scale: 1.02 }}
+      whileHover={{ y: -8, scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onClick={() => profilePath && router.push(profilePath)}
-      className={`flex-shrink-0 w-64 h-[310px] flex flex-col bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group relative snap-start ${profilePath ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`flex-shrink-0 w-[280px] h-[340px] flex flex-col bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group relative snap-start ${profilePath ? 'cursor-pointer' : 'cursor-default'} snap-start`}
     >
-      <div className="h-[120px] w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
+      <div className="h-[140px] w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
         <SmartMedia useSkeleton={false} src={coverSrc} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
       </div>
 
-      <div className="absolute top-[88px] left-5 p-1 bg-white dark:bg-slate-900 rounded-[22px] shadow-sm z-10 transition-transform duration-500 group-hover:scale-105">
-        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800">
+      <div className="absolute top-[108px] left-6 p-1.5 bg-white dark:bg-slate-900 rounded-[22px] shadow-sm z-10 transition-transform duration-500 group-hover:scale-105">
+        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800">
              <SmartMedia useSkeleton={false} src={avatarSrc} className="w-full h-full object-cover" />
         </div>
       </div>
 
-      <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end z-10">
+      <div className="absolute top-4 right-4 flex flex-col gap-2 items-end z-10">
         {profile.trust > 0 && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg">
-            <Star size={10} className="fill-amber-400 text-amber-400" />
-            <span className="text-white/90 text-[11px] font-black">{profile.trust}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg">
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <span className="text-white/90 text-xs font-black">{profile.trust}</span>
           </div>
         )}
         {profile.likesCount > 0 && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg">
-            <Heart size={10} className="fill-rose-400 text-rose-400" />
-            <span className="text-white/90 text-[11px] font-black">{profile.likesCount}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg">
+            <Heart size={12} className="fill-rose-400 text-rose-400" />
+            <span className="text-white/90 text-xs font-black">{profile.likesCount}</span>
           </div>
         )}
       </div>
 
-      <div className="px-5 pt-[42px] pb-5 flex flex-col flex-grow">
-        <h3 className="font-bold text-slate-900 dark:text-white text-[17px] tracking-tight leading-tight truncate transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+      <div className="px-6 pt-[52px] pb-6 flex flex-col flex-grow">
+        <h3 className="font-bold text-slate-900 dark:text-white text-lg tracking-tight leading-tight truncate transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
           {displayName}
         </h3>
         
-        <p className="text-slate-500 dark:text-slate-400 text-[13px] font-medium mt-1 truncate capitalize">
-          {cat} <span className="text-slate-300 dark:text-slate-600 font-bold mx-1.5">•</span> {locationText || "India"}
+        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1 truncate capitalize">
+          {cat} <span className="text-slate-300 dark:text-slate-600 font-bold mx-2">•</span> {locationText || "India"}
         </p>
 
         <div className="flex-1 min-h-[16px]"></div>
 
-        <div className="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-auto">
-           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors">
-              <ImageIcon size={16} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
-              <div className="flex items-baseline gap-1">
-                 <span className="text-sm font-bold">{profile.postsCount || 0}</span>
-                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:inline">Posts</span>
+        <div className="flex items-center gap-5 pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-auto">
+           <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors">
+              <ImageIcon size={18} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
+              <div className="flex items-baseline gap-1.5">
+                 <span className="text-base font-bold">{profile.postsCount || 0}</span>
+                 <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:inline">Posts</span>
               </div>
            </div>
            
            <div className="w-px h-6 bg-slate-100 dark:bg-slate-800 shrink-0"></div>
            
-           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 group-hover:text-rose-500 transition-colors">
-              <Video size={16} className="text-rose-500 dark:text-rose-400 shrink-0" />
-              <div className="flex items-baseline gap-1">
-                 <span className="text-sm font-bold">{profile.reelsCount || 0}</span>
-                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:inline">Reels</span>
+           <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 group-hover:text-rose-500 transition-colors">
+              <Video size={18} className="text-rose-500 dark:text-rose-400 shrink-0" />
+              <div className="flex items-baseline gap-1.5">
+                 <span className="text-base font-bold">{profile.reelsCount || 0}</span>
+                 <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:inline">Reels</span>
               </div>
            </div>
         </div>
@@ -433,24 +434,6 @@ ProfileCard.displayName = "ProfileCard";
 
 const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles, isLoading, apiCategory }) => {
   const router = useRouter();
-  const scrollRef = useRef(null);
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
-
-  const checkScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setShowLeft(scrollLeft > 10);
-    setShowRight(scrollLeft < scrollWidth - clientWidth - 10);
-  }, []);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [checkScroll, profiles]);
-
-  const scroll = (dir) => scrollRef.current?.scrollBy({ left: dir === "left" ? -840 : 840, behavior: "smooth" });
 
   return (
     <section id={`carousel-${id}`} className="py-6 relative group/section">
@@ -473,39 +456,10 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
       </div>
 
       <div className="relative">
-        <AnimatePresence>
-          {showLeft && (
-            <motion.button
-              key="prev"
-              initial={{ opacity: 0, x: 20, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 20, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => scroll("left")}
-              className="absolute -left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 hover:scale-110 active:scale-90 transition-all text-slate-900 dark:text-white group"
-            >
-              <ChevronLeft size={24} strokeWidth={3} className="group-hover:-translate-x-0.5 transition-transform" />
-            </motion.button>
-          )}
-          {showRight && (
-            <motion.button
-              key="next"
-              initial={{ opacity: 0, x: -20, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -20, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => scroll("right")}
-              className="absolute -right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 hover:scale-110 active:scale-90 transition-all text-slate-900 dark:text-white group"
-            >
-              <ChevronRight size={24} strokeWidth={3} className="group-hover:translate-x-0.5 transition-transform" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <div ref={scrollRef} onScroll={checkScroll} className="flex gap-6 overflow-x-auto no-scrollbar pb-8 px-2 snap-x items-start">
+        <ScrollCarousel className="pt-4 pb-5">
           {isLoading
             ? [...Array(5)].map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-64 h-[310px] rounded-[32px] bg-slate-100 dark:bg-slate-800 animate-pulse snap-start" />
+              <div key={i} className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] bg-slate-100 dark:bg-slate-800 animate-pulse snap-start" />
             ))
             : profiles.length > 0
               ? (
@@ -513,13 +467,13 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
                   {profiles.map((p, i) => <ProfileCard key={p._id || p.id || i} profile={p} fallbackIndex={i} apiCategory={apiCategory} />)}
                   <div
                     onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-                    className="flex-shrink-0 w-64 h-[310px] rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors snap-start"
+                    className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors snap-start"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
-                      <ArrowRight size={28} />
+                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
+                      <ArrowRight size={32} />
                     </div>
-                    <p className="font-black text-slate-800 dark:text-white text-sm">View All</p>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {label}</p>
+                    <p className="font-black text-slate-800 dark:text-white text-base">View All</p>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {label}</p>
                   </div>
                 </>
               )
@@ -530,24 +484,23 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
                   ))}
                   <div
                     onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-                    className="flex-shrink-0 w-64 h-[310px] rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors snap-start"
+                    className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors snap-start"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
-                      <ArrowRight size={28} />
+                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
+                      <ArrowRight size={32} />
                     </div>
-                    <p className="font-black text-slate-800 dark:text-white text-sm">View All</p>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {label}</p>
+                    <p className="font-black text-slate-800 dark:text-white text-base">View All</p>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {label}</p>
                   </div>
                 </>
               )
           }
-        </div>
+        </ScrollCarousel>
       </div>
     </section>
   );
 });
 ProfileCarousel.displayName = "ProfileCarousel";
-
 const TrustStrip = memo(() => (
   <div className="py-4 px-2">
     <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 to-purple-50 dark:to-purple-900/40 border border-indigo-200 dark:border-indigo-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] hover:-translate-y-1 transition-all duration-500">
@@ -1100,7 +1053,7 @@ const ConciergeSmallStrip = memo(() => {
 });
 ConciergeSmallStrip.displayName = "ConciergeSmallStrip";
 
-export default function Explorevendorprofilewrapper() {
+export default function VendorProfilesExploreWrapper() {
   const [sections, setSections] = useState(() =>
     Object.fromEntries(CAROUSEL_SECTIONS.map((s) => [s.key, { data: [], loading: true }]))
   );

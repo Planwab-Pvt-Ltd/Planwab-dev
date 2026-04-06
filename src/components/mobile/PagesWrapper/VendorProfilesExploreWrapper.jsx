@@ -47,6 +47,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
+import { ScrollCarousel } from "./IdeasPageWrapper";
 
 const CAROUSEL_SECTIONS = [
   { key: "venues", label: "Premium Venues", subtitle: "Grand stages for your event", icon: Building2, color: "#0ea5e9", apiCategory: "venues" },
@@ -247,8 +248,8 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           )}
           {slot.isLive && !sliver && (
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-3 py-1.5">
+            <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+              <div className="opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-3 py-1.5 hidden md:block">
                 <p className="text-white text-[10px] font-black uppercase tracking-widest">View Profile</p>
               </div>
             </div>
@@ -265,12 +266,9 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
   );
 
   return (
-    <div className="relative w-full bg-[#fcfcfc] dark:bg-slate-950 rounded-[48px] overflow-hidden mb-16 min-h-[550px] flex items-center shadow-lg border border-slate-100 dark:border-slate-900 transition-colors duration-500">
-
-
-      <div className="relative z-10 grid lg:grid-cols-2 gap-0 w-full h-full min-h-[550px]">
-
-        <div className="relative h-full grid grid-cols-3 gap-2 p-2 bg-slate-50 dark:bg-slate-900/40">
+    <div className="relative w-full bg-[#fcfcfc] dark:bg-slate-950 md:rounded-[48px] overflow-hidden mb-8 md:mb-16 min-h-[400px] md:min-h-[550px] flex items-center shadow-lg border-y md:border border-slate-100 dark:border-slate-900 transition-colors duration-500">
+      <div className="relative z-10 grid lg:grid-cols-2 gap-0 w-full h-full min-h-[400px] md:min-h-[550px]">
+        <div className="hidden lg:grid relative h-full grid-cols-3 gap-2 p-2 bg-slate-50 dark:bg-slate-900/40">
           <div className="grid grid-rows-6 gap-2">
             {col0.map((slot, i) => <MosaicCell key={i} slot={slot} />)}
             <div className="row-span-1 rounded-2xl bg-slate-100 dark:bg-slate-800 opacity-30" />
@@ -285,40 +283,40 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center justify-center p-6 py-14 lg:p-16 bg-white dark:bg-slate-950 text-center">
+        <div className="relative flex flex-col items-center justify-center p-6 py-10 md:py-14 lg:p-16 bg-white dark:bg-slate-950 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="flex flex-col items-center max-w-2xl w-full space-y-10"
+            className="flex flex-col items-center max-w-2xl w-full space-y-8 md:space-y-10"
           >
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">PlanWAB Presents</span>
+              <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">PlanWAB Presents</span>
             </div>
 
-            <h1 className="text-[44px] md:text-6xl xl:text-[84px] font-black leading-[0.95] tracking-tighter uppercase text-slate-900 dark:text-white">
+            <h1 className="text-4xl sm:text-[44px] md:text-6xl xl:text-[84px] font-black leading-[0.95] tracking-tighter uppercase text-slate-900 dark:text-white">
               <span className="italic opacity-90">The Best</span> <br />
               <span className="italic opacity-90">Vendors</span> <br />
               <span className="text-blue-500 dark:text-blue-400">For You.</span>
             </h1>
 
-            <div className="space-y-10 w-full flex flex-col items-center">
-              <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed font-semibold max-w-md mx-auto">
+            <div className="space-y-8 w-full flex flex-col items-center">
+              <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg leading-relaxed font-semibold max-w-md mx-auto">
                 Discover 10,000+ top-rated wedding curators, photographers, and venues across India.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
                 <button
                   onClick={() => router.push('/vendors/marketplace')}
-                  className="w-full sm:w-auto bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none"
+                  className="w-full sm:w-auto bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-8 md:px-10 py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none"
                 >
                   Find Your Vendor
                 </button>
                 <div className="relative w-full sm:w-auto flex justify-center" ref={dropdownRef}>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-800 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-800 px-8 md:px-10 py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] active:bg-slate-50 dark:active:bg-slate-800 transition-all"
                   >
                     <span>Explore Categories</span>
                     <ChevronDown size={16} className={`transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -340,9 +338,9 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
                               <button
                                 key={cat.key}
                                 onClick={() => handleCategorySelect(cat.key)}
-                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-left group/btn"
+                                className="w-full flex items-center gap-3 px-4 py-3 active:bg-slate-50 dark:active:bg-slate-800 rounded-xl transition-colors text-left group/btn"
                               >
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover/btn:scale-110" style={{ backgroundColor: `${cat.color}15`, color: cat.color }}>
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform md:group-hover/btn:scale-110" style={{ backgroundColor: `${cat.color}15`, color: cat.color }}>
                                   <Icon size={16} />
                                 </div>
                                 <div className="truncate">
@@ -360,7 +358,6 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
             </div>
           </motion.div>
         </div>
-
       </div>
     </div>
   );
@@ -388,16 +385,15 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
 
   return (
     <motion.div
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => profilePath && router.push(profilePath)}
-      className={`flex-shrink-0 w-44 h-[236px] flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group relative snap-start ${profilePath ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`flex-shrink-0 w-40 sm:w-44 h-[236px] flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm md:hover:shadow-2xl dark:md:hover:shadow-indigo-900/20 transition-all duration-300 group relative snap-start ${profilePath ? 'cursor-pointer' : 'cursor-default'} snap-start`}
     >
       <div className="h-[100px] w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
-        <SmartMedia useSkeleton={false} src={coverSrc} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <SmartMedia useSkeleton={false} src={coverSrc} className="w-full h-full object-cover transition-transform duration-700 md:group-hover:scale-105" />
       </div>
 
-      <div className="absolute top-[76px] left-3 p-1 bg-white dark:bg-slate-900 rounded-[14px] shadow-sm z-10 transition-transform duration-500 group-hover:scale-105">
+      <div className="absolute top-[76px] left-3 p-1 bg-white dark:bg-slate-900 rounded-[14px] shadow-sm z-10 transition-transform duration-500 md:group-hover:scale-105">
         <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
           <SmartMedia useSkeleton={false} src={avatarSrc} className="w-full h-full object-cover" />
         </div>
@@ -419,7 +415,7 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
       </div>
 
       <div className="px-3 pt-[44px] pb-3 flex flex-col flex-grow">
-        <h3 className="font-bold text-slate-900 dark:text-white text-sm tracking-tight leading-tight truncate transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+        <h3 className="font-bold text-slate-900 dark:text-white text-sm tracking-tight leading-tight truncate transition-colors md:group-hover:text-indigo-600 dark:md:group-hover:text-indigo-400">
           {displayName}
         </h3>
 
@@ -430,7 +426,7 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
         <div className="flex-1 min-h-[8px]"></div>
 
         <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-auto justify-between">
-          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors">
+          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 md:group-hover:text-indigo-500 transition-colors">
             <ImageIcon size={14} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
             <div className="flex items-baseline gap-0.5">
               <span className="text-xs font-bold">{profile.postsCount || 0}</span>
@@ -440,7 +436,7 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
 
           <div className="w-px h-4 bg-slate-100 dark:bg-slate-800 shrink-0"></div>
 
-          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 group-hover:text-rose-500 transition-colors">
+          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 md:group-hover:text-rose-500 transition-colors">
             <Video size={14} className="text-rose-500 dark:text-rose-400 shrink-0" />
             <div className="flex items-baseline gap-0.5">
               <span className="text-xs font-bold">{profile.reelsCount || 0}</span>
@@ -456,79 +452,32 @@ ProfileCard.displayName = "ProfileCard";
 
 const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles, isLoading, apiCategory }) => {
   const router = useRouter();
-  const scrollRef = useRef(null);
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
-
-  const checkScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    setShowLeft(scrollLeft > 10);
-    setShowRight(scrollLeft < scrollWidth - clientWidth - 10);
-  }, []);
-
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [checkScroll, profiles]);
-
-  const scroll = (dir) => scrollRef.current?.scrollBy({ left: dir === "left" ? -840 : 840, behavior: "smooth" });
 
   return (
-    <section id={`carousel-${id}`} className="py-6 relative group/section">
+    <section id={`carousel-${id}`} className="py-4 relative group/section">
       <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}18` }}>
             <Icon size={20} style={{ color }} />
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-none">{label}</h2>
-            <p className="text-slate-400 dark:text-slate-500 font-medium text-[10px] uppercase mt-1">{subtitle}</p>
+            <p className="text-slate-400 dark:text-slate-500 font-medium text-[10px] uppercase mt-1 line-clamp-1">{subtitle}</p>
           </div>
         </div>
         <button
           onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-          className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all"
+          className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 active:bg-indigo-50 dark:active:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap shrink-0"
         >
           View All
         </button>
       </div>
 
       <div className="relative">
-        <AnimatePresence>
-          {showLeft && (
-            <motion.button
-              key="prev"
-              initial={{ opacity: 0, x: 20, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 20, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => scroll("left")}
-              className="absolute -left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 hover:scale-110 active:scale-90 transition-all text-slate-900 dark:text-white group"
-            >
-              <ChevronLeft size={24} strokeWidth={3} className="group-hover:-translate-x-0.5 transition-transform" />
-            </motion.button>
-          )}
-          {showRight && (
-            <motion.button
-              key="next"
-              initial={{ opacity: 0, x: -20, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -20, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => scroll("right")}
-              className="absolute -right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 hover:scale-110 active:scale-90 transition-all text-slate-900 dark:text-white group"
-            >
-              <ChevronRight size={24} strokeWidth={3} className="group-hover:translate-x-0.5 transition-transform" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <div ref={scrollRef} onScroll={checkScroll} className="flex gap-4 overflow-x-auto no-scrollbar pb-6 px-4 snap-x items-start">
+        <ScrollCarousel>
           {isLoading
             ? [...Array(5)].map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-44 h-[236px] rounded-2xl bg-white border border-slate-100 dark:border-slate-800 dark:bg-slate-800 snap-start overflow-hidden shadow-sm">
+              <div key={i} className="flex-shrink-0 w-[160px] sm:w-[176px] h-[236px] rounded-2xl bg-white border border-slate-100 dark:border-slate-800 dark:bg-slate-800 snap-start overflow-hidden shadow-sm">
                 <div className="h-[100px] bg-slate-100 dark:bg-slate-700 animate-pulse" />
                 <div className="relative pt-[44px] px-3 pb-3 space-y-2">
                   <div className="absolute top-[-24px] left-3 w-12 h-12 bg-slate-200 dark:bg-slate-600 rounded-xl animate-pulse" />
@@ -540,12 +489,14 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
             : profiles.length > 0
               ? (
                 <>
-                  {profiles.map((p, i) => <ProfileCard key={p._id || p.id || i} profile={p} fallbackIndex={i} apiCategory={apiCategory} />)}
+                  {profiles.map((p, i) => (
+                    <ProfileCard key={p._id || p.id || i} profile={p} fallbackIndex={i} apiCategory={apiCategory} />
+                  ))}
                   <div
                     onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-                    className="flex-shrink-0 w-44 h-[236px] rounded-2xl border-[3px] border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-4 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all snap-start"
+                    className="flex-shrink-0 w-[160px] sm:w-[176px] h-[236px] rounded-2xl border-[3px] border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-4 group cursor-pointer active:bg-slate-50 dark:active:bg-slate-800/30 transition-all snap-start"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-400 dark:text-slate-500 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 text-slate-400 dark:text-slate-500 shadow-sm">
                       <ArrowRight size={20} />
                     </div>
                     <p className="font-bold text-slate-800 dark:text-white text-sm">View All</p>
@@ -560,9 +511,9 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
                   ))}
                   <div
                     onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-                    className="flex-shrink-0 w-44 h-[236px] rounded-2xl border-[3px] border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-4 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all snap-start"
+                    className="flex-shrink-0 w-[160px] sm:w-[176px] h-[236px] rounded-2xl border-[3px] border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-4 group cursor-pointer active:bg-slate-50 dark:active:bg-slate-800/30 transition-all snap-start"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-400 dark:text-slate-500 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 text-slate-400 dark:text-slate-500 shadow-sm">
                       <ArrowRight size={20} />
                     </div>
                     <p className="font-bold text-slate-800 dark:text-white text-sm">View All</p>
@@ -571,7 +522,7 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
                 </>
               )
           }
-        </div>
+        </ScrollCarousel>
       </div>
     </section>
   );
@@ -579,22 +530,22 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
 ProfileCarousel.displayName = "ProfileCarousel";
 
 const TrustStrip = memo(() => (
-  <div className="py-4 px-2">
-    <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 to-purple-50 dark:to-purple-900/40 border border-indigo-200 dark:border-indigo-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] hover:-translate-y-1 transition-all duration-500">
+  <div className="py-2 px-4 mb-4">
+    <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 to-purple-50 dark:to-purple-900/40 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl p-5 flex flex-col gap-5 shadow-sm">
       {[
         { icon: Check, label: "100% Verified", desc: "Every vendor is manually verified" },
         { icon: Star, label: "Top Rated", desc: "Only the best in the industry" },
         { icon: Heart, label: "Loved by Couples", desc: "10,000+ happy weddings planned" },
       ].map((item, i) => (
         <React.Fragment key={item.label}>
-          {i > 0 && <div className="hidden md:block w-px h-12 bg-indigo-200 dark:bg-indigo-800/50" />}
-          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left group cursor-default">
-            <div className="w-14 h-14 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform duration-500">
-              <item.icon className="text-indigo-500 dark:text-indigo-400" size={24} strokeWidth={3} />
+          {i > 0 && <div className="h-px w-full bg-indigo-200/50 dark:bg-indigo-800/30" />}
+          <div className="flex items-center gap-4 text-left group cursor-default">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-white dark:bg-indigo-950/50 shadow-sm flex items-center justify-center">
+              <item.icon className="text-indigo-500 dark:text-indigo-400" size={20} strokeWidth={3} />
             </div>
             <div>
-              <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-1">{item.label}</h4>
-              <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold max-w-[170px]">{item.desc}</p>
+              <h4 className="text-slate-900 dark:text-white font-black text-sm tracking-widest uppercase mb-0.5">{item.label}</h4>
+              <p className="text-slate-500 dark:text-indigo-200/70 text-xs font-semibold">{item.desc}</p>
             </div>
           </div>
         </React.Fragment>
@@ -615,63 +566,61 @@ const UploadStrip = memo(() => {
   };
 
   return (
-    <div className="py-4 px-2 relative">
-      <div className="bg-gradient-to-r from-violet-50 dark:from-violet-900/30 to-pink-50 dark:to-pink-900/30 border border-violet-200 dark:border-violet-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 shrink-0 rounded-full bg-white dark:bg-violet-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
-            <Camera className="text-violet-500 dark:text-violet-400" size={28} />
-          </div>
-          <div>
-            <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tight mb-1">Share Your Wedding Story</h4>
-            <p className="text-slate-500 dark:text-violet-200/70 text-sm font-semibold">Upload your photos and reels to be featured in our premium gallery.</p>
-          </div>
+    <div className="py-2 px-4 mb-4 relative">
+      <div className="bg-gradient-to-r from-violet-50 dark:from-violet-900/30 to-pink-50 dark:to-pink-900/30 border border-violet-200 dark:border-violet-800/50 rounded-3xl p-5 flex flex-col items-center gap-5 shadow-sm text-center">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-violet-950/50 shadow-sm flex items-center justify-center -rotate-12">
+          <Camera className="text-violet-500 dark:text-violet-400" size={24} />
         </div>
-        <button onClick={() => setIsOpen(true)} className="bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-8 py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md whitespace-nowrap overflow-hidden">
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-1">Share Your Story</h4>
+          <p className="text-slate-500 dark:text-violet-200/70 text-xs font-semibold">Upload your photos to be featured.</p>
+        </div>
+        <button onClick={() => setIsOpen(true)} className="w-full bg-gradient-to-r from-violet-600 to-pink-600 active:from-violet-500 active:to-pink-500 text-white px-6 py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md">
           UPLOAD MEDIA
         </button>
       </div>
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-[32px] p-8 max-w-md w-full shadow-2xl relative border border-slate-100 dark:border-slate-800"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-100 dark:border-slate-800 max-h-[90dvh] overflow-y-auto no-scrollbar"
             >
               <button
                 onClick={() => { setIsOpen(false); setIsSubmitted(false); }}
-                className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition"
               >
-                <X size={20} className="text-slate-500" />
+                <X size={18} className="text-slate-500" />
               </button>
 
               {isSubmitted ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <Check className="text-green-600 dark:text-green-400" size={32} />
+                <div className="flex flex-col items-center justify-center py-6 text-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <Check className="text-green-600 dark:text-green-400" size={28} />
                   </div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">Media Uploaded!</h3>
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Thank you for sharing your story. It is under review.</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Media Uploaded!</h3>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Thank you for sharing your story.</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Upload Media</h3>
-                    <p className="text-sm border-b pb-4 mb-2 font-semibold text-slate-500 dark:text-slate-400">Share your best moments with us.</p>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white pr-8">Upload Media</h3>
+                    <p className="text-xs border-b pb-3 mb-1 font-semibold text-slate-500 dark:text-slate-400">Share your best moments.</p>
                   </div>
 
-                  <div className="flex flex-col gap-4">
-                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-800/50 cursor-pointer hover:border-violet-500 transition-colors">
-                      <Camera className="text-slate-400" size={32} />
-                      <p className="text-xs font-bold text-slate-500">Click to browse or drag & drop files here</p>
+                  <div className="flex flex-col gap-3">
+                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/50 active:border-violet-500 transition-colors">
+                      <Camera className="text-slate-400" size={28} />
+                      <p className="text-[11px] font-bold text-slate-500 text-center">Tap to browse files</p>
                     </div>
                     <input type="text" placeholder="Caption or Link" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm font-semibold border-none outline-none focus:ring-2 focus:ring-violet-500 transition" required />
                   </div>
 
-                  <button type="submit" className="w-full bg-violet-600 hover:bg-violet-500 text-white rounded-xl py-4 font-black text-xs tracking-widest mt-2 active:scale-95 transition-all shadow-md">
-                    SUBMIT MEDIA
+                  <button type="submit" className="w-full bg-violet-600 active:bg-violet-500 text-white rounded-xl py-4 font-black text-xs tracking-widest mt-1 active:scale-95 transition-all shadow-md">
+                    SUBMIT
                   </button>
                 </form>
               )}
@@ -695,66 +644,64 @@ const PromoStrip = memo(() => {
   };
 
   return (
-    <div className="py-4 px-2 relative">
-      <div className="bg-gradient-to-r from-amber-50 dark:from-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(245,158,11,0.15)] hover:-translate-y-1 transition-all duration-500">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 shrink-0 rounded-full bg-white dark:bg-amber-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
-            <Trophy className="text-amber-500 dark:text-amber-400" size={28} />
-          </div>
-          <div>
-            <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tight mb-1 flex flex-wrap items-center gap-3">
-              Featured Vendor Award
-              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] uppercase tracking-widest">Monthly</span>
-            </h4>
-            <p className="text-slate-500 dark:text-amber-200/70 text-sm font-semibold">Top-rated vendor profiles get featured prominently across the platform.</p>
-          </div>
+    <div className="py-2 px-4 mb-4 relative">
+      <div className="bg-gradient-to-r from-amber-50 dark:from-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800/50 rounded-3xl p-5 flex flex-col items-center gap-5 shadow-sm text-center">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-amber-950/50 shadow-sm flex items-center justify-center -rotate-12">
+          <Trophy className="text-amber-500 dark:text-amber-400" size={24} />
         </div>
-        <div className="flex flex-col items-center shrink-0 gap-2">
-          <button onClick={() => setIsOpen(true)} className="bg-amber-500 hover:bg-amber-400 text-white px-8 py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md whitespace-nowrap">
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-1 flex flex-col items-center gap-1.5">
+            Vendor Award
+            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] uppercase tracking-widest">Monthly</span>
+          </h4>
+          <p className="text-slate-500 dark:text-amber-200/70 text-xs font-semibold mt-1">Vote for the top-rated vendor.</p>
+        </div>
+        <div className="flex flex-col w-full gap-2 mt-1">
+          <button onClick={() => setIsOpen(true)} className="w-full bg-amber-500 active:bg-amber-400 text-white py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md">
             NOMINATE NOW
           </button>
-          <span className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Vote closes Apr 30th</span>
+          <span className="text-slate-400 text-[9px] uppercase tracking-widest font-bold">Vote closes Apr 30th</span>
         </div>
       </div>
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-[32px] p-8 max-w-md w-full shadow-2xl relative border border-slate-100 dark:border-slate-800"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-100 dark:border-slate-800 max-h-[90dvh] overflow-y-auto no-scrollbar"
             >
               <button
                 onClick={() => { setIsOpen(false); setIsSubmitted(false); }}
-                className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition"
               >
-                <X size={20} className="text-slate-500" />
+                <X size={18} className="text-slate-500" />
               </button>
 
               {isSubmitted ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <Trophy className="text-amber-600 dark:text-amber-400" size={32} />
+                <div className="flex flex-col items-center justify-center py-6 text-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <Trophy className="text-amber-600 dark:text-amber-400" size={28} />
                   </div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">Nomination Submitted</h3>
-                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Thank you for recognizing an amazing vendor!</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Nomination Sent!</h3>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Thanks for recognizing an amazing vendor!</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Nominate Vendor</h3>
-                    <p className="text-sm border-b pb-4 mb-2 font-semibold text-slate-500 dark:text-slate-400">Cast your vote for the Vendor of the Month.</p>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white pr-8">Nominate Vendor</h3>
+                    <p className="text-xs border-b pb-3 mb-1 font-semibold text-slate-500 dark:text-slate-400">Cast your vote for this month.</p>
                   </div>
 
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3">
                     <input type="text" placeholder="Vendor Business Name" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm font-semibold border-none outline-none focus:ring-2 focus:ring-amber-500 transition" required />
                     <textarea placeholder="Why do they deserve this award?" rows={3} className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm font-semibold border-none outline-none focus:ring-2 focus:ring-amber-500 transition resize-none" required />
                   </div>
 
-                  <button type="submit" className="w-full bg-amber-500 hover:bg-amber-400 text-white rounded-xl py-4 font-black text-xs tracking-widest mt-2 active:scale-95 transition-all shadow-md">
-                    SUBMIT NOMINATION
+                  <button type="submit" className="w-full bg-amber-500 active:bg-amber-400 text-white rounded-xl py-4 font-black text-xs tracking-widest mt-1 active:scale-95 transition-all shadow-md">
+                    SUBMIT
                   </button>
                 </form>
               )}
@@ -772,7 +719,9 @@ const DealsStrip = memo(() => {
   const [copiedCode, setCopiedCode] = useState(null);
 
   const handleCopy = (code) => {
-    navigator.clipboard.writeText(code);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(code);
+    }
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
@@ -780,21 +729,19 @@ const DealsStrip = memo(() => {
   const COUPONS = [
     {
       code: "PLANWAB20",
-      title: "20% Off Photography",
-      desc: "Valid on all premium photographers",
+      title: "20% Off Photos",
+      desc: "Valid on premium photographers",
       bg: "bg-emerald-50 dark:bg-emerald-900/10",
       border: "border-emerald-200 dark:border-emerald-800/50",
-      hoverBg: "hover:bg-emerald-100 dark:hover:bg-emerald-900/20",
       titleColor: "text-emerald-700 dark:text-emerald-400",
       btnBorder: "border-emerald-200 dark:border-emerald-700"
     },
     {
       code: "VENUE50K",
-      title: "Flat ₹50K Off Venues",
+      title: "Flat ₹50K Off",
       desc: "For bookings above ₹5 Lakhs",
       bg: "bg-blue-50 dark:bg-blue-900/10",
       border: "border-blue-200 dark:border-blue-800/50",
-      hoverBg: "hover:bg-blue-100 dark:hover:bg-blue-900/20",
       titleColor: "text-blue-700 dark:text-blue-400",
       btnBorder: "border-blue-200 dark:border-blue-700"
     },
@@ -804,71 +751,68 @@ const DealsStrip = memo(() => {
       desc: "Exclusive bridal makeup discount",
       bg: "bg-rose-50 dark:bg-rose-900/10",
       border: "border-rose-200 dark:border-rose-800/50",
-      hoverBg: "hover:bg-rose-100 dark:hover:bg-rose-900/20",
       titleColor: "text-rose-700 dark:text-rose-400",
       btnBorder: "border-rose-200 dark:border-rose-700"
     }
   ];
 
   return (
-    <div className="py-4 px-2 relative">
-      <div className="bg-gradient-to-r from-emerald-50 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(16,185,129,0.15)] hover:-translate-y-1 transition-all duration-500">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 shrink-0 rounded-full bg-white dark:bg-emerald-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
-            <Zap className="text-emerald-500 dark:text-emerald-400" size={28} />
-          </div>
-          <div>
-            <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tight mb-1 flex flex-wrap items-center gap-3">
-              Exclusive Vendor Deals
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] uppercase tracking-widest font-black animate-pulse">Live</span>
-            </h4>
-            <p className="text-slate-500 dark:text-emerald-200/70 text-sm font-semibold">Save up to 30% on premium vendors for a limited time when booking through PlanWAB.</p>
-          </div>
+    <div className="py-2 px-4 mb-4 relative">
+      <div className="bg-gradient-to-r from-emerald-50 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-3xl p-5 flex flex-col items-center gap-5 shadow-sm text-center">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-emerald-950/50 shadow-sm flex items-center justify-center -rotate-12">
+          <Zap className="text-emerald-500 dark:text-emerald-400" size={24} />
         </div>
-        <div className="flex flex-col items-center shrink-0 gap-2">
-          <button onClick={() => setIsOpen(true)} className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md whitespace-nowrap">
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-1 flex flex-col items-center gap-1.5">
+            Vendor Deals
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] uppercase tracking-widest font-black animate-pulse">Live</span>
+          </h4>
+          <p className="text-slate-500 dark:text-emerald-200/70 text-xs font-semibold mt-1">Save up to 30% for a limited time.</p>
+        </div>
+        <div className="flex flex-col w-full gap-2 mt-1">
+          <button onClick={() => setIsOpen(true)} className="w-full bg-emerald-500 active:bg-emerald-400 text-white py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md">
             VIEW OFFERS
           </button>
-          <span className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">150+ active offers</span>
+          <span className="text-slate-400 text-[9px] uppercase tracking-widest font-bold">150+ active offers</span>
         </div>
       </div>
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-[32px] p-8 max-w-lg w-full shadow-2xl relative border border-slate-100 dark:border-slate-800"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-100 dark:border-slate-800 max-h-[90dvh] overflow-y-auto no-scrollbar"
             >
               <button
                 onClick={() => setIsOpen(false)}
-                className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition"
               >
-                <X size={20} className="text-slate-500" />
+                <X size={18} className="text-slate-500" />
               </button>
 
-              <div className="flex flex-col items-center mb-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
-                  <Zap className="text-emerald-500 dark:text-emerald-400" size={32} />
+              <div className="flex flex-col items-center mb-6 pt-2 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
+                  <Zap className="text-emerald-500 dark:text-emerald-400" size={24} />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Active Offers</h3>
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-2">Tap a code to copy and apply it during vendor booking.</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Active Offers</h3>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Tap a code to copy it.</p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {COUPONS.map((coupon, i) => (
-                  <div key={i} className={`border ${coupon.border} ${coupon.bg} rounded-2xl p-4 flex items-center justify-between gap-4 transition-all ${coupon.hoverBg}`}>
+                  <div key={i} className={`border ${coupon.border} ${coupon.bg} rounded-2xl p-4 flex flex-col gap-3 transition-all`}>
                     <div>
-                      <h4 className={`text-sm font-bold ${coupon.titleColor} mb-1`}>{coupon.title}</h4>
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{coupon.desc}</p>
+                      <h4 className={`text-sm font-bold ${coupon.titleColor} mb-0.5`}>{coupon.title}</h4>
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">{coupon.desc}</p>
                     </div>
                     <button
                       onClick={() => handleCopy(coupon.code)}
-                      className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black tracking-wider transition-all ${copiedCode === coupon.code
+                      className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black tracking-wider transition-all ${copiedCode === coupon.code
                           ? 'bg-emerald-500 text-white border-emerald-500'
-                          : `bg-white dark:bg-slate-800 text-slate-900 dark:text-white border ${coupon.btnBorder} shadow-sm hover:scale-105 active:scale-95`
+                          : `bg-white dark:bg-slate-800 text-slate-900 dark:text-white border ${coupon.btnBorder} shadow-sm active:scale-95`
                         }`}
                     >
                       {copiedCode === coupon.code ? (
@@ -902,69 +846,67 @@ const CommunityStrip = memo(() => {
   };
 
   return (
-    <div className="py-4 px-2 relative">
-      <div className="bg-gradient-to-r from-rose-50 dark:from-rose-900/30 to-pink-50 dark:to-pink-900/30 border border-rose-200 dark:border-rose-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(244,63,94,0.15)] hover:-translate-y-1 transition-all duration-500">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 shrink-0 rounded-full bg-white dark:bg-rose-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
-            <Users className="text-rose-500 dark:text-rose-400" size={28} />
-          </div>
-          <div>
-            <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tight mb-1">
-              Join the PlanWAB Community
-            </h4>
-            <p className="text-slate-500 dark:text-rose-200/70 text-sm font-semibold">Connect with couples, share advice, and get expert tips for your big day.</p>
-          </div>
+    <div className="py-2 px-4 mb-4 relative">
+      <div className="bg-gradient-to-r from-rose-50 dark:from-rose-900/30 to-pink-50 dark:to-pink-900/30 border border-rose-200 dark:border-rose-800/50 rounded-3xl p-5 flex flex-col items-center gap-5 shadow-sm text-center">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-rose-950/50 shadow-sm flex items-center justify-center -rotate-12">
+          <Users className="text-rose-500 dark:text-rose-400" size={24} />
         </div>
-        <div className="flex flex-col items-center shrink-0 gap-2">
-          <button onClick={() => setIsOpen(true)} className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white px-8 py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md whitespace-nowrap">
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-1">
+            Join the Community
+          </h4>
+          <p className="text-slate-500 dark:text-rose-200/70 text-xs font-semibold">Connect, share, and get expert tips.</p>
+        </div>
+        <div className="flex flex-col w-full gap-2 mt-1">
+          <button onClick={() => setIsOpen(true)} className="w-full bg-gradient-to-r from-rose-500 to-pink-500 active:from-rose-400 active:to-pink-400 text-white py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md">
             JOIN FORUM
           </button>
-          <span className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">10k+ Couples Online</span>
+          <span className="text-slate-400 text-[9px] uppercase tracking-widest font-bold">10k+ Couples Online</span>
         </div>
       </div>
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-[32px] p-8 max-w-md w-full shadow-2xl relative border border-slate-100 dark:border-slate-800"
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-100 dark:border-slate-800 max-h-[90dvh] overflow-y-auto no-scrollbar"
             >
               <button
                 onClick={() => { setIsOpen(false); setIsSubmitted(false); }}
-                className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 transition"
               >
-                <X size={20} className="text-slate-500" />
+                <X size={18} className="text-slate-500" />
               </button>
 
               {isSubmitted ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center gap-6">
-                  <div className="w-20 h-20 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center animate-bounce">
-                    <Users className="text-rose-600 dark:text-rose-400" size={40} />
+                <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center animate-bounce">
+                    <Users className="text-rose-600 dark:text-rose-400" size={32} />
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Request Sent!</h3>
-                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 px-4">
-                      Your request to join the community has been received. Our admin will add you shortly!
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Request Sent!</h3>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      Our admin will add you shortly!
                     </p>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Community Access</h3>
-                    <p className="text-sm border-b pb-4 mb-2 font-semibold text-slate-500 dark:text-slate-400">Enter your details to request forum access.</p>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white pr-8">Forum Access</h3>
+                    <p className="text-xs border-b pb-3 mb-1 font-semibold text-slate-500 dark:text-slate-400">Request entry to the community.</p>
                   </div>
 
-                  <div className="flex flex-col gap-4">
-                    <input type="text" placeholder="Your Full Name" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-rose-500 transition" required />
-                    <input type="email" placeholder="Email Address" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-rose-500 transition" required />
-                    <input type="text" placeholder="Wedding Date (Optional)" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-rose-500 transition" />
+                  <div className="flex flex-col gap-3">
+                    <input type="text" placeholder="Your Full Name" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3.5 text-sm font-semibold border-none outline-none focus:ring-2 focus:ring-rose-500 transition" required />
+                    <input type="email" placeholder="Email Address" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3.5 text-sm font-semibold border-none outline-none focus:ring-2 focus:ring-rose-500 transition" required />
+                    <input type="text" placeholder="Wedding Date (Optional)" className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3.5 text-sm font-semibold border-none outline-none focus:ring-2 focus:ring-rose-500 transition" />
                   </div>
 
-                  <button type="submit" className="w-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white rounded-2xl py-5 font-black text-xs tracking-[0.2em] mt-2 active:scale-95 transition-all shadow-lg">
+                  <button type="submit" className="w-full bg-gradient-to-r from-rose-600 to-pink-600 active:from-rose-500 active:to-pink-500 text-white rounded-2xl py-4 font-black text-xs tracking-[0.2em] mt-1 active:scale-95 transition-all shadow-md">
                     REQUEST ACCESS
                   </button>
                 </form>
@@ -990,47 +932,45 @@ const MagazineStrip = memo(() => {
   };
 
   return (
-    <div className="py-4 px-2 relative">
-      <div className="bg-gradient-to-r from-cyan-50 dark:from-cyan-900/30 to-blue-50 dark:to-blue-900/30 border border-cyan-200 dark:border-cyan-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(6,182,212,0.15)] hover:-translate-y-1 transition-all duration-500">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 shrink-0 rounded-full bg-white dark:bg-cyan-950/50 shadow-sm flex items-center justify-center -rotate-12 hover:rotate-0 transition-transform duration-500">
-            <LayoutGrid className="text-cyan-500 dark:text-cyan-400" size={28} />
-          </div>
-          <div>
-            <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tight mb-1">
-              {downloadState === "completed" ? "Successfully Downloaded!" : "Read Our Digital Magazine"}
-            </h4>
-            <p className="text-slate-500 dark:text-cyan-200/70 text-sm font-semibold">
-              {downloadState === "completed"
-                ? "The latest edition has been saved to your device. Enjoy reading!"
-                : "Discover the latest wedding trends, real wedding stories, and expert guides."}
-            </p>
-          </div>
+    <div className="py-2 px-4 mb-4 relative">
+      <div className="bg-gradient-to-r from-cyan-50 dark:from-cyan-900/30 to-blue-50 dark:to-blue-900/30 border border-cyan-200 dark:border-cyan-800/50 rounded-3xl p-5 flex flex-col items-center gap-5 shadow-sm text-center">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-white dark:bg-cyan-950/50 shadow-sm flex items-center justify-center -rotate-12">
+          <LayoutGrid className="text-cyan-500 dark:text-cyan-400" size={24} />
         </div>
-        <div className="flex flex-col items-center shrink-0 gap-2">
+        <div>
+          <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-1">
+            {downloadState === "completed" ? "Downloaded!" : "Digital Magazine"}
+          </h4>
+          <p className="text-slate-500 dark:text-cyan-200/70 text-xs font-semibold px-2">
+            {downloadState === "completed"
+              ? "The edition has been saved to your device."
+              : "Discover the latest wedding trends and stories."}
+          </p>
+        </div>
+        <div className="flex flex-col w-full gap-2 mt-1">
           <button
             onClick={handleDownload}
             disabled={downloadState !== "idle"}
-            className={`px-8 py-4 rounded-2xl font-black text-xs tracking-widest transition-all active:scale-95 shadow-md whitespace-nowrap overflow-hidden flex items-center gap-3 ${downloadState === "completed"
+            className={`w-full py-4 rounded-2xl font-black text-[11px] tracking-widest transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 ${downloadState === "completed"
                 ? "bg-green-500 text-white"
-                : "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white"
+                : "bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
               }`}
           >
-            {downloadState === "idle" && "DOWNLOAD MAGAZINE"}
+            {downloadState === "idle" && "DOWNLOAD NOW"}
             {downloadState === "downloading" && (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 DOWNLOADING...
               </>
             )}
             {downloadState === "completed" && (
               <>
-                <Check size={16} strokeWidth={3} />
-                MAGAZINE DOWNLOADED
+                <Check size={14} strokeWidth={3} />
+                COMPLETED
               </>
             )}
           </button>
-          <span className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Updated Weekly · 12MB</span>
+          <span className="text-slate-400 text-[9px] uppercase tracking-widest font-bold">Weekly · 12MB</span>
         </div>
       </div>
     </div>
@@ -1042,31 +982,29 @@ const VendorStorefrontStrip = memo(() => {
   const router = useRouter();
 
   return (
-    <div className="py-4 px-2 relative">
-      <div className="bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 rounded-[32px] p-1 overflow-hidden group hover:border-solid transition-all duration-500 shadow-sm hover:shadow-xl">
-        <div className="bg-indigo-50 dark:bg-indigo-950/20 rounded-[28px] p-6 lg:p-10 flex flex-col md:flex-row items-center justify-between gap-8 py-10 relative overflow-hidden">
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-5 dark:opacity-10 pointer-events-none group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
-            <Building2 size={240} className="text-indigo-600" />
+    <div className="py-2 px-4 mb-4 relative">
+      <div className="bg-white dark:bg-slate-900 border-[1.5px] border-dashed border-indigo-200 dark:border-indigo-900/50 rounded-3xl p-1 shadow-sm">
+        <div className="bg-indigo-50 dark:bg-indigo-950/20 rounded-[26px] p-5 py-8 flex flex-col items-center gap-5 relative overflow-hidden text-center">
+          <div className="absolute right-[-20%] top-[-10%] opacity-[0.03] dark:opacity-5 pointer-events-none">
+            <Building2 size={180} className="text-indigo-600" />
           </div>
 
-          <div className="relative z-10 flex-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-4">
-              <Building2 size={12} />
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[9px] font-black uppercase tracking-widest mb-3">
+              <Building2 size={10} />
               For Professionals
             </div>
-            <h4 className="text-slate-900 dark:text-white font-black text-2xl lg:text-3xl tracking-tight mb-2">
-              Are you a Wedding Vendor?
+            <h4 className="text-slate-900 dark:text-white font-black text-xl tracking-tight mb-2">
+              Are you a Vendor?
             </h4>
-            <p className="text-slate-600 dark:text-slate-400 font-medium max-w-md">
-              Grow your business, showcase your portfolio, and connect with premium clients planning their big day.
+            <p className="text-slate-600 dark:text-slate-400 text-xs font-medium px-2">
+              Grow your business and connect with premium clients planning their big day.
             </p>
           </div>
 
-          <div className="relative z-10 shrink-0 w-full md:w-auto">
-            <button onClick={() => router.push('/vendor/register')} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-5 rounded-2xl font-black text-xs tracking-[0.2em] uppercase transition-all shadow-[0_10px_20px_rgba(79,70,229,0.2)] hover:shadow-[0_15px_30px_rgba(79,70,229,0.3)] active:scale-95">
-              Claim Your Profile
-            </button>
-          </div>
+          <button onClick={() => router.push('/vendor/register')} className="relative z-10 w-full bg-indigo-600 active:bg-indigo-500 text-white py-4 rounded-2xl font-black text-xs tracking-widest uppercase transition-all shadow-md active:scale-95 mt-1">
+            Claim Profile
+          </button>
         </div>
       </div>
     </div>
@@ -1083,42 +1021,42 @@ const ConciergeSmallStrip = memo(() => {
   };
 
   return (
-    <div className="py-4 px-2">
-      <div className="bg-indigo-50/40 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/50 rounded-[32px] p-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all duration-300">
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-full bg-white dark:bg-indigo-900/30 flex items-center justify-center shadow-sm shrink-0">
+    <div className="py-2 px-4 pb-8">
+      <div className="bg-indigo-50/60 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/50 rounded-3xl p-5 flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-white dark:bg-indigo-900/30 flex items-center justify-center shadow-sm shrink-0">
             {isSubmitted ? (
-              <Check className="text-green-600 dark:text-green-400" size={24} strokeWidth={3} />
+              <Check className="text-green-600 dark:text-green-400" size={20} strokeWidth={3} />
             ) : (
-              <Sparkles className="text-indigo-600 dark:text-indigo-400" size={24} />
+              <Sparkles className="text-indigo-600 dark:text-indigo-400" size={20} />
             )}
           </div>
-          <div className="text-center md:text-left">
-            <h4 className="text-slate-900 dark:text-white font-black text-lg tracking-tight mb-1">
-              {isSubmitted ? "Request Received!" : "Overwhelmed with choices?"}
+          <div>
+            <h4 className="text-slate-900 dark:text-white font-black text-base tracking-tight mb-1">
+              {isSubmitted ? "Received!" : "Overwhelmed?"}
             </h4>
-            <p className="text-slate-500 dark:text-indigo-200/70 text-sm font-semibold">
+            <p className="text-slate-500 dark:text-indigo-200/70 text-[11px] font-semibold">
               {isSubmitted
-                ? "Our expert team has been notified and will contact you shortly to help."
-                : "Our expert concierge is available 24/7 to help you structure your dream event."}
+                ? "Our team will contact you shortly."
+                : "Our concierge is available to help."}
             </p>
           </div>
         </div>
         <button
           onClick={handleRequest}
           disabled={isSubmitted}
-          className={`px-8 py-4 rounded-2xl font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg whitespace-nowrap flex items-center gap-2 ${isSubmitted
+          className={`w-full py-3.5 rounded-2xl font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2 ${isSubmitted
               ? "bg-green-500 text-white shadow-none"
-              : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-none"
+              : "bg-indigo-600 active:bg-indigo-500 text-white"
             }`}
         >
           {isSubmitted ? (
             <>
               <Check size={14} strokeWidth={3} />
-              CONTACT REQUESTED
+              REQUESTED
             </>
           ) : (
-            "GET FREE EXPERT HELP"
+            "GET FREE HELP"
           )}
         </button>
       </div>
@@ -1136,7 +1074,7 @@ function useHapticFeedback() {
   }, []);
 }
 
-const HeroCarousel = memo(({ featuredProfiles = {} }) => {
+const HeroCarousel = memo(({ featuredProfiles = {}, sections = {} }) => {
   const scrollRef = useRef(null);
   const haptic = useHapticFeedback();
   const router = useRouter();
@@ -1186,15 +1124,18 @@ const HeroCarousel = memo(({ featuredProfiles = {} }) => {
   };
 
   return (
-    <div className="mb-6 py-3">
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white px-4 mb-4">Vendor categories</h2>
+    <div className="mb-4 py-3">
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white px-4 mb-3">Categories</h2>
       <motion.div
         ref={scrollRef}
-        className="grid grid-rows-2 grid-flow-col gap-3 gap-x-8 overflow-x-auto px-4 pb-2 no-scrollbar"
+        className="grid grid-rows-2 grid-flow-col gap-3 gap-x-5 overflow-x-auto px-4 pb-2 no-scrollbar snap-x"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
         onMouseDown={() => setIsDragging(false)}
         onMouseMove={(e) => { if (e.buttons === 1) setIsDragging(true); }}
         onMouseUp={() => setTimeout(() => setIsDragging(false), 100)}
+        onTouchStart={() => setIsDragging(false)}
+        onTouchMove={() => setIsDragging(true)}
+        onTouchEnd={() => setTimeout(() => setIsDragging(false), 100)}
       >
         {HERO_CATEGORIES.map((item, index) => {
           const profile = featuredProfiles[item.key];
@@ -1206,47 +1147,48 @@ const HeroCarousel = memo(({ featuredProfiles = {} }) => {
             else if (isValidImageUrl(profile.posts?.[0]?.mediaUrl)) displayImage = profile.posts[0].mediaUrl;
             else if (isValidImageUrl(profile.reels?.[0]?.thumbnail)) displayImage = profile.reels[0].thumbnail;
           }
+          const dynamicCount = sections[item.key]?.total || item.count;
 
           return (
             <motion.div
               key={item.id}
               onClick={() => handleCategoryClick(item)}
-              className="flex flex-col cursor-pointer group"
-              style={{ width: "110px" }}
-              initial={{ opacity: 0, scale: 0.9 }}
+              className="flex flex-col cursor-pointer group snap-start"
+              style={{ width: "100px" }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05, duration: 0.3, ease: "easeOut" }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              transition={{ delay: index * 0.03, duration: 0.3, ease: "easeOut" }}
+              whileTap={{ scale: 0.95 }}
             >
-              <div className="relative w-full h-32 rounded-xl overflow-hidden bg-transparent mb-2 shadow-sm transition-all duration-300">
+              <div className="relative w-full h-28 rounded-xl overflow-hidden bg-transparent mb-1.5 shadow-sm transition-all duration-300">
                 <SmartMedia
                   src={displayImage}
                   type="image"
-                  className="w-full h-full object-cover grayscale-[0.2] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110 group-active:grayscale-0 group-active:scale-110"
+                  className="w-full h-full object-cover grayscale-[0.2] transition-all duration-700 active:grayscale-0 active:scale-110"
                   prioirity={true}
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                  <span className="text-white font-black text-[13px] tracking-wider text-center px-1 drop-shadow-md">{item.name}</span>
+                <div className="absolute inset-0 bg-black/30 opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <span className="text-white font-black text-[11px] tracking-wider text-center px-1 drop-shadow-md">{item.name}</span>
                 </div>
               </div>
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 leading-tight truncate">{item.name}</h3>
-              <div className="flex items-center gap-0.5 mt-0.5">
-                <span className="text-[11px] text-rose-500 font-medium">{item.count}</span>
-                <ChevronRight size={10} className="text-rose-500" />
+              <div className="flex items-center justify-between mt-0.5">
+                <h3 className="text-[11px] font-semibold text-gray-900 dark:text-gray-100 leading-tight truncate">{item.name}</h3>
+                <div className="flex items-center gap-0.5">
+                  <span className="text-[9px] text-rose-500 font-bold">{dynamicCount}</span>
+                </div>
               </div>
             </motion.div>
           );
         })}
-        <div className="w-4 flex-shrink-0" />
+        <div className="w-1 flex-shrink-0" />
       </motion.div>
-      <div className="flex justify-center gap-1.5 mt-4">
+      <div className="flex justify-center gap-1.5 mt-3">
         {Array.from({ length: totalPages }).map((_, index) => (
           <motion.button
             key={index}
             onClick={() => scrollToPage(index)}
             className={`h-1.5 rounded-full transition-all duration-300 ${currentPage === index ? "bg-gray-400 dark:bg-gray-500" : "bg-gray-200 dark:bg-gray-800"}`}
-            animate={{ width: currentPage === index ? 24 : 6 }}
+            animate={{ width: currentPage === index ? 20 : 6 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
             whileTap={{ scale: 0.9 }}
           />
@@ -1257,7 +1199,7 @@ const HeroCarousel = memo(({ featuredProfiles = {} }) => {
 });
 HeroCarousel.displayName = "HeroCarousel";
 
-export default function Explorevendorprofilewrapper() {
+export default function VendorProfilesExploreWrapper() {
   const haptic = useHapticFeedback();
   const router = useRouter();
 
@@ -1273,7 +1215,11 @@ export default function Explorevendorprofilewrapper() {
       const json = await res.json();
       setSections((prev) => ({
         ...prev,
-        [key]: { data: Array.isArray(json.data) ? json.data : [], loading: false },
+        [key]: { 
+        data: Array.isArray(json.data) ? json.data : [], 
+        loading: false,
+        total: json.pagination?.total || json.total || 0 // Capture the dynamic count
+      },
       }));
     } catch {
       setSections((prev) => ({ ...prev, [key]: { data: [], loading: false } }));
@@ -1295,39 +1241,39 @@ export default function Explorevendorprofilewrapper() {
   }, [sections]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0B1120] transition-colors duration-500">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-100 dark:border-slate-800">
-        <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0B1120] transition-colors duration-500 w-full overflow-x-hidden">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-3 h-14">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 haptic("light");
                 router.back();
               }}
-              className="w-10 h-10 -ml-1 rounded-xl flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 active:scale-90 transition-all text-gray-700 dark:text-gray-200"
+              className="w-10 h-10 rounded-xl flex items-center justify-center active:bg-gray-100 dark:active:bg-slate-800 active:scale-95 transition-all text-gray-700 dark:text-gray-200"
             >
-              <ArrowLeft size={22} />
+              <ArrowLeft size={20} />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Vendor Profiles</h1>
+            <h1 className="text-base font-bold text-gray-900 dark:text-white">Vendors Profiles</h1>
           </div>
           <button
             onClick={() => {
               haptic("light");
               router.push('/vendors/marketplace');
             }}
-            className="w-10 h-10 -mr-1 rounded-xl flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 active:scale-90 transition-all text-gray-700 dark:text-gray-200"
+            className="w-10 h-10 rounded-xl flex items-center justify-center active:bg-gray-100 dark:active:bg-slate-800 active:scale-95 transition-all text-gray-700 dark:text-gray-200"
           >
-            <ShoppingBag size={22} />
+            <ShoppingBag size={20} />
           </button>
         </div>
       </header>
 
       <div className="h-14" />
 
-      <main className="w-full mx-auto pt-4 pb-16">
-        <HeroCarousel featuredProfiles={featuredProfiles} />
+      <main className="w-full mx-auto pt-2 pb-16">
+        <HeroCarousel featuredProfiles={featuredProfiles} sections={sections} />
 
-        <div className="space-y-4 px-0">
+        <div className="space-y-1 px-0">
           {CAROUSEL_SECTIONS.map((section, index) => {
             const { key, ...props } = section;
             return (
@@ -1356,6 +1302,7 @@ export default function Explorevendorprofilewrapper() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         html { scroll-behavior: smooth; }
+        body { overflow-x: hidden; width: 100%; position: relative; }
       `}</style>
     </div>
   );

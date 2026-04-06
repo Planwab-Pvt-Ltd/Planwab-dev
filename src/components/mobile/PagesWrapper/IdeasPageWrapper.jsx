@@ -756,7 +756,7 @@ const MiniCard = ({ item, idx, onClick }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: idx * 0.025, type: "spring", stiffness: 300, damping: 26 }}
     onClick={onClick}
-    className="w-[104px] shrink-0 snap-start cursor-pointer group"
+    className="w-[104px] shrink-0 cursor-pointer group snap-start"
   >
     <div className="relative h-[140px] w-[104px] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
       <SmartMedia
@@ -788,7 +788,7 @@ const MiniCard = ({ item, idx, onClick }) => (
   </motion.div>
 );
 
-const ScrollCarousel = memo(({ children, className = "" }) => {
+export const ScrollCarousel = memo(({ children, className = "" }) => {
   const ref = useRef(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);

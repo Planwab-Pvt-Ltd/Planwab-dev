@@ -1,4 +1,4 @@
-import Explorevendorprofilewrapper from "@/components/mobile/PagesWrapper/Explorevendorprofilewrapper";
+import VendorProfilesExploreWrapper from './../../../../../../components/desktop/PagesWrapper/VendorProfilesExploreWrapper';
 
 export const metadata = {
   title: "Profile Media | PlanWAB Gallery",
@@ -8,7 +8,7 @@ export const metadata = {
 export default function ProfileMediaPage() {
   return (
     <>
-      <Explorevendorprofilewrapper />
+      <VendorProfilesExploreWrapper />
     </>
   );
 }

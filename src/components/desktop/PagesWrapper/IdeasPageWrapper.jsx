@@ -728,7 +728,7 @@ const ReelCard = ({ item, idx, onClick }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: Math.min(idx * 0.02, 0.16), duration: 0.3 }}
     onClick={onClick}
-    className="cursor-pointer group"
+    className="cursor-pointer group snap-start"
   >
     <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 ring-1 ring-stone-200/60 dark:ring-stone-700/40 group-hover:ring-rose-300/60 dark:group-hover:ring-rose-500/30 group-hover:shadow-lg group-hover:shadow-rose-100/40 transition-all duration-300">
       <SmartMedia
@@ -774,7 +774,7 @@ const FeaturedReelCard = ({ item, idx, onClick }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: Math.min(idx * 0.02, 0.16), duration: 0.3 }}
     onClick={onClick}
-    className="cursor-pointer group"
+    className="cursor-pointer group snap-start"
   >
     <div className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800 ring-1 ring-rose-200/40 dark:ring-rose-800/30 group-hover:ring-rose-300 dark:group-hover:ring-rose-500/40 group-hover:shadow-xl group-hover:shadow-rose-100/50 transition-all duration-300">
       <SmartMedia
@@ -817,7 +817,7 @@ const FeaturedReelCard = ({ item, idx, onClick }) => (
   </motion.div>
 );
 
-const ScrollCarousel = memo(({ children, className = "" }) => {
+export const ScrollCarousel = memo(({ children, className = "" }) => {
   const ref = useRef(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -854,7 +854,7 @@ const ScrollCarousel = memo(({ children, className = "" }) => {
             onClick={() => scroll("left")}
             className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
           >
-            <ChevronLeft size={15} className="text-gray-600 dark:text-gray-300" />
+            <ChevronLeft size={24} strokeWidth={3} className="text-gray-600 dark:text-gray-300" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -881,7 +881,7 @@ const ScrollCarousel = memo(({ children, className = "" }) => {
             onClick={() => scroll("right")}
             className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
           >
-            <ChevronRight size={15} className="text-gray-600 dark:text-gray-300" />
+            <ChevronRight size={24} strokeWidth={3} className="text-gray-600 dark:text-gray-300" />
           </motion.button>
         )}
       </AnimatePresence>
