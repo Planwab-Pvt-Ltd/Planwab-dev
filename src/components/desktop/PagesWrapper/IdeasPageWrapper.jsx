@@ -824,16 +824,17 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(true);
 
+  const getMaxOffset = useCallback(() => {
+    if (!containerRef.current || !trackRef.current) return 0;
+    return -(trackRef.current.offsetWidth - containerRef.current.offsetWidth);
+  }, []);
+
   const checkScroll = useCallback(() => {
     if (!containerRef.current || !trackRef.current) return;
-    const containerWidth = containerRef.current.offsetWidth;
-    const trackWidth = trackRef.current.offsetWidth;
-    const maxOffset = -(trackWidth - containerWidth);
-    
-    // Logic to show/hide gradients and buttons based on exact offset
+    const maxOffset = getMaxOffset();
     setCanLeft(xOffset < -10);
     setCanRight(xOffset > maxOffset + 10);
-  }, [xOffset]);
+  }, [xOffset, getMaxOffset]);
 
   useEffect(() => {
     checkScroll();
@@ -845,27 +846,44 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
     setXOffset(0);
   }, [children]);
 
+  useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const handleWheel = (e) => {
+    const maxOffset = getMaxOffset();
+    if (maxOffset >= 0) return;
+
+    if (e.deltaX === 0) return; // ✅ let vertical scroll pass to the page
+    e.preventDefault();
+
+    setXOffset((prev) => {
+      const next = prev - e.deltaX;
+      return Math.min(0, Math.max(maxOffset, next));
+    });
+  };
+
+  container.addEventListener("wheel", handleWheel, { passive: false });
+  return () => container.removeEventListener("wheel", handleWheel);
+}, [getMaxOffset]);
+
   const scroll = useCallback((direction) => {
     if (!containerRef.current || !trackRef.current) return;
     const containerWidth = containerRef.current.offsetWidth;
-    const trackWidth = trackRef.current.offsetWidth;
-    const maxOffset = -(trackWidth - containerWidth);
-    
-    // Ultra-smooth slide distance (75% of view width for a professional feel)
-    const scrollAmount = containerWidth * 0.75; 
+    const maxOffset = getMaxOffset();
+    const scrollAmount = containerWidth * 0.75;
 
     const newOffset =
       direction === "left"
         ? Math.min(0, xOffset + scrollAmount)
         : Math.max(maxOffset, xOffset - scrollAmount);
-        
+
     setXOffset(newOffset);
-  }, [xOffset]);
+  }, [xOffset, getMaxOffset]);
 
   return (
     <div className={`relative ${className}`}>
       
-      {/* --- Left Button --- */}
       <AnimatePresence>
         {canLeft && (
           <motion.button
@@ -883,13 +901,12 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
         )}
       </AnimatePresence>
 
-      {/* --- ORIGINAL LEFT WHITISH EFFECT --- */}
       {canLeft && (
         <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#faf8f5] dark:from-stone-950 to-transparent z-10 pointer-events-none" />
       )}
 
-      {/* --- Main Animated Carousel Track --- */}
-      <div ref={containerRef} className="overflow-hidden relative px-5 pb-2">
+      {/* ✅ overflow-hidden — native scroll disabled, wheel handled manually above */}
+      <div ref={containerRef} className="overflow-hidden relative px-5 pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <motion.div
           ref={trackRef}
           animate={{ x: xOffset }}
@@ -901,12 +918,10 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
         </motion.div>
       </div>
 
-      {/* --- ORIGINAL RIGHT WHITISH EFFECT --- */}
       {canRight && (
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#faf8f5] dark:from-stone-950 to-transparent z-10 pointer-events-none" />
       )}
 
-      {/* --- Right Button --- */}
       <AnimatePresence>
         {canRight && (
           <motion.button
