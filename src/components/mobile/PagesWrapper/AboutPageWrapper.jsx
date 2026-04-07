@@ -71,7 +71,7 @@ const AboutPageWrapper = () => {
       achievements: ["MBA Operations", "Ex-Zomato", "Process Optimization Expert"],
     },
     {
-      name: "Rahul Gupta",
+      name: "Balram Dhakad",
       role: "CTO",
       image: "/team/cto.jpg", // Placeholder
       bio: "Tech wizard building scalable solutions that power thousands of events across India.",
