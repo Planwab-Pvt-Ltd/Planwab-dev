@@ -8,18 +8,18 @@ const scheduleMeetSchema = new mongoose.Schema(
     },
     url: {
       type: String,
-      default: "", // Can be updated later with a generated Google Meet/Zoom link
+      default: "",
     },
     pageUrl: {
         type: String,
     },
     profileId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "VendorProfile", // Replace with your actual profile/vendor ref name
+      ref: "VendorProfile",
       required: true,
     },
     userId: {
-      type: String, // Clerk userId
+      type: String,
       required: true,
     },
     user: {
@@ -38,12 +38,12 @@ const scheduleMeetSchema = new mongoose.Schema(
       required: true,
     },
     otherEventType: {
-      type: String, // Populated only if eventType is "Others"
+      type: String,
       default: "",
     },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled", "completed"],
+      enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
   },
