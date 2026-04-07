@@ -818,76 +818,116 @@ const FeaturedReelCard = ({ item, idx, onClick }) => (
 );
 
 export const ScrollCarousel = memo(({ children, className = "" }) => {
-  const ref = useRef(null);
+  const containerRef = useRef(null);
+  const trackRef = useRef(null);
+  const [xOffset, setXOffset] = useState(0);
   const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
-  const check = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    setCanLeft(el.scrollLeft > 8);
-    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
-  }, []);
+  const [canRight, setCanRight] = useState(true);
+
+  const checkScroll = useCallback(() => {
+    if (!containerRef.current || !trackRef.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    const trackWidth = trackRef.current.offsetWidth;
+    const maxOffset = -(trackWidth - containerWidth);
+    
+    // Logic to show/hide gradients and buttons based on exact offset
+    setCanLeft(xOffset < -10);
+    setCanRight(xOffset > maxOffset + 10);
+  }, [xOffset]);
+
   useEffect(() => {
-    check();
-    const el = ref.current;
-    if (!el) return;
-    el.addEventListener("scroll", check, { passive: true });
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => {
-      el.removeEventListener("scroll", check);
-      ro.disconnect();
-    };
-  }, [check, children]);
-  const scroll = useCallback((dir) => {
-    ref.current?.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
-  }, []);
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, [checkScroll, children]);
+
+  useEffect(() => {
+    setXOffset(0);
+  }, [children]);
+
+  const scroll = useCallback((direction) => {
+    if (!containerRef.current || !trackRef.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    const trackWidth = trackRef.current.offsetWidth;
+    const maxOffset = -(trackWidth - containerWidth);
+    
+    // Ultra-smooth slide distance (75% of view width for a professional feel)
+    const scrollAmount = containerWidth * 0.75; 
+
+    const newOffset =
+      direction === "left"
+        ? Math.min(0, xOffset + scrollAmount)
+        : Math.max(maxOffset, xOffset - scrollAmount);
+        
+    setXOffset(newOffset);
+  }, [xOffset]);
+
   return (
     <div className={`relative ${className}`}>
+      
+      {/* --- Left Button --- */}
       <AnimatePresence>
         {canLeft && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, x: 20, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => scroll("left")}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
+            className="absolute -left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white shadow-2xl shadow-slate-300/50 border border-slate-100 hover:bg-slate-50 transition-all text-slate-800 group"
           >
-            <ChevronLeft size={24} strokeWidth={3} className="text-gray-600 dark:text-gray-300" />
+            <ChevronLeft size={24} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* --- ORIGINAL LEFT WHITISH EFFECT --- */}
       {canLeft && (
         <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#faf8f5] dark:from-stone-950 to-transparent z-10 pointer-events-none" />
       )}
-      <div
-        ref={ref}
-        className="flex gap-3.5 overflow-x-auto px-5 pb-2 snap-x snap-mandatory"
-        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
-      >
-        {children}
+
+      {/* --- Main Animated Carousel Track --- */}
+      <div ref={containerRef} className="overflow-hidden relative px-5 pb-2">
+        <motion.div
+          ref={trackRef}
+          animate={{ x: xOffset }}
+          transition={{ type: "spring", stiffness: 110, damping: 22, mass: 0.85 }}
+          className="flex gap-3.5"
+          style={{ width: "max-content" }}
+        >
+          {children}
+        </motion.div>
       </div>
+
+      {/* --- ORIGINAL RIGHT WHITISH EFFECT --- */}
       {canRight && (
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#faf8f5] dark:from-stone-950 to-transparent z-10 pointer-events-none" />
       )}
+
+      {/* --- Right Button --- */}
       <AnimatePresence>
         {canRight && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, x: -20, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -20, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => scroll("right")}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
+            className="absolute -right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white shadow-2xl shadow-slate-300/50 border border-slate-100 hover:bg-slate-50 transition-all text-slate-800 group"
           >
-            <ChevronRight size={24} strokeWidth={3} className="text-gray-600 dark:text-gray-300" />
+            <ChevronRight size={24} strokeWidth={2.5} className="group-hover:translate-x-0.5 transition-transform" />
           </motion.button>
         )}
       </AnimatePresence>
+      
     </div>
   );
 });
+
 ScrollCarousel.displayName = "ScrollCarousel";
 
 const DesktopCarouselSection = ({ section, onItemClick }) => {

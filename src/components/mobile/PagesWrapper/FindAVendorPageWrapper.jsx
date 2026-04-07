@@ -31,81 +31,25 @@ import SmartMedia from "../SmartMediaLoader";
 import { formatPrice } from "../../../lib/utils";
 import { ScrollCarousel } from "./IdeasPageWrapper";
 
-const HERO_CATEGORIES = [
-  {
-    id: 1,
-    name: "Makeup Artists",
-    key: "makeup",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png",
-    count: "456",
-  },
-  {
-    id: 2,
-    name: "Planners",
-    key: "planners",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png",
-    count: "145",
-  },
-  {
-    id: 3,
-    name: "Decorators",
-    key: "decor",
-    image:
-      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
-    count: "267",
-  },
-  {
-    id: 4,
-    name: "Photographers",
-    key: "photographers",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png",
-    count: "198",
-  },
-  {
-    id: 5,
-    name: "Venues",
-    key: "venues",
-    image:
-      "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg",
-    count: "476",
-  },
-  {
-    id: 6,
-    name: "Mehendi",
-    key: "mehendi",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png",
-    count: "156",
-  },
-  {
-    id: 7,
-    name: "Caterers",
-    key: "catering",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png",
-    count: "189",
-  },
-  {
-    id: 8,
-    name: "DJ & Music",
-    key: "djs",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png",
-    count: "97",
-  },
-  {
-    id: 9,
-    name: "Florists",
-    key: "florists",
-    image:
-      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.png",
-    count: "0",
-  },
-  {
-    id: 10,
-    name: "Choreographers",
-    key: "choreographers",
-    image:
-      "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1767931666/pkg-lifestyle-events-management-vishnu-garden-delhi-event-organisers-j3dtzmp1pt_upqonu.jpg",
-    count: "0",
-  },
+export const HERO_CATEGORIES = [
+  { id: 1, name: "Venues", key: "venues", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567028/VenuesCat_hgj3l0.png", count: "476" },
+  { id: 2, name: "Photographers", key: "photographers", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png", count: "198" },
+  { id: 3, name: "Makeup", key: "makeup", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", count: "456" },
+  { id: 4, name: "Planners", key: "planners", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", count: "145" },
+  { id: 5, name: "Decorators", key: "decor", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567022/DecoratorsCat_hwpgaf.png", count: "267" },
+  { id: 6, name: "Caterers", key: "catering", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png", count: "189" },
+  { id: 7, name: "Mehendi", key: "mehendi", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", count: "156" },
+  // { id: 8, name: "Clothes", key: "clothes", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/SareesCat_cyugf6.png", count: "342" },
+  // { id: 9, name: "Jewellery", key: "jewellery", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", count: "210" },
+  { id: 10, name: "Music", key: "djs", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png", count: "97" },
+  { id: 11, name: "Hairstyling", key: "hairstyling", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567027/HairstylersCat_ggriqx.png", count: "167" },
+  { id: 12, name: "Invitations", key: "invitations", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567026/InvitationsCat_twzcbc.png", count: "124" },
+  { id: 13, name: "Cakes", key: "cakes", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567022/CakesCat_hlpwqv.png", count: "89" },
+  { id: 14, name: "Anchors", key: "anchor", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567022/AnchorsCat_kdv6am.png", count: "88" },
+  { id: 15, name: "Dhol", key: "dhol", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428613/DholCat_swqr0p.png", count: "54" },
+  { id: 16, name: "Barat", key: "barat", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567023/BaraatCat_dyuqi9.png", count: "67" },
+  { id: 17, name: "Fireworks", key: "fireworks", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567023/FireworksCat_pngfbi.png", count: "32" },
+  { id: 18, name: "Stage Entry", key: "stageEntry", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", count: "45" }
 ];
 
 const THEME = {
