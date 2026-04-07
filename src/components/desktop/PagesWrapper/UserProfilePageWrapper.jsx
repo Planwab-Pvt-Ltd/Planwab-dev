@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import { useVideoThumbnail } from "../../../lib/video-thumbnail";
 import SmartMedia from "../SmartMediaLoader";
+import { ScrollCarousel } from "./IdeasPageWrapper";
 
 const MediaRenderer = ({ src, alt, className, ...props }) => {
   if (src?.startsWith("data:") || src?.startsWith("blob:")) {
@@ -133,29 +134,6 @@ const PlanBadge = memo(({ plan, size = "default" }) => {
 PlanBadge.displayName = "PlanBadge";
 
 const HCarousel = memo(({ label, icon: Icon, count, items, renderItem, itemClass = "w-[220px]", onRemove }) => {
-  const ref = useRef(null);
-  const [canL, setCanL] = useState(false);
-  const [canR, setCanR] = useState(false);
-  const check = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    setCanL(el.scrollLeft > 5);
-    setCanR(el.scrollLeft < el.scrollWidth - el.clientWidth - 5);
-  }, []);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    check();
-    el.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-    return () => {
-      el.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-    };
-  }, [check, items]);
-  const scroll = useCallback((dir) => {
-    ref.current?.scrollBy({ left: dir * 320, behavior: "smooth" });
-  }, []);
   if (!items || items.length === 0) return null;
   return (
     <div className="relative mb-8">
@@ -174,81 +152,30 @@ const HCarousel = memo(({ label, icon: Icon, count, items, renderItem, itemClass
           )}
         </div>
       </div>
-      <div className="relative group/carousel">
-        <AnimatePresence>
-          {canL && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-white dark:from-gray-900 to-transparent z-10 pointer-events-none"
-            />
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {canR && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-white dark:from-gray-900 to-transparent z-10 pointer-events-none"
-            />
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {canL && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => scroll(-1)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/3 z-20 w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
-            >
-              <ChevronLeft size={18} className="text-gray-700 dark:text-gray-300" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {canR && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => scroll(1)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/3 z-20 w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
-            >
-              <ChevronRight size={18} className="text-gray-700 dark:text-gray-300" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-        <div
-          ref={ref}
-          className="flex gap-4 overflow-x-auto pb-3 scroll-smooth [&::-webkit-scrollbar]:hidden px-1"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {items.map((item, i) => (
-            <div
-              key={item?._id?.toString?.() || item?.reelId || item?.postId || i}
-              className={`shrink-0 ${itemClass} relative group/card`}
-            >
-              {onRemove && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onRemove(item);
-                  }}
-                  className="absolute top-2.5 right-2.5 z-30 w-7 h-7 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-all duration-200 hover:bg-red-500 hover:scale-110 border border-white/10"
-                  title="Remove from collection"
-                >
-                  <X size={11} className="text-white" strokeWidth={3} />
-                </button>
-              )}
-              {renderItem(item)}
-            </div>
-          ))}
-        </div>
-      </div>
+      
+      <ScrollCarousel>
+        {items.map((item, i) => (
+          <div
+            key={item?._id?.toString?.() || item?.reelId || item?.postId || i}
+            className={`shrink-0 ${itemClass} relative group/card`}
+          >
+            {onRemove && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRemove(item);
+                }}
+                className="absolute top-2.5 right-2.5 z-30 w-7 h-7 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-all duration-200 hover:bg-red-500 hover:scale-110 border border-white/10"
+                title="Remove from collection"
+              >
+                <X size={11} className="text-white" strokeWidth={3} />
+              </button>
+            )}
+            {renderItem(item)}
+          </div>
+        ))}
+      </ScrollCarousel>
     </div>
   );
 });

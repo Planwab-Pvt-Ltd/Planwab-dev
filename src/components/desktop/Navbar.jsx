@@ -1321,6 +1321,8 @@ const DesktopNavbar = () => {
         return;
       }
 
+      setIsNavbarExpanded(false);
+
       if (pathname === item.route) return;
 
       haptic("light");

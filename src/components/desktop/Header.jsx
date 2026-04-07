@@ -124,7 +124,7 @@ const CategoryButton = ({ category, imageSrc, active }) => (
   </div>
 );
 
-const PlannerDropdown = ({ isOpen }) => {
+const PlannerDropdown = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
     <div className="absolute !z-60 top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-6 px-6 transform transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-top-2">
@@ -138,7 +138,8 @@ const PlannerDropdown = ({ isOpen }) => {
         </p>
         <div className="space-y-3 flex flex-col">
           <Link
-            href="/vendor/onboarding"
+            href="/vendor/onboarding" 
+            onClick={onClose}
             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer"
           >
             Start Application
@@ -275,7 +276,7 @@ const LocationDropdown = ({ isOpen, onClose }) => {
   );
 };
 
-const ProfileDropdown = ({ isOpen }) => {
+const ProfileDropdown = ({ isOpen, onClose }) => {
   const { user } = useUser();
   const { signOut } = useClerk();
   const searchParams = useSearchParams();
@@ -312,7 +313,8 @@ const ProfileDropdown = ({ isOpen }) => {
         {menuItems.map((item, index) => (
           <Link
             key={index}
-            href={item.href}
+            href={item.href} 
+            onClick={onClose}
             className="w-full px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 flex items-center space-x-3 group rounded-lg"
           >
             <item.icon className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300" />
@@ -325,7 +327,8 @@ const ProfileDropdown = ({ isOpen }) => {
           <SignInButton forceRedirectUrl={fullAuthRedirectUrl}>
             <motion.button
               whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.97 }} 
+              onClick={onClose}
               className="w-[90%] px-4 py-3 flex items-center space-x-3 rounded-xl bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors duration-200 group cursor-pointer justify-center"
             >
               <LogIn className="w-5 h-5 text-amber-500 group-hover:text-amber-600 transition-colors" />
@@ -335,7 +338,8 @@ const ProfileDropdown = ({ isOpen }) => {
           <SignUpButton forceRedirectUrl={fullAuthRedirectUrl}>
             <motion.button
               whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.97 }} 
+              onClick={onClose}
               className="w-[90%] px-4 py-3 flex items-center space-x-3 rounded-xl bg-green-100 dark:bg-green-700/30 hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors duration-200 group cursor-pointer justify-center"
             >
               <UserPlus className="w-5 h-5 text-green-500 group-hover:text-green-600 transition-colors" />
@@ -348,7 +352,10 @@ const ProfileDropdown = ({ isOpen }) => {
         <div className="border-t border-gray-100 dark:border-gray-700 pt-2">
           <button
             className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/40 transition-all duration-200 flex items-center space-x-3 group rounded-lg"
-            onClick={() => signOut()}
+            onClick={() => {
+              signOut();
+              onClose();
+            }}
           >
             <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-600" />
             <span className="font-medium text-red-600 dark:text-red-400">Sign out</span>
@@ -816,6 +823,7 @@ const MobileSidebar = ({ categories, pathname: pathnameMS, onClose, theme, toggl
 
   const toggleAccordion = (accordionName) => {
     setOpenAccordion(openAccordion === accordionName ? null : accordionName);
+
   };
 
   return (
@@ -1384,6 +1392,8 @@ export default function DesktopHeader() {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
   };
 
+  const closeAllDropdowns = () => setOpenDropdown(null);
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -1486,7 +1496,7 @@ export default function DesktopHeader() {
                     }`}
                   />
                 </button>
-                <PlannerDropdown isOpen={openDropdown === "planner"} />
+                <PlannerDropdown isOpen={openDropdown === "planner"} onClose={closeAllDropdowns} />
               </div>
               <div className="relative" ref={locationRef}>
                 <button
@@ -1512,7 +1522,7 @@ export default function DesktopHeader() {
                     </SignedOut>
                   </div>
                 </button>
-                <ProfileDropdown isOpen={openDropdown === "profile"} />
+                <ProfileDropdown isOpen={openDropdown === "profile"} onClose={closeAllDropdowns}/>
               </div>
             </div>
 
