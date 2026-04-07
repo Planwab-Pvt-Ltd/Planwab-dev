@@ -49,31 +49,48 @@ import { ScrollCarousel } from "./IdeasPageWrapper";
 
 const CAROUSEL_SECTIONS = [
   { key: "venues", label: "Premium Venues", subtitle: "Grand stages for your event", icon: Building2, color: "#0ea5e9", apiCategory: "venues" },
-  { key: "photographers", label: "Photographers", subtitle: "Freeze your best memories", icon: Camera, color: "#3b82f6", apiCategory: "photographers" },
-  { key: "makeup", label: "Makeup Artists", subtitle: "Bridal glow experts", icon: Paintbrush2, color: "#ec4899", apiCategory: "makeup" },
-  { key: "planners", label: "Wedding Planners", subtitle: "Expertly managed celebrations", icon: UserCheck, color: "#8b5cf6", apiCategory: "planners" },
-  { key: "catering", label: "Best Catering", subtitle: "Delicious food for your guests", icon: UtensilsCrossed, color: "#14b8a6", apiCategory: "catering" },
-  { key: "clothes", label: "Bridal & Groom Wear", subtitle: "Trendsetting wedding fashion", icon: Shirt, color: "#f43f5e", apiCategory: "clothes" },
-  { key: "mehendi", label: "Mehendi Artists", subtitle: "Exquisite henna designs", icon: Hand, color: "#d946ef", apiCategory: "mehendi" },
-  { key: "cakes", label: "Celebration Cakes", subtitle: "Sweet masterpieces", icon: CakeSlice, color: "#84cc16", apiCategory: "cakes" },
-  { key: "jewellery", label: "Fine Jewellery", subtitle: "Exquisite bridal accessories", icon: Gem, color: "#f59e0b", apiCategory: "jewellery" },
+  { key: "hairstyling", label: "Hairstylists", subtitle: "Flawless hair transformations", icon: Scissors, color: "#db2777", apiCategory: "hairstyling" },
   { key: "invitations", label: "Invitations", subtitle: "Beautiful wedding cards", icon: Mail, color: "#64748b", apiCategory: "invitations" },
-  { key: "djs", label: "DJ & Music", subtitle: "Set the perfect wedding mood", icon: Music, color: "#6366f1", apiCategory: "djs" },
-  { key: "hairstyling", label: "Hairstyling", subtitle: "Flawless hair transformations", icon: Scissors, color: "#db2777", apiCategory: "hairstyling" },
+  { key: "sarees", label: "Bridal Sarees", subtitle: "Elegant traditional wear", icon: Shirt, color: "#f43f5e", apiCategory: "sarees" },
+  { key: "fireworks", label: "Fireworks", subtitle: "Spectacular pyro displays", icon: FlameKindling, color: "#ef4444", apiCategory: "fireworks" },
   { key: "decor", label: "Decorators", subtitle: "Transform every space", icon: Lamp, color: "#d946ef", apiCategory: "decor" },
   { key: "dhol", label: "Dhol Players", subtitle: "Traditional beats and rhythm", icon: Drum, color: "#fb923c", apiCategory: "dhol" },
+  { key: "cakes", label: "Celebration Cakes", subtitle: "Sweet masterpieces", icon: CakeSlice, color: "#84cc16", apiCategory: "cakes" },
   { key: "anchor", label: "Anchors & Hosts", subtitle: "Engage your audience", icon: MicVocal, color: "#22c55e", apiCategory: "anchor" },
-  { key: "stageEntry", label: "Grand Stage Entry", subtitle: "Unforgettable entrances", icon: Sparkles, color: "#a855f7", apiCategory: "stageEntry" },
-  { key: "fireworks", label: "Fireworks", subtitle: "Spectacular pyro displays", icon: FlameKindling, color: "#ef4444", apiCategory: "fireworks" },
-  { key: "barat", label: "Barat Processions", subtitle: "Bands, horses and more", icon: Music, color: "#eab308", apiCategory: "barat" },
+  { key: "planners", label: "Wedding Planners", subtitle: "Expertly managed celebrations", icon: UserCheck, color: "#8b5cf6", apiCategory: "planners" },
+  { key: "photographers", label: "Photographers", subtitle: "Freeze your best memories", icon: Camera, color: "#3b82f6", apiCategory: "photographers" },
+  { key: "mehendi", label: "Mehendi Artists", subtitle: "Exquisite henna designs", icon: Hand, color: "#d946ef", apiCategory: "mehendi" },
+  { key: "makeup", label: "Makeup Artists", subtitle: "Bridal glow experts", icon: Paintbrush2, color: "#ec4899", apiCategory: "makeup" },
+  { key: "djs", label: "DJ & Music", subtitle: "Set the perfect wedding mood", icon: Music, color: "#6366f1", apiCategory: "djs" },
+  { key: "catering", label: "Catering", subtitle: "Delicious food for your guests", icon: UtensilsCrossed, color: "#14b8a6", apiCategory: "catering" },
 ];
 
 const FALLBACK_IMAGES = [
-  "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png",
-  "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png",
-  "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png",
-  "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png",
-  "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg",
+  "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/MakeupCat_lcp68d.png",
+  "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/PhotographerCat_ymq0vh.png",
+  "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/PlannerCat_p16v2m.png",
+  "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/MehndiCat_hdsxxo.png",
+  "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/VenuesCat_hgjb10.png",
+];
+
+const HERO_MOSAIC = [
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", label: "MUA", span: "row-span-2", pos: "0", delay: 0.1, catKey: "makeup" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png", label: "PHOTO", span: "row-span-3", pos: "1", delay: 0.3, catKey: "photographers" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png", label: "MUSIC", span: "row-span-1", pos: "2", delay: 0.5, catKey: "djs" },
+  { src: "hhttps://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", label: "PLAN", span: "row-span-4", pos: "3", delay: 0.2, catKey: "planners" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", label: "ART", span: "row-span-2", pos: "4", delay: 0.4, catKey: "mehendi" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567028/VenuesCat_hgj3l0.png", label: "VENUE", span: "row-span-3", pos: "5", delay: 0.6, catKey: "venues" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png", label: "CATERER", span: "row-span-3", pos: "6", delay: 0.7, catKey: "catering" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/DecoratorsCat_hvpgaf.png", label: "DECOR", span: "row-span-2", pos: "7", delay: 0.8, catKey: "decor" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/HaroCategories/mobile/SareesCat_cyugf6.png", label: "SAREES", span: "row-span-3", pos: "8", delay: 0.9, catKey: "sarees" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567022/AnchorsCat_kdv6am.png", label: "ANCHOR", span: "row-span-3", pos: "9", delay: 1.0, catKey: "anchor" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567026/InvitationsCat_twzcbc.png", label: "INVITATIONS", span: "row-span-3", pos: "10", delay: 1.1, catKey: "invitations" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567023/FireworksCat_pngfbi.png", label: "FIREWORKS", span: "row-span-3", pos: "11", delay: 1.2, catKey: "fireworks" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567022/CakesCat_hlpwqv.png", label: "CAKES", span: "row-span-2", pos: "12", delay: 1.3, catKey: "cakes" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567027/HairstylersCat_ggriqx.png", label: "HAIR", span: "row-span-3", pos: "13", delay: 1.4, catKey: "hairstyling" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428613/DholCat_swqr0p.png", label: "DHOL", span: "row-span-3", pos: "14", delay: 1.5, catKey: "dhol" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png", label: "MUSIC", span: "row-span-2", pos: "15", delay: 1.6, catKey: "djs" },
+  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567023/BaraatCat_dyuqi9.png", label: "Baraat", span: "row-span-4", pos: "16", delay: 1.7, catKey: "planners" },
 ];
 
 const getFallbackProfiles = (category) => {
@@ -109,16 +126,6 @@ const getAvatarImage = (profile, fallbackIndex = 0) => {
   if (isValidImageUrl(profile.vendorAvatar)) return profile.vendorAvatar;
   return getProfileImage(profile, fallbackIndex);
 };
-
-const HERO_MOSAIC = [
-  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", label: "MUA", span: "row-span-2", pos: "0", delay: 0.1, catKey: "makeup" },
-  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png", label: "PHOTO", span: "row-span-3", pos: "1", delay: 0.3, catKey: "photographers" },
-  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428613/DholCat_swqr0p.png", label: "MUSIC", span: "row-span-1", pos: "2", delay: 0.5, catKey: "djs" },
-  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", label: "PLAN", span: "row-span-4", pos: "3", delay: 0.2, catKey: "planners" },
-  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", label: "ART", span: "row-span-2", pos: "4", delay: 0.4, catKey: "mehendi" },
-  { src: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg", label: "VENUE", span: "row-span-3", pos: "5", delay: 0.6, catKey: "venues" },
-  { src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png", label: "CATERER", span: "row-span-3", pos: "6", delay: 0.7, catKey: "catering" },
-];
 
 const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => {
   const router = useRouter();
@@ -210,17 +217,17 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: slot.delay }}
       onClick={() => handleSlotClick(slot)}
-      className={`${slot.span} group relative overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800 ${slot.isLive ? "cursor-pointer" : "cursor-default"}`}
+      className={`${slot.span} group relative overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800 ${slot.isLive && !isLoading ? "cursor-pointer" : "cursor-default"}`}
     >
       {isLoading ? (
-        <div className="w-full h-full animate-pulse bg-slate-200 dark:bg-slate-800" />
+        <div className="w-full h-full bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+        </div>
       ) : (
         <>
-          <AnimatePresence mode="wait">
-            <motion.div key={slot.src} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
-              <SmartMedia useSkeleton={false} src={slot.src} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-            </motion.div>
-          </AnimatePresence>
+          <div className="w-full h-full">
+            <SmartMedia useSkeleton={false} src={slot.src} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          </div>
           {!sliver && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           )}
@@ -345,11 +352,43 @@ const ProfileMediaHero = memo(({ featuredProfiles = {}, isLoading = false }) => 
 });
 ProfileMediaHero.displayName = "ProfileMediaHero";
 
+const ProfileCardSkeleton = memo(() => (
+  <div className="flex-shrink-0 w-[280px] h-[340px] flex flex-col bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm snap-start relative">
+    <div className="h-[140px] w-full bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+       <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+    </div>
+    <div className="absolute top-[108px] left-6 p-1.5 bg-white dark:bg-slate-900 rounded-[22px] z-10">
+      <div className="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+      </div>
+    </div>
+    <div className="px-6 pt-[52px] pb-6 flex flex-col flex-grow">
+      <div className="h-6 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-md mb-2 relative overflow-hidden">
+         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+      </div>
+      <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-md relative overflow-hidden">
+         <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+      </div>
+      <div className="flex-1"></div>
+      <div className="flex items-center gap-5 pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-auto">
+         <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-md relative overflow-hidden">
+           <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+         </div>
+         <div className="w-px h-6 bg-slate-100 dark:bg-slate-800"></div>
+         <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-md relative overflow-hidden">
+           <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+         </div>
+      </div>
+    </div>
+  </div>
+));
+ProfileCardSkeleton.displayName = "ProfileCardSkeleton";
+
 const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
   const router = useRouter();
 
-  const coverSrc = getProfileImage(profile, fallbackIndex);
-  const avatarSrc = getAvatarImage(profile, fallbackIndex);
+  const coverSrc = profile.vendorCoverImage || getProfileImage(profile, fallbackIndex);
+  const avatarSrc = profile.vendorAvatarImage || profile.vendorAvatar || getAvatarImage(profile, fallbackIndex);
   const displayName = profile.vendorBusinessName || profile.vendorName || "Vendor";
   const locationText = [profile.location?.city, profile.location?.state].filter(Boolean).join(", ");
   
@@ -357,7 +396,7 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
   const vendorIdStr = profile.vendorId || profile.vendor || null;
   const username = profile.username || null;
   const encodedBackTo = typeof window !== 'undefined' ? btoa(window.location.pathname) : "L3ZlbmRvcnMvUHJvZmlsZS9leHBsb3Jl";
-
+  
   const profilePath = vendorIdStr
     ? `/vendor/${cat}/${vendorIdStr}/profile?backTo=${encodeURIComponent(encodedBackTo)}&tab=posts`
     : username
@@ -372,12 +411,12 @@ const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
       className={`flex-shrink-0 w-[280px] h-[340px] flex flex-col bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group relative snap-start ${profilePath ? 'cursor-pointer' : 'cursor-default'} snap-start`}
     >
       <div className="h-[140px] w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
-        <SmartMedia useSkeleton={false} src={coverSrc} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <SmartMedia src={coverSrc} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
       </div>
 
       <div className="absolute top-[108px] left-6 p-1.5 bg-white dark:bg-slate-900 rounded-[22px] shadow-sm z-10 transition-transform duration-500 group-hover:scale-105">
         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800">
-             <SmartMedia useSkeleton={false} src={avatarSrc} className="w-full h-full object-cover" />
+             <SmartMedia src={avatarSrc} className="w-full h-full object-cover" />
         </div>
       </div>
 
@@ -459,7 +498,7 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
         <ScrollCarousel className="pt-4 pb-5">
           {isLoading
             ? [...Array(5)].map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] bg-slate-100 dark:bg-slate-800 animate-pulse snap-start" />
+              <ProfileCardSkeleton key={i} />
             ))
             : profiles.length > 0
               ? (
@@ -478,21 +517,15 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
                 </>
               )
               : (
-                <>
-                  {getFallbackProfiles(label).map((p, i) => (
-                    <ProfileCard key={p._id} profile={p} fallbackIndex={i} apiCategory={apiCategory} />
-                  ))}
-                  <div
-                    onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-                    className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] border-4 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-8 group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors snap-start"
-                  >
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300 dark:text-slate-600">
-                      <ArrowRight size={32} />
-                    </div>
-                    <p className="font-black text-slate-800 dark:text-white text-base">View All</p>
-                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-2 uppercase tracking-tighter">100+ More {label}</p>
+                <div className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] border-2 border-dashed border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center p-8 snap-start">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-5 text-slate-400 dark:text-slate-500">
+                    <Icon size={32} strokeWidth={1.5} />
                   </div>
-                </>
+                  <p className="font-black text-slate-800 dark:text-white text-base mb-2">Coming Soon</p>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed max-w-[200px]">
+                    We are currently onboarding top-tier {label.toLowerCase()} in your area.
+                  </p>
+                </div>
               )
           }
         </ScrollCarousel>
@@ -501,6 +534,7 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
   );
 });
 ProfileCarousel.displayName = "ProfileCarousel";
+
 const TrustStrip = memo(() => (
   <div className="py-4 px-2">
     <div className="bg-gradient-to-r from-indigo-50 dark:from-indigo-900/40 to-purple-50 dark:to-purple-900/40 border border-indigo-200 dark:border-indigo-800/50 rounded-[32px] p-6 lg:py-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl hover:shadow-[0_20px_50px_rgba(79,70,229,0.15)] hover:-translate-y-1 transition-all duration-500">
@@ -1054,6 +1088,7 @@ const ConciergeSmallStrip = memo(() => {
 ConciergeSmallStrip.displayName = "ConciergeSmallStrip";
 
 export default function VendorProfilesExploreWrapper() {
+  const [allProfiles, setAllProfiles] = useState({ data: [], loading: true });
   const [sections, setSections] = useState(() =>
     Object.fromEntries(CAROUSEL_SECTIONS.map((s) => [s.key, { data: [], loading: true }]))
   );
@@ -1074,6 +1109,21 @@ export default function VendorProfilesExploreWrapper() {
   }, []);
 
   useEffect(() => {
+    const fetchAllProfiles = async () => {
+      try {
+        const res = await fetch(`/api/vendor/profile/lists?sortBy=trust&sortOrder=desc&page=1&limit=20`);
+        const json = await res.json();
+        setAllProfiles({ data: Array.isArray(json.data) ? json.data : [], loading: false });
+      } catch {
+        setAllProfiles({ data: [], loading: false });
+      }
+    };
+    
+    fetchAllProfiles();
+    CAROUSEL_SECTIONS.forEach(({ key, apiCategory }) => fetchSection(key, apiCategory));
+  }, [fetchSection]);
+
+  useEffect(() => {
     CAROUSEL_SECTIONS.forEach(({ key, apiCategory }) => fetchSection(key, apiCategory));
   }, [fetchSection]);
 
@@ -1087,12 +1137,25 @@ export default function VendorProfilesExploreWrapper() {
     return map;
   }, [sections]);
 
+  const isGlobalLoading = allProfiles.loading || Object.values(sections).some((s) => s.loading);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] transition-colors duration-500">
       <main className="max-w-[1400px] mx-auto px-8 pt-32 pb-16">
         <ProfileMediaHero featuredProfiles={featuredProfiles} isLoading={Object.values(sections).some((s) => s.loading)} />
 
         <div className="space-y-4">
+          <ProfileCarousel
+            id="all-profiles"
+            label="All Profiles"
+            subtitle="Top rated across all categories"
+            icon={Star}
+            color="#f59e0b"
+            profiles={allProfiles.data}
+            isLoading={allProfiles.loading}
+            apiCategory=""
+          />
+
           {CAROUSEL_SECTIONS.map((section, index) => {
             const { key, ...props } = section;
             return (
@@ -1117,10 +1180,10 @@ export default function VendorProfilesExploreWrapper() {
         </div>
       </main>
 
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        html { scroll-behavior: smooth; }
+     <style jsx global>{`
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
       `}</style>
     </div>
   );

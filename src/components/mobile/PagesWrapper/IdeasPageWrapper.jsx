@@ -823,9 +823,9 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.15 }}
             onClick={() => scroll("left")}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
           >
-            <ChevronLeft size={13} className="text-gray-600 dark:text-gray-300" />
+            <ChevronLeft size={15} className="text-gray-600 dark:text-gray-300" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -850,9 +850,9 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.15 }}
             onClick={() => scroll("right")}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg shadow-black/10 flex items-center justify-center border border-gray-100 dark:border-gray-700 active:scale-90 transition-transform"
           >
-            <ChevronRight size={13} className="text-gray-600 dark:text-gray-300" />
+            <ChevronRight size={15} className="text-gray-600 dark:text-gray-300" />
           </motion.button>
         )}
       </AnimatePresence>

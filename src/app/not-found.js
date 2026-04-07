@@ -11,7 +11,7 @@ export default function NotFound() {
       {/* --- 1. Central Video Graphic --- */}
       <div className="w-full max-w-lg aspect-square flex items-center justify-center mb-2">
         <SmartMedia
-          src="/Loading/404NotFoundVideo.mp4"
+          src="https://res.cloudinary.com/dhkkvo36x/video/upload/q_auto/f_auto/v1771429332/404NotFoundVideo_pirjvg.mp4"
           type="video"
           className="w-full h-full object-contain pointer-events-none"
           autoPlay

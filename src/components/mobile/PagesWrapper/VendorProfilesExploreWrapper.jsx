@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import SmartMedia from "../SmartMediaLoader";
 import { ScrollCarousel } from "./IdeasPageWrapper";
+import { HERO_CATEGORIES } from "./FindAVendorPageWrapper";
 
 const CAROUSEL_SECTIONS = [
   { key: "venues", label: "Premium Venues", subtitle: "Grand stages for your event", icon: Building2, color: "#0ea5e9", apiCategory: "venues" },
@@ -68,27 +69,6 @@ const CAROUSEL_SECTIONS = [
   { key: "stageEntry", label: "Grand Stage Entry", subtitle: "Unforgettable entrances", icon: Sparkles, color: "#a855f7", apiCategory: "stageEntry" },
   { key: "fireworks", label: "Fireworks", subtitle: "Spectacular pyro displays", icon: FlameKindling, color: "#ef4444", apiCategory: "fireworks" },
   { key: "barat", label: "Barat Processions", subtitle: "Bands, horses and more", icon: Music, color: "#eab308", apiCategory: "barat" },
-];
-
-const HERO_CATEGORIES = [
-  { id: 1, name: "Makeup", key: "makeup", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", count: "456" },
-  { id: 2, name: "Planners", key: "planners", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", count: "145" },
-  { id: 3, name: "Decorators", key: "decor", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif", count: "267" },
-  { id: 4, name: "Photographers", key: "photographers", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png", count: "198" },
-  { id: 5, name: "Venues", key: "venues", image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg", count: "476" },
-  { id: 6, name: "Mehendi", key: "mehendi", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", count: "156" },
-  { id: 7, name: "Caterers", key: "catering", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png", count: "189" },
-  { id: 8, name: "Music", key: "djs", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png", count: "97" },
-  { id: 9, name: "Clothes", key: "clothes", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", count: "342" },
-  { id: 10, name: "Cakes", key: "cakes", image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg", count: "89" },
-  { id: 11, name: "Jewellery", key: "jewellery", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", count: "210" },
-  { id: 12, name: "Invitations", key: "invitations", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif", count: "124" },
-  { id: 13, name: "Hairstyling", key: "hairstyling", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png", count: "167" },
-  { id: 14, name: "Dhol", key: "dhol", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png", count: "54" },
-  { id: 15, name: "Anchors", key: "anchor", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png", count: "88" },
-  { id: 16, name: "Stage Entry", key: "stageEntry", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", count: "45" },
-  { id: 17, name: "Fireworks", key: "fireworks", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771591300/FeaturedVendorsWeddingDesktopCarHeaderCard_ycnu2l.avif", count: "32" },
-  { id: 18, name: "Barat", key: "barat", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428617/MakeUpCat_lcp68d.png", count: "67" }
 ];
 
 const FALLBACK_IMAGES = [
@@ -506,19 +486,15 @@ const ProfileCarousel = memo(({ id, label, subtitle, icon: Icon, color, profiles
               )
               : (
                 <>
-                  {getFallbackProfiles(label).map((p, i) => (
-                    <ProfileCard key={p._id} profile={p} fallbackIndex={i} apiCategory={apiCategory} />
-                  ))}
-                  <div
-                    onClick={() => router.push(`/vendors/marketplace?categories=${apiCategory}&sortBy=rating`)}
-                    className="flex-shrink-0 w-[160px] sm:w-[176px] h-[236px] rounded-2xl border-[3px] border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center p-4 group cursor-pointer active:bg-slate-50 dark:active:bg-slate-800/30 transition-all snap-start"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 text-slate-400 dark:text-slate-500 shadow-sm">
-                      <ArrowRight size={20} />
-                    </div>
-                    <p className="font-bold text-slate-800 dark:text-white text-sm">View All</p>
-                    <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">100+ More</p>
-                  </div>
+                 <div className="flex-shrink-0 w-[280px] h-[340px] rounded-[32px] border-2 border-dashed border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center p-8 snap-start">
+  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-5 text-slate-400 dark:text-slate-500">
+    <Icon size={32} strokeWidth={1.5} />
+  </div>
+  <p className="font-black text-slate-800 dark:text-white text-base mb-2">Coming Soon</p>
+  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed max-w-[200px]">
+    We are currently onboarding top-tier {label.toLowerCase()} in your area.
+  </p>
+</div>
                 </>
               )
           }
@@ -1138,15 +1114,7 @@ const HeroCarousel = memo(({ featuredProfiles = {}, sections = {} }) => {
         onTouchEnd={() => setTimeout(() => setIsDragging(false), 100)}
       >
         {HERO_CATEGORIES.map((item, index) => {
-          const profile = featuredProfiles[item.key];
           let displayImage = item.image;
-          if (profile) {
-            if (isValidImageUrl(profile.vendorCoverImage)) displayImage = profile.vendorCoverImage;
-            else if (isValidImageUrl(profile.vendorAvatar)) displayImage = profile.vendorAvatar;
-            else if (isValidImageUrl(profile.highlights?.[0]?.coverImage)) displayImage = profile.highlights[0].coverImage;
-            else if (isValidImageUrl(profile.posts?.[0]?.mediaUrl)) displayImage = profile.posts[0].mediaUrl;
-            else if (isValidImageUrl(profile.reels?.[0]?.thumbnail)) displayImage = profile.reels[0].thumbnail;
-          }
           const dynamicCount = sections[item.key]?.total || item.count;
 
           return (

@@ -39,7 +39,7 @@ const HERO_CATEGORIES = [
   { id: 2, name: "Planners", key: "planners", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428626/PlannerCat_p16v2m.png", count: "145", color: "#8b5cf6" },
   { id: 3, name: "Decorators", key: "decor", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428613/DholCat_swqr0p.png", count: "267", color: "#f59e0b" },
   { id: 4, name: "Photographers", key: "photographers", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428623/PhotographerCat_ymq0vh.png", count: "198", color: "#3b82f6" },
-  { id: 5, name: "Venues", key: "venues", image: "https://res.cloudinary.com/dkbbz4ev9/image/upload/v1757836294/0EFTkdsFRtcOsPL6eOczS1WeImaQFUUPNK96jUd6IIWmiFdBYYAqWXnNG4O6l1Lm9ygs653-k-no_vl3ofw.jpg", count: "476", color: "#0ea5e9" },
+  { id: 5, name: "Venues", key: "venues", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1775567028/VenuesCat_hgj3l0.png", count: "476", color: "#0ea5e9" },
   { id: 6, name: "Mehendi", key: "mehendi", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428620/MehndiCat_hdsxxo.png", count: "156", color: "#d946ef" },
   { id: 7, name: "Caterers", key: "catering", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428610/CaterorsCat_pch4d5.png", count: "189", color: "#14b8a6" },
   { id: 8, name: "DJ & Music", key: "djs", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771428615/DJCat_hay9fu.png", count: "97", color: "#6366f1" },
