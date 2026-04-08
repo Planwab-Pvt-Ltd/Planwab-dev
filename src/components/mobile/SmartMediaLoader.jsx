@@ -117,9 +117,8 @@ const SmartMedia = memo(
             src={safeSrc}
             alt={alt}
             fill
-            sizes={sizes}
-            quality={quality}
-            unoptimized={unoptimized}
+            sizes="100vw"
+            unoptimized={true}
             priority={priority}
             className={`object-${finalObjectFit} ${mediaClass}`}
             style={style}
