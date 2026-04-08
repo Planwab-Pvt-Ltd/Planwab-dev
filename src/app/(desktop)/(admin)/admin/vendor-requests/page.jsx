@@ -64,7 +64,7 @@ export default function RequestsPage() {
       if (requestType === "birthday") endpoint = "/api/vendor/requests/birthday-routes";
       else if (requestType === "booking") endpoint = "/api/vendor/requests/detail-booking";
       else if (requestType === "leads") endpoint = "/api/leads";
-      else if (requestType === "testimonial") endpoint = "/api/testimonials";
+      else if (requestType === "testimonial") endpoint = "/api/user/testimonials";
 
       let fetchUrl = endpoint;
       if (requestType === "birthday") fetchUrl += "?limit=10000";

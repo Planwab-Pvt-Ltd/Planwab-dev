@@ -226,9 +226,9 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
       } else if (requestType === "newsletter") {
         endpoint = "/api/admin/newsletter?limit=10000&sortBy=createdAt&sortOrder=desc";
       } else if (requestType === "meeting") {
-        endpoint = "/api/schedule-meet?limit=10000&sortBy=createdAt&sortOrder=desc";
+        endpoint = "/api/user/schedule-meet?limit=10000&sortBy=createdAt&sortOrder=desc";
       } else if (requestType === "testimonial") {
-        endpoint = "/api/testimonials";
+        endpoint = "/api/user/testimonials";
       }
 
       const response = await fetch(endpoint);
@@ -544,9 +544,9 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
           endpoint = `/api/admin/newsletter?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
         }
       } else if (requestType === "meeting") {
-        endpoint = `/api/schedule-meet?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
+        endpoint = `/api/user/schedule-meet?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
       } else if (requestType === "testimonial") {
-        endpoint = `/api/testimonials?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
+        endpoint = `/api/user/testimonials?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
       }
 
       if (action === "delete") {

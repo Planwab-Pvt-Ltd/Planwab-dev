@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../database/mongoose";
-import TestimonialModel from "../../../database/models/TestimonialsModel";
+import { connectToDatabase } from "../../../../database/mongoose";
+import TestimonialModel from "../../../../database/models/TestimonialsModel";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "PlanWAB@12345";
 const VENDOR_REQ_EDIT_ADMIN_PASSWORD = process.env.VENDOR_REQ_EDIT_ADMIN_PASSWORD || "EDit@PlanWAB@12345";
@@ -89,7 +89,11 @@ export async function POST(request) {
       status: "PENDING",
     };
 
-    if (eventDate) payload.eventDate = eventDate;
+    if (eventDate) {
+      payload.eventDate = eventDate;
+    } else {
+      payload.eventDate = new Date();
+    }
     if (location) payload.location = location;
     if (guests && guests > 0) payload.guests = guests;
     if (vendorUsed) payload.vendorUsed = vendorUsed;

@@ -51,7 +51,7 @@ const AboutPageWrapper = () => {
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const res = await fetch("/api/testimonials?status=APPROVED&limit=6");
+        const res = await fetch("/api/user/testimonials?status=APPROVED&limit=6");
         const data = await res.json();
         if (data.success && data.data) {
           setFetchedTestimonials(data.data);
@@ -105,7 +105,7 @@ const AboutPageWrapper = () => {
         guests: parseInt(testimonialData.guests) || 0,
       };
 
-      const res = await fetch("/api/testimonials", {
+      const res = await fetch("/api/user/testimonials", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

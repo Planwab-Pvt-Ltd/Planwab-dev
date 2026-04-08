@@ -172,7 +172,7 @@ const Testimonials = () => {
     const loadTestimonials = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/testimonials?status=APPROVED&limit=6");
+        const res = await fetch("/api/user/testimonials?status=APPROVED&limit=6");
         if (res.ok) {
           const data = await res.json();
           if (data.data && data.data.length > 0) {

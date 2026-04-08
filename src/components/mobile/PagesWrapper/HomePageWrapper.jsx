@@ -8,18 +8,19 @@ import Link from "next/link";
 import SmartMedia from "./../SmartMediaLoader";
 import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityStore";
 
-// INSTANT — above the fold
+
 import CategoryGrid from "../homepage/CategoriesGrid";
 import HowItWorksSection from "../../desktop/HomePage/HowItWorks";
 
-// LAZY — below the fold, not needed at first paint
+
 const ServicesSteps = lazy(() => import("../homepage/ServicesSteps"));
 const SampleProposal = lazy(() => import("../homepage/SampleProposals"));
 const WhyWeBetter = lazy(() => import("../homepage/WhyWeBetter"));
 const AreYouAVendorSection = lazy(() => import("../homepage/AreYouVendor"));
 const QuickServices = lazy(() => import("../homepage/QuickServices"));
+const TestimonialsSection = lazy(() => import("../homepage/TestimonialsSection"));
 
-// Lazy-load the drawer separately since it's conditionally rendered
+
 const VendorOnboardingDrawer = lazy(() =>
   import("../homepage/AreYouVendor").then((mod) => ({
     default: mod.VendorOnboardingDrawer,
@@ -122,7 +123,7 @@ const HeroSection = memo(() => {
   );
 });
 
-// Minimal fallback for lazy sections — invisible but reserves no awkward space
+
 const LazyFallback = () => null;
 
 const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
@@ -275,6 +276,10 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
           haptic={haptic}
           setIsDrawerOpen={setIsDrawerOpen}
         />
+      </Suspense>
+
+      <Suspense fallback={<LazyFallback />}>
+        <TestimonialsSection />
       </Suspense>
 
       <HowItWorksSection />
