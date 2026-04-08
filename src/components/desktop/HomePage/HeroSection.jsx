@@ -109,15 +109,15 @@ export default function HeroSection({ activeCategory, theme, categoryData }) {
   const sectionBottomImage = useMemo(() => {
     switch (activeCategory.toLowerCase()) {
       case "events":
-        return "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430385/eventsSectionBottom_wluswz.png";
+        return "https://res.cloudinary.com/dhkkvo36x/image/upload/q_100/v1771430385/eventsSectionBottom_wluswz.png";
       case "wedding":
-        return "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430390/weddingSectionBottom_ljso1g.png";
+        return "https://res.cloudinary.com/dhkkvo36x/image/upload/q_100/v1771430385/eventsSectionBottom_wluswz.png";
       case "anniversary":
-        return "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430373/anniversarySectionBottom_vsstyv.png";
+        return "https://res.cloudinary.com/dhkkvo36x/image/upload/q_100/v1771430385/eventsSectionBottom_wluswz.png";
       case "birthday":
-        return "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430377/birthdaySectionBottom_qaegfj.png";
+        return "https://res.cloudinary.com/dhkkvo36x/image/upload/q_100/v1771430385/eventsSectionBottom_wluswz.png";
       default:
-        return "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430382/DholSectionBottom_zqsab2.png";
+        return "https://res.cloudinary.com/dhkkvo36x/image/upload/q_100/v1771430385/eventsSectionBottom_wluswz.png";
     }
   }, [activeCategory]);
 
