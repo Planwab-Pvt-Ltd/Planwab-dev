@@ -41,6 +41,7 @@ const BenefitCard = memo(({ data }) => (
         height={145}
         alt={data.title}
         loading="lazy"
+        unoptimized={true}
       />
     </div>
 

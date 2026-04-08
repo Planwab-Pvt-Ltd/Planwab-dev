@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { motion, useAnimationControls, useMotionValue } from "framer-motion";
 import {
   Star,
@@ -21,104 +22,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const testimonialsData = [
-  {
-    id: 1,
-    name: "Priya Sharma",
-    email: "priya.sharma@email.com",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=150&q=80",
-    eventType: "Wedding",
-    eventDate: "2024-03-15",
-    location: "Udaipur, Rajasthan",
-    guests: 450,
-    rating: 5,
-    testimonial:
-      "EventCraft made our dream wedding come true! The vendors they connected us with were absolutely phenomenal. From the breathtaking venue at The Marble Palace to the incredible photography by Rohan Mehta, every detail was perfect. The planning process was seamless and stress-free.",
-    vendorUsed: "The Marble Palace, Rohan Mehta Photography",
-    verified: true,
-    featured: true,
-  },
-  {
-    id: 2,
-    name: "Rajesh & Meera Gupta",
-    email: "rajesh.gupta@email.com",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-    eventType: "Anniversary",
-    eventDate: "2024-01-20",
-    location: "Goa",
-    guests: 150,
-    rating: 5,
-    testimonial:
-      "Our 25th anniversary celebration was magical thanks to EventCraft. Coastal Dreams Resort provided the perfect beachside setting, and Bloom & Petal created the most romantic floral arrangements. Highly recommend!",
-    vendorUsed: "Coastal Dreams Resort, Bloom & Petal",
-    verified: true,
-    featured: false,
-  },
-  {
-    id: 3,
-    name: "Ananya Singh",
-    email: "ananya.singh@email.com",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80",
-    eventType: "Birthday",
-    eventDate: "2024-02-10",
-    location: "Mumbai",
-    guests: 80,
-    rating: 4,
-    testimonial:
-      "Amazing experience planning my milestone birthday party! The Event Architects understood my vision perfectly and executed it flawlessly. The decorations by The Gilded Lily were absolutely stunning.",
-    vendorUsed: "The Event Architects, The Gilded Lily",
-    verified: true,
-    featured: false,
-  },
-  {
-    id: 4,
-    name: "Vikram Patel",
-    email: "vikram.patel@email.com",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80",
-    eventType: "Corporate Event",
-    eventDate: "2024-02-28",
-    location: "Bangalore",
-    guests: 300,
-    rating: 5,
-    testimonial:
-      "Professional service from start to finish. EventCraft helped us find the perfect venue and vendors for our annual company retreat. Everything was organized perfectly and within budget.",
-    vendorUsed: "Multiple Vendors",
-    verified: true,
-    featured: true,
-  },
-  {
-    id: 5,
-    name: "Kavita Joshi",
-    email: "kavita.joshi@email.com",
-    avatar: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=150&q=80",
-    eventType: "Wedding",
-    eventDate: "2024-01-05",
-    location: "Jaipur",
-    guests: 600,
-    rating: 5,
-    testimonial:
-      "EventCraft exceeded all our expectations! Priya Sharma was an incredible planner who managed every detail perfectly. The photography by Frames & Vows captured our special moments beautifully.",
-    vendorUsed: "Priya Sharma Events, Frames & Vows",
-    verified: true,
-    featured: false,
-  },
-  {
-    id: 6,
-    name: "Rohit Malhotra",
-    email: "rohit.malhotra@email.com",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
-    eventType: "Engagement",
-    eventDate: "2024-03-01",
-    location: "Delhi",
-    guests: 200,
-    rating: 4,
-    testimonial:
-      "Great platform with excellent vendor options. The booking process was smooth and the customer support was very helpful throughout our engagement planning journey.",
-    vendorUsed: "Various Vendors",
-    verified: true,
-    featured: false,
-  },
-];
+
 const eventTypeIcons = {
   Wedding: <Heart size={14} className="text-rose-500" />,
   Anniversary: <Calendar size={14} className="text-amber-500" />,
@@ -147,15 +51,14 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
       >
         <div className="grid md:grid-cols-5">
           <div className="md:col-span-2 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-800 dark:to-amber-900/30 p-8 flex flex-col items-center justify-center text-center border-r border-amber-200/30 dark:border-amber-800/30">
-            // Line ~85 - Inside ViewTestimonialModal
             <img
-              src={testimonial.avatar}
+              src={testimonial.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonial.name)}&background=random&size=150`}
               alt={testimonial.name}
-              loading="eager" // Modal images load immediately
+              loading="eager"
               decoding="async"
               className="w-28 h-28 mb-6 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg"
               onError={(e) => {
-                // Prevent infinite reload attempts
+
                 if (!e.target.dataset.fallbackApplied) {
                   e.target.dataset.fallbackApplied = "true";
                   e.target.src = "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=150&q=80";
@@ -243,7 +146,7 @@ const ViewTestimonialModal = ({ testimonial, onClose }) => {
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isMarqueeActive, setIsMarqueeActive] = useState(false);
+  const [isMarqueeActive, setIsMarqueeActive] = useState(true);
   const [viewModalData, setViewModalData] = useState(null);
 
   const handleImageError = useCallback((e) => {
@@ -253,18 +156,32 @@ const Testimonials = () => {
     }
   }, []);
 
-  // ADD THIS: Prevent marquee from running when modal is open
+
 
   useEffect(() => {
     const loadTestimonials = async () => {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setTestimonials(testimonialsData);
-      setIsLoading(false);
+      try {
+        const res = await fetch("/api/user/testimonials?status=APPROVED");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.data && data.data.length > 0) {
+            setTestimonials(data.data);
+          } else {
+            setTestimonials([]);
+          }
+        } else {
+          setTestimonials([]);
+        }
+      } catch (err) {
+        setTestimonials([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadTestimonials();
   }, []);
-  // REPLACE with the ORIGINAL code (before my changes):
+
   useEffect(() => {
     if (viewModalData) {
       document.body.style.overflow = "hidden";
@@ -283,15 +200,15 @@ const Testimonials = () => {
   const containerRef = useRef(null);
   const contentRef = useRef(null);
   const duplicatedTestimonials = useMemo(() => {
-    if (!isMarqueeActive || testimonials.length === 0) return testimonials;
-    // Only duplicate if we actually need marquee
-    return [...testimonials, ...testimonials];
-  }, [testimonials, isMarqueeActive]);
+    if (testimonials.length === 0) return [];
+
+    return [...testimonials, ...testimonials, ...testimonials];
+  }, [testimonials]);
 
   const CARD_WIDTH = 400;
   const GAP = 24;
   const TOTAL_CARD_WIDTH = CARD_WIDTH + GAP;
-  const MARQUEE_DURATION = 45;
+  const MARQUEE_DURATION = testimonials.length * 10;
   const controls = useAnimationControls();
   const x = useMotionValue(0);
   const hoverRef = useRef(false);
@@ -313,16 +230,7 @@ const Testimonials = () => {
   };
   useEffect(() => {
     if (isLoading || testimonials.length === 0) return;
-    const checkWidth = () => {
-      if (containerRef.current && contentRef.current) {
-        const contentWidth = contentRef.current.scrollWidth;
-        const containerWidth = containerRef.current.offsetWidth;
-        setIsMarqueeActive(contentWidth > containerWidth);
-      }
-    };
-    checkWidth();
-    window.addEventListener("resize", checkWidth);
-    return () => window.removeEventListener("resize", checkWidth);
+    setIsMarqueeActive(true);
   }, [isLoading, testimonials]);
   useEffect(() => {
     if (isMarqueeActive && !viewModalData) {
@@ -394,16 +302,18 @@ const Testimonials = () => {
             </p>
           </div>
           <div className="flex-shrink-0 flex items-center justify-center lg:justify-start gap-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="group px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <span className="flex items-center gap-2">
-                <MessageSquarePlus size={18} />
-                Share Your Story
-              </span>
-            </motion.button>
+            <Link href="/about#submit-testimonial" passHref>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="group px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <span className="flex items-center gap-2">
+                  <MessageSquarePlus size={18} />
+                  Share Your Story
+                </span>
+              </motion.button>
+            </Link>
             {isMarqueeActive && (
               <div className="flex gap-2">
                 <motion.button
@@ -465,7 +375,7 @@ const Testimonials = () => {
             >
               <motion.div ref={contentRef} className="flex shrink-0 gap-6" animate={controls} style={{ x }}>
                 {duplicatedTestimonials.map((testimonial, index) => {
-                  const uniqueKey = `${testimonial.id}-${index}`; // Ensure unique key for duplicates
+                  const uniqueKey = `${testimonial.id}-${index}`;
                   return (
                     <motion.div
                       key={uniqueKey}
@@ -476,13 +386,12 @@ const Testimonials = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-4">
                           <img
-                            src={testimonial.avatar}
+                            src={testimonial.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonial.name)}&background=random&size=60`}
                             alt={testimonial.name}
-                            loading="lazy" // ADD THIS
-                            decoding="async" // ADD THIS
+                            loading="lazy"
+                            decoding="async"
                             className="w-14 h-14 rounded-full object-cover border-2 border-amber-200 dark:border-amber-700 shadow-md group-hover:border-amber-300 dark:group-hover:border-amber-600 transition-all duration-300"
                             onError={(e) => {
-                              // FIX: Set once and don't reload
                               if (!e.target.dataset.fallbackApplied) {
                                 e.target.dataset.fallbackApplied = "true";
                                 e.target.src =

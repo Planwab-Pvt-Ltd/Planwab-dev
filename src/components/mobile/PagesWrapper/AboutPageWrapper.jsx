@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -20,10 +21,124 @@ import {
   ExternalLink,
   Play,
   CheckCircle,
+  Loader2,
+  AlertCircle,
+  SendHorizontal,
 } from "lucide-react";
 
 const AboutPageWrapper = () => {
   const [activeTeamMember, setActiveTeamMember] = useState(null);
+  const { user } = useUser();
+
+  const [testimonialData, setTestimonialData] = useState({
+    name: "",
+    email: "",
+    eventType: "",
+    eventDate: "",
+    location: "",
+    guests: "",
+    rating: 5,
+    testimonial: "",
+    vendorUsed: "",
+  });
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const [fetchedTestimonials, setFetchedTestimonials] = useState([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const res = await fetch("/api/user/testimonials?status=APPROVED&limit=6");
+        const data = await res.json();
+        if (data.success && data.data) {
+          setFetchedTestimonials(data.data);
+        }
+      } catch (error) {
+      } finally {
+        setLoadingTestimonials(false);
+      }
+    };
+    fetchTestimonials();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setTestimonialData((prev) => ({
+        ...prev,
+        name: user.fullName || user.username || "",
+        email: user.primaryEmailAddress?.emailAddress || "",
+      }));
+    }
+  }, [user]);
+
+  const handleTestimonialSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitLoading(true);
+    setSubmitError("");
+    setSubmitSuccess(false);
+
+    if (!testimonialData.eventType) {
+      setSubmitError("Event Type is mandatory.");
+      setSubmitLoading(false);
+      return;
+    }
+
+    if (!testimonialData.testimonial || testimonialData.testimonial.trim() === "") {
+      setSubmitError("Your Message is mandatory.");
+      setSubmitLoading(false);
+      return;
+    }
+
+    if (!testimonialData.rating) {
+      setSubmitError("Rating is mandatory.");
+      setSubmitLoading(false);
+      return;
+    }
+
+    try {
+      const payload = {
+        ...testimonialData,
+        avatar: user?.imageUrl || "",
+        guests: parseInt(testimonialData.guests) || 0,
+      };
+
+      const res = await fetch("/api/user/testimonials", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit testimonial");
+      }
+
+      setSubmitSuccess(true);
+      setTestimonialData({
+        name: user?.fullName || user?.username || "",
+        email: user?.primaryEmailAddress?.emailAddress || "",
+        eventType: "",
+        eventDate: "",
+        location: "",
+        guests: "",
+        rating: 5,
+        testimonial: "",
+        vendorUsed: "",
+      });
+      
+      setTimeout(() => setSubmitSuccess(false), 5000);
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   const stats = [
     { number: "5,000+", label: "Events Planned", icon: Calendar },
@@ -87,29 +202,7 @@ const AboutPageWrapper = () => {
     { year: "2026", event: "AI Integration", description: "Launching smart event planning features" },
   ];
 
-  const testimonials = [
-    {
-      name: "Anjali Mehta",
-      role: "Bride",
-      text: "PlanWAB made my wedding planning stress-free. Found amazing vendors and stayed within budget!",
-      rating: 5,
-      event: "Wedding in Mumbai",
-    },
-    {
-      name: "Rajesh Caterers",
-      role: "Vendor",
-      text: "Joined PlanWAB 6 months ago, my business has grown 300%. Best platform for vendors!",
-      rating: 5,
-      event: "Catering Business",
-    },
-    {
-      name: "Kavita Singh",
-      role: "Event Organizer",
-      text: "Organized 50+ corporate events through PlanWAB. Reliable vendors, transparent pricing.",
-      rating: 5,
-      event: "Corporate Events",
-    },
-  ];
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -294,25 +387,147 @@ const AboutPageWrapper = () => {
           {/* Testimonials */}
           <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">What People Say</h3>
-            <div className="space-y-4">
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="bg-gray-50 rounded-xl p-4">
-                  <div className="flex items-center gap-1 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} size={12} className="text-yellow-400 fill-current" />
-                    ))}
+            
+            {loadingTestimonials ? (
+              <div className="flex justify-center items-center py-6">
+                <Loader2 className="animate-spin text-pink-600" size={24} />
+              </div>
+            ) : fetchedTestimonials.length > 0 ? (
+              <div className="space-y-4">
+                {fetchedTestimonials.map((t, index) => (
+                  <div key={index} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex items-center gap-1 mb-2">
+                      {[...Array(t.rating || 5)].map((_, i) => (
+                        <Star key={i} size={12} className="text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-gray-700 text-sm mb-3 italic">"{t.testimonial}"</p>
+                    <div className="text-xs text-gray-500">
+                      <span className="font-medium">{t.name}</span>
+                      <span> • </span>
+                      <span>{t.eventType}</span>
+                      {t.location && (
+                        <>
+                          <span> • </span>
+                          <span>{t.location}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-gray-700 text-sm mb-3">"{testimonial.text}"</p>
-                  <div className="text-xs text-gray-500">
-                    <span className="font-medium">{testimonial.name}</span>
-                    <span> • </span>
-                    <span>{testimonial.role}</span>
-                    <span> • </span>
-                    <span>{testimonial.event}</span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 text-sm">No testimonials yet. Be the first to share your experience!</p>
+            )}
+          </div>
+
+          {/* Submit a Testimonial Form (Mobile Optimized) */}
+          <div id="submit-testimonial" className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 overflow-hidden relative scroll-mt-20">
+             <div className="flex items-center gap-3 mb-4">
+               <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center text-pink-600 shrink-0">
+                 <Heart size={24} />
+               </div>
+               {user && (
+                  <div className="w-12 h-12 rounded-xl border-2 border-pink-200 overflow-hidden shrink-0">
+                    <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
                   </div>
-                </div>
-              ))}
-            </div>
+               )}
+             </div>
+             <h3 className="text-lg font-bold text-gray-900 mb-2">Share Your Experience</h3>
+             <p className="text-gray-600 text-xs mb-5 leading-relaxed">
+               We'd love to hear how PlanWAB helped make your event unforgettable. Your stories inspire us!
+             </p>
+             
+             {submitSuccess && (
+               <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2 mb-4">
+                 <CheckCircle className="text-green-600 mt-0.5 shrink-0" size={16} />
+                 <div>
+                   <h4 className="text-green-900 font-bold text-sm mb-0.5">Thank You!</h4>
+                   <p className="text-green-800 text-xs">Your testimonial was submitted successfully.</p>
+                 </div>
+               </div>
+             )}
+             
+             {submitError && (
+               <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 mb-4">
+                 <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={16} />
+                 <p className="text-red-800 text-xs font-medium">{submitError}</p>
+               </div>
+             )}
+             
+             <form onSubmit={handleTestimonialSubmit} className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+               <div className="space-y-3">
+                 <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
+                   <input required type="text" value={testimonialData.name} onChange={(e) => setTestimonialData({...testimonialData, name: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all text-sm" placeholder="John Doe" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                   <input required type="email" value={testimonialData.email} onChange={(e) => setTestimonialData({...testimonialData, email: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all text-sm" placeholder="john@email.com" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Event Type</label>
+                   <select required value={testimonialData.eventType} onChange={(e) => setTestimonialData({...testimonialData, eventType: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all bg-white text-sm">
+                     <option value="">Select Type</option>
+                     <option value="Wedding">Wedding</option>
+                     <option value="Birthday">Birthday</option>
+                     <option value="Corporate">Corporate Event</option>
+                     <option value="Anniversary">Anniversary</option>
+                     <option value="Other">Other Event</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Vendor Used (Optional)</label>
+                   <input type="text" value={testimonialData.vendorUsed} onChange={(e) => setTestimonialData({...testimonialData, vendorUsed: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all text-sm" placeholder="Royal Decorators" />
+                 </div>
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="block text-xs font-medium text-gray-700 mb-1">Event Date</label>
+                     <input type="date" value={testimonialData.eventDate} onChange={(e) => setTestimonialData({...testimonialData, eventDate: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all text-sm" />
+                   </div>
+                   <div>
+                     <label className="block text-xs font-medium text-gray-700 mb-1">Guests</label>
+                     <input type="number" min="1" value={testimonialData.guests} onChange={(e) => setTestimonialData({...testimonialData, guests: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all text-sm" placeholder="100" />
+                   </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-3">
+                   <div className="col-span-2">
+                     <label className="block text-xs font-medium text-gray-700 mb-1">Location / Venue</label>
+                     <input type="text" value={testimonialData.location} onChange={(e) => setTestimonialData({...testimonialData, location: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all text-sm" placeholder="City or Venue Name" />
+                   </div>
+                   <div className="col-span-2">
+                     <label className="block text-xs font-medium text-gray-700 mb-1">Rating</label>
+                     <select required value={testimonialData.rating} onChange={(e) => setTestimonialData({...testimonialData, rating: parseInt(e.target.value)})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all bg-white text-sm">
+                       <option value={5}>5 Stars ★★★★★</option>
+                       <option value={4}>4 Stars ★★★★☆</option>
+                       <option value={3}>3 Stars ★★★☆☆</option>
+                       <option value={2}>2 Stars ★★☆☆☆</option>
+                       <option value={1}>1 Star  ★☆☆☆☆</option>
+                     </select>
+                   </div>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Your Message</label>
+                   <textarea required rows="3" value={testimonialData.testimonial} onChange={(e) => setTestimonialData({...testimonialData, testimonial: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all resize-none text-sm" placeholder="Tell us about your experience..."></textarea>
+                 </div>
+               </div>
+               
+               <div className="pt-2">
+                 <button type="submit" disabled={submitLoading} className="w-full py-3 bg-pink-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-pink-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
+                   {submitLoading ? (
+                     <>
+                       <Loader2 className="animate-spin" size={16} />
+                       Submitting...
+                     </>
+                   ) : (
+                     <>
+                       <SendHorizontal size={16} />
+                       Submit
+                     </>
+                   )}
+                 </button>
+               </div>
+             </form>
           </div>
 
           {/* Contact CTA */}

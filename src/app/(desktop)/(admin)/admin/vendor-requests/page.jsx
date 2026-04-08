@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, Eye, ArrowLeft, TrendingUp, RefreshCw, ChevronRight, Home, UserCheck, Cake, CalendarDays, Rocket, MessageSquare, Mail } from "lucide-react";
+import { List, Eye, ArrowLeft, TrendingUp, RefreshCw, ChevronRight, Home, UserCheck, Cake, CalendarDays, Rocket, MessageSquare, Mail, Video, Star } from "lucide-react";
 import ViewVendorRequestTab from "@/components/desktop/admin/vendor-requests/viewVendorRequestTab";
 import AllVendorRequests from "@/components/desktop/admin/vendor-requests/AllVendorRequests";
 
@@ -20,7 +20,7 @@ export default function RequestsPage() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [mounted, setMounted] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [stats, setStats] = useState(null); // Add state for stats
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -64,6 +64,7 @@ export default function RequestsPage() {
       if (requestType === "birthday") endpoint = "/api/vendor/requests/birthday-routes";
       else if (requestType === "booking") endpoint = "/api/vendor/requests/detail-booking";
       else if (requestType === "leads") endpoint = "/api/leads";
+      else if (requestType === "testimonial") endpoint = "/api/user/testimonials";
 
       let fetchUrl = endpoint;
       if (requestType === "birthday") fetchUrl += "?limit=10000";
@@ -82,6 +83,9 @@ export default function RequestsPage() {
         data = list.find(item => item._id === id);
       } else if (requestType === "leads") {
         const list = result.leads || result.data || [];
+        data = list.find(item => item._id === id);
+      } else if (requestType === "testimonial") {
+        const list = result.data || [];
         data = list.find(item => item._id === id);
       } else {
         const res = await fetch(`${endpoint}?id=${id}`);
@@ -135,7 +139,7 @@ export default function RequestsPage() {
   const handleViewRequest = useCallback(
     (request) => {
       if (!request || !request._id) {
-        console.error("Invalid vendor request data for view");
+
         return;
       }
       setSelectedRequest(request);
@@ -150,7 +154,7 @@ export default function RequestsPage() {
   const handleEditRequest = useCallback(
     (request) => {
       if (!request || !request._id) {
-        console.error("Invalid vendor request data for edit");
+
         return;
       }
       setSelectedRequest(request);
@@ -241,6 +245,10 @@ export default function RequestsPage() {
         return { label: "Planning Tools", icon: CalendarDays, description: "Manage planned events and tools" };
       case "newsletter":
         return { label: "Newsletter Subscribers", icon: Mail, description: "Manage newsletter subscriptions" };
+      case "meeting":
+        return { label: "Meeting Requests", icon: Video, description: "Manage scheduled meeting requests" };
+      case "testimonial":
+        return { label: "Testimonial Requests", icon: Star, description: "Manage received testimonials submissions" };
       default:
         return { label: "Vendor Requests", icon: UserCheck, description: "Manage vendor registration requests" };
     }

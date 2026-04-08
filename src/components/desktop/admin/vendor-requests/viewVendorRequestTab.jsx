@@ -490,6 +490,14 @@ function ViewVendorRequestContent({
         icon: Mail,
       };
     }
+    if (requestType === "testimonial") {
+      return {
+        title: request.name || "Testimonial",
+        subtitle: request.email,
+        category: request.eventType || "Event",
+        icon: Star,
+      };
+    }
     return {
       title: request.businessName,
       subtitle: `${request.ownerName} • ${request.city}`,
@@ -823,6 +831,27 @@ function ViewVendorRequestContent({
                     <InfoCard icon={Link} label="Subscribed From URL" value={request.visitedUrl} copyable onCopy={copyToClipboard} copied={copiedField} className="lg:col-span-2" />
                     <InfoCard icon={User} label="Clerk ID" value={request.clerkId || "Not Registered"} copyable={!!request.clerkId} onCopy={copyToClipboard} copied={copiedField} />
                     <InfoCard icon={Calendar} label="Subscribed At" value={formatDate(request.createdAt)} />
+                  </>
+                )}
+
+                {requestType === "testimonial" && (
+                  <>
+                    <InfoCard icon={User} label="Name" value={request.name} highlight />
+                    <InfoCard icon={Mail} label="Email" value={request.email} copyable onCopy={copyToClipboard} copied={copiedField} />
+                    <InfoCard icon={Star} label="Event Type" value={request.eventType} />
+                    <InfoCard icon={Calendar} label="Event Date" value={formatDate(request.eventDate)} />
+                    <InfoCard icon={MapPin} label="Location" value={request.location} />
+                    <InfoCard icon={Users} label="Guests" value={request.guests} />
+                    <InfoCard icon={Building2} label="Vendor Used" value={request.vendorUsed} />
+                    <InfoCard icon={Star} label="Rating" value={`${request.rating}/5`} />
+                    {request.testimonial && (
+                      <InfoCard
+                        icon={MessageCircle}
+                        label="Testimonial"
+                        value={request.testimonial}
+                        className="lg:col-span-full"
+                      />
+                    )}
                   </>
                 )}
               </div>

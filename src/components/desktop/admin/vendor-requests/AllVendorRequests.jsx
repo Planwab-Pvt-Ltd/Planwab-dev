@@ -49,6 +49,7 @@ import {
   Plus,
   Minus,
   User,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
@@ -224,6 +225,10 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         endpoint = "/api/contact?limit=10000&sortBy=createdAt&sortOrder=desc";
       } else if (requestType === "newsletter") {
         endpoint = "/api/admin/newsletter?limit=10000&sortBy=createdAt&sortOrder=desc";
+      } else if (requestType === "meeting") {
+        endpoint = "/api/user/schedule-meet?limit=10000&sortBy=createdAt&sortOrder=desc";
+      } else if (requestType === "testimonial") {
+        endpoint = "/api/user/testimonials";
       }
 
       const response = await fetch(endpoint);
@@ -249,6 +254,10 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
           requestsArray = result.data || [];
         } else if (requestType === "newsletter") {
           requestsArray = result.data || [];
+        } else if (requestType === "meeting") {
+          requestsArray = result.data || [];
+        } else if (requestType === "testimonial") {
+          requestsArray = result.data || [];
         } else {
           requestsArray = result.data?.requests || [];
           setApiStats(result.data?.statusStats);
@@ -260,7 +269,6 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         throw new Error(result.error || "Failed to fetch requests");
       }
     } catch (err) {
-      console.error("Error fetching requests:", err);
       setError(err.message);
       setRequests([]);
       setAllRequestsData([]);
@@ -324,6 +332,22 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
             request.clerkId?.toLowerCase().includes(query)
           );
         }
+        if (requestType === "meeting") {
+          return (
+            `${request.user?.firstName || ""} ${request.user?.lastName || ""}`.toLowerCase().includes(query) ||
+            request.user?.email?.toLowerCase().includes(query) ||
+            request.eventType?.toLowerCase().includes(query) ||
+            request.userId?.toLowerCase().includes(query)
+          );
+        }
+        if (requestType === "testimonial") {
+          return (
+            request.name?.toLowerCase().includes(query) ||
+            request.email?.toLowerCase().includes(query) ||
+            request.testimonial?.toLowerCase().includes(query) ||
+            request.eventType?.toLowerCase().includes(query)
+          );
+        }
         return (
           request.businessName?.toLowerCase().includes(query) ||
           request.ownerName?.toLowerCase().includes(query) ||
@@ -335,7 +359,11 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
       });
     }
     if (statusFilter !== "all") {
-      filtered = filtered.filter((request) => request.status === statusFilter);
+      if (requestType === "meeting" || requestType === "testimonial") {
+        filtered = filtered.filter((request) => (request.status || "PENDING").toLowerCase() === statusFilter.toLowerCase());
+      } else {
+        filtered = filtered.filter((request) => request.status === statusFilter);
+      }
     }
 
     if (categoryFilter !== "all") {
@@ -360,14 +388,14 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         const getBusinessName = (r) => {
           if (requestType === "birthday") return r.userDetails?.name;
           if (requestType === "booking") return r.fullName;
-          if (requestType === "leads") return r.name;
+          if (requestType === "leads" || requestType === "testimonial") return r.name;
           return r.businessName;
         };
         aVal = getBusinessName(a) || "";
         bVal = getBusinessName(b) || "";
       } else if (sortBy === "ownerName") {
         const getOwnerName = (r) => {
-          if (requestType === "booking" || requestType === "newsletter") return r.email;
+          if (requestType === "booking" || requestType === "newsletter" || requestType === "testimonial") return r.email;
           if (requestType === "leads") return r.phone;
           return r.ownerName;
         }
@@ -385,6 +413,9 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
       } else if (requestType === "planning" && sortBy === "eventName") {
         aVal = a.eventName || "";
         bVal = b.eventName || "";
+      } else if (requestType === "meeting" && (sortBy === "scheduledDate" || sortBy === "appliedDate")) {
+        aVal = new Date(a[sortBy] || 0);
+        bVal = new Date(b[sortBy] || 0);
       } else {
         aVal = a[sortBy] || "";
         bVal = b[sortBy] || "";
@@ -453,6 +484,18 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
             priority: request.priority || "medium",
             adminNotes: request.adminNotes || "",
           };
+        } else if (requestType === "meeting") {
+          formData = {
+            _id: request._id,
+            status: request.status || "pending",
+            url: request.url || "",
+          };
+        } else if (requestType === "testimonial") {
+          formData = {
+            _id: request._id,
+            status: request.status || "PENDING",
+            rating: request.rating,
+          };
         } else {
           formData = {
             ...request,
@@ -500,6 +543,10 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         if (action === "delete") {
           endpoint = `/api/admin/newsletter?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
         }
+      } else if (requestType === "meeting") {
+        endpoint = `/api/user/schedule-meet?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
+      } else if (requestType === "testimonial") {
+        endpoint = `/api/user/testimonials?id=${selectedRequest._id}&adminPassword=${encodeURIComponent(adminPassword)}`;
       }
 
       if (action === "delete") {
@@ -531,6 +578,15 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
             status: editFormData.status,
             priority: editFormData.priority,
             adminNotes: editFormData.adminNotes,
+          };
+        } else if (requestType === "meeting") {
+          body = {
+            status: editFormData.status,
+            url: editFormData.url,
+          };
+        } else if (requestType === "testimonial") {
+          body = {
+            status: editFormData.status,
           };
         } else {
           body = { status: editFormData.status };
@@ -655,6 +711,30 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
         r.clerkId || "N/A",
         r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
       ]);
+    } else if (requestType === "meeting") {
+      headers = ["User Name", "Email", "Event Type", "Visited Page URL", "Scheduled Date", "Applied Date", "Status", "Meet URL"];
+      rows = filteredRequests.map((r) => [
+        `${r.user?.firstName || ""} ${r.user?.lastName || ""}`.trim() || "N/A",
+        r.user?.email || "N/A",
+        r.eventType === "Others" ? r.otherEventType || "Others" : r.eventType || "N/A",
+        r.pageUrl || "N/A",
+        r.scheduledDate ? new Date(r.scheduledDate).toLocaleDateString() : "N/A",
+        r.appliedDate ? new Date(r.appliedDate).toLocaleDateString() : "N/A",
+        r.status || "pending",
+        r.url || "",
+      ]);
+    } else if (requestType === "testimonial") {
+      headers = ["Name", "Email", "Event Type", "Event Date", "Guests", "Location", "Rating", "Status"];
+      rows = filteredRequests.map((r) => [
+        r.name || "",
+        r.email || "",
+        r.eventType || "",
+        r.eventDate ? new Date(r.eventDate).toLocaleDateString() : "",
+        r.guests || "",
+        r.location || "",
+        r.rating || "",
+        r.status || "PENDING",
+      ]);
     } else {
       headers = [
         "Business Name",
@@ -718,11 +798,30 @@ export default function AllVendorRequests({ requestType = "vendor", onViewReques
   }, [allRequestsData]);
 
   const statusFilterOptions = useMemo(() => {
-  return [
-    { value: "all", label: "All Status" },
-    ...statusOptions.map((s) => ({ value: s.value, label: s.label })),
-  ];
-}, []);
+    if (requestType === "meeting" || requestType === "testimonial") {
+      const uniqueStatuses = new Set(allRequestsData.map(r => r.status || "PENDING").map(s => s.toLowerCase()));
+      const dynamicOptions = Array.from(uniqueStatuses).map(status => ({
+        value: status,
+        label: status.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+      }));
+      
+      const defaultStatuses = ["pending", "approved", "rejected"];
+      defaultStatuses.forEach(s => {
+        if (!uniqueStatuses.has(s)) {
+          dynamicOptions.push({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) });
+        }
+      });
+
+      return [
+        { value: "all", label: "All Status" },
+        ...dynamicOptions
+      ];
+    }
+    return [
+      { value: "all", label: "All Status" },
+      ...statusOptions.map((s) => ({ value: s.value, label: s.label })),
+    ];
+  }, [requestType, allRequestsData]);
 
 const cityFilterOptions = useMemo(
   () => [{ value: "all", label: "All Cities" }, ...cityOptions],
@@ -741,6 +840,10 @@ const cityFilterOptions = useMemo(
     { value: "ownerName", label: "Owner Name" },
     { value: "category", label: "Category" },
     { value: "city", label: "City" },
+    ...(requestType === "meeting" ? [
+      { value: "scheduledDate", label: "Scheduled Date" },
+      { value: "appliedDate", label: "Applied Date" },
+    ] : []),
   ];
 
   return (
@@ -855,36 +958,40 @@ const cityFilterOptions = useMemo(
                     }}
                     icon={CheckCircle}
                   />
-                  <FilterDropdown
-                    label="Category"
-                    options={categoryFilterOptions}
-                    value={categoryFilter}
-                    onChange={(val) => {
-                      setCategoryFilter(val);
-                      setCurrentPage(1);
-                    }}
-                    icon={Building2}
-                  />
-                  <FilterDropdown
-                    label="City"
-                    options={cityFilterOptions}
-                    value={cityFilterOptions.value}
-                    onChange={(val) => {
-                      setCityFilter(val);
-                      setCurrentPage(1);
-                    }}
-                    icon={MapPin}
-                  />
-                  <FilterDropdown
-                    label="Type"
-                    options={registrationTypeOptions}
-                    value={registrationTypeFilter}
-                    onChange={(val) => {
-                      setRegistrationTypeFilter(val);
-                      setCurrentPage(1);
-                    }}
-                    icon={Users}
-                  />
+                  {requestType !== "meeting" && (
+                    <>
+                      <FilterDropdown
+                        label="Category"
+                        options={categoryFilterOptions}
+                        value={categoryFilter}
+                        onChange={(val) => {
+                          setCategoryFilter(val);
+                          setCurrentPage(1);
+                        }}
+                        icon={Building2}
+                      />
+                      <FilterDropdown
+                        label="City"
+                        options={cityFilterOptions}
+                        value={cityFilter}
+                        onChange={(val) => {
+                          setCityFilter(val);
+                          setCurrentPage(1);
+                        }}
+                        icon={MapPin}
+                      />
+                      <FilterDropdown
+                        label="Type"
+                        options={registrationTypeOptions}
+                        value={registrationTypeFilter}
+                        onChange={(val) => {
+                          setRegistrationTypeFilter(val);
+                          setCurrentPage(1);
+                        }}
+                        icon={Users}
+                      />
+                    </>
+                  )}
                   <FilterDropdown
                     label="Sort By"
                     options={sortOptions}
@@ -1007,6 +1114,23 @@ const cityFilterOptions = useMemo(
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subject</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">User Type</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Priority</th>
+                    </>
+                  )}
+                  {requestType === "meeting" && (
+                    <>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">User / Contact</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Event Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Visited Page</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Scheduled Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Applied Date</th>
+                    </>
+                  )}
+                  {requestType === "testimonial" && (
+                    <>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name / Contact</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Event</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Rating</th>
                     </>
                   )}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -1366,13 +1490,39 @@ const cityFilterOptions = useMemo(
                       onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
-                      {statusOptions.map((status) => (
-  <option key={status.value} value={status.value}>
-    {status.label}
-  </option>
-))}
+                      {requestType === "meeting" ? (
+                        <>
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </>
+                      ) : requestType === "testimonial" ? (
+                        <>
+                          <option value="PENDING">Pending</option>
+                          <option value="APPROVED">Approved</option>
+                          <option value="REJECTED">Rejected</option>
+                        </>
+                      ) : (
+                        statusOptions.map((status) => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
+                  {requestType === "meeting" && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Meet URL (optional)</label>
+                      <input
+                        type="url"
+                        placeholder="https://meet.google.com/..."
+                        value={editFormData.url || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, url: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  )}
 
                   {requestType === "vendor" && (
                     <>
@@ -1921,6 +2071,81 @@ const RequestTableRow = ({ request, requestType, onAction }) => {
     )
   }
 
+  if (requestType === "testimonial") {
+    return (
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+              {request.name?.charAt(0).toUpperCase() || "?"}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                {request.name || "Unknown"}
+              </h3>
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <Mail size={12} />
+                {request.email || "N/A"}
+              </div>
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+          <div className="flex items-center gap-2">
+            <Star size={14} className="text-gray-400" />
+            {request.eventType || "N/A"}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Vendor: {request.vendorUsed || "N/A"}
+          </div>
+        </td>
+        <td className="px-4 py-3 hidden md:table-cell">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Calendar size={14} className="text-gray-400" />
+            {request.eventDate ? new Date(request.eventDate).toLocaleDateString() : "N/A"}
+          </div>
+        </td>
+        <td className="px-4 py-3 hidden lg:table-cell">
+          <div className="flex items-center gap-1">
+            <Star size={14} className="text-amber-400 fill-amber-400" />
+            <span className="text-sm font-medium">{request.rating || "N/A"}/5</span>
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.color}`}>
+            <StatusIcon size={12} />
+            <span className="capitalize">{request.status?.replace("_", " ") || "Pending"}</span>
+          </span>
+        </td>
+        <td className="px-4 py-3 text-right">
+          <div className="flex items-center justify-end gap-2 transition-opacity">
+            <button
+              onClick={() => onAction("view", request)}
+              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+              title="View Details"
+            >
+              <Eye size={16} />
+            </button>
+            <button
+              onClick={() => onAction("edit", request)}
+              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+              title="Edit Request"
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              onClick={() => onAction("delete", request)}
+              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+              title="Delete Request"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </td>
+      </tr>
+    )
+  }
+
   if (requestType === "booking") {
     return (
       <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
@@ -2198,6 +2423,78 @@ const RequestTableRow = ({ request, requestType, onAction }) => {
     );
   }
 
+  if (requestType === "meeting") {
+    const meetingStatusColors = {
+      pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
+      approved: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+      rejected: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+    };
+    const meetStatus = request.status || "pending";
+    const displayName = `${request.user?.firstName || ""} ${request.user?.lastName || ""}`.trim() || "Unknown User";
+    const displayEventType = request.eventType === "Others" ? (request.otherEventType || "Others") : (request.eventType || "N/A");
+    return (
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
+              {displayName.charAt(0).toUpperCase() || "?"}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</h3>
+              <div className="flex flex-col gap-0.5 text-xs text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1"><Mail size={11} />{request.user?.email || "N/A"}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-gray-400" />
+            {displayEventType}
+          </div>
+        </td>
+        <td className="px-4 py-3 hidden md:table-cell">
+          {request.pageUrl ? (
+            <a href={request.pageUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate max-w-[150px]" title={request.pageUrl}>
+              <Link size={14} />
+              <span className="truncate">View Page</span>
+            </a>
+          ) : (
+            <span className="text-sm text-gray-400">N/A</span>
+          )}
+        </td>
+        <td className="px-4 py-3 hidden md:table-cell">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Calendar size={14} className="text-gray-400" />
+            {request.scheduledDate ? new Date(request.scheduledDate).toLocaleDateString() : "N/A"}
+          </div>
+        </td>
+        <td className="px-4 py-3 hidden lg:table-cell">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Calendar size={14} className="text-gray-400" />
+            {request.appliedDate ? new Date(request.appliedDate).toLocaleDateString() : "N/A"}
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize ${meetingStatusColors[meetStatus] || meetingStatusColors.pending}`}>
+            {meetStatus}
+          </span>
+        </td>
+        <td className="px-4 py-3 text-right">
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => onAction("edit", request)}
+              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+              title="Update Status"
+            >
+              <Edit size={16} />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
       <td className="px-4 py-3">
@@ -2376,6 +2673,21 @@ const RequestCard = ({ request, type, onView, onEdit, onDelete }) => {
             { icon: Calendar, text: request.createdAt ? new Date(request.createdAt).toLocaleDateString() : "N/A" },
           ]
         };
+      case "meeting": {
+        const fullName = `${request.user?.firstName || ""} ${request.user?.lastName || ""}`.trim() || "Unknown User";
+        const evtType = request.eventType === "Others" ? (request.otherEventType || "Others") : (request.eventType || "N/A");
+        return {
+          title: fullName,
+          subtitle: evtType,
+          badge: null,
+          details: [
+            { icon: Mail, text: request.user?.email || "N/A" },
+            { icon: Calendar, text: request.scheduledDate ? new Date(request.scheduledDate).toLocaleDateString() : "N/A" },
+            { icon: Clock, text: request.appliedDate ? `Applied: ${new Date(request.appliedDate).toLocaleDateString()}` : (request.createdAt ? `Applied: ${new Date(request.createdAt).toLocaleDateString()}` : "N/A") },
+            ...(request.url ? [{ icon: Globe, text: request.url }] : []),
+          ]
+        };
+      }
       case "vendor":
       default:
         return {
@@ -2396,6 +2708,20 @@ const RequestCard = ({ request, type, onView, onEdit, onDelete }) => {
 
   const { title, subtitle, badge, details } = getDisplayData();
 
+  const meetingStatusColors = {
+    pending: "bg-yellow-100 text-yellow-800",
+    approved: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+  };
+
+  const statusBadgeClass = type === "meeting"
+    ? (meetingStatusColors[request.status] || meetingStatusColors.pending)
+    : statusInfo.color;
+
+  const statusLabel = request.status
+    ? request.status.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+    : "Pending";
+
   return (
     <motion.div
       layout
@@ -2405,16 +2731,14 @@ const RequestCard = ({ request, type, onView, onEdit, onDelete }) => {
       whileHover={{ y: -5 }}
       className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all group flex flex-col h-full"
     >
-      <div className="relative h-32 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">
+      <div className={`relative h-32 flex items-center justify-center shrink-0 ${type === "meeting" ? "bg-gradient-to-br from-violet-500 to-purple-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
         <div className="text-white text-center p-4 w-full">
           <h3 className="text-lg font-bold truncate mb-1 px-2">{title}</h3>
           <p className="text-white/80 text-sm truncate px-2">{subtitle}</p>
         </div>
         <div className="absolute top-2 right-2">
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusInfo.color}`}>
-            {request.status
-              ? request.status.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
-              : "Pending"}
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusBadgeClass}`}>
+            {statusLabel}
           </span>
         </div>
         {badge && (
@@ -2441,27 +2765,31 @@ const RequestCard = ({ request, type, onView, onEdit, onDelete }) => {
             {type === "vendor" ? request.category : type}
           </span>
           <div className="flex items-center gap-1">
-            <button
-              onClick={onView}
-              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-              title="View Details"
-            >
-              <Eye size={16} />
-            </button>
+            {type !== "meeting" && (
+              <button
+                onClick={onView}
+                className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                title="View Details"
+              >
+                <Eye size={16} />
+              </button>
+            )}
             <button
               onClick={onEdit}
               className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-              title="Edit Request"
+              title={type === "meeting" ? "Update Status" : "Edit Request"}
             >
               <Edit size={16} />
             </button>
-            <button
-              onClick={onDelete}
-              className="p-1.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-              title="Delete Request"
-            >
-              <Trash2 size={16} />
-            </button>
+            {type !== "meeting" && (
+              <button
+                onClick={onDelete}
+                className="p-1.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                title="Delete Request"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         </div>
       </div>
