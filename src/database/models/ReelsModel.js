@@ -179,5 +179,61 @@ reelSchema.pre("save", function (next) {
   next();
 });
 
+const reelSectionSchema = new mongoose.Schema(
+  {
+    // ── Display Info ─────────────────────────────────────────────────────
+    title: {
+      type: String,
+      required: [true, "Section title is required"],
+      trim: true,
+      maxlength: [100, "Title cannot exceed 100 characters"],
+    },
+    subtitle: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Subtitle cannot exceed 200 characters"],
+    },
+
+    // ── Categorization & Filtering ───────────────────────────────────────
+    category: { type: String, trim: true, index: true },
+    subcategory: { type: String, trim: true },
+    
+    type: { type: String, trim: true, index: true },
+    subType: { type: String, trim: true },
+    nestedType: { type: String, trim: true },
+
+    // ── Associated Reels ─────────────────────────────────────────────────
+    // Stores ObjectIds referencing the 'Reel' model
+    linkedReels: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Reel",
+      },
+    ],
+
+    // ── Settings & Visibility ────────────────────────────────────────────
+    isActive: { 
+      type: Boolean, 
+      default: true, 
+      index: true 
+    },
+    priority: { 
+      type: Number, 
+      default: 0, 
+      index: true 
+    }, // Useful for ordering multiple carousels on the feed
+
+    // ── Audit ────────────────────────────────────────────────────────────
+    createdBy: { type: String, trim: true },
+    updatedBy: { type: String, trim: true },
+  },
+  {
+    timestamps: true, // Automatically manages createdAt and updatedAt
+  }
+);
+
+const ReelSection = mongoose.models.ReelSection || mongoose.model("ReelSection", reelSectionSchema);
+export { ReelSection };
+
 const Reel = mongoose.models.Reel || mongoose.model("Reel", reelSchema);
 export default Reel;
