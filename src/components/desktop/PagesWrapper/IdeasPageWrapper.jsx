@@ -62,6 +62,7 @@ import { ShareModal } from "./VendorProfilePageWrapper";
 import { useUser } from "@clerk/nextjs";
 import SmartMedia from "../SmartMediaLoader";
 import { useNavigationState } from "../../../hooks/useNavigationState";
+import { REEL_SUBTYPES } from "../admin/reels/AddReels";
 
 const DESKTOP_TOP_OFFSET = 110;
 
@@ -347,6 +348,16 @@ const fetchTrendingReels = async (params = {}) => {
   }
 };
 
+const fetchCustomReelSections = async (params = {}) => {
+  try {
+    const res = await fetch(`/api/reels/reel-sections/feed?${buildQuery(params)}`);
+    if (!res.ok) return { data: [] };
+    return res.json();
+  } catch {
+    return { data: [] };
+  }
+};
+
 const fetchFeaturedReels = async (params = {}) => {
   try {
     const res = await fetch(`/api/reels/featured?${buildQuery(params)}`);
@@ -573,6 +584,10 @@ const DesktopSidebar = ({
   onChangeEvent,
   activeSubType,
   onSubTypeClick,
+  dynamicQuickFilters,
+  activeNestedType,
+  onNestedTypeClick,
+  dynamicNestedFilters,
 }) => (
   <aside
     style={{ top: DESKTOP_TOP_OFFSET, height: `calc(100vh - ${DESKTOP_TOP_OFFSET}px)` }}
@@ -596,11 +611,12 @@ const DesktopSidebar = ({
       </button>
     </div>
 
-    {config.quickFilters && config.quickFilters.length > 0 && (
+    {/* PRIMARY QUICK FILTERS */}
+    {dynamicQuickFilters && dynamicQuickFilters.length > 0 && (
       <div className="p-4 xl:p-5 border-b border-rose-100/50 dark:border-stone-800">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Moments & Styles</p>
         <div className="flex flex-wrap gap-1.5">
-          {config.quickFilters.map((f) => (
+          {dynamicQuickFilters.map((f) => (
             <button
               key={f.id}
               onClick={() => onSubTypeClick(f.id)}
@@ -616,6 +632,37 @@ const DesktopSidebar = ({
         </div>
       </div>
     )}
+
+    {/* SECONDARY NESTED FILTERS (Dynamic) */}
+    <AnimatePresence>
+      {dynamicNestedFilters && dynamicNestedFilters.length > 0 && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="overflow-hidden border-b border-rose-100/50 dark:border-stone-800 bg-rose-50/30 dark:bg-stone-900/20"
+        >
+          <div className="p-4 xl:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Specifics</p>
+            <div className="flex flex-wrap gap-1.5">
+              {dynamicNestedFilters.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => onNestedTypeClick(f.id)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border ${
+                    activeNestedType === f.id
+                      ? "bg-stone-800 text-white border-stone-800 dark:bg-white dark:text-stone-900 dark:border-white shadow-sm"
+                      : "bg-white dark:bg-stone-950 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
     <div className="p-4 xl:p-5">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 mb-2">Categories</p>
@@ -949,10 +996,18 @@ const DesktopCarouselSection = ({ section, onItemClick }) => {
   if (!section.items || section.items.length === 0) return null;
   return (
     <section className="space-y-3">
-      <div className="px-5 flex items-center justify-between gap-4">
-        <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate">
+      <div className="px-5 flex flex-col gap-0.5">
+        <h3 className="text-[16px] font-bold text-stone-800 dark:text-stone-100 tracking-tight truncate flex items-center gap-2">
           {section.title}
+          {/* Highlight custom admin-curated sections */}
+          {section.isCustomSection && <Crown size={14} className="text-amber-500" />}
         </h3>
+        {/* Render subtitle if the admin provided one */}
+        {section.subtitle && (
+          <p className="text-[12px] text-stone-500 dark:text-stone-400 truncate">
+            {section.subtitle}
+          </p>
+        )}
       </div>
       <ScrollCarousel>
         {section.items.map((item, idx) => (
@@ -2211,6 +2266,7 @@ export default function IdeasDesktopPage() {
   const urlReel = searchParams.get("reel") || null;
   const urlSearch = searchParams.get("q") || "";
   const urlSubType = searchParams.get("subType") || searchParams.get("wf") || "all";
+  const urlNestedType = searchParams.get("nestedType") || "all";
 
   const [isDirectReelLoading, setIsDirectReelLoading] = useState(!!urlReel);
 
@@ -2266,6 +2322,7 @@ export default function IdeasDesktopPage() {
   const [activeCategory, setActiveCategory] = useState(urlCategory);
   const [activeSubcategory, setActiveSubcategory] = useState(urlSubcategory);
   const [activeSubType, setActiveSubType] = useState(urlSubType);
+  const [activeNestedType, setActiveNestedType] = useState(urlNestedType);
 
   const [reelsViewerData, setReelsViewerData] = useState(null);
   const [drawerItem, setDrawerItem] = useState(null);
@@ -2297,11 +2354,12 @@ export default function IdeasDesktopPage() {
     if (activeCategory) params.category = activeCategory;
     if (activeSubcategory) params.subcategory = activeSubcategory;
     if (activeSubType && activeSubType !== "all") params.subType = activeSubType;
+    if (activeNestedType && activeNestedType !== "all") params.nestedType = activeNestedType;
     if (filterState.sort && filterState.sort !== "relevance") params.sort = filterState.sort;
     if (filterState.minRating) params.rating = String(filterState.minRating);
     if (filterState.location) params.location = filterState.location;
     return params;
-  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, activeNestedType, filterState]);
 
   const syncURL = useCallback(
     (extra = {}) => {
@@ -2317,7 +2375,7 @@ export default function IdeasDesktopPage() {
   useEffect(() => {
     if (showModal) return;
     syncURL();
-  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState, showModal, syncURL]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, activeNestedType, filterState, showModal, syncURL]);
 
   useEffect(() => {
     setRecentlyViewedReels(getRecentlyViewed());
@@ -2344,6 +2402,20 @@ export default function IdeasDesktopPage() {
 
   const getDynamicHeading = useCallback((index) => EVENT_SECTION_HEADINGS[index % EVENT_SECTION_HEADINGS.length], []);
 
+  const dynamicQuickFilters = useMemo(() => {
+    if (!eventType) return [];
+    const types = REEL_SUBTYPES[eventType] || [];
+    if (types.length === 0) return [];
+    return [{ id: "all", label: "All" }, ...types.map(t => ({ id: t.value, label: t.label }))];
+  }, [eventType]);
+
+  const dynamicNestedFilters = useMemo(() => {
+    if (!eventType || activeSubType === "all") return [];
+    const subtypeObj = (REEL_SUBTYPES[eventType] || []).find(t => t.value === activeSubType);
+    if (!subtypeObj || !subtypeObj.nestedTypes || subtypeObj.nestedTypes.length === 0) return [];
+    return [{ id: "all", label: "All" }, ...subtypeObj.nestedTypes.map(nt => ({ id: nt.value, label: nt.label }))];
+  }, [eventType, activeSubType]);
+
   useEffect(() => {
     if (!eventType || !config) return;
     const version = ++fetchVersionRef.current;
@@ -2355,6 +2427,7 @@ export default function IdeasDesktopPage() {
       if (activeCategory) baseParams.category = activeCategory;
       if (activeSubcategory) baseParams.subcategory = activeSubcategory;
       if (activeSubType && activeSubType !== "all") baseParams.subType = activeSubType;
+      if (activeNestedType && activeNestedType !== "all") baseParams.nestedType = activeNestedType;
       if (filterState.location) baseParams.city = filterState.location;
 
       if (filterState.sort === "trending") {
@@ -2374,10 +2447,11 @@ export default function IdeasDesktopPage() {
       if (filterState.minRating) baseParams.minPriority = Math.round(((filterState.minRating - 3.5) / 1.5) * 100);
 
       try {
-        const [mainResult, featuredResult, trendingResult] = await Promise.all([
+        const [mainResult, featuredResult, trendingResult, customSectionsResult] = await Promise.all([
           fetchReels(baseParams),
           fetchFeaturedReels({ limit: 15, type: eventType }),
           fetchTrendingReels({ limit: 15, type: eventType }),
+          fetchCustomReelSections(baseParams)
         ]);
 
         if (cancelled || version !== fetchVersionRef.current) return;
@@ -2385,6 +2459,11 @@ export default function IdeasDesktopPage() {
         const allReels = (mainResult.data || []).map(normalizeReel);
         const featuredReels = (featuredResult.reels || []).map(normalizeReel);
         const tReels = (trendingResult.reels || []).map(normalizeReel);
+
+        const customSecs = (customSectionsResult.data || []).map(sec => ({
+          ...sec,
+          items: sec.items.map(normalizeReel)
+        }));
 
         setTrendingReels(tReels);
         setPaginationInfo(mainResult.pagination || null);
@@ -2482,7 +2561,40 @@ export default function IdeasDesktopPage() {
 
         if (tReels.length > 0) sections.push({ id: "trending", title: "Trending Now", items: tReels });
 
-        setCarouselSections(sections);
+        // ── DYNAMIC SECTION INTERLEAVING LOGIC ──
+        const finalSections = [];
+        let customIdx = 0;
+        let regularIdx = 0;
+
+        // How many regular sections should appear before the next custom section?
+        // You can change this to 1, 2, or 3 based on how dense you want custom sections to be.
+        const REGULAR_INTERVAL = 2; 
+
+        // 1. Guarantee the highest priority custom section is always at the absolute top
+        if (customSecs.length > 0) {
+          finalSections.push(customSecs[customIdx]);
+          customIdx++;
+        }
+
+        // 2. Interleave the rest of the sections
+        while (regularIdx < sections.length || customIdx < customSecs.length) {
+          // Add a chunk of regular sections
+          for (let i = 0; i < REGULAR_INTERVAL && regularIdx < sections.length; i++) {
+            finalSections.push(sections[regularIdx]);
+            regularIdx++;
+          }
+          // Add the next custom section (respecting priority order)
+          if (customIdx < customSecs.length) {
+            finalSections.push(customSecs[customIdx]);
+            customIdx++;
+          }
+        }
+
+        // Set the beautifully merged feed to state
+        setCarouselSections(finalSections);
+        setInitialLoadDone(true);
+
+        setCarouselSections(finalSections);
         setInitialLoadDone(true);
       } catch {
         if (!cancelled && version === fetchVersionRef.current) {
@@ -2503,6 +2615,7 @@ export default function IdeasDesktopPage() {
     activeSubcategory,
     filterState,
     activeSubType,
+    activeNestedType,
     config,
     activeCategoryData,
     eventLabel,
@@ -2607,6 +2720,7 @@ export default function IdeasDesktopPage() {
     setActiveCategory(null);
     setActiveSubcategory(null);
     setActiveSubType("all");
+    setActiveNestedType("all");
     setInitialLoadDone(false);
   };
 
@@ -2629,6 +2743,12 @@ export default function IdeasDesktopPage() {
 
   const handleSubTypeClick = (filterId) => {
     setActiveSubType(filterId);
+    setActiveNestedType("all");
+    setInitialLoadDone(false);
+  };
+
+  const handleNestedTypeClick = (filterId) => { 
+    setActiveNestedType(filterId);
     setInitialLoadDone(false);
   };
 
@@ -2713,12 +2833,17 @@ export default function IdeasDesktopPage() {
             setActiveCategory(null);
             setActiveSubcategory(null);
             setActiveSubType("all");
+            setActiveNestedType("all");
             setInitialLoadDone(false);
             window.history.replaceState(null, "", pathname);
           }}
           activeSubType={activeSubType}
           onSubTypeClick={handleSubTypeClick}
           isWeddingType={isWeddingType}
+          dynamicQuickFilters={dynamicQuickFilters}
+          activeNestedType={activeNestedType}
+          onNestedTypeClick={handleNestedTypeClick}
+          dynamicNestedFilters={dynamicNestedFilters}
         />
         <main className="flex-1 min-w-0">
           <div
@@ -2910,6 +3035,7 @@ export default function IdeasDesktopPage() {
                         if (activeSubcategory) params.subcategory = activeSubcategory;
                         if (filterState.location) params.city = filterState.location;
                         if (activeSubType && activeSubType !== "all") params.subType = activeSubType;
+                        if (activeNestedType && activeNestedType !== "all") params.nestedType = activeNestedType;
 
                         if (filterState.sort === "trending") {
                           params.sortBy = "viewCount";

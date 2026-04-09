@@ -4,29 +4,21 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  List,
-  PlusCircle,
-  Eye,
-  Edit,
-  ArrowLeft,
-  Video,
-  RefreshCw,
-  ChevronRight,
-  Home,
-} from "lucide-react";
+import { List, PlusCircle, Eye, Edit, ArrowLeft, Video, RefreshCw, ChevronRight, Home, Layers } from "lucide-react";
 import AllReels from "../../../../../components/desktop/admin/reels/AllReels";
 import ViewReelTab from "../../../../../components/desktop/admin/reels/ViewReelTab";
 import EditReelTab from "../../../../../components/desktop/admin/reels/EditReelTab";
 import AddReel from "../../../../../components/desktop/admin/reels/AddReels";
 
+import AllReelSections from "../../../../../components/desktop/admin/reels/reelSection/AllReelSections";
+import AddEditReelSection from "../../../../../components/desktop/admin/reels/reelSection/AddEditReelSection";
+
 export default function ReelsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "all"
-  );
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
+  const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [selectedReel, setSelectedReel] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -41,13 +33,20 @@ export default function ReelsPage() {
   useEffect(() => {
     const tab = searchParams.get("tab");
     const reelId = searchParams.get("reelId");
+    const sectionId = searchParams.get("sectionId");
 
-    if (tab && ["all", "add", "view", "edit"].includes(tab)) {
+    if (tab && ["all", "add", "view", "edit", "all-sections", "edit-section"].includes(tab)) {
       setActiveTab(tab);
     }
 
     if (reelId && (tab === "view" || tab === "edit")) {
       fetchReelById(reelId);
+    }
+
+    if (sectionId && tab === "edit-section") {
+      setSelectedSectionId(sectionId);
+    } else {
+      setSelectedSectionId(null);
     }
   }, [searchParams]);
 
@@ -66,16 +65,16 @@ export default function ReelsPage() {
   }, []);
 
   const updateURL = useCallback(
-    (tab, reelId = null) => {
+    (tab, id = null, type = "reel") => {
       const params = new URLSearchParams();
       params.set("tab", tab);
-      if (reelId) params.set("reelId", reelId);
-      if (tab === "view" || tab === "edit") {
-        params.set("title", selectedReel?.title || "reel");
+      if (id) {
+        if (type === "section") params.set("sectionId", id);
+        else params.set("reelId", id);
       }
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [router, selectedReel]
+    [router],
   );
 
   const handleViewReel = useCallback(
@@ -86,7 +85,7 @@ export default function ReelsPage() {
       updateURL("view", reel._id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [updateURL]
+    [updateURL],
   );
 
   const handleEditReel = useCallback(
@@ -97,7 +96,7 @@ export default function ReelsPage() {
       updateURL("edit", reel._id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [updateURL]
+    [updateURL],
   );
 
   const handleBackToList = useCallback(() => {
@@ -150,12 +149,26 @@ export default function ReelsPage() {
     setStats(newStats);
   }, []);
 
+  const handleEditSection = useCallback(
+    (sectionId) => {
+      setSelectedSectionId(sectionId);
+      setActiveTab("edit-section");
+      updateURL("edit-section", sectionId, "section");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [updateURL],
+  );
+
+  const handleBackToSections = useCallback(() => {
+    setActiveTab("all-sections");
+    setSelectedSectionId(null);
+    updateURL("all-sections");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [updateURL]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (
-        e.key === "Escape" &&
-        (activeTab === "view" || activeTab === "edit")
-      ) {
+      if (e.key === "Escape" && (activeTab === "view" || activeTab === "edit")) {
         handleBackToList();
       }
       if (e.ctrlKey && e.key === "r") {
@@ -181,33 +194,41 @@ export default function ReelsPage() {
       icon: PlusCircle,
       description: "Upload a new reel",
     },
+     {
+      id: "all-sections",
+      label: "Reel Sections",
+      icon: Layers,
+      description: "Manage dynamic UI sections",
+    },
   ];
 
   const getBreadcrumbs = () => {
     const crumbs = [
       { label: "Dashboard", href: "/admin" },
-      { label: "Reels" },
+      { label: "Reels", onClick: handleBackToList },
     ];
     if (activeTab === "view" && selectedReel) {
       crumbs.push({ label: selectedReel.title, isActive: true });
     } else if (activeTab === "edit" && selectedReel) {
-      crumbs.push({
-        label: selectedReel.title,
-        onClick: () => setActiveTab("view"),
-      });
+      crumbs.push({ label: selectedReel.title, onClick: () => setActiveTab("view") });
       crumbs.push({ label: "Edit", isActive: true });
     } else if (activeTab === "add") {
       crumbs.push({ label: "Add New", isActive: true });
+    } else if (activeTab === "all-sections") {
+      crumbs.push({ label: "Sections", isActive: true });
+    } else if (activeTab === "edit-section") {
+      crumbs.push({ label: "Sections", onClick: handleBackToSections });
+      crumbs.push({ label: selectedSectionId ? "Edit Section" : "Add Section", isActive: true });
     }
     return crumbs;
   };
 
   const getPageTitle = () => {
-    if (activeTab === "view" && selectedReel)
-      return `Viewing: ${selectedReel.title}`;
-    if (activeTab === "edit" && selectedReel)
-      return `Editing: ${selectedReel.title}`;
-        if (activeTab === "add") return "Add New Reel";
+    if (activeTab === "view" && selectedReel) return `Viewing: ${selectedReel.title}`;
+    if (activeTab === "edit" && selectedReel) return `Editing: ${selectedReel.title}`;
+    if (activeTab === "add") return "Add New Reel";
+    if (activeTab === "all-sections") return "Reel Sections";
+    if (activeTab === "edit-section") return selectedSectionId ? "Edit Section" : "Create Section";
     return "Manage Reels";
   };
 
@@ -238,9 +259,7 @@ export default function ReelsPage() {
                 ) : (
                   <span
                     className={
-                      crumb.isActive
-                        ? "text-gray-900 dark:text-white font-medium"
-                        : "text-gray-500 dark:text-gray-400"
+                      crumb.isActive ? "text-gray-900 dark:text-white font-medium" : "text-gray-500 dark:text-gray-400"
                     }
                   >
                     {crumb.label}
@@ -264,8 +283,7 @@ export default function ReelsPage() {
                   <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                     <span className="flex items-center gap-1">
                       <RefreshCw size={10} />
-                      Last updated:{" "}
-                      {mounted ? lastRefresh.toLocaleTimeString() : "--:--:--"}
+                      Last updated: {mounted ? lastRefresh.toLocaleTimeString() : "--:--:--"}
                     </span>
                     <span className="hidden sm:inline">•</span>
                     <span className="hidden sm:inline">Press Ctrl+R to refresh</span>
@@ -293,10 +311,7 @@ export default function ReelsPage() {
                   className="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50"
                   title="Refresh (Ctrl+R)"
                 >
-                  <RefreshCw
-                    size={18}
-                    className={isRefreshing ? "animate-spin" : ""}
-                  />
+                  <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
                 </button>
 
                 {activeTab === "all" && (
@@ -311,6 +326,22 @@ export default function ReelsPage() {
                   >
                     <PlusCircle size={16} />
                     <span className="hidden sm:inline">Add Reel</span>
+                    <span className="sm:hidden">Add</span>
+                  </motion.button>
+                )}
+
+                {activeTab === "all-sections" && (
+                  <motion.button
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={() => {
+                      setActiveTab("edit-section");
+                      updateURL("edit-section");
+                    }}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl transition-all text-sm font-semibold shadow-lg shadow-violet-500/25"
+                  >
+                    <PlusCircle size={16} />
+                    <span className="hidden sm:inline">Add Section</span>
                     <span className="sm:hidden">Add</span>
                   </motion.button>
                 )}
@@ -354,12 +385,9 @@ export default function ReelsPage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {selectedReel.title}
-                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{selectedReel.title}</p>
                     <p className="text-xs text-gray-500 capitalize">
-                      {selectedReel.eventType} •{" "}
-                      {selectedReel.category || "Uncategorized"}
+                      {selectedReel.eventType} • {selectedReel.category || "Uncategorized"}
                     </p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
@@ -425,10 +453,21 @@ export default function ReelsPage() {
               )}
 
               {activeTab === "edit" && selectedReel && (
-                <EditReelTab
-                  reelId={selectedReel?._id}
-                  initialReelData={selectedReel}
-                  onSuccess={handleEditSuccess}
+                <EditReelTab reelId={selectedReel?._id} initialReelData={selectedReel} onSuccess={handleEditSuccess} />
+              )}
+
+              {activeTab === "all-sections" && (
+                <AllReelSections onEditSection={handleEditSection} refreshTrigger={refreshTrigger} />
+              )}
+
+              {activeTab === "edit-section" && (
+                <AddEditReelSection
+                  sectionId={selectedSectionId}
+                  onSuccess={() => {
+                    handleRefresh();
+                    handleBackToSections();
+                  }}
+                  onCancel={handleBackToSections}
                 />
               )}
             </motion.div>
@@ -438,14 +477,8 @@ export default function ReelsPage() {
           <div className="mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
             <p>
               Reels Management System • Press{" "}
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">
-                Esc
-              </kbd>{" "}
-              to go back •{" "}
-              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">
-                Ctrl+R
-              </kbd>{" "}
-              to refresh
+              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> to go back •{" "}
+              <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Ctrl+R</kbd> to refresh
             </p>
           </div>
         </div>
@@ -473,9 +506,7 @@ const TabButton = ({ tab, isActive, onClick }) => (
       <span className="block">{tab.label}</span>
       <span
         className={`text-xs font-normal hidden md:block ${
-          isActive
-            ? "text-rose-500 dark:text-rose-400"
-            : "text-gray-400 dark:text-gray-500"
+          isActive ? "text-rose-500 dark:text-rose-400" : "text-gray-400 dark:text-gray-500"
         }`}
       >
         {tab.description}

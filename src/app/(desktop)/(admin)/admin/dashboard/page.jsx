@@ -3,7 +3,9 @@
 import DashboardStatsCard from "@/components/desktop/admin/DashboardStatsCard";
 import {
   Users, Briefcase, Star, Layers, IdCard,
-  ShoppingCart, SendHorizontal, Cake, CalendarCheck, Megaphone, BookOpen, Mail
+  ShoppingCart, SendHorizontal, Cake, CalendarCheck, Megaphone, BookOpen, Mail,
+  MessageSquare,
+  Calendar1
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { VendorCategoriesChart } from "@/components/desktop/ui/Charts/VendorCategoriesChart";
@@ -28,6 +30,8 @@ export default function DashboardPage() {
     totalContactRequests: 0,
     totalBlogs: 0,
     totalNewsletterSubscribers: 0,
+    totalTestimonials: 0,
+    totalScheduledMeetings: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -129,6 +133,18 @@ export default function DashboardPage() {
           title="Newsletter Subs"
           value={stats.totalNewsletterSubscribers}
           icon={Mail}
+          loading={loading}
+        />
+        <DashboardStatsCard
+          title="Total Testimonials"
+          value={stats.totalTestimonials}
+          icon={MessageSquare}
+          loading={loading}
+        />
+        <DashboardStatsCard
+          title="Scheduled Meetings"
+          value={stats.totalScheduledMeetings}
+          icon={Calendar1}
           loading={loading}
         />
       </div>

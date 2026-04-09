@@ -84,6 +84,7 @@ import { ShareModal } from "./VendorProfilePageWrapper";
 import { useUser } from "@clerk/nextjs";
 import SmartMedia from "../SmartMediaLoader";
 import { useNavigationState } from "../../../hooks/useNavigationState";
+import { REEL_SUBTYPES } from "../../desktop/admin/reels/AddReels";
 
 const EVENT_CONFIGS = {
   wedding: {
@@ -372,6 +373,16 @@ const fetchFeaturedReels = async (params = {}) => {
     return res.json();
   } catch {
     return { reels: [] };
+  }
+};
+
+const fetchCustomReelSections = async (params = {}) => {
+  try {
+    const res = await fetch(`/api/reels/reel-sections/feed?${buildQuery(params)}`);
+    if (!res.ok) return { data: [] };
+    return res.json();
+  } catch {
+    return { data: [] };
   }
 };
 
@@ -863,8 +874,16 @@ ScrollCarousel.displayName = "ScrollCarousel";
 
 const SingleRowCarousel = ({ section, onItemClick }) => (
   <div className="mb-5">
-    <div className="flex items-center justify-between px-4 mb-2">
-      <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
+    <div className="flex flex-col gap-0.5 px-4 mb-2">
+      <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-1.5">
+        {section.title}
+        {section.isCustomSection && <Crown size={12} className="text-amber-500 shrink-0" />}
+      </h3>
+      {section.subtitle && (
+        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+          {section.subtitle}
+        </p>
+      )}
     </div>
     <ScrollCarousel>
       {section.items.length > 0 ? (
@@ -885,11 +904,19 @@ const TwoRowGridCarousel = ({ section, onItemClick }) => {
     <div className="relative mx-3 rounded-3xl overflow-hidden bg-white/[0.04] backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_24px_rgba(0,0,0,0.20),0_2px_6px_rgba(0,0,0,0.10)] pt-[14px] pb-3 mb-5">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
       <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
-      <div className="flex items-center px-4 mb-3">
+      <div className="flex flex-col px-4 mb-3 gap-0.5">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-4 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
-          <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight">{section.title}</h3>
+          <div className="w-1 h-4 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500 shrink-0" />
+          <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-1.5">
+            {section.title}
+            {section.isCustomSection && <Crown size={12} className="text-amber-500 shrink-0" />}
+          </h3>
         </div>
+        {section.subtitle && (
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate ml-3">
+            {section.subtitle}
+          </p>
+        )}
       </div>
       <ScrollCarousel>
         {topItems.map((item, idx) => (
@@ -2258,6 +2285,7 @@ export default function IdeasPageWrapper() {
   const urlReel = searchParams.get("reel") || null;
   const urlSearch = searchParams.get("q") || "";
   const urlSubType = searchParams.get("subType") || searchParams.get("wf") || "all";
+  const urlNestedType = searchParams.get("nestedType") || "all";
 
   const [isDirectReelLoading, setIsDirectReelLoading] = useState(!!urlReel);
 
@@ -2313,6 +2341,7 @@ export default function IdeasPageWrapper() {
   const [activeCategory, setActiveCategory] = useState(urlCategory);
   const [activeSubcategory, setActiveSubcategory] = useState(urlSubcategory);
   const [activeSubType, setActiveSubType] = useState(urlSubType);
+  const [activeNestedType, setActiveNestedType] = useState(urlNestedType);
 
   const [reelsViewerData, setReelsViewerData] = useState(null);
   const [drawerItem, setDrawerItem] = useState(null);
@@ -2346,11 +2375,12 @@ export default function IdeasPageWrapper() {
     if (activeCategory) params.category = activeCategory;
     if (activeSubcategory) params.subcategory = activeSubcategory;
     if (activeSubType && activeSubType !== "all") params.subType = activeSubType;
+    if (activeNestedType && activeNestedType !== "all") params.nestedType = activeNestedType;
     if (filterState.sort && filterState.sort !== "relevance") params.sort = filterState.sort;
     if (filterState.minRating) params.rating = String(filterState.minRating);
     if (filterState.location) params.location = filterState.location;
     return params;
-  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, activeNestedType, filterState]);
 
   const syncURL = useCallback(
     (extra = {}) => {
@@ -2366,7 +2396,7 @@ export default function IdeasPageWrapper() {
   useEffect(() => {
     if (showModal) return;
     syncURL();
-  }, [eventType, activeCategory, activeSubcategory, activeSubType, filterState, showModal, syncURL]);
+  }, [eventType, activeCategory, activeSubcategory, activeSubType, activeNestedType, filterState, showModal, syncURL]);
 
   useEffect(() => {
     setRecentlyViewedReels(getRecentlyViewed());
@@ -2395,6 +2425,21 @@ export default function IdeasPageWrapper() {
     return EVENT_SECTION_HEADINGS[index % EVENT_SECTION_HEADINGS.length];
   }, []);
 
+  const dynamicQuickFilters = useMemo(() => {
+    if (!eventType) return [];
+    const types = REEL_SUBTYPES[eventType] || [];
+    if (types.length === 0) return [];
+    return [{ id: "all", label: "All" }, ...types.map(t => ({ id: t.value, label: t.label }))];
+  }, [eventType]);
+
+  const dynamicNestedFilters = useMemo(() => {
+    if (!eventType || activeSubType === "all") return [];
+    const subtypeObj = (REEL_SUBTYPES[eventType] || []).find(t => t.value === activeSubType);
+    if (!subtypeObj || !subtypeObj.nestedTypes || subtypeObj.nestedTypes.length === 0) return [];
+    
+    return [{ id: "all", label: "All" }, ...subtypeObj.nestedTypes.map(nt => ({ id: nt.value, label: nt.label }))];
+  }, [eventType, activeSubType]);
+
   useEffect(() => {
     if (!eventType || !config) return;
 
@@ -2413,6 +2458,7 @@ export default function IdeasPageWrapper() {
       if (activeCategory) baseParams.category = activeCategory;
       if (activeSubcategory) baseParams.subcategory = activeSubcategory;
       if (activeSubType && activeSubType !== "all") baseParams.subType = activeSubType;
+      if (activeNestedType && activeNestedType !== "all") baseParams.nestedType = activeNestedType;
       if (filterState.location) baseParams.city = filterState.location;
 
       if (filterState.sort === "trending") {
@@ -2432,10 +2478,11 @@ export default function IdeasPageWrapper() {
       if (filterState.minRating) baseParams.minPriority = Math.round(((filterState.minRating - 3.5) / 1.5) * 100);
 
       try {
-        const [mainResult, featuredResult, trendingResult] = await Promise.all([
+        const [mainResult, featuredResult, trendingResult, customSectionsResult] = await Promise.all([
           fetchReels(baseParams),
           fetchFeaturedReels({ limit: 15, type: eventType }),
           fetchTrendingReels({ limit: 15, type: eventType }),
+          fetchCustomReelSections(baseParams)
         ]);
 
         if (cancelled || version !== fetchVersionRef.current) return;
@@ -2443,6 +2490,11 @@ export default function IdeasPageWrapper() {
         const allReels = (mainResult.data || []).map(normalizeReel);
         const featuredReels = (featuredResult.reels || []).map(normalizeReel);
         const tReels = (trendingResult.reels || []).map(normalizeReel);
+
+        const customSecs = (customSectionsResult.data || []).map(sec => ({
+          ...sec,
+          items: sec.items.map(normalizeReel)
+        }));
 
         setTrendingReels(tReels);
         setPaginationInfo(mainResult.pagination || null);
@@ -2551,8 +2603,33 @@ export default function IdeasPageWrapper() {
           });
         }
 
-        setCarouselSections(sections);
+        // 🔥 ADDED: Dynamic Interleaving Logic
+        const finalSections = [];
+        let customIdx = 0;
+        let regularIdx = 0;
+        const REGULAR_INTERVAL = 2; // Inject 1 custom section every 2 regular sections
+
+        // Guarantee highest priority custom section is always absolutely top
+        if (customSecs.length > 0) {
+          finalSections.push(customSecs[customIdx]);
+          customIdx++;
+        }
+
+        // Interleave the rest
+        while (regularIdx < sections.length || customIdx < customSecs.length) {
+          for (let i = 0; i < REGULAR_INTERVAL && regularIdx < sections.length; i++) {
+            finalSections.push(sections[regularIdx]);
+            regularIdx++;
+          }
+          if (customIdx < customSecs.length) {
+            finalSections.push(customSecs[customIdx]);
+            customIdx++;
+          }
+        }
+
+        setCarouselSections(finalSections);
         setInitialLoadDone(true);
+
       } catch {
         if (!cancelled && version === fetchVersionRef.current) {
           setCarouselSections([]);
@@ -2573,6 +2650,7 @@ export default function IdeasPageWrapper() {
     activeSubcategory,
     filterState,
     activeSubType,
+    activeNestedType,
     config,
     activeCategoryData,
     eventLabel,
@@ -2676,6 +2754,7 @@ export default function IdeasPageWrapper() {
     setActiveCategory(null);
     setActiveSubcategory(null);
     setActiveSubType("all");
+    setActiveNestedType("all");
     setInitialLoadDone(false);
   };
 
@@ -2697,6 +2776,12 @@ export default function IdeasPageWrapper() {
 
   const handleSubTypeClick = (filterId) => {
     setActiveSubType(filterId);
+    setActiveNestedType("all");
+    setInitialLoadDone(false);
+  };
+
+  const handleNestedTypeClick = (filterId) => { // 👈 NEW HANDLER
+    setActiveNestedType(filterId);
     setInitialLoadDone(false);
   };
 
@@ -2833,13 +2918,31 @@ export default function IdeasPageWrapper() {
         </motion.button>
       </div>
 
-      {config.quickFilters && config.quickFilters.length > 0 && (
+      {dynamicQuickFilters.length > 0 && (
         <QuickFiltersCarousel
           activeFilter={activeSubType}
           onFilterClick={handleSubTypeClick}
-          filters={config.quickFilters}
+          filters={dynamicQuickFilters}
         />
       )}
+
+      <AnimatePresence>
+        {dynamicNestedFilters.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            {/* Using the SubcategoryChips component so it looks visually distinct from the main filters */}
+            <SubcategoryChips
+              subcategories={dynamicNestedFilters}
+              activeSubcategory={activeNestedType}
+              onSubcategoryClick={handleNestedTypeClick}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-100/80 dark:border-gray-800/80">
         <CategoryGridCarousel

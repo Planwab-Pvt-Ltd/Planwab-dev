@@ -11,6 +11,8 @@ import Lead from "@/database/models/LeadsModel";
 import Blog from "@/database/models/BlogModel";
 import Newsletter from "@/database/models/NewsletterModel";
 import mongoose from "mongoose";
+import TestimonialModel from "../../../../database/models/TestimonialsModel";
+import ScheduleMeetModel from './../../../../database/models/ScheduleMeetModel';
 
 export async function GET() {
     try {
@@ -38,6 +40,8 @@ export async function GET() {
             totalContactRequests,
             totalBlogs,
             totalNewsletterSubscribers,
+            totalTestimonials,
+            totalScheduledMeetings,
         ] = await Promise.all([
             Vendor.countDocuments(),
             Vendor.countDocuments({ isFeatured: true }),
@@ -52,6 +56,8 @@ export async function GET() {
             ContactUs.countDocuments(),
             Blog.countDocuments(),
             Newsletter.countDocuments(),
+            TestimonialModel.countDocuments(),
+            ScheduleMeetModel.countDocuments(),
         ]);
 
         const totalCategories = categories.length;
@@ -73,6 +79,8 @@ export async function GET() {
                     totalContactRequests,
                     totalBlogs,
                     totalNewsletterSubscribers,
+                    totalTestimonials,
+                    totalScheduledMeetings,
                 },
             },
             { status: 200 }
