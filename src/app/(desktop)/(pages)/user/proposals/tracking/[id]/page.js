@@ -1,13 +1,32 @@
 import ProposalTrackingPageWrapper from "@/components/desktop/PagesWrapper/TrackingProposalsPagewrapper";
+import { getPlannedEventById } from "@/database/actions/FetchActions";
 
 export async function generateMetadata({ params }) {
-  const resolvedParams = await params;
-  const id = resolvedParams?.id;
-  const shortId = id ? id.slice(0, 8).toUpperCase() : "";
+  const { id } = await params;
+  const event = await getPlannedEventById(id);
+
+  if (!event) {
+    return {
+      title: "Proposal Tracking | PlanWAB",
+      description: "Track the real-time status of your event proposal on PlanWAB.",
+    };
+  }
+
+  const formattedCategory = event.category
+    ? event.category.charAt(0).toUpperCase() + event.category.slice(1)
+    : "Event";
+  const statusMap = {
+    "pending": "Pending Review",
+    "in-progress": "In Progress",
+    "proposal-sent": "Proposal Ready",
+    "confirmed": "Confirmed",
+    "cancelled": "Cancelled",
+  };
+  const statusLabel = statusMap[event.status] || "Tracking";
 
   return {
-    title: `Proposal Tracking${shortId ? ` — #${shortId}` : ""} | PlanWAB`,
-    description: `Track the real-time status of your event proposal${shortId ? ` #${shortId}` : ""} on PlanWAB.`,
+    title: `${formattedCategory} Proposal — ${statusLabel} | PlanWAB`,
+    description: `Track your ${formattedCategory} event proposal in ${event.city}. Current status: ${statusLabel}. Stay updated with PlanWAB's real-time tracking.`,
   };
 }
 
@@ -18,3 +37,4 @@ export default function ProposalTrackingPage() {
     </>
   );
 }
+

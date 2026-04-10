@@ -1,13 +1,27 @@
 import SingleBlogPageWrapper from "@/components/mobile/PagesWrapper/SingleBlogPageWrapper";
+import { getBlogById } from "@/database/actions/FetchActions";
 
 export async function generateMetadata({ params }) {
-  const resolvedParams = await params;
-  const id = await resolvedParams?.id;
-  const formattedTitle = id ? id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "Blog Post";
+  const { id } = await params;
+  const blog = await getBlogById(id);
+
+  if (!blog) {
+    return {
+      title: "Blog Post | PlanWAB Blog",
+      description: "Read inspiring event planning tips and stories on PlanWAB Blog.",
+    };
+  }
 
   return {
-    title: `${formattedTitle} | PlanWAB Blog`,
-    description: `Read the latest insights and tips about ${formattedTitle}.`,
+    title: `${blog.title} | PlanWAB Blog`,
+    description: blog.excerpt
+      ? blog.excerpt.substring(0, 160)
+      : `Read "${blog.title}" on PlanWAB Blog — written by ${blog.authorName}.`,
+    openGraph: {
+      title: `${blog.title} | PlanWAB Blog`,
+      description: blog.excerpt ? blog.excerpt.substring(0, 160) : "",
+      images: blog.coverImage ? [{ url: blog.coverImage }] : [],
+    },
   };
 }
 
@@ -18,3 +32,4 @@ export default function SingleBlogPage() {
     </>
   );
 }
+
