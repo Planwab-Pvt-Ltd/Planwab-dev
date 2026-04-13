@@ -11,6 +11,9 @@ import { useNavbarVisibilityStore } from "../../../GlobalState/navbarVisibilityS
 
 import CategoryGrid from "../homepage/CategoriesGrid";
 import HowItWorksSection from "../../desktop/HomePage/HowItWorks";
+import { BookingDrawer, normalizeReel, ReelsViewerModal, SingleRowCarousel } from "./IdeasPageWrapper";
+import { sub } from "three/src/nodes/math/OperatorNode.js";
+import { useUser } from "@clerk/clerk-react";
 
 
 const ServicesSteps = lazy(() => import("../homepage/ServicesSteps"));
@@ -123,20 +126,121 @@ const HeroSection = memo(() => {
   );
 });
 
+const HomepageCarouselSkeleton = () => (
+  <div className="mb-5 w-full overflow-hidden">
+    {/* Header Skeleton */}
+    <div className="flex flex-col gap-1.5 px-4 mb-2.5">
+      <div className="h-[14px] w-40 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+      <div className="h-[10px] w-24 bg-gray-100 dark:bg-gray-800/60 rounded animate-pulse" />
+    </div>
+    
+    {/* Scrollable Items Skeleton */}
+    <div className="flex gap-2.5 overflow-hidden px-5 pb-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div 
+          key={i} 
+          className="w-[104px] h-[140px] shrink-0 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse ring-1 ring-black/[0.04] dark:ring-white/[0.06]" 
+        />
+      ))}
+    </div>
+  </div>
+);
 
 const LazyFallback = () => null;
 
 const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
   const haptic = useHapticFeedback();
+  const { user, isLoaded } = useUser();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get("category") || "Default";
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { setIsNavbarVisible } = useNavbarVisibilityStore();
-
+  const [detosSections, setDetosSections] = useState(null);
+  const [reelsViewerData, setReelsViewerData] = useState(null);
+  const [drawerItem, setDrawerItem] = useState(null);
+  const [userInteractions, setUserInteractions] = useState({ liked: new Set(), saved: new Set() });
+  const [isLoadingDetos, setIsLoadingDetos] = useState(true);
+  
   const handleCloseDrawer = () => {
     haptic("light");
     setIsDrawerOpen(false);
     setIsNavbarVisible(true);
+  };
+
+  useEffect(()=> {
+    const category = currentCategory.toLowerCase() || 'wedding';
+    const sectionIdMap = {
+      wedding: "69dcf76d752950b5b0019c21",
+      birthday: "69dd0548b3f84faa630983ad",
+      anniversary: "69dd0517b3f84faa630983a6",
+      events: "69dd0598b3f84faa630983b4",
+    };
+    const sectionId = sectionIdMap[category] || sectionIdMap['events'];
+    
+    const fetchDetos = async () => {
+      setIsLoadingDetos(true);
+      try {
+        const response = await fetch(`/api/reels/reel-sections/${sectionId}`);
+        const json = await response.json();
+        
+        if (json.success && json.data) {
+          setDetosSections({
+            title: json.data.title || "Trending Reels",
+            subtitle: json.data.subtitle || "",
+            items: (json.data.linkedReels || []).map(normalizeReel),
+            isCustomSection: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching detos:", error);
+      } finally {
+        setIsLoadingDetos(false);
+      }
+    };
+
+    fetchDetos();
+  }, [currentCategory]);
+
+   useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    const fetchInteractions = async () => {
+      try {
+        const res = await fetch(`/api/user/interactionsLists?userId=${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          const likedIds = new Set(data.reels?.liked?.map((r) => r._id) || []);
+          const savedIds = new Set(data.reels?.watchlist?.map((r) => r._id) || []);
+          setUserInteractions({ liked: likedIds, saved: savedIds });
+        }
+      } catch (err) {
+        console.error("Failed to fetch user interactions:", err);
+      }
+    };
+
+    fetchInteractions();
+  }, [isLoaded, user]);
+
+  const handleDetoClick = useCallback(
+      (item, allItems, index) => {
+        setReelsViewerData({ reels: allItems, initialIndex: index });
+        setIsNavbarVisible(false);
+      },
+      [setIsNavbarVisible],
+  );
+
+  const handleCloseReels = useCallback(() => {
+      setReelsViewerData(null);
+      setIsNavbarVisible(true);
+    }, [setIsNavbarVisible]);
+
+  const handleBookNow = (item) => {
+    setDrawerItem(item);
+    setIsNavbarVisible(false);
+  };
+
+  const handleDetoCloseDrawer = () => {
+    setDrawerItem(null);
   };
 
   const banner2Url = {
@@ -210,6 +314,17 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
             />
           </motion.div>
         </Link>
+      </div>
+
+     <div className="w-full relative min-h-[220px] overflow-hidden">
+        {isLoadingDetos ? (
+            <HomepageCarouselSkeleton />
+        ) : detosSections && detosSections.items?.length > 0 ? (
+          <SingleRowCarousel 
+            section={detosSections} 
+            onItemClick={handleDetoClick} 
+          />
+        ) : null}
       </div>
 
       <div className="min-h-[200px] transition-all">{mostBookedSlot}</div>
@@ -293,6 +408,20 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
           />
         </Suspense>
       )}
+
+      <AnimatePresence>
+              {reelsViewerData && (
+                <ReelsViewerModal
+                  reels={reelsViewerData.reels}
+                  initialIndex={reelsViewerData.initialIndex}
+                  onClose={handleCloseReels}
+                  onBookNow={handleBookNow}
+                  userInteractions={userInteractions}
+                />
+              )}
+      </AnimatePresence>
+
+      <AnimatePresence>{drawerItem && <BookingDrawer item={drawerItem} onClose={handleDetoCloseDrawer} />}</AnimatePresence>
 
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {

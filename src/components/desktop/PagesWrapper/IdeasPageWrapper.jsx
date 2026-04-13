@@ -464,7 +464,7 @@ const fetchReelById = async (reelId) => {
   }
 };
 
-const normalizeReel = (reel) => ({
+export const normalizeReel = (reel) => ({
   id: reel._id || reel.id,
   _id: reel._id || reel.id,
   title: reel.title || "Untitled",
@@ -992,7 +992,7 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
 
 ScrollCarousel.displayName = "ScrollCarousel";
 
-const DesktopCarouselSection = ({ section, onItemClick }) => {
+export const DesktopCarouselSection = ({ section, onItemClick }) => {
   if (!section.items || section.items.length === 0) return null;
   return (
     <section className="space-y-3">
@@ -1410,7 +1410,7 @@ const EventSelectionModal = ({ onSelect }) => {
   );
 };
 
-const BookingDrawer = ({ item, onClose }) => {
+export const BookingDrawer = ({ item, onClose }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(0);
   const packages = [
@@ -1534,7 +1534,7 @@ const BookingDrawer = ({ item, onClose }) => {
   );
 };
 
-const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
+export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
   const router = useRouter();
   const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
   const [reels, setReels] = useState(initialReels);

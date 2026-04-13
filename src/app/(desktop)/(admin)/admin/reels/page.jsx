@@ -25,6 +25,7 @@ export default function ReelsPage() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState(null);
+  const [sectionStats, setSectionStats] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -149,6 +150,10 @@ export default function ReelsPage() {
     setStats(newStats);
   }, []);
 
+  const handleSectionStatsUpdate = useCallback((newStats) => {
+    setSectionStats(newStats);
+  }, []);
+
   const handleEditSection = useCallback(
     (sectionId) => {
       setSelectedSectionId(sectionId);
@@ -199,6 +204,7 @@ export default function ReelsPage() {
       label: "Reel Sections",
       icon: Layers,
       description: "Manage dynamic UI sections",
+      badge: sectionStats?.total,
     },
   ];
 
@@ -457,7 +463,7 @@ export default function ReelsPage() {
               )}
 
               {activeTab === "all-sections" && (
-                <AllReelSections onEditSection={handleEditSection} refreshTrigger={refreshTrigger} />
+                <AllReelSections onEditSection={handleEditSection} refreshTrigger={refreshTrigger} onStatsUpdate={handleSectionStatsUpdate}/>
               )}
 
               {activeTab === "edit-section" && (

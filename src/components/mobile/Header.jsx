@@ -92,7 +92,7 @@ const TABS_CONFIG = [
     id: "Wedding",
     label: "Wedding",
     styles: "bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430828/WeddingCat_qz1gdd.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097681/WeddingCat_qz1gdd_lopcu3.png",
     src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429996/WeddingHeaderCard_vslgmt.png",
     placeholders: ["Wedding Venues", "Bridal Makeup", "Mehndi Artists"],
   },
@@ -100,7 +100,7 @@ const TABS_CONFIG = [
     id: "Anniversary",
     label: "Anniversary",
     styles: "bg-gradient-to-r from-gray-900 via-pink-700 to-gray-900",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430833/AnniversaryCat_iyr77x.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097683/AnniversaryCat_iyr77x_x4ytra.png",
     src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429999/AnniversaryHeaderCard_garm4n.png",
     placeholders: ["Romantic Dinner", "Flower Bouquets", "Couple Spa"],
   },
@@ -108,7 +108,7 @@ const TABS_CONFIG = [
     id: "Birthday",
     label: "Birthday",
     styles: "bg-gradient-to-r from-gray-900 via-yellow-600 to-gray-900",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430838/BirthdayCat_adjjnh.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097682/BirthdayCat_adjjnh_ocub5e.png",
     src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429994/BirthdayHeaderCard_nat4mj.png",
     placeholders: ["Birthday Cakes", "Party Decor", "Event Planners"],
   },
@@ -239,11 +239,11 @@ const CategoryButton = memo(({ category, imageSrc, active, onClick, styles, src 
     {active ? (
       <>
         <div className="relative flex items-center justify-center z-10 shrink-0 pb-2">
-          <SmartMedia
+          {/* <SmartMedia
             src={imageSrc}
             alt={category}
             className={`object-contain ${category === "Anniversary" ? "w-7 h-9" : "w-10 h-15"}`}
-          />
+          /> */}
         </div>
         <span className="whitespace-nowrap text-sm font-bold text-white z-10 truncate">{category}</span>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-white/50 rounded-full w-[70%] z-10" />

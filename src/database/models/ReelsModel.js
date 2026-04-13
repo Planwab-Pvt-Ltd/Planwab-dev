@@ -1,5 +1,6 @@
 // models/Reel.js
 import mongoose from "mongoose";
+import { min } from "three/src/nodes/math/MathNode.js";
 
 const reelSchema = new mongoose.Schema(
   {
@@ -219,8 +220,10 @@ const reelSectionSchema = new mongoose.Schema(
     },
     priority: { 
       type: Number, 
-      default: 0, 
-      index: true 
+      default: 10, 
+      index: true,
+      min: 0,
+      max: 10,
     }, // Useful for ordering multiple carousels on the feed
 
     // ── Audit ────────────────────────────────────────────────────────────
