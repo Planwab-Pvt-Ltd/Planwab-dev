@@ -2,6 +2,8 @@ import VendorProfile from "../models/VendorProfileModel";
 import { connectToDatabase } from "../mongoose";
 import Vendor from './../models/VendorModel';
 import Review from './../models/VendorsReviewsModel';
+import Blog from './../models/BlogModel';
+import PlannedEvent from './../models/PlannedEvent';
 import { cache } from "react";
 
 const logAction = (actionName, details = "") => {
@@ -147,6 +149,36 @@ export const getRelatedVendors = cache(async (id) => {
   } catch (error) {
     logError("getRelatedVendors", error);
     return { similarVendors: [], recommendedVendors: [] };
+  }
+});
+
+export const getBlogById = cache(async (id) => {
+  try {
+    logAction("getBlogById", `Start fetching blog with ID: ${id}`);
+    await connectToDatabase();
+    const blog = await Blog.findById(id)
+      .select("title excerpt coverImage category authorName readTime")
+      .lean();
+    logAction("getBlogById", `Successfully fetched blog with ID: ${id}`);
+    return blog ? sanitize(blog) : null;
+  } catch (error) {
+    logError("getBlogById", error);
+    return null;
+  }
+});
+
+export const getPlannedEventById = cache(async (id) => {
+  try {
+    logAction("getPlannedEventById", `Start fetching planned event with ID: ${id}`);
+    await connectToDatabase();
+    const event = await PlannedEvent.findById(id)
+      .select("category city status contactName eventDetails")
+      .lean();
+    logAction("getPlannedEventById", `Successfully fetched planned event with ID: ${id}`);
+    return event ? sanitize(event) : null;
+  } catch (error) {
+    logError("getPlannedEventById", error);
+    return null;
   }
 });
 
