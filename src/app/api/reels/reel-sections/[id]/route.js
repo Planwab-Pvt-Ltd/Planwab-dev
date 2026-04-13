@@ -15,7 +15,6 @@ export async function GET(req, { params }) {
 
     const section = await ReelSection.findById(id).populate({
       path: "linkedReels",
-      select: "title thumbnailUrl viewCount type category", // Populate for the multi-select UI preview
     });
 
     if (!section) {
@@ -48,7 +47,7 @@ export async function PUT(req, { params }) {
       { new: true, runValidators: true }
     ).populate({
       path: "linkedReels",
-      select: "title thumbnailUrl viewCount",
+      select: "title thumbnailUrl viewCount type category videoUrl",
     });
 
     if (!updatedSection) {

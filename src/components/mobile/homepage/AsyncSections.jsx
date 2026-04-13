@@ -3,8 +3,14 @@ import { VendorCarousel } from "../PagesWrapper/FindAVendorPageWrapper";
 import MostBooked from "./MostBooked";
 import { getMostBookedVendors, getTopPlanners, getTrendingVendors } from "../../../database/actions/FetchActions";
 
-export async function AsyncPlannersSection() {
-  const planners = await getTopPlanners();
+const getPageForCategory = (category) => {
+  const map = { Wedding: 1, Anniversary: 2, Birthday: 3, Events: 4 };
+  return map[category] || 1;
+};
+
+export async function AsyncPlannersSection({ category = "Wedding" }) {
+  const page = getPageForCategory(category);
+  const planners = await getTopPlanners(page);
   return (
     <VendorCarousel
       title="Top Event Planners"
@@ -16,8 +22,9 @@ export async function AsyncPlannersSection() {
   );
 }
 
-export async function AsyncTrendingSection() {
-  const trending = await getTrendingVendors();
+export async function AsyncTrendingSection({ category = "Wedding" }) {
+  const page = getPageForCategory(category);
+  const trending = await getTrendingVendors(page);
   return (
     <VendorCarousel
       title="Trending Vendors"
@@ -29,7 +36,8 @@ export async function AsyncTrendingSection() {
   );
 }
 
-export async function AsyncMostBookedSection() {
-  const mostBooked = await getMostBookedVendors();
+export async function AsyncMostBookedSection({ category = "Wedding" }) {
+  const page = getPageForCategory(category);
+  const mostBooked = await getMostBookedVendors(page);
   return <MostBooked initialData={mostBooked} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCategoryStore } from "@/GlobalState/CategoryStore";
 import HeroSection from "../HomePage/HeroSection";
@@ -16,6 +16,8 @@ import { Camera, MapPin, PersonStanding } from "lucide-react";
 import CarouselHeader from "../CarouselHeader";
 import CardsWithBanner from "../HomePage/CardsWithBanner";
 import SmartMedia from "../SmartMediaLoader";
+import { BookingDrawer, DesktopCarouselSection, normalizeReel, ReelsViewerModal } from "./IdeasPageWrapper";
+import { useUser } from "@clerk/clerk-react";
 
 export const categoryThemes = {
   Events: {
@@ -405,6 +407,23 @@ function buildEmptySections(category) {
   }, {});
 }
 
+const DesktopDetosSkeleton = () => (
+  <div className="mb-8 w-full overflow-hidden">
+    <div className="flex flex-col gap-1.5 px-4 mb-3">
+      <div className="h-[16px] w-48 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+      <div className="h-[12px] w-32 bg-gray-100 dark:bg-gray-800/60 rounded animate-pulse" />
+    </div>
+    <div className="flex gap-3 overflow-hidden px-4 pb-2">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div 
+          key={i} 
+          className="w-[104px] h-[140px] shrink-0 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse ring-1 ring-black/[0.04] dark:ring-white/[0.06]" 
+        />
+      ))}
+    </div>
+  </div>
+);
+
 export default function DesktopHomePageWrapper() {
   const { activeCategoryDesktop: rawActiveCategory, setActiveCategoryDesktop: setActiveCategory } = useCategoryStore();
   const searchParams = useSearchParams();
@@ -413,9 +432,93 @@ export default function DesktopHomePageWrapper() {
   const sectionsCategoryRef = useRef(null);
   const initializedRef = useRef(false);
 
+  const { user, isLoaded } = useUser();
+  const [detosSections, setDetosSections] = useState(null);
+  const [isLoadingDetos, setIsLoadingDetos] = useState(true);
+  const [reelsViewerData, setReelsViewerData] = useState(null);
+  const [drawerItem, setDrawerItem] = useState(null);
+  const [userInteractions, setUserInteractions] = useState({ liked: new Set(), saved: new Set() });
+
   const activeCategory = resolveCategory(rawActiveCategory);
 
   const [sections, setSections] = useState(() => buildEmptySections(activeCategory));
+
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    const fetchInteractions = async () => {
+      try {
+        const res = await fetch(`/api/user/interactionsLists?userId=${user.id}`);
+        const data = await res.json();
+        if (data.success) {
+          const likedIds = new Set(data.reels?.liked?.map((r) => r._id) || []);
+          const savedIds = new Set(data.reels?.watchlist?.map((r) => r._id) || []);
+          setUserInteractions({ liked: likedIds, saved: savedIds });
+        }
+      } catch (err) {
+        console.error("Failed to fetch user interactions:", err);
+      }
+    };
+    fetchInteractions();
+  }, [isLoaded, user]);
+
+  // Fetch Detos (Reel Sections)
+  useEffect(()=> {
+    const category = activeCategory.toLowerCase() || 'wedding';
+    const sectionIdMap = {
+       wedding: "69dcf76d752950b5b0019c21",
+      birthday: "69dd0548b3f84faa630983ad",
+      anniversary: "69dd0517b3f84faa630983a6",
+      events: "69dd0598b3f84faa630983b4",
+    };
+    const sectionId = sectionIdMap[category] || sectionIdMap['events'];
+    
+    const fetchDetos = async () => {
+      setIsLoadingDetos(true);
+      try {
+        const response = await fetch(`/api/reels/reel-sections/${sectionId}`);
+        const json = await response.json();
+        
+        if (json.success && json.data) {
+          const normalizedItems = (json.data.linkedReels || []).map((reel) => {
+            const mappedReel = normalizeReel(reel);
+            
+            // Temporary fix for missing videoUrl
+            if (!mappedReel.videoUrl && reel.thumbnailUrl) {
+              mappedReel.videoUrl = reel.thumbnailUrl.replace('_thumbnail.png', '.mp4');
+            }
+            
+            return mappedReel;
+          });
+
+          setDetosSections({
+            title: json.data.title || "Trending Reels",
+            subtitle: json.data.subtitle || "",
+            items: normalizedItems,
+            isCustomSection: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching detos:", error);
+      } finally {
+        setIsLoadingDetos(false);
+      }
+    };
+
+    fetchDetos();
+  }, [activeCategory]);
+
+  // Reel Handlers
+  const handleDetoClick = useCallback((item, allItems, index) => {
+    setReelsViewerData({ reels: allItems, initialIndex: index });
+  }, []);
+
+  const handleCloseReels = useCallback(() => {
+    setReelsViewerData(null);
+  }, []);
+
+  const handleBookNow = (item) => {
+    setDrawerItem(item);
+  };
 
   // Sync store if raw value was invalid
   useEffect(() => {
@@ -670,6 +773,17 @@ export default function DesktopHomePageWrapper() {
         </div>
       </motion.div>
 
+      <div className="max-w-7xl mx-auto mt-8 mb-10 relative min-h-[220px]">
+        {isLoadingDetos ? (
+          <DesktopDetosSkeleton />
+        ) : detosSections && detosSections.items?.length > 0 ? (
+          <DesktopCarouselSection 
+            section={detosSections} 
+            onItemClick={handleDetoClick} 
+          />
+        ) : null}
+      </div>
+
       {currentSectionKeys.includes("planners") && (
         <>
           {renderCarouselHeader("planners", "left")}
@@ -780,6 +894,22 @@ export default function DesktopHomePageWrapper() {
       <VendorsCatSection buttonColor={currentTheme?.gradientLight || "#ec4899"} />
       <ServicesBanner />
       <Testimonials />
+
+      <AnimatePresence>
+              {drawerItem && <BookingDrawer item={drawerItem} onClose={() => setDrawerItem(null)} />}
+       </AnimatePresence>
+
+      <AnimatePresence>
+        {reelsViewerData && (
+          <ReelsViewerModal
+            reels={reelsViewerData.reels}
+            initialIndex={reelsViewerData.initialIndex}
+            onClose={handleCloseReels}
+            onBookNow={handleBookNow}
+            userInteractions={userInteractions}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }

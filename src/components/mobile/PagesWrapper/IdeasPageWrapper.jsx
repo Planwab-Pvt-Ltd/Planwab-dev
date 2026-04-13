@@ -482,7 +482,7 @@ const fetchReelById = async (reelId) => {
   }
 };
 
-const normalizeReel = (reel) => ({
+export const normalizeReel = (reel) => ({
   id: reel._id || reel.id,
   _id: reel._id || reel.id,
   title: reel.title || "Untitled",
@@ -562,7 +562,7 @@ const ShimmerBlock = ({ className }) => (
   />
 );
 
-const CarouselSkeleton = ({ isDouble = false }) => (
+export const CarouselSkeleton = ({ isDouble = false }) => (
   <div
     className={
       isDouble
@@ -872,23 +872,23 @@ export const ScrollCarousel = memo(({ children, className = "" }) => {
 });
 ScrollCarousel.displayName = "ScrollCarousel";
 
-const SingleRowCarousel = ({ section, onItemClick }) => (
+export const SingleRowCarousel = ({ section, onItemClick }) => (
   <div className="mb-5">
     <div className="flex flex-col gap-0.5 px-4 mb-2">
       <h3 className="text-[13px] font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-1.5">
-        {section.title}
-        {section.isCustomSection && <Crown size={12} className="text-amber-500 shrink-0" />}
+        {section?.title}
+        {section?.isCustomSection && <Crown size={12} className="text-amber-500 shrink-0" />}
       </h3>
-      {section.subtitle && (
+      {section?.subtitle && (
         <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-          {section.subtitle}
+          {section?.subtitle}
         </p>
       )}
     </div>
     <ScrollCarousel>
-      {section.items.length > 0 ? (
-        section.items.map((item, idx) => (
-          <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section.items, idx)} />
+      {section?.items?.length > 0 ? (
+        section?.items?.map((item, idx) => (
+          <MiniCard key={item.id} item={item} idx={idx} onClick={() => onItemClick(item, section?.items, idx)} />
         ))
       ) : (
         <div className="flex items-center justify-center w-full py-6 text-gray-400 text-xs px-4">No reels found</div>
@@ -932,7 +932,7 @@ const TwoRowGridCarousel = ({ section, onItemClick }) => {
   );
 };
 
-const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
+export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, onBookNow, userInteractions }) => {
   const router = useRouter();
 
   // ── All original states (unchanged) ──
@@ -1985,7 +1985,7 @@ const FilterDrawer = ({ initialFilter, onApply, onClose }) => {
   );
 };
 
-const BookingDrawer = ({ item, onClose }) => {
+export const BookingDrawer = ({ item, onClose }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(0);
 

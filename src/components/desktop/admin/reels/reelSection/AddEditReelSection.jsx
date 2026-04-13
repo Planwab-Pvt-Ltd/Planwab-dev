@@ -43,6 +43,7 @@ export default function AddEditReelSection({ sectionId, onSuccess, onCancel }) {
     subType: "",
     nestedType: "",
     isActive: true,
+    priority: 10,
     linkedReels: [], 
   });
 
@@ -231,6 +232,36 @@ export default function AddEditReelSection({ sectionId, onSuccess, onCancel }) {
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
+              {/* 👈 NEW PRIORITY DROPDOWN START */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">
+                  Display Priority <span className="text-gray-400 text-xs font-normal ml-1">(1 = Top, 10 = Bottom)</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={formData.priority || 10}
+                    onChange={(e) => handleInputChange("priority", parseInt(e.target.value, 10))}
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-violet-500 appearance-none text-gray-900 dark:text-white cursor-pointer"
+                  >
+                    {[...Array(10)].map((_, i) => {
+                      const value = i + 1;
+                      return (
+                        <option key={value} value={value}>
+                          {value} {value === 1 ? "— Highest (Top of Page)" : value === 10 ? "— Lowest (Bottom of Page)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {/* Custom dropdown arrow to match your UI */}
+                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              {/* 👈 NEW PRIORITY DROPDOWN END */}
+  
               <label className="flex items-center gap-3 mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer">
                 <input 
                   type="checkbox" 

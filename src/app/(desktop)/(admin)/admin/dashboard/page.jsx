@@ -5,7 +5,8 @@ import {
   Users, Briefcase, Star, Layers, IdCard,
   ShoppingCart, SendHorizontal, Cake, CalendarCheck, Megaphone, BookOpen, Mail,
   MessageSquare,
-  Calendar1
+  Calendar1,
+  Video
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { VendorCategoriesChart } from "@/components/desktop/ui/Charts/VendorCategoriesChart";
@@ -32,6 +33,7 @@ export default function DashboardPage() {
     totalNewsletterSubscribers: 0,
     totalTestimonials: 0,
     totalScheduledMeetings: 0,
+    totalReels: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -57,42 +59,13 @@ export default function DashboardPage() {
     <div>
       <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Dashboard</h1>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-        <DashboardStatsCard
-          title="Total Vendors"
-          value={stats.totalVendors}
-          icon={Briefcase}
-          loading={loading}
-        />
-        <DashboardStatsCard
-          title="Featured Vendors"
-          value={stats.featuredVendors}
-          icon={Star}
-          loading={loading}
-        />
-        <DashboardStatsCard
-          title="Total Users"
-          value={stats.totalUsers}
-          icon={Users}
-          loading={loading}
-        />
-        <DashboardStatsCard
-          title="Total Categories"
-          value={stats.totalCategories}
-          icon={Layers}
-          loading={loading}
-        />
-        <DashboardStatsCard
-          title="Vendor Profiles"
-          value={stats.totalVendorProfiles}
-          icon={IdCard}
-          loading={loading}
-        />
-        <DashboardStatsCard
-          title="Total Orders"
-          value={stats.totalOrders}
-          icon={ShoppingCart}
-          loading={loading}
-        />
+        <DashboardStatsCard title="Total Vendors" value={stats.totalVendors} icon={Briefcase} loading={loading} />
+        <DashboardStatsCard title="Featured Vendors" value={stats.featuredVendors} icon={Star} loading={loading} />
+        <DashboardStatsCard title="Total Users" value={stats.totalUsers} icon={Users} loading={loading} />
+        <DashboardStatsCard title="Total Categories" value={stats.totalCategories} icon={Layers} loading={loading} />
+        <DashboardStatsCard title="Vendor Profiles" value={stats.totalVendorProfiles} icon={IdCard} loading={loading} />
+        <DashboardStatsCard title="Total Reels" value={stats.totalReels} icon={Video} loading={loading} />
+        <DashboardStatsCard title="Total Orders" value={stats.totalOrders} icon={ShoppingCart} loading={loading} />
         <DashboardStatsCard
           title="Vendor Requests"
           value={stats.vendorRequests}
@@ -123,12 +96,7 @@ export default function DashboardPage() {
           icon={Megaphone}
           loading={loading}
         />
-        <DashboardStatsCard
-          title="Total Blogs"
-          value={stats.totalBlogs}
-          icon={BookOpen}
-          loading={loading}
-        />
+        <DashboardStatsCard title="Total Blogs" value={stats.totalBlogs} icon={BookOpen} loading={loading} />
         <DashboardStatsCard
           title="Newsletter Subs"
           value={stats.totalNewsletterSubscribers}

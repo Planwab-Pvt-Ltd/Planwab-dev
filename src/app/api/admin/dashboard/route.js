@@ -13,6 +13,7 @@ import Newsletter from "@/database/models/NewsletterModel";
 import mongoose from "mongoose";
 import TestimonialModel from "../../../../database/models/TestimonialsModel";
 import ScheduleMeetModel from './../../../../database/models/ScheduleMeetModel';
+import ReelsModel from './../../../../database/models/ReelsModel';
 
 export async function GET() {
     try {
@@ -42,6 +43,7 @@ export async function GET() {
             totalNewsletterSubscribers,
             totalTestimonials,
             totalScheduledMeetings,
+            totalReels,
         ] = await Promise.all([
             Vendor.countDocuments(),
             Vendor.countDocuments({ isFeatured: true }),
@@ -58,6 +60,7 @@ export async function GET() {
             Newsletter.countDocuments(),
             TestimonialModel.countDocuments(),
             ScheduleMeetModel.countDocuments(),
+            ReelsModel.countDocuments(),
         ]);
 
         const totalCategories = categories.length;
@@ -81,6 +84,7 @@ export async function GET() {
                     totalNewsletterSubscribers,
                     totalTestimonials,
                     totalScheduledMeetings,
+                    totalReels,
                 },
             },
             { status: 200 }

@@ -16,7 +16,7 @@ import {
   XCircle
 } from "lucide-react";
 
-export default function AllReelSections({ onEditSection, refreshTrigger }) {
+export default function AllReelSections({ onEditSection, refreshTrigger, onStatsUpdate }) {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,12 +42,18 @@ export default function AllReelSections({ onEditSection, refreshTrigger }) {
       const result = await response.json();
       setSections(result.data || []);
       setPaginationData(result.pagination);
+
+      if (onStatsUpdate && result.pagination) {
+        onStatsUpdate({ 
+          total: result.pagination.totalItems || result.pagination.total || (result.data || []).length 
+        });
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, onStatsUpdate]);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchSections(), 300);
@@ -106,6 +112,7 @@ export default function AllReelSections({ onEditSection, refreshTrigger }) {
                 <th className="px-4 py-3 font-semibold">Title & Subtitle</th>
                 <th className="px-4 py-3 font-semibold">Target Filters</th>
                 <th className="px-4 py-3 font-semibold">Attached Reels</th>
+                 <th className="px-4 py-3 font-semibold">Section Priority</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
@@ -135,6 +142,7 @@ export default function AllReelSections({ onEditSection, refreshTrigger }) {
                         <span className="font-medium">{section.linkedReels?.length || 0}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">{section.priority}</td>
                     <td className="px-4 py-3">
                       {section.isActive ? (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">

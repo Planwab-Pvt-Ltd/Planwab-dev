@@ -16,14 +16,25 @@ const logError = (actionName, error) => {
 
 const sanitize = (data) => JSON.parse(JSON.stringify(data));
 
-export const getMostBookedVendors = cache(async (id) => {
+export const getMostBookedVendors = cache(async (page = 1) => {
   try {
     logAction("getMostBookedVendors", "Start fetching...");
     await connectToDatabase();
-    const vendors = await Vendor.find({ isFeatured: true }) // Adjust 'isFeatured' to your schema
+    const limit = 8;
+    const skip = (page - 1) * limit;
+    let vendors = await Vendor.find({ isFeatured: true })
       .sort({ rating: -1 })
-      .limit(8)
+      .skip(skip)
+      .limit(limit)
       .lean();
+
+    if (vendors.length === 0 && page > 1) {
+        logAction("getMostBookedVendors", `Page ${page} empty. Falling back to page 1.`);
+        vendors = await Vendor.find({ isFeatured: true })
+          .sort({ rating: -1 })
+          .limit(limit)
+          .lean();
+    }  
 
     logAction("getMostBookedVendors", `Success. Found ${vendors.length} vendors.`);  
     return sanitize(vendors);
@@ -33,14 +44,28 @@ export const getMostBookedVendors = cache(async (id) => {
   }
 });
 
-export const getTopPlanners = cache(async (id) => {
+export const getTopPlanners = cache(async (page = 1) => {
   try {
-    logAction("getTopPlanners", "Start fetching...");
+    logAction("getTopPlanners", `Start fetching for page ${page}...`);
     await connectToDatabase();
-    const vendors = await Vendor.find({ category: "planners" })
+    
+    const limit = 5;
+    const skip = (page - 1) * limit;
+
+    let vendors = await Vendor.find({ category: "planners" })
       .sort({ rating: -1 })
-      .limit(5)
+      .skip(skip)
+      .limit(limit)
       .lean();
+      
+    // Fallback: If this page has no data, fetch page 1 instead
+    if (vendors.length === 0 && page > 1) {
+        logAction("getTopPlanners", `Page ${page} empty. Falling back to page 1.`);
+        vendors = await Vendor.find({ category: "planners" })
+          .sort({ rating: -1 })
+          .limit(limit)
+          .lean();
+    }
     
     logAction("getTopPlanners", `Success. Found ${vendors.length} planners.`);
     return sanitize(vendors);
@@ -50,14 +75,28 @@ export const getTopPlanners = cache(async (id) => {
   }
 });
 
-export const getTrendingVendors = cache(async (id) => {
+export const getTrendingVendors = cache(async (page = 1) => {
   try {
-    logAction("getTrendingVendors", "Start fetching...");
+    logAction("getTrendingVendors", `Start fetching for page ${page}...`);
     await connectToDatabase();
-    const vendors = await Vendor.find({ isFeatured: true })
+    
+    const limit = 5;
+    const skip = (page - 1) * limit;
+
+    let vendors = await Vendor.find({ isFeatured: true })
       .sort({ bookings: -1 })
-      .limit(5)
+      .skip(skip)
+      .limit(limit)
       .lean();
+      
+    // Fallback: If this page has no data, fetch page 1 instead
+    if (vendors.length === 0 && page > 1) {
+        logAction("getTrendingVendors", `Page ${page} empty. Falling back to page 1.`);
+        vendors = await Vendor.find({ isFeatured: true })
+          .sort({ bookings: -1 })
+          .limit(limit)
+          .lean();
+    }
     
     logAction("getTrendingVendors", `Success. Found ${vendors.length} trending vendors.`);
     return sanitize(vendors);

@@ -67,22 +67,35 @@ export const metadata = {
   description: "Your one-stop solution for planning Weddings, Anniversaries, and Birthdays.",
 };
 
-export default function HomePage() {
+export default async function HomePage({ searchParams }) {
+  const resolvedSearchParams = await searchParams; 
+  const category = resolvedSearchParams?.category || "Wedding"; 
+  const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+
   return (
     <HomePageWrapper
       plannersSlot={
-        <Suspense fallback={<CarouselShimmer />}>
-          <AsyncPlannersSection />
+        <Suspense 
+          key={`planners-${formattedCategory}`}
+          fallback={<CarouselShimmer />}
+        >
+          <AsyncPlannersSection category={formattedCategory} /> 
         </Suspense>
       }
       trendingSlot={
-        <Suspense fallback={<CarouselShimmer />}>
-          <AsyncTrendingSection />
+        <Suspense 
+          key={`trending-${formattedCategory}`} 
+          fallback={<CarouselShimmer />}
+        >
+          <AsyncTrendingSection category={formattedCategory} /> 
         </Suspense>
       }
       mostBookedSlot={
-        <Suspense fallback={<MostBookedShimmer />}>
-          <AsyncMostBookedSection />
+        <Suspense 
+          key={`booked-${formattedCategory}`} 
+          fallback={<MostBookedShimmer />}
+        >
+          <AsyncMostBookedSection category={formattedCategory} /> 
         </Suspense>
       }
     />
