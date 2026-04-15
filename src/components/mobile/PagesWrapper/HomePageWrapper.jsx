@@ -297,6 +297,17 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
 
       <CategoryGrid currentCategory={currentCategory} />
 
+       <div className="w-full relative min-h-[200px] overflow-hidden mt-2">
+        {isLoadingDetos ? (
+            <HomepageCarouselSkeleton />
+        ) : detosSections && detosSections.items?.length > 0 ? (
+          <SingleRowCarousel 
+            section={detosSections} 
+            onItemClick={handleDetoClick} 
+          />
+        ) : null}
+      </div>
+
       <div className="min-h-[280px] transition-all">{plannersSlot}</div>
 
       <div className="mx-1 mt-2 px-2 mb-6 pb-4">
@@ -314,17 +325,6 @@ const MainContent = ({ plannersSlot, trendingSlot, mostBookedSlot }) => {
             />
           </motion.div>
         </Link>
-      </div>
-
-     <div className="w-full relative min-h-[220px] overflow-hidden">
-        {isLoadingDetos ? (
-            <HomepageCarouselSkeleton />
-        ) : detosSections && detosSections.items?.length > 0 ? (
-          <SingleRowCarousel 
-            section={detosSections} 
-            onItemClick={handleDetoClick} 
-          />
-        ) : null}
       </div>
 
       <div className="min-h-[200px] transition-all">{mostBookedSlot}</div>
