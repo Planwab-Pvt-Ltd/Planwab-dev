@@ -1157,12 +1157,12 @@ const AccordionButton = ({ icon: Icon, label, name, openAccordion, toggleAccordi
 );
 
 const categories = [
-  { name: "Wedding", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430828/WeddingCat_qz1gdd.png" },
+  { name: "Wedding", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097681/WeddingCat_qz1gdd_lopcu3.png" },
   {
     name: "Anniversary",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430833/AnniversaryCat_iyr77x.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097683/AnniversaryCat_iyr77x_x4ytra.png",
   },
-  { name: "Birthday", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430838/BirthdayCat_adjjnh.png" },
+  { name: "Birthday", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097682/BirthdayCat_adjjnh_ocub5e.png" },
 ];
 
 const LOGO_SEGMENTS = [

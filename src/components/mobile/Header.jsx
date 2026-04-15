@@ -96,7 +96,7 @@ const TABS_CONFIG = [
     src: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429996/WeddingHeaderCard_vslgmt.png",
     placeholders: ["Wedding Venues", "Bridal Makeup", "Mehndi Artists"],
   },
-  {
+  { 
     id: "Anniversary",
     label: "Anniversary",
     styles: "bg-gradient-to-r from-gray-900 via-pink-700 to-gray-900",
@@ -172,12 +172,12 @@ const NAV_LINKS = [
 ];
 
 const EVENT_CATEGORIES = [
-  { name: "Wedding", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430828/WeddingCat_qz1gdd.png" },
+  { name: "Wedding", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097681/WeddingCat_qz1gdd_lopcu3.png" },
   {
     name: "Anniversary",
-    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430833/AnniversaryCat_iyr77x.png",
+    image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097683/AnniversaryCat_iyr77x_x4ytra.png",
   },
-  { name: "Birthday", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771430838/BirthdayCat_adjjnh.png" },
+  { name: "Birthday", image: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1776097682/BirthdayCat_adjjnh_ocub5e.png" },
 ];
 
 const SCROLL_DELTA = 8;
