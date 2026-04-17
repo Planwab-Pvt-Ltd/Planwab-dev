@@ -4101,7 +4101,7 @@ const FloatingActionButtonComponent = memo(({ theme, onAction, isNavbarVisible }
   }, [haptic]);
 
   // Dynamic position class based on Navbar visibility
-  const bottomPosition = isNavbarVisible ? "bottom-24" : "bottom-6";
+  const bottomPosition = "bottom-3";
 
   return (
     <>
@@ -4190,7 +4190,7 @@ const ScrollToTopButton = memo(({ theme, isNavbarVisible }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [haptic]);
 
-  const bottomPosition = isNavbarVisible ? "bottom-24" : "bottom-6";
+  const bottomPosition = "bottom-3";
 
   return (
     <AnimatePresence>

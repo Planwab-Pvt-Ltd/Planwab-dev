@@ -2,16 +2,36 @@ import ClientWrapper from "@/components/mobile/ClientWrapper";
 import ConditionalNavbar from "@/components/mobile/ConditionalNavbar";
 import ForceLightMode from "@/components/mobile/ForceLightMode";
 
+const DOMAIN = "https://www.planwab.com";
+ 
 export const metadata = {
-  title: {
-    default: "PlanWAB - Book Event Vendors & Plan Weddings, Birthdays Online",
-    template: "%s | PlanWAB Marketplace",
+  metadataBase: new URL(DOMAIN),
+ 
+  // Desktop pages are the canonical source of truth.
+  // Individual pages MUST override `alternates.canonical` with their own URL.
+  alternates: {
+    canonical: DOMAIN,
   },
-  description:
-    "India's most affordable event planning marketplace. Find and book verified vendors for Weddings, Anniversaries, and Birthdays.",
-  appleWebApp: {
-    title: "PlanWAB",
-    statusBarStyle: "default",
+ 
+  robots: {
+    index: true,
+    follow: true,
+    "max-video-preview": -1,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+ 
+  openGraph: {
+    siteName: "PlanWAB",
+    locale: "en_IN",
+    type: "website",
   },
 };
 
