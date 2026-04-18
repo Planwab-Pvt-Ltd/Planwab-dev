@@ -141,7 +141,7 @@ export async function POST(request) {
         { status: 200 }
       );
     }
-
+ 
     // Prepare lead data
     const leadData = {
       name: validName,
@@ -151,7 +151,6 @@ export async function POST(request) {
       ipAddress,
       userAgent,
       source: "website",
-      status: "new",
     };
 
     // Add metadata if provided
