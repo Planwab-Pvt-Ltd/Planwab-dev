@@ -9,9 +9,26 @@ import {
 const DOMAIN = "https://www.planwab.com";
 
 // ─── Page Metadata ────────────────────────────────────────────────────────────
+// This metadata is what Google actually reads (mobile-first indexing).
+// Must be as complete and keyword-rich as the desktop page.
 export const metadata = {
-  title:
-    "Book Event Vendors Online – Weddings, Birthdays & Anniversaries",
+  // ✅ index:true — this serves the public homepage URL
+  robots: {
+    index: true,
+    follow: true,
+    "max-video-preview": -1,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  title: "Book Event Vendors Online – Weddings, Birthdays & Anniversaries",
 
   description:
     "India's #1 event planning marketplace. Browse 1,000+ verified vendors – photographers, decorators, caterers, DJs & more. Compare prices, read reviews and book your dream event online. Free to search!",
@@ -29,6 +46,8 @@ export const metadata = {
     "event planning platform India",
   ],
 
+  // ✅ Canonical = the actual public URL this content lives at.
+  // In dynamic serving, mobile and desktop serve the same URL — canonical is identical.
   alternates: {
     canonical: `${DOMAIN}/`,
     languages: {
@@ -47,7 +66,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
+        url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
         width: 1200,
         height: 630,
         alt: "PlanWAB – Book Event Vendors Online for Weddings & Birthdays in India",
@@ -62,23 +81,23 @@ export const metadata = {
     description:
       "Book verified photographers, decorators, caterers and more. Fast, affordable, trusted. Start planning today!",
     images: [
-      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429701/birthdayRight_tox6wr.jpg",
+      "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1771429701/birthdayRight_tox6wr.jpg",
     ],
   },
 };
 
-// ─── Homepage Structured Data ─────────────────────────────────────────────────
-// Separate from root layout schema. Adds WebPage + ItemList for the homepage
-// specifically, which helps Google understand the page's purpose and content.
+// ─── Homepage Structured Data (mobile) ───────────────────────────────────────
+// Google uses mobile-first indexing — it primarily reads the MOBILE HTML.
+// The structured data here is what Google's crawler actually processes.
+// Must include the same schema as the desktop page.
 function HomepageStructuredData() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      // WebPage — signals this is the authoritative homepage
       {
         "@type": "WebPage",
         "@id": `${DOMAIN}/#webpage`,
-        url: DOMAIN,
+        url: `${DOMAIN}/`,
         name: "PlanWAB – Book Event Vendors for Weddings, Birthdays & Anniversaries",
         isPartOf: { "@id": `${DOMAIN}/#website` },
         about: { "@id": `${DOMAIN}/#business` },
@@ -89,112 +108,81 @@ function HomepageStructuredData() {
         dateModified: new Date().toISOString().split("T")[0],
         primaryImageOfPage: {
           "@type": "ImageObject",
-          url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto/f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
+          url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
           width: 1200,
           height: 630,
         },
         breadcrumb: {
           "@type": "BreadcrumbList",
-          "@id": `${DOMAIN}/#breadcrumb`,
           itemListElement: [
             {
               "@type": "ListItem",
               position: 1,
               name: "Home",
-              item: DOMAIN,
+              item: `${DOMAIN}/`,
             },
           ],
         },
-        potentialAction: {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: `${DOMAIN}/search?q={search_term_string}`,
-          },
-          "query-input": "required name=search_term_string",
-        },
-        speakable: {
-          "@type": "SpeakableSpecification",
-          cssSelector: ["h1", ".hero-description"],
-        },
       },
 
-      // ItemList — top vendor categories, helps Google show rich category results
       {
         "@type": "ItemList",
         "@id": `${DOMAIN}/vendors/marketplace#itemlist`,
         name: "Event Vendor Categories on PlanWAB",
-        description:
-          "Browse top event vendor categories available on PlanWAB marketplace across India",
-        url: DOMAIN,
+        url: `${DOMAIN}/`,
         numberOfItems: 8,
-        itemListOrder: "https://schema.org/ItemListOrderAscending",
         itemListElement: [
           {
             "@type": "ListItem",
             position: 1,
             name: "Wedding Photographers",
             url: `${DOMAIN}/vendors/marketplace/photographers`,
-            description:
-              "Professional wedding and event photographers across India",
           },
           {
             "@type": "ListItem",
             position: 2,
             name: "Event Decorators",
             url: `${DOMAIN}/vendors/marketplace/decors`,
-            description:
-              "Balloon, floral and theme decorators for weddings and parties",
           },
           {
             "@type": "ListItem",
             position: 3,
             name: "Wedding Caterers",
             url: `${DOMAIN}/vendors/marketplace/caterers`,
-            description:
-              "Multi-cuisine caterers for weddings, parties and corporate events",
           },
           {
             "@type": "ListItem",
             position: 4,
             name: "DJs & Entertainment",
             url: `${DOMAIN}/vendors/marketplace/djs`,
-            description:
-              "Professional DJs and live entertainment for events and weddings",
           },
           {
             "@type": "ListItem",
             position: 5,
             name: "Makeup Artists",
             url: `${DOMAIN}/vendors/marketplace/makeup`,
-            description: "Bridal and event makeup artists across India",
           },
           {
             "@type": "ListItem",
             position: 6,
             name: "Event Venues",
             url: `${DOMAIN}/vendors/marketplace/venues`,
-            description: "Banquet halls, farmhouses and open venues for events",
           },
           {
             "@type": "ListItem",
             position: 7,
             name: "Wedding Planners",
             url: `${DOMAIN}/vendors/marketplace/planners`,
-            description:
-              "Full-service wedding and event planners across India",
           },
           {
             "@type": "ListItem",
             position: 8,
             name: "Mehendi Artists",
             url: `${DOMAIN}/vendors/marketplace/mehendi`,
-            description: "Professional mehendi artists for weddings and functions",
           },
         ],
       },
 
-      // FAQPage — targets featured snippet / PAA boxes in Google
       {
         "@type": "FAQPage",
         "@id": `${DOMAIN}/#faq`,
@@ -228,7 +216,15 @@ function HomepageStructuredData() {
             name: "Which cities does PlanWAB cover?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "PlanWAB covers vendors across major Indian cities including Delhi, Noida, Mumbai, Bangalore, Hyderabad, Pune, and many more cities across India.",
+              text: "PlanWAB covers vendors across major Indian cities including Delhi, Noida, Gurgaon, Mumbai, Bangalore, Hyderabad, Pune, Jaipur and many more cities across India.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "What types of event vendors can I find on PlanWAB?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "On PlanWAB you can find photographers, videographers, decorators, caterers, DJs, makeup artists, mehendi artists, wedding planners, venues and many more vendor categories for weddings, birthdays and anniversaries.",
             },
           },
         ],
@@ -244,7 +240,7 @@ function HomepageStructuredData() {
   );
 }
 
-
+// ─── Shimmer / Skeleton components ────────────────────────────────────────────
 const CarouselShimmer = () => (
   <div className="w-full overflow-hidden">
     <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide">
@@ -301,7 +297,7 @@ const MostBookedShimmer = () => (
   </div>
 );
 
-// ─── Page Component ────────────────────────────────────────────────────────────
+// ─── Page Component ───────────────────────────────────────────────────────────
 export default async function MobileHomePage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
   const category = resolvedSearchParams?.category || "Wedding";
@@ -309,31 +305,35 @@ export default async function MobileHomePage({ searchParams }) {
     category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
 
   return (
-    <HomePageWrapper
-      plannersSlot={
-        <Suspense
-          key={`planners-${formattedCategory}`}
-          fallback={<CarouselShimmer />}
-        >
-          <AsyncPlannersSection category={formattedCategory} />
-        </Suspense>
-      }
-      trendingSlot={
-        <Suspense
-          key={`trending-${formattedCategory}`}
-          fallback={<CarouselShimmer />}
-        >
-          <AsyncTrendingSection category={formattedCategory} />
-        </Suspense>
-      }
-      mostBookedSlot={
-        <Suspense
-          key={`booked-${formattedCategory}`}
-          fallback={<MostBookedShimmer />}
-        >
-          <AsyncMostBookedSection category={formattedCategory} />
-        </Suspense>
-      }
-    />
+    <>
+      {/* Schema injected into <head> via Next.js — Google's mobile bot reads this */}
+      <HomepageStructuredData />
+      <HomePageWrapper
+        plannersSlot={
+          <Suspense
+            key={`planners-${formattedCategory}`}
+            fallback={<CarouselShimmer />}
+          >
+            <AsyncPlannersSection category={formattedCategory} />
+          </Suspense>
+        }
+        trendingSlot={
+          <Suspense
+            key={`trending-${formattedCategory}`}
+            fallback={<CarouselShimmer />}
+          >
+            <AsyncTrendingSection category={formattedCategory} />
+          </Suspense>
+        }
+        mostBookedSlot={
+          <Suspense
+            key={`booked-${formattedCategory}`}
+            fallback={<MostBookedShimmer />}
+          >
+            <AsyncMostBookedSection category={formattedCategory} />
+          </Suspense>
+        }
+      />
+    </>
   );
 }

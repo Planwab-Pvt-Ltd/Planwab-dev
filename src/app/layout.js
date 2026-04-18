@@ -6,35 +6,36 @@ import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "sonner";
 import ReactQueryProvider from "../components/providers/ReactQueryProvider";
 import ClientModalWrapper from "../components/shared/ClientModalWrapper";
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { GoogleAnalytics } from "@next/third-parties/google";
 
+// display:"swap" prevents render-blocking fonts → better LCP score
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const DOMAIN = "https://www.planwab.com";
- 
+
+// ─── Site-wide Metadata ───────────────────────────────────────────────────────
 export const metadata = {
   metadataBase: new URL(DOMAIN),
- 
-  // ─── Title ────────────────────────────────────────────────────────────────
+
   title: {
     default:
       "PlanWAB – Book Event Vendors for Weddings, Birthdays & Anniversaries in India",
     template: "%s | PlanWAB",
   },
- 
-  // ─── Description ──────────────────────────────────────────────────────────
+
   description:
     "India's most affordable event planning marketplace. Find and book verified photographers, decorators, caterers & more for Weddings, Anniversaries and Birthdays. Compare quotes and book online instantly.",
- 
-  // ─── Keywords ─────────────────────────────────────────────────────────────
+
   keywords: [
     "event vendor marketplace India",
     "book wedding vendors online",
@@ -53,15 +54,13 @@ export const metadata = {
     "best wedding marketplace India",
     "budget wedding vendors",
   ],
- 
-  // ─── Author / Publisher ───────────────────────────────────────────────────
+
   authors: [{ name: "PlanWAB Team", url: DOMAIN }],
   creator: "PlanWAB",
   publisher: "PlanWAB",
   category: "Events & Wedding Planning",
   classification: "Event Vendor Marketplace",
- 
-  // ─── Canonical ────────────────────────────────────────────────────────────
+
   alternates: {
     canonical: DOMAIN,
     languages: {
@@ -69,8 +68,7 @@ export const metadata = {
       "x-default": DOMAIN,
     },
   },
- 
-  // ─── Robots ───────────────────────────────────────────────────────────────
+
   robots: {
     index: true,
     follow: true,
@@ -85,8 +83,7 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
- 
-  // ─── Open Graph ───────────────────────────────────────────────────────────
+
   openGraph: {
     title: "PlanWAB – India's Event Vendor Marketplace",
     description:
@@ -97,28 +94,26 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771865168/events_osoyqb.png",
+        url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
         width: 1200,
         height: 630,
         alt: "PlanWAB – Event Vendor Marketplace India – Book Vendors Online",
       },
     ],
   },
- 
-  // ─── Twitter Card ─────────────────────────────────────────────────────────
+
   twitter: {
     card: "summary_large_image",
-    site: "@planwab",       // ← update with your actual handle
+    site: "@planwab",
     creator: "@planwab",
     title: "PlanWAB – Book Event Vendors in India",
     description:
       "Find verified vendors for weddings, birthdays & anniversaries. Compare quotes and book online instantly.",
     images: [
-      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771864973/wedding_fplcb3.png",
+      "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1771864973/wedding_fplcb3.png",
     ],
   },
- 
-  // ─── Icons ────────────────────────────────────────────────────────────────
+
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -128,16 +123,14 @@ export const metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
     shortcut: "/favicon.ico",
   },
- 
-  // ─── PWA / Web App ────────────────────────────────────────────────────────
+
   manifest: "/site.webmanifest",
   appleWebApp: {
     title: "PlanWAB",
     statusBarStyle: "default",
     capable: true,
   },
- 
-  // ─── Geo / Locale Signals ─────────────────────────────────────────────────
+
   other: {
     "geo.region": "IN",
     "geo.placename": "India",
@@ -146,29 +139,24 @@ export const metadata = {
     "DC.subject": "Event Planning, Wedding Vendors, Birthday Vendors",
   },
 };
- 
-// ─── Viewport (separate export, not inside metadata) ──────────────────────────
-// NOTE: maximumScale:1 + userScalable:false is a Google ranking signal penalty
-// on mobile. Changed to allow zooming for accessibility compliance.
+
+// ─── Viewport ─────────────────────────────────────────────────────────────────
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
   ],
-  viewportFit: "cover",
 };
- 
-// ─── Root JSON-LD Schema Graph ────────────────────────────────────────────────
-// Uses @graph so Google can connect Organization + WebSite + LocalBusiness
-// as one unified entity for Knowledge Panel eligibility
+
 function RootStructuredData() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      // 1. Organization — brand identity, logo, social profiles
+      // 1. Organization — brand identity, logo, social profiles for Knowledge Panel
       {
         "@type": "Organization",
         "@id": `${DOMAIN}/#organization`,
@@ -188,14 +176,8 @@ function RootStructuredData() {
         description:
           "PlanWAB is India's most affordable event planning marketplace connecting users with verified vendors for weddings, anniversaries, and birthdays.",
         foundingDate: "2023",
-        foundingLocation: {
-          "@type": "Place",
-          name: "Noida, India",
-        },
-        areaServed: {
-          "@type": "Country",
-          name: "India",
-        },
+        foundingLocation: { "@type": "Place", name: "Noida, India" },
+        areaServed: { "@type": "Country", name: "India" },
         contactPoint: [
           {
             "@type": "ContactPoint",
@@ -203,11 +185,9 @@ function RootStructuredData() {
             contactType: "customer service",
             availableLanguage: ["English", "Hindi"],
             areaServed: "IN",
-            contactOption: "TollFree",
           },
         ],
         sameAs: [
-          // ← replace with your actual social URLs
           "https://www.instagram.com/planwab.official?igsh=MWlqMmxpcnF6NThjZw==",
           "https://www.facebook.com/planwab",
           "https://twitter.com/planwab",
@@ -215,8 +195,8 @@ function RootStructuredData() {
           "https://www.youtube.com/@planwab",
         ],
       },
- 
-      // 2. WebSite — enables Sitelinks Searchbox in Google results
+
+      // 2. WebSite — enables the Sitelinks Searchbox in Google results
       {
         "@type": "WebSite",
         "@id": `${DOMAIN}/#website`,
@@ -237,14 +217,15 @@ function RootStructuredData() {
           },
         ],
       },
- 
-      // 3. LocalBusiness — eligibility for Google Maps, Local Pack
+
+      // 3. LocalBusiness — Google Maps / Local Pack eligibility
       {
         "@type": ["LocalBusiness", "EventPlanningService"],
         "@id": `${DOMAIN}/#business`,
         name: "PlanWAB",
         url: DOMAIN,
-        image: `https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto/f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png`,
+        image:
+          "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
         logo: `${DOMAIN}/planwablogo.png`,
         description:
           "PlanWAB is India's leading event planning marketplace. Book verified photographers, decorators, caterers, DJs and more for weddings, anniversaries, and birthdays.",
@@ -273,8 +254,7 @@ function RootStructuredData() {
             {
               "@type": "OfferCatalog",
               name: "Wedding Vendors",
-              description:
-                "Photographers, decorators, caterers, DJs for weddings",
+              description: "Photographers, decorators, caterers, DJs for weddings",
             },
             {
               "@type": "OfferCatalog",
@@ -284,7 +264,8 @@ function RootStructuredData() {
             {
               "@type": "OfferCatalog",
               name: "Anniversary Event Vendors",
-              description: "Romantic event planners and decorators for anniversaries",
+              description:
+                "Romantic event planners and decorators for anniversaries",
             },
           ],
         },
@@ -292,7 +273,7 @@ function RootStructuredData() {
       },
     ],
   };
- 
+
   return (
     <script
       type="application/ld+json"
@@ -301,45 +282,42 @@ function RootStructuredData() {
   );
 }
 
+// ─── Root Layout Component ────────────────────────────────────────────────────
 export default function RootLayout({ children }) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "EventPlanner",
-    name: "PlanWAB",
-    url: DOMAIN,
-    logo: `${DOMAIN}/planwablogo.png`,
-    image: `${DOMAIN}/WeddingDesign.png`,
-    description: "PlanWAB is an event planning marketplace connecting users with verified vendors.",
-    telephone: "+91-6267430959",
-    priceRange: "₹₹",
-    address: {
-      "@type": "PostalAddress",
-      addressCountry: "IN",
-      addressRegion: "Noida",
-    },
-    offers: {
-      "@type": "Offer",
-      description: "Affordable booking for Event Vendors and Full Planning Services",
-    },
-  };
-
   return (
     <ThemeProvider>
       <ReactQueryProvider>
-      <ThemeClerkProvider>
-        <html lang="en" suppressHydrationWarning>
-          <head>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-          </head>
-          <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}>
-            <NextTopLoader color="#2563eb" height={3} crawl={false} showSpinner={false} easing="linear" speed={300} shadow={false} zIndex={1600} />
-            {children}
-            <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || "G-ML8HLB62X6"} />
-            <Toaster position="bottom-center" richColors closeButton />
-            <ClientModalWrapper />
-          </body>
-        </html>
-      </ThemeClerkProvider>
+        <ThemeClerkProvider>
+          <html lang="en-IN" suppressHydrationWarning>
+            <head>
+              <RootStructuredData />
+
+              <link rel="preconnect" href="https://res.cloudinary.com" />
+              <link rel="preconnect" href="https://planwab.b-cdn.net" />
+              <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+            </head>
+            <body
+              className={`${geistSans.variable} ${geistMono.variable} font-sans bg-gray-50 text-gray-900`}
+            >
+              <NextTopLoader
+                color="#2563eb"
+                height={3}
+                crawl={false}
+                showSpinner={false}
+                easing="linear"
+                speed={300}
+                shadow={false}
+                zIndex={1600}
+              />
+              {children}
+              <GoogleAnalytics
+                gaId={process.env.NEXT_PUBLIC_GA_ID || "G-ML8HLB62X6"}
+              />
+              <Toaster position="bottom-center" richColors closeButton />
+              <ClientModalWrapper />
+            </body>
+          </html>
+        </ThemeClerkProvider>
       </ReactQueryProvider>
     </ThemeProvider>
   );

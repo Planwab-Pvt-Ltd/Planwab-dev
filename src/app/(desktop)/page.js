@@ -1,14 +1,12 @@
-// app/(desktop)/page.js
-// Desktop homepage — canonical URL, full schema, keyword-rich metadata.
-
 import DesktopHomePageWrapper from "@/components/desktop/PagesWrapper/HomePageWrapper";
 
 const DOMAIN = "https://www.planwab.com";
 
 // ─── Page Metadata ────────────────────────────────────────────────────────────
 export const metadata = {
-  title:
-    "Book Event Vendors Online – Weddings, Birthdays & Anniversaries",
+  // Keyword-first title — Google reads left to right, leading with intent matters.
+  // Keep under 60 chars for clean SERP display.
+  title: "Book Event Vendors Online – Weddings, Birthdays & Anniversaries",
 
   description:
     "India's #1 event planning marketplace. Browse 1,000+ verified vendors – photographers, decorators, caterers, DJs & more. Compare prices, read reviews and book your dream event online. Free to search!",
@@ -26,6 +24,7 @@ export const metadata = {
     "event planning platform India",
   ],
 
+  // Canonical points to the homepage — the definitive URL for this content.
   alternates: {
     canonical: `${DOMAIN}/`,
     languages: {
@@ -44,7 +43,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "https://res.cloudinary.com/dhkkvo36x/image/upload/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
+        url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
         width: 1200,
         height: 630,
         alt: "PlanWAB – Book Event Vendors Online for Weddings & Birthdays in India",
@@ -59,23 +58,24 @@ export const metadata = {
     description:
       "Book verified photographers, decorators, caterers and more. Fast, affordable, trusted. Start planning today!",
     images: [
-      "https://res.cloudinary.com/dhkkvo36x/image/upload/v1771429701/birthdayRight_tox6wr.jpg",
+      "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1771429701/birthdayRight_tox6wr.jpg",
     ],
   },
 };
 
 // ─── Homepage Structured Data ─────────────────────────────────────────────────
-// Separate from root layout schema. Adds WebPage + ItemList for the homepage
-// specifically, which helps Google understand the page's purpose and content.
+// Page-level schema. Adds WebPage + ItemList + FAQPage on top of the root
+// layout's Organization/WebSite/LocalBusiness @graph.
+// FAQPage targets "People Also Ask" boxes — very high-value SERP real estate.
 function HomepageStructuredData() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      // WebPage — signals this is the authoritative homepage
+      // WebPage — marks this as the authoritative homepage document
       {
         "@type": "WebPage",
         "@id": `${DOMAIN}/#webpage`,
-        url: DOMAIN,
+        url: `${DOMAIN}/`,
         name: "PlanWAB – Book Event Vendors for Weddings, Birthdays & Anniversaries",
         isPartOf: { "@id": `${DOMAIN}/#website` },
         about: { "@id": `${DOMAIN}/#business` },
@@ -83,10 +83,11 @@ function HomepageStructuredData() {
           "Browse and book verified event vendors across India. Compare photographers, decorators, caterers, DJs and more for your wedding, anniversary or birthday.",
         inLanguage: "en-IN",
         datePublished: "2023-01-01",
+        // dateModified updates on each build/render → freshness signal for Google
         dateModified: new Date().toISOString().split("T")[0],
         primaryImageOfPage: {
           "@type": "ImageObject",
-          url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto/f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
+          url: "https://res.cloudinary.com/dhkkvo36x/image/upload/q_auto,f_auto/v1772043937/VenuesEventsDesktopCarHeaderCard_itlslv.png",
           width: 1200,
           height: 630,
         },
@@ -98,17 +99,9 @@ function HomepageStructuredData() {
               "@type": "ListItem",
               position: 1,
               name: "Home",
-              item: DOMAIN,
+              item: `${DOMAIN}/`,
             },
           ],
-        },
-        potentialAction: {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: `${DOMAIN}/search?q={search_term_string}`,
-          },
-          "query-input": "required name=search_term_string",
         },
         speakable: {
           "@type": "SpeakableSpecification",
@@ -116,14 +109,14 @@ function HomepageStructuredData() {
         },
       },
 
-      // ItemList — top vendor categories, helps Google show rich category results
+      // ItemList — vendor categories as rich results in Google
       {
         "@type": "ItemList",
         "@id": `${DOMAIN}/vendors/marketplace#itemlist`,
         name: "Event Vendor Categories on PlanWAB",
         description:
           "Browse top event vendor categories available on PlanWAB marketplace across India",
-        url: DOMAIN,
+        url: `${DOMAIN}/`,
         numberOfItems: 8,
         itemListOrder: "https://schema.org/ItemListOrderAscending",
         itemListElement: [
@@ -132,8 +125,7 @@ function HomepageStructuredData() {
             position: 1,
             name: "Wedding Photographers",
             url: `${DOMAIN}/vendors/marketplace/photographers`,
-            description:
-              "Professional wedding and event photographers across India",
+            description: "Professional wedding and event photographers across India",
           },
           {
             "@type": "ListItem",
@@ -178,20 +170,21 @@ function HomepageStructuredData() {
             position: 7,
             name: "Wedding Planners",
             url: `${DOMAIN}/vendors/marketplace/planners`,
-            description:
-              "Full-service wedding and event planners across India",
+            description: "Full-service wedding and event planners across India",
           },
           {
             "@type": "ListItem",
             position: 8,
             name: "Mehendi Artists",
             url: `${DOMAIN}/vendors/marketplace/mehendi`,
-            description: "Professional mehendi artists for weddings and functions",
+            description:
+              "Professional mehendi artists for weddings and functions",
           },
         ],
       },
 
-      // FAQPage — targets featured snippet / PAA boxes in Google
+      // FAQPage — targets "People Also Ask" boxes in Google results.
+      // These appear above organic results and drive significant traffic.
       {
         "@type": "FAQPage",
         "@id": `${DOMAIN}/#faq`,
@@ -225,7 +218,15 @@ function HomepageStructuredData() {
             name: "Which cities does PlanWAB cover?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "PlanWAB covers vendors across major Indian cities including Delhi, Noida, Mumbai, Bangalore, Hyderabad, Pune, and many more cities across India.",
+              text: "PlanWAB covers vendors across major Indian cities including Delhi, Noida, Gurgaon, Mumbai, Bangalore, Hyderabad, Pune, Jaipur and many more cities across India.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "What types of event vendors can I find on PlanWAB?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "On PlanWAB you can find photographers, videographers, decorators, caterers, DJs, makeup artists, mehendi artists, wedding planners, venues and many more vendor categories for weddings, birthdays and anniversaries.",
             },
           },
         ],
