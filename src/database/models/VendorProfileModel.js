@@ -100,6 +100,17 @@ const reelSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+const PackageSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  originalPrice: { type: Number },
+  duration: { type: String },
+  features: { type: [String], default: [] },
+  notIncluded: { type: [String], default: [] },
+  isPopular: { type: Boolean, default: false },
+  savingsPercentage: { type: Number, default: 0 },
+});
+
 const vendorProfileSchema = new mongoose.Schema(
   {
     vendorId: {
@@ -172,6 +183,7 @@ const vendorProfileSchema = new mongoose.Schema(
     highlights: [highlightSchema],
     posts: [postSchema],
     reels: [reelSchema],
+    packages: [PackageSchema],
     createdBy: {
       type: String,
       required: true,

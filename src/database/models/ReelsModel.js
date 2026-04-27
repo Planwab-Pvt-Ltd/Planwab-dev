@@ -1,6 +1,5 @@
 // models/Reel.js
 import mongoose from "mongoose";
-import { min } from "three/src/nodes/math/MathNode.js";
 
 const reelSchema = new mongoose.Schema(
   {

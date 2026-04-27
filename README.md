@@ -36,6 +36,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
+
 ```
 Planwab-dev
 ├─ .dockerignore
@@ -48,6 +49,12 @@ Planwab-dev
 ├─ package.json
 ├─ postcss.config.mjs
 ├─ public
+│  ├─ android-chrome-192x192.png
+│  ├─ android-chrome-512x512.png
+│  ├─ apple-touch-icon.png
+│  ├─ favicon-16x16.png
+│  ├─ favicon-32x32.png
+│  ├─ favicon.ico
 │  ├─ file.svg
 │  ├─ globe.svg
 │  ├─ GlowLoadingGif.gif
@@ -55,6 +62,7 @@ Planwab-dev
 │  ├─ next.svg
 │  ├─ planwablogo.ico
 │  ├─ planwablogo.png
+│  ├─ site.webmanifest
 │  ├─ vercel.svg
 │  └─ window.svg
 ├─ README.md
@@ -162,10 +170,14 @@ Planwab-dev
 │  │  │  │     │  └─ [category]
 │  │  │  │     │     ├─ loading.js
 │  │  │  │     │     └─ page.js
-│  │  │  │     └─ marketplace
-│  │  │  │        ├─ page.jsx
-│  │  │  │        └─ [category]
-│  │  │  │           └─ page.jsx
+│  │  │  │     ├─ marketplace
+│  │  │  │     │  ├─ page.jsx
+│  │  │  │     │  └─ [category]
+│  │  │  │     │     └─ page.jsx
+│  │  │  │     └─ profiles
+│  │  │  │        └─ explore
+│  │  │  │           ├─ loading.js
+│  │  │  │           └─ page.js
 │  │  │  ├─ layout.js
 │  │  │  └─ page.js
 │  │  ├─ (mobile)
@@ -251,12 +263,16 @@ Planwab-dev
 │  │  │     │     │  └─ [category]
 │  │  │     │     │     ├─ loading.js
 │  │  │     │     │     └─ page.js
-│  │  │     │     └─ marketplace
-│  │  │     │        ├─ loading.js
-│  │  │     │        ├─ page.jsx
-│  │  │     │        └─ [category]
+│  │  │     │     ├─ marketplace
+│  │  │     │     │  ├─ loading.js
+│  │  │     │     │  ├─ page.jsx
+│  │  │     │     │  └─ [category]
+│  │  │     │     │     ├─ loading.js
+│  │  │     │     │     └─ page.jsx
+│  │  │     │     └─ profiles
+│  │  │     │        └─ explore
 │  │  │     │           ├─ loading.js
-│  │  │     │           └─ page.jsx
+│  │  │     │           └─ page.js
 │  │  │     ├─ layout.js
 │  │  │     ├─ loading.js
 │  │  │     └─ page.js
@@ -308,6 +324,12 @@ Planwab-dev
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ featured
 │  │  │  │  │  └─ route.js
+│  │  │  │  ├─ reel-sections
+│  │  │  │  │  ├─ feed
+│  │  │  │  │  │  └─ route.js
+│  │  │  │  │  ├─ route.js
+│  │  │  │  │  └─ [id]
+│  │  │  │  │     └─ route.js
 │  │  │  │  ├─ related
 │  │  │  │  │  └─ [id]
 │  │  │  │  │     └─ route.js
@@ -344,9 +366,13 @@ Planwab-dev
 │  │  │  │  ├─ removeFromList
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ route.js
+│  │  │  │  ├─ schedule-meet
+│  │  │  │  │  └─ route.js
 │  │  │  │  ├─ status
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ subscription
+│  │  │  │  │  └─ route.js
+│  │  │  │  ├─ testimonials
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ toggle-like
 │  │  │  │  │  └─ route.js
@@ -473,6 +499,9 @@ Planwab-dev
 │  │  │  │  │  ├─ AddReels.jsx
 │  │  │  │  │  ├─ AllReels.jsx
 │  │  │  │  │  ├─ EditReelTab.jsx
+│  │  │  │  │  ├─ reelSection
+│  │  │  │  │  │  ├─ AddEditReelSection.jsx
+│  │  │  │  │  │  └─ AllReelSections.jsx
 │  │  │  │  │  └─ ViewReelTab.jsx
 │  │  │  │  ├─ Sidebar.jsx
 │  │  │  │  ├─ users
@@ -535,6 +564,7 @@ Planwab-dev
 │  │  │  │  ├─ VendorOnboardingPageWrapper.jsx
 │  │  │  │  ├─ VendorProfileNewPageWrapper.jsx
 │  │  │  │  ├─ VendorProfilePageWrapper.jsx
+│  │  │  │  ├─ VendorProfilesExploreWrapper.jsx
 │  │  │  │  ├─ VendorRegisterPageWrapper.jsx
 │  │  │  │  └─ VendorsMarketplacePageWrapper.jsx
 │  │  │  ├─ ReviewSection.jsx
@@ -631,6 +661,7 @@ Planwab-dev
 │  │  │  │  ├─ QuickServices.jsx
 │  │  │  │  ├─ SampleProposals.jsx
 │  │  │  │  ├─ ServicesSteps.jsx
+│  │  │  │  ├─ TestimonialsSection.jsx
 │  │  │  │  └─ WhyWeBetter.jsx
 │  │  │  ├─ Img.jsx
 │  │  │  ├─ LeadCaptureModal.jsx
@@ -659,6 +690,7 @@ Planwab-dev
 │  │  │  │  ├─ VendorOnboardingPageWrapper.jsx
 │  │  │  │  ├─ VendorProfileNewPageWrapper.jsx
 │  │  │  │  ├─ VendorProfilePageWrapper.jsx
+│  │  │  │  ├─ VendorProfilesExploreWrapper.jsx
 │  │  │  │  ├─ VendorRegisterPageWrapper.jsx
 │  │  │  │  └─ VendorsMarketplacePageWrapper.jsx
 │  │  │  ├─ RawHeroMedia.jsx
@@ -678,7 +710,6 @@ Planwab-dev
 │  │  │  │  │  ├─ SearchSection.jsx
 │  │  │  │  │  ├─ ServicesBanner.jsx
 │  │  │  │  │  ├─ ServicesSection.jsx
-│  │  │  │  │  ├─ TestimonialsSection.jsx
 │  │  │  │  │  └─ VendorsSection.jsx
 │  │  │  │  └─ skeletons
 │  │  │  │     └─ DetailsPageSkeleton.jsx
@@ -711,6 +742,8 @@ Planwab-dev
 │  │  │  ├─ PlannedEvent.js
 │  │  │  ├─ PlannedToolEvent.js
 │  │  │  ├─ ReelsModel.js
+│  │  │  ├─ ScheduleMeetModel.js
+│  │  │  ├─ TestimonialsModel.js
 │  │  │  ├─ userModel.js
 │  │  │  ├─ VendorModel.js
 │  │  │  ├─ VendorProfileModel.js
@@ -734,6 +767,8 @@ Planwab-dev
 │  │  ├─ getDeviceType.js
 │  │  ├─ navigationUtils.js
 │  │  ├─ reviewUtils.js
+│  │  ├─ seo
+│  │  │  └─ marketplace.js
 │  │  ├─ ThemeClerkProvider.jsx
 │  │  ├─ utils.js
 │  │  └─ video-thumbnail.js

@@ -15,6 +15,7 @@ import {
 import {
   ArrowLeft,
   ArrowRight,
+  SettingsIcon,
   Share2,
   MoreVertical,
   Download,
@@ -159,6 +160,7 @@ import ImageKit from "imagekit-javascript";
 import { useVideoThumbnail, generateVideoThumbnail } from "../../../lib/video-thumbnail";
 import { useNavigationState } from "../../../hooks/useNavigationState";
 import Link from "next/link";
+import EditVendorModal from "../../shared/EditVendorModal";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -11307,6 +11309,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
+  const [upsertVendorModal, setUpsertVendorModal] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [coverImageLoaded, setCoverImageLoaded] = useState(false);
@@ -12402,6 +12405,10 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   useEffect(() => {
     handleLikeRef.current = handleLike;
   }, [handleLike]);
+
+  const handleUpsertVendor = (vendor) => {
+     window.location.reload();
+  };
 
   const stats = useMemo(
     () => [
@@ -14856,10 +14863,10 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Meet</span>
-                     <span className="flex items-center gap-1 text-[8px] uppercase tracking-widest text-blue-500 font-semibold opacity-70 mt-0.5">
-                        <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
-                        Live
-                      </span>
+                    <span className="flex items-center gap-1 text-[8px] uppercase tracking-widest text-blue-500 font-semibold opacity-70 mt-0.5">
+                      <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
+                      Live
+                    </span>
                   </div>
                 </motion.button>
               </motion.div>
@@ -15005,6 +15012,32 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             }}
           >
             <Edit2Icon size={21} className="text-white" />
+          </motion.button>
+        )}
+
+        {/* Edit Services Button */}
+        {isVerified && activeTab === "services" && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to edit services");
+                return;
+              }
+              setUpsertVendorModal(true);
+            }}
+            className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center cursor-pointer"
+            style={{
+              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+              boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`,
+            }}
+            title="Edit Services"
+          >
+            <SettingsIcon size={21} className="text-white" />
           </motion.button>
         )}
 
@@ -15288,6 +15321,12 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
               updateURLParams({ update: null });
             }}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {upsertVendorModal && (
+          <EditVendorModal onSuccess={handleUpsertVendor} onClose={() => setUpsertVendorModal(false)} vendor={vendor} profile={profile} />
         )}
       </AnimatePresence>
 
