@@ -34,6 +34,7 @@ import {
   Headphones,
   Award,
   Users,
+  CreditCard,
 } from "lucide-react";
 
 // =============================================================================
@@ -374,7 +375,7 @@ export default function ProposalTrackingPageWrapper() {
                </div>
             </div>
 
-            {/* Quick Actions Action Bar */}
+            {/* Quick Actions Action Bar
             <div className="bg-indigo-600 rounded-[40px] p-8 text-white shadow-xl shadow-indigo-100">
                <h3 className="text-lg font-black mb-6 flex items-center gap-2"><Zap size={20} fill="white" /> Instant Actions</h3>
                <div className="grid grid-cols-2 gap-4">
@@ -389,7 +390,7 @@ export default function ProposalTrackingPageWrapper() {
                </div>
             </div>
 
-            {/* Activity Hub Support Card */}
+            Activity Hub Support Card
             <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex gap-6">
                   <div className="w-16 h-16 rounded-[24px] bg-slate-900 flex items-center justify-center shrink-0">
@@ -401,7 +402,7 @@ export default function ProposalTrackingPageWrapper() {
                     <button className="mt-4 text-xs font-black text-indigo-600 uppercase underline underline-offset-4">Talk to Expert</button>
                   </div>
                 </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>

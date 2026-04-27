@@ -1530,7 +1530,7 @@ const LeftPanel = ({ category }) => {
     <div className="hidden lg:flex fixed top-0 left-0 w-[40%] h-screen flex-col items-center justify-between py-8 px-8 bg-white dark:bg-gray-800/50 dark:backdrop-blur-sm shadow-xl rounded-r-3xl overflow-hidden z-10 border-r border-gray-200 dark:border-gray-700/50">
       <div className="w-full flex-shrink-0">
         <div className="mx-auto w-32 h-11 bg-gradient-to-r from-amber-600 to-amber-800 rounded-xl flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-lg">PlanWab</span>
+          <span onClick={() => window.location.href = "/"} className="text-white font-bold text-lg">PlanWab</span>
         </div>
       </div>
       <div className="flex flex-col items-center gap-8 text-center">
@@ -2290,7 +2290,7 @@ const DetailItem = ({ icon: Icon, label, value }) => {
 // STEP SUCCESS (Enhanced)
 // =============================================================================
 
-const StepSuccess = ({ category, formData, onPrev, onReset }) => {
+const StepSuccess = ({ category, formData, onPrev, onReset, genratedPurposalId }) => {
   const config = categoryConfig[category] || categoryConfig.wedding;
   const fullDate = formData?.selectedDate
     ? formatDate(formData.selectedDate)
@@ -2596,7 +2596,7 @@ export default function PlanMyEventPageWrapper() {
           />
         );
       case 6:
-        return <StepSuccess category={category} formData={formData} onPrev={handlePrevStep} onReset={handleReset} />;
+        return <StepSuccess category={category} formData={formData} onPrev={handlePrevStep} onReset={handleReset} genratedPurposalId={genratedPurposalId} />;
       default:
         return <StepCity onNext={handleNextStep} formData={formData} category={category} />;
     }

@@ -8,6 +8,7 @@ import { motion, AnimatePresence, useScroll, useTransform, LayoutGroup } from "f
 import {
   ArrowLeft,
   Tag,
+  SettingsIcon,
   Share2,
   MoreVertical,
   Download,
@@ -151,6 +152,7 @@ import SmartMedia from "@/components/mobile/SmartMediaLoader";
 import ImageKit from "imagekit-javascript";
 import { useVideoThumbnail } from "../../../lib/video-thumbnail";
 import { useNavigationState } from "../../../hooks/useNavigationState";
+import EditNewVendorModal from "../../shared/EditNewVendorModal";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -11504,6 +11506,7 @@ const VendorProfileNewPageWrapper = ({
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
+  const [upsertVendorModal, setUpsertVendorModal] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [coverImageLoaded, setCoverImageLoaded] = useState(false);
@@ -12615,6 +12618,10 @@ const VendorProfileNewPageWrapper = ({
   useEffect(() => {
     handleLikeRef.current = handleLike;
   }, [handleLike]);
+
+  const handleUpsertVendor = (vendor) => {
+    window.location.reload();
+  };
 
   const stats = useMemo(
     () => [
@@ -15308,6 +15315,32 @@ const VendorProfileNewPageWrapper = ({
           </motion.button>
         )}
 
+        {/* Edit Services Button */}
+        {isVerified && activeTab === "services" && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to edit services");
+                return;
+              }
+              setUpsertVendorModal(true);
+            }}
+            className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center cursor-pointer"
+            style={{
+              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+              boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`,
+            }}
+            title="Edit Services"
+          >
+            <SettingsIcon size={21} className="text-white" />
+          </motion.button>
+        )}
+
         {/* Upload Content Button */}
         {isVerified && (
           <motion.button
@@ -15607,6 +15640,12 @@ const VendorProfileNewPageWrapper = ({
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+              {upsertVendorModal && (
+                <EditNewVendorModal onSuccess={handleUpsertVendor} onClose={() => setUpsertVendorModal(false)} vendor={vendor} profile={profile} />
+              )}
+            </AnimatePresence>
 
       {/* Image Gallery Modal */}
       <AnimatePresence>

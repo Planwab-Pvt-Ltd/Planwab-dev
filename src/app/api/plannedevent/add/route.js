@@ -275,11 +275,12 @@ export async function GET(request) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get("eventId");
+    const eventId = searchParams.get("id");
+    let event;
 
     // If specific event ID is provided
     if (eventId) {
-      const event = await PlannedEvent.findById(eventId).lean();
+      event = await PlannedEvent.findById(eventId).lean();
       if (!event) {
         return NextResponse.json({ success: false, message: "Event not found" }, { status: 404 });
       }
@@ -289,8 +290,8 @@ export async function GET(request) {
     return NextResponse.json(
       {
         success: true,
-        count: events.length,
-        events: events,
+        count: event ? 1 : 0,
+        events: event ? [event] : [],
       },
       { status: 200 }
     );
