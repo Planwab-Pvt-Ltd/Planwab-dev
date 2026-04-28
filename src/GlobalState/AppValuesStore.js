@@ -8,6 +8,7 @@ export const useAppValuesStore = create(
       allowedAction: null,
       leadData: null,
       sessionId: null,
+      isVendorProfileVerified: false,
 
       setCanContinue: (value) => set({ canContinue: value }),
 
@@ -16,6 +17,8 @@ export const useAppValuesStore = create(
       setLeadData: (data) => set({ leadData: data }),
 
       setSessionId: (id) => set({ sessionId: id }),
+
+      setIsVendorProfileVerified: (value) => set({ isVendorProfileVerified: value }),
 
       checkActionPermission: (requiredAction) => {
         const { canContinue, allowedAction } = get();
@@ -42,6 +45,7 @@ export const useAppValuesStore = create(
         canContinue: state.canContinue,
         allowedAction: state.allowedAction,
         sessionId: state.sessionId,
+        isVendorProfileVerified: state.isVendorProfileVerified,
       }),
     }
   )

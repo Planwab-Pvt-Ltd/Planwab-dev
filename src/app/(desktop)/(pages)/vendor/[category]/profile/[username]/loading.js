@@ -1,138 +1,194 @@
 import React from "react";
 
-// Helper component for the shimmer animation
 const ShimmerEffect = ({ className }) => (
-  <div className={`relative overflow-hidden bg-gray-200 dark:bg-gray-800 ${className}`}>
-    <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent" />
+  <div className={`relative overflow-hidden bg-gray-100 dark:bg-gray-800/60 ${className}`}>
+    <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 dark:via-white/[0.07] to-transparent" />
   </div>
 );
 
 export default function VendorProfileLoading() {
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-black pb-24">
-      {/* Header Skeleton */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <ShimmerEffect className="w-9 h-9 rounded-full" />
-            <ShimmerEffect className="w-28 h-4 rounded-full" />
+    <main className="min-h-screen bg-gray-50/50 dark:bg-black">
+      {/* ===== Top Navigation Bar ===== */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl border-b border-gray-200/60 dark:border-gray-800/40">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-between px-8 py-3.5">
+          <div className="flex items-center gap-4">
+            <ShimmerEffect className="w-9 h-9 rounded-xl" />
+            <ShimmerEffect className="w-36 h-5 rounded-lg" />
           </div>
-          <div className="flex gap-1.5">
-            <ShimmerEffect className="w-9 h-9 rounded-full" />
+          {/* Desktop Search Bar */}
+          <ShimmerEffect className="w-[320px] h-10 rounded-xl hidden lg:block" />
+          <div className="flex items-center gap-2">
+            <ShimmerEffect className="w-10 h-10 rounded-xl" />
+            <ShimmerEffect className="w-10 h-10 rounded-xl" />
+            <ShimmerEffect className="w-10 h-10 rounded-xl" />
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1" />
             <ShimmerEffect className="w-9 h-9 rounded-full" />
           </div>
         </div>
       </header>
 
-      <div className="pt-14" />
+      <div className="pt-[68px]" />
 
-      <div className="bg-white dark:bg-gray-900">
-        <div className="px-4 pt-5 pb-5">
-          {/* Profile Info Section Skeleton */}
-          <div className="flex items-start gap-5 mb-6">
-            {/* Profile Picture */}
+      {/* ===== Cover / Banner Area ===== */}
+      <div className="relative">
+        <ShimmerEffect className="w-full h-[260px] lg:h-[300px]" />
+        {/* Fade into content */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-gray-50/50 dark:from-black to-transparent" />
+      </div>
+
+      {/* ===== Main Content Container ===== */}
+      <div className="max-w-[1200px] mx-auto px-8 -mt-16 relative z-10">
+        {/* ===== Profile Header Card ===== */}
+        <div className="bg-white dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-800/40 shadow-sm p-8 mb-6">
+          <div className="flex items-start gap-8">
+            {/* Avatar */}
             <div className="relative flex-shrink-0">
-              <ShimmerEffect className="w-24 h-24 rounded-full" />
-              <ShimmerEffect className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-white dark:border-gray-900" />
+              <ShimmerEffect className="w-32 h-32 rounded-3xl ring-4 ring-white dark:ring-gray-900 shadow-lg" />
+              <ShimmerEffect className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full border-[3px] border-white dark:border-gray-900" />
             </div>
 
-            {/* Profile Details */}
-            <div className="flex-1 min-w-0 pt-2 space-y-3">
-              <div className="flex items-center gap-2">
-                <ShimmerEffect className="w-36 h-6 rounded-lg" />
-                <ShimmerEffect className="w-12 h-5 rounded-full" />
+            {/* Profile Info */}
+            <div className="flex-1 min-w-0 pt-2">
+              <div className="flex items-start justify-between mb-5">
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <ShimmerEffect className="w-52 h-7 rounded-lg" />
+                    <ShimmerEffect className="w-20 h-6 rounded-full" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShimmerEffect className="w-36 h-5 rounded-lg" />
+                    <div className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+                    <ShimmerEffect className="w-28 h-5 rounded-lg" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShimmerEffect className="w-4 h-4 rounded" />
+                    <ShimmerEffect className="w-40 h-4 rounded-lg" />
+                  </div>
+                </div>
+
+                {/* Action Buttons - Desktop */}
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <ShimmerEffect className="w-32 h-11 rounded-xl" />
+                  <ShimmerEffect className="w-28 h-11 rounded-xl" />
+                  <ShimmerEffect className="w-11 h-11 rounded-xl" />
+                </div>
               </div>
-              <ShimmerEffect className="w-28 h-5 rounded-lg" />
-              <div className="flex items-center gap-1.5">
-                <ShimmerEffect className="w-4 h-4 rounded-full" />
-                <ShimmerEffect className="w-32 h-4 rounded-lg" />
+
+              {/* Stats Row */}
+              <div className="flex items-center gap-10 pt-4 border-t border-gray-100 dark:border-gray-800/50">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <ShimmerEffect className="w-10 h-6 rounded-md" />
+                    <ShimmerEffect className="w-16 h-4 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== Two Column Layout ===== */}
+        <div className="flex gap-6 items-start">
+          {/* ===== Left Sidebar ===== */}
+          <div className="w-[320px] flex-shrink-0 space-y-5 sticky top-[84px]">
+            {/* Bio Card */}
+            <div className="bg-white dark:bg-gray-900/80 rounded-2xl border border-gray-200/60 dark:border-gray-800/40 shadow-sm p-6">
+              <ShimmerEffect className="w-16 h-4 rounded-md mb-4" />
+              <div className="space-y-2.5">
+                <ShimmerEffect className="w-full h-4 rounded-md" />
+                <ShimmerEffect className="w-11/12 h-4 rounded-md" />
+                <ShimmerEffect className="w-4/5 h-4 rounded-md" />
+                <ShimmerEffect className="w-3/5 h-4 rounded-md" />
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2 mt-5">
+                <ShimmerEffect className="w-20 h-7 rounded-full" />
+                <ShimmerEffect className="w-24 h-7 rounded-full" />
+                <ShimmerEffect className="w-16 h-7 rounded-full" />
+                <ShimmerEffect className="w-28 h-7 rounded-full" />
+              </div>
+            </div>
+
+            {/* Social Links Card */}
+            <div className="bg-white dark:bg-gray-900/80 rounded-2xl border border-gray-200/60 dark:border-gray-800/40 shadow-sm p-6">
+              <ShimmerEffect className="w-24 h-4 rounded-md mb-4" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <ShimmerEffect className="w-9 h-9 rounded-xl" />
+                    <div className="flex-1 space-y-1.5">
+                      <ShimmerEffect className="w-24 h-3.5 rounded-md" />
+                      <ShimmerEffect className="w-32 h-3 rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Highlights Card */}
+            <div className="bg-white dark:bg-gray-900/80 rounded-2xl border border-gray-200/60 dark:border-gray-800/40 shadow-sm p-6">
+              <ShimmerEffect className="w-20 h-4 rounded-md mb-4" />
+              <div className="grid grid-cols-4 gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex flex-col items-center gap-2">
+                    <ShimmerEffect className="w-14 h-14 rounded-2xl" />
+                    <ShimmerEffect className="w-10 h-2.5 rounded-full" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Stats Section Skeleton */}
-          <div className="flex justify-around mb-5 py-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-2 px-4">
-                <ShimmerEffect className="w-12 h-6 rounded-lg" />
-                <ShimmerEffect className="w-14 h-3 rounded-full" />
+          {/* ===== Right Content Area ===== */}
+          <div className="flex-1 min-w-0">
+            {/* Tabs */}
+            <div className="bg-white dark:bg-gray-900/80 rounded-2xl border border-gray-200/60 dark:border-gray-800/40 shadow-sm mb-5 overflow-hidden">
+              <div className="flex">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex-1 py-4 flex items-center justify-center gap-2.5 border-b-2 border-transparent"
+                  >
+                    <ShimmerEffect className="w-5 h-5 rounded-md" />
+                    <ShimmerEffect className="w-14 h-4 rounded-md" />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Bio Section Skeleton */}
-          <div className="mb-5 space-y-2">
-            <ShimmerEffect className="w-full h-4 rounded-lg" />
-            <ShimmerEffect className="w-11/12 h-4 rounded-lg" />
-            <ShimmerEffect className="w-4/5 h-4 rounded-lg" />
-            <ShimmerEffect className="w-3/4 h-4 rounded-lg" />
-            <ShimmerEffect className="w-2/3 h-4 rounded-lg" />
-          </div>
-
-          {/* Social Links Skeleton */}
-          <div className="flex items-center gap-2 mb-5">
-            <ShimmerEffect className="w-24 h-9 rounded-full" />
-            <ShimmerEffect className="w-28 h-9 rounded-full" />
-          </div>
-
-          {/* Action Buttons Skeleton */}
-          <div className="flex gap-2 mb-5">
-            <ShimmerEffect className="flex-[2] h-12 rounded-xl" />
-            <ShimmerEffect className="flex-1 h-12 rounded-xl" />
-            <ShimmerEffect className="flex-1 h-12 rounded-xl" />
-          </div>
-
-          {/* Highlights Section Skeleton */}
-          <div className="flex gap-4 py-1 overflow-hidden">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-2 min-w-[72px]">
-                <ShimmerEffect className="w-16 h-16 rounded-2xl" />
-                <ShimmerEffect className="w-12 h-3 rounded-full" />
+            {/* Post Grid */}
+            <div className="bg-white dark:bg-gray-900/80 rounded-2xl border border-gray-200/60 dark:border-gray-800/40 shadow-sm overflow-hidden">
+              <div className="grid grid-cols-3 gap-1 p-1">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="aspect-square relative group">
+                    <ShimmerEffect className="w-full h-full rounded-xl" />
+                    {/* Fake video icon on some items */}
+                    {(i === 1 || i === 4 || i === 7 || i === 10) && (
+                      <div className="absolute top-2.5 right-2.5">
+                        <ShimmerEffect className="w-6 h-6 rounded-md" />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs Section Skeleton */}
-      <div className="sticky top-14 z-30 bg-white dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800/80">
-        <div className="flex">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex-1 py-3.5 flex items-center justify-center gap-2">
-              <ShimmerEffect className="w-5 h-5 rounded" />
-              <ShimmerEffect className="w-12 h-3 rounded-full" />
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Bottom Spacing */}
+      <div className="h-20" />
 
-      {/* Content Grid Skeleton */}
-      <div className="bg-white dark:bg-gray-900 min-h-[50vh]">
-        <div className="grid grid-cols-3 gap-0.5">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-            /* Replaced motion.div with div to avoid hydration errors in loading.js */
-            <div key={i} className="aspect-square">
-              <ShimmerEffect className="w-full h-full" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Floating Button Skeleton */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <ShimmerEffect className="w-14 h-14 rounded-full" />
-      </div>
-
-      {/* CSS for Shimmer Animation */}
-      {/* Note: In Next.js App Router, using a global css file is preferred, 
-          but this style tag works for standalone skeletons */}
+      {/* Shimmer Animation Keyframes */}
       <style>{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
         .animate-shimmer {
-          animation: shimmer 1.5s infinite;
+          animation: shimmer 1.8s ease-in-out infinite;
         }
       `}</style>
     </main>

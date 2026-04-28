@@ -745,13 +745,13 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
   ];
 
   useEffect(() => {
-    if (vendor) {
-      const initialData = initializeFormData(vendor);
+    if (profile) {
+      const initialData = initializeFormData(profile);
       setFormData(initialData);
       setOriginalData(JSON.parse(JSON.stringify(initialData)));
       setExistingImages(vendor.images || []);
     }
-  }, [vendor, initializeFormData]);
+  }, [profile, initializeFormData]);
 
   useEffect(() => {
     return () => {
@@ -1159,7 +1159,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
   const overallProgress = Math.round(Object.values(sectionProgress).reduce((a, b) => a + b, 0) / sections.length);
   const requiredFieldsComplete = true; // Always allow saving
 
-  if (!vendor || !formData.name) {
+  if (!profile || !formData.username) {
     return (
       <motion.div
         initial={{ opacity: 0 }}

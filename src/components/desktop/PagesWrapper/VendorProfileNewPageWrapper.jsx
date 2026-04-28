@@ -8,6 +8,7 @@ import { motion, AnimatePresence, useScroll, useTransform, LayoutGroup } from "f
 import {
   ArrowLeft,
   Share2,
+  SettingsIcon,
   ChefHat,
   Languages,
   HelpCircle,
@@ -151,6 +152,9 @@ import { SignInButton, useUser } from "@clerk/clerk-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useVideoThumbnail, generateVideoThumbnail } from "../../../lib/video-thumbnail";
 import { useNavigationState } from "../../../hooks/useNavigationState";
+import EditNewVendorModal from "../../shared/EditNewVendorModal";
+import { useCartStore } from "../../../GlobalState/CartDataStore";
+import { useAppValuesStore } from "../../../GlobalState/AppValuesStore";
 
 const POST_CONFIGS = {
   1: {
@@ -331,7 +335,6 @@ const CATEGORY_GRADIENTS = {
   makeup: { from: "#f43f5e", to: "#ec4899" },
   mehendi: { from: "#10b981", to: "#059669" },
 };
-
 
 const MOCK_SERVICES = [
   {
@@ -692,7 +695,7 @@ const PasswordVerificationModal = ({ isOpen, onClose, onSuccess, vendorId, vendo
       const response = await fetch(`/api/vendor/profile/verify-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: password.trim(), id: vendorId}),
+        body: JSON.stringify({ password: password.trim(), id: vendorId }),
       });
 
       const result = await response.json();
@@ -801,8 +804,9 @@ const PasswordVerificationModal = ({ isOpen, onClose, onSuccess, vendorId, vendo
                     onKeyDown={handleKeyDown}
                     placeholder="Enter your password"
                     disabled={isVerifying}
-                    className={`w-full pl-12 pr-12 py-4 bg-slate-100 dark:bg-slate-800 border-2 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all ${error ? "border-red-500 focus:border-red-500" : "border-transparent focus:border-blue-500"
-                      } ${isVerifying ? "opacity-60 cursor-not-allowed" : ""}`}
+                    className={`w-full pl-12 pr-12 py-4 bg-slate-100 dark:bg-slate-800 border-2 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all ${
+                      error ? "border-red-500 focus:border-red-500" : "border-transparent focus:border-blue-500"
+                    } ${isVerifying ? "opacity-60 cursor-not-allowed" : ""}`}
                   />
                   <motion.button
                     type="button"
@@ -1352,13 +1356,13 @@ const NoDataFallback = ({ postNumber, onUpdateClick }) => {
 
   return (
     <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-gray-50 border border-gray-200 border-dashed rounded-xl">
-      <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${config.color} flex items-center justify-center mb-4 opacity-80`}>
+      <div
+        className={`w-12 h-12 rounded-full bg-gradient-to-r ${config.color} flex items-center justify-center mb-4 opacity-80`}
+      >
         <IconComponent size={24} className="text-white" />
       </div>
       <h3 className="text-gray-800 font-medium mb-1">{config.title}</h3>
-      <p className="text-gray-500 text-xs mb-4 max-w-[200px]">
-        No details added for this post category yet.
-      </p>
+      <p className="text-gray-500 text-xs mb-4 max-w-[200px]">No details added for this post category yet.</p>
       {onUpdateClick && (
         <button
           onClick={onUpdateClick}
@@ -1370,7 +1374,6 @@ const NoDataFallback = ({ postNumber, onUpdateClick }) => {
     </div>
   );
 };
-
 
 // Validation function
 const validateField = (field, value) => {
@@ -1593,7 +1596,9 @@ const PostContentForm = ({ postNumber, initialData, onSubmit, onCancel, isSubmit
                     className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Package {index + 1}</span>
+                      <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Package {index + 1}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handlePackageRemove(index)}
@@ -1683,7 +1688,6 @@ const PostContentForm = ({ postNumber, initialData, onSubmit, onCancel, isSubmit
     </motion.div>
   );
 };
-
 
 const WorkDetailsContent = ({ data }) => (
   <div className="space-y-4">
@@ -1881,7 +1885,6 @@ const TrustContent = ({ data }) => (
   </div>
 );
 
-
 const PostDetailModal = ({
   post,
   posts = [],
@@ -1895,7 +1898,7 @@ const PostDetailModal = ({
   vendorId: desktopVendorId,
   vendorUsername,
   allInteractions = {},
-  isVerified = false,
+  isVendorProfileVerified,
   profileId,
   onInteractionUpdate,
 }) => {
@@ -2090,11 +2093,18 @@ const PostDetailModal = ({
 
   // ===== RENDER POST CONTENT =====
   const renderPostContent = useCallback(() => {
-    const hasContent = contentData && Object.values(contentData).some(val =>
-      Array.isArray(val) ? val.length > 0 : (val !== undefined && val !== null && val !== "")
-    );
+    const hasContent =
+      contentData &&
+      Object.values(contentData).some((val) =>
+        Array.isArray(val) ? val.length > 0 : val !== undefined && val !== null && val !== "",
+      );
     if (!hasContent) {
-      return <NoDataFallback postNumber={postNumber} onUpdateClick={isVerified ? (() => setShowContentForm(true)) : null} />;
+      return (
+        <NoDataFallback
+          postNumber={postNumber}
+          onUpdateClick={isVendorProfileVerified === profileId ? () => setShowContentForm(true) : null}
+        />
+      );
     }
 
     switch (postNumber) {
@@ -2109,7 +2119,7 @@ const PostDetailModal = ({
       default:
         return null;
     }
-  }, [contentData, postNumber, isVerified]);
+  }, [contentData, postNumber, isVendorProfileVerified, profileId]);
 
   // Video event handlers with optimized updates
   useEffect(() => {
@@ -2156,7 +2166,7 @@ const PostDetailModal = ({
 
     const handleEnded = () => {
       video.currentTime = 0;
-      video.play().catch(() => { });
+      video.play().catch(() => {});
     };
 
     const handleError = () => {
@@ -2233,7 +2243,7 @@ const PostDetailModal = ({
     } else {
       // Resume video only if it was playing before drag started
       if (videoRef.current && isVideo && wasDragPlayingRef.current) {
-        videoRef.current.play().catch(() => { });
+        videoRef.current.play().catch(() => {});
       }
     }
 
@@ -2442,9 +2452,9 @@ const PostDetailModal = ({
       } else {
         setLikes(data.data.likesCount);
         if (onInteractionUpdate) {
-          onInteractionUpdate(currentPost._id, { 
-            likesCount: data.data.likesCount, 
-            isLiked: newLikedState 
+          onInteractionUpdate(currentPost._id, {
+            likesCount: data.data.likesCount,
+            isLiked: newLikedState,
           });
         }
       }
@@ -2564,8 +2574,8 @@ const PostDetailModal = ({
         const updatedReview = data.data.review;
         setReviews((prev) => prev.map((r) => (r._id === tempId ? updatedReview : r)));
         if (onInteractionUpdate) {
-          onInteractionUpdate(currentPost._id, { 
-            reviews: [...reviews.filter(r => r._id !== tempId), updatedReview] 
+          onInteractionUpdate(currentPost._id, {
+            reviews: [...reviews.filter((r) => r._id !== tempId), updatedReview],
           });
         }
       } else {
@@ -2595,8 +2605,8 @@ const PostDetailModal = ({
         }),
       });
       if (onInteractionUpdate) {
-        onInteractionUpdate(currentPost._id, { 
-          reviews: reviews.filter((r) => (r._id || r.id) !== reviewId) 
+        onInteractionUpdate(currentPost._id, {
+          reviews: reviews.filter((r) => (r._id || r.id) !== reviewId),
         });
       }
     } catch (err) {
@@ -3074,9 +3084,13 @@ const PostDetailModal = ({
                   />
                 </div>
                 <div>
-                  <span className="text-gray-900 font-serif font-bold text-[15px] block tracking-tight">{vendorName}</span>
+                  <span className="text-gray-900 font-serif font-bold text-[15px] block tracking-tight">
+                    {vendorName}
+                  </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-xs font-semibold bg-gradient-to-r ${POST_CONFIGS[postNumber]?.color || "from-gray-500 to-gray-600"} bg-clip-text text-transparent`}>
+                    <span
+                      className={`text-xs font-semibold bg-gradient-to-r ${POST_CONFIGS[postNumber]?.color || "from-gray-500 to-gray-600"} bg-clip-text text-transparent`}
+                    >
                       {POST_CONFIGS[postNumber]?.title || "Details"}
                     </span>
                     <span className="text-gray-300 text-xs">•</span>
@@ -3085,7 +3099,7 @@ const PostDetailModal = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {isVerified && (
+                {isVendorProfileVerified === profileId && (
                   <button
                     onClick={() => setShowContentForm(!showContentForm)}
                     className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors border border-gray-200"
@@ -3131,11 +3145,7 @@ const PostDetailModal = ({
             </AnimatePresence>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 no-scrollbar">
-              {!showContentForm && (
-                <div className="mb-6">
-                  {renderPostContent()}
-                </div>
-              )}
+              {!showContentForm && <div className="mb-6">{renderPostContent()}</div>}
               {currentPost.date && <p className="text-gray-500 text-xs">{currentPost.date}</p>}
 
               {(currentPost.caption || currentPost.description) && (
@@ -3201,7 +3211,11 @@ const PostDetailModal = ({
                         className="p-2.5 rounded-xl hover:bg-gray-100 transition-colors"
                         disabled={isInteracting}
                       >
-                        <motion.div animate={isLiked ? { scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.3 }} className="flex items-center gap-1.5">
+                        <motion.div
+                          animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+                          transition={{ duration: 0.3 }}
+                          className="flex items-center gap-1.5"
+                        >
                           <Heart size={24} className={isLiked ? "text-red-500 fill-red-500" : "text-gray-700"} />
                           {likes > 0 && (
                             <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{likes}</span>
@@ -3279,10 +3293,11 @@ const PostDetailModal = ({
                       }
                     }}
                     disabled={currentIndex === 0}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${currentIndex === 0
-                      ? "bg-gray-50 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
-                      }`}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                      currentIndex === 0
+                        ? "bg-gray-50 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+                    }`}
                   >
                     <ChevronUp size={16} />
                     Previous
@@ -3294,10 +3309,11 @@ const PostDetailModal = ({
                       }
                     }}
                     disabled={currentIndex >= posts.length - 1}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${currentIndex >= posts.length - 1
-                      ? "bg-gray-50 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
-                      }`}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                      currentIndex >= posts.length - 1
+                        ? "bg-gray-50 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+                    }`}
                   >
                     Next
                     <ChevronDown size={16} />
@@ -3602,7 +3618,7 @@ const ReelsViewer = ({
     const video = videoRef.current;
     if (video) {
       video.currentTime = 0;
-      video.play().catch(() => { });
+      video.play().catch(() => {});
     }
   };
 
@@ -3791,7 +3807,7 @@ const ReelsViewer = ({
       goToReel("down");
     } else {
       if (videoRef.current && isPlaying) {
-        videoRef.current.play().catch(() => { });
+        videoRef.current.play().catch(() => {});
       }
     }
 
@@ -4264,10 +4280,11 @@ const ReelsViewer = ({
                       }
                     }}
                     disabled={currentIndex === 0}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${currentIndex === 0
-                      ? "bg-gray-800/50 text-gray-600 cursor-not-allowed"
-                      : "bg-gray-800 text-white hover:bg-gray-700 cursor-pointer"
-                      }`}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                      currentIndex === 0
+                        ? "bg-gray-800/50 text-gray-600 cursor-not-allowed"
+                        : "bg-gray-800 text-white hover:bg-gray-700 cursor-pointer"
+                    }`}
                   >
                     <ChevronUp size={16} />
                     Previous
@@ -4282,10 +4299,11 @@ const ReelsViewer = ({
                       }
                     }}
                     disabled={currentIndex >= reels.length - 1}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${currentIndex >= reels.length - 1
-                      ? "bg-gray-800/50 text-gray-600 cursor-not-allowed"
-                      : "bg-gray-800 text-white hover:bg-gray-700 cursor-pointer"
-                      }`}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                      currentIndex >= reels.length - 1
+                        ? "bg-gray-800/50 text-gray-600 cursor-not-allowed"
+                        : "bg-gray-800 text-white hover:bg-gray-700 cursor-pointer"
+                    }`}
                   >
                     Next
                     <ChevronDown size={16} />
@@ -4425,8 +4443,9 @@ const PortfolioViewer = ({ portfolio, onClose, onBookService }) => {
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsSaved(!isSaved)}
-            className={`py-3.5 px-5 rounded-2xl border transition-all ${isSaved ? "bg-red-500/20 border-red-500/50" : "bg-white/10 backdrop-blur-xl border-white/20"
-              }`}
+            className={`py-3.5 px-5 rounded-2xl border transition-all ${
+              isSaved ? "bg-red-500/20 border-red-500/50" : "bg-white/10 backdrop-blur-xl border-white/20"
+            }`}
           >
             <Heart size={20} className={isSaved ? "text-red-500 fill-red-500" : "text-white"} />
           </motion.button>
@@ -4436,7 +4455,15 @@ const PortfolioViewer = ({ portfolio, onClose, onBookService }) => {
   );
 };
 
-const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, reelsCount, vendorId: uploadVendorId }) => {
+const UploadModal = ({
+  isOpen,
+  onClose,
+  onUploadPost,
+  onUploadReel,
+  postsCount,
+  reelsCount,
+  vendorId: uploadVendorId,
+}) => {
   const [uploadType, setUploadType] = useState(null);
   const [caption, setCaption] = useState("");
   const [title, setTitle] = useState("");
@@ -5283,14 +5310,16 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                     whileTap={{ scale: isPostsFull ? 1 : 0.98 }}
                     onClick={() => !isPostsFull && setUploadType("post")}
                     disabled={isPostsFull}
-                    className={`w-full p-6 rounded-2xl border flex items-center lg:flex-col lg:items-start lg:text-left gap-4 transition-all cursor-pointer ${isPostsFull
-                      ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
-                      : "bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-100 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg hover:shadow-blue-500/10"
-                      }`}
+                    className={`w-full p-6 rounded-2xl border flex items-center lg:flex-col lg:items-start lg:text-left gap-4 transition-all cursor-pointer ${
+                      isPostsFull
+                        ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
+                        : "bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-100 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg hover:shadow-blue-500/10"
+                    }`}
                   >
                     <div
-                      className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${isPostsFull ? "bg-gray-400" : "bg-gradient-to-br from-blue-500 to-purple-600"
-                        }`}
+                      className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${
+                        isPostsFull ? "bg-gray-400" : "bg-gradient-to-br from-blue-500 to-purple-600"
+                      }`}
                     >
                       <Image size={28} className="text-white" />
                     </div>
@@ -5311,14 +5340,16 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                     whileTap={{ scale: isReelsFull ? 1 : 0.98 }}
                     onClick={() => !isReelsFull && setUploadType("reel")}
                     disabled={isReelsFull}
-                    className={`w-full p-6 rounded-2xl border flex items-center lg:flex-col lg:items-start lg:text-left gap-4 transition-all cursor-pointer ${isReelsFull
-                      ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
-                      : "bg-gradient-to-br from-pink-50 to-orange-50 dark:from-pink-900/20 dark:to-orange-900/20 border-pink-100 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-600 hover:shadow-lg hover:shadow-pink-500/10"
-                      }`}
+                    className={`w-full p-6 rounded-2xl border flex items-center lg:flex-col lg:items-start lg:text-left gap-4 transition-all cursor-pointer ${
+                      isReelsFull
+                        ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
+                        : "bg-gradient-to-br from-pink-50 to-orange-50 dark:from-pink-900/20 dark:to-orange-900/20 border-pink-100 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-600 hover:shadow-lg hover:shadow-pink-500/10"
+                    }`}
                   >
                     <div
-                      className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${isReelsFull ? "bg-gray-400" : "bg-gradient-to-br from-pink-500 to-orange-500"
-                        }`}
+                      className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 ${
+                        isReelsFull ? "bg-gray-400" : "bg-gradient-to-br from-pink-500 to-orange-500"
+                      }`}
                     >
                       <Video size={28} className="text-white" />
                     </div>
@@ -5376,10 +5407,11 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                       whileTap={{ scale: isUploading ? 1 : 0.98 }}
                       onClick={handleFileSelect}
                       disabled={isUploading}
-                      className={`w-full ${uploadType === "reel" ? "aspect-[9/16] lg:aspect-[9/14]" : "aspect-square"} rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-4 overflow-hidden ${selectedFile
-                        ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                        : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
-                        } ${isUploading ? "pointer-events-none cursor-not-allowed" : "cursor-pointer"}`}
+                      className={`w-full ${uploadType === "reel" ? "aspect-[9/16] lg:aspect-[9/14]" : "aspect-square"} rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-4 overflow-hidden ${
+                        selectedFile
+                          ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                          : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
+                      } ${isUploading ? "pointer-events-none cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       {selectedFile ? (
                         <div className="relative w-full h-full">
@@ -5758,12 +5790,14 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
 
 const InfoChip = memo(({ icon: Icon, label, value, color = "blue", size = "normal" }) => (
   <div
-    className={`flex items-center gap-2 p-2.5 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl ${size === "small" ? "p-2" : ""
-      }`}
+    className={`flex items-center gap-2 p-2.5 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl ${
+      size === "small" ? "p-2" : ""
+    }`}
   >
     <div
-      className={`w-8 h-8 rounded-lg bg-${color}-100 dark:bg-${color}-800/30 flex items-center justify-center ${size === "small" ? "w-7 h-7" : ""
-        }`}
+      className={`w-8 h-8 rounded-lg bg-${color}-100 dark:bg-${color}-800/30 flex items-center justify-center ${
+        size === "small" ? "w-7 h-7" : ""
+      }`}
     >
       <Icon size={size === "small" ? 14 : 16} className={`text-${color}-600 dark:text-${color}-400`} />
     </div>
@@ -5781,9 +5815,10 @@ const QuickStatCard = memo(({ icon: Icon, label, value, subtext, color = "blue",
   <motion.div
     whileHover={{ scale: 1.02, y: -2 }}
     whileTap={{ scale: 0.98 }}
-    className={`relative overflow-hidden p-3 rounded-2xl ${gradient ||
+    className={`relative overflow-hidden p-3 rounded-2xl ${
+      gradient ||
       `bg-gradient-to-br from-${color}-50 to-${color}-100/50 dark:from-${color}-900/30 dark:to-${color}-800/20`
-      } border border-${color}-100 dark:border-${color}-800/30`}
+    } border border-${color}-100 dark:border-${color}-800/30`}
   >
     <div className="flex items-start justify-between">
       <div>
@@ -5806,8 +5841,9 @@ const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
     layout
     whileTap={{ scale: 0.98 }}
     onClick={() => onSelect(pkg.id || pkg._id)}
-    className={`bg-white dark:bg-gray-900 p-4 rounded-2xl border-2 transition-all shadow-sm ${isSelected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-gray-100 dark:border-gray-800"
-      } ${pkg.isPopular ? "ring-2 ring-amber-400 ring-offset-2 dark:ring-offset-black" : ""}`}
+    className={`bg-white dark:bg-gray-900 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+      isSelected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-gray-100 dark:border-gray-800"
+    } ${pkg.isPopular ? "ring-2 ring-amber-400 ring-offset-2 dark:ring-offset-black" : ""}`}
   >
     {pkg.isPopular && (
       <div className="flex justify-center -mt-7 mb-3">
@@ -5866,10 +5902,11 @@ const PackageCard = memo(({ pkg, isSelected, onSelect }) => (
     )}
     <motion.button
       whileTap={{ scale: 0.97 }}
-      className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all ${isSelected
-        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
-        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-        }`}
+      className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all ${
+        isSelected
+          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
+          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+      }`}
     >
       {isSelected ? "✓ Selected" : "Select Package"}
     </motion.button>
@@ -6204,10 +6241,11 @@ const CategorySpecificSection = memo(({ vendor, formatPrice }) => {
             )}
             {vendor.destinationWeddings !== undefined && (
               <div
-                className={`p-3 rounded-xl flex items-center gap-3 ${vendor.destinationWeddings
-                  ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-                  : "bg-gray-50 dark:bg-gray-800"
-                  }`}
+                className={`p-3 rounded-xl flex items-center gap-3 ${
+                  vendor.destinationWeddings
+                    ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                    : "bg-gray-50 dark:bg-gray-800"
+                }`}
               >
                 {vendor.destinationWeddings ? (
                   <CheckCircle size={18} className="text-green-500" />
@@ -6486,8 +6524,9 @@ const CollapsibleSection = memo(
           <div className="flex items-center gap-3">
             {Icon && (
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg || "bg-blue-50 dark:bg-blue-900/20"
-                  }`}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                  iconBg || "bg-blue-50 dark:bg-blue-900/20"
+                }`}
               >
                 <Icon className={iconColor || "text-blue-500"} size={18} />
               </div>
@@ -6862,8 +6901,9 @@ const BookingDrawer = ({ isOpen, onClose, services, vendorName, onBookingConfirm
                   <motion.div
                     key={s}
                     animate={{ scaleX: s <= step ? 1 : 0.5 }}
-                    className={`flex-1 h-1.5 rounded-full transition-colors ${s <= step ? "bg-gradient-to-r from-blue-600 to-purple-600" : "bg-gray-200 dark:bg-gray-700"
-                      }`}
+                    className={`flex-1 h-1.5 rounded-full transition-colors ${
+                      s <= step ? "bg-gradient-to-r from-blue-600 to-purple-600" : "bg-gray-200 dark:bg-gray-700"
+                    }`}
                   />
                 ))}
               </div>
@@ -6930,10 +6970,11 @@ const BookingDrawer = ({ isOpen, onClose, services, vendorName, onBookingConfirm
                       key={service.id}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setSelectedService(service)}
-                      className={`w-full p-5 rounded-2xl border-2 transition-all text-left cursor-pointer ${selectedService?.id === service.id
-                        ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-lg shadow-blue-500/10"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                        }`}
+                      className={`w-full p-5 rounded-2xl border-2 transition-all text-left cursor-pointer ${
+                        selectedService?.id === service.id
+                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-lg shadow-blue-500/10"
+                          : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -6984,10 +7025,11 @@ const BookingDrawer = ({ isOpen, onClose, services, vendorName, onBookingConfirm
                               setSelectedDate(day.date);
                               setSelectedSlot(slot);
                             }}
-                            className={`px-5 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${selectedDate === day.date && selectedSlot === slot
-                              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                              }`}
+                            className={`px-5 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                              selectedDate === day.date && selectedSlot === slot
+                                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                            }`}
                           >
                             {slot}
                           </motion.button>
@@ -7256,7 +7298,8 @@ const MoreOptionsDrawer = ({
   onCopyLink,
   setShowUpdateProfileDrawer,
   onVerifyIdentity, // Add this new prop
-  isVerified,
+  isVendorProfileVerified,
+  profile,
 }) => {
   const [showReportConfirm, setShowReportConfirm] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -7287,28 +7330,28 @@ const MoreOptionsDrawer = ({
     },
     {
       id: "verify",
-      label: isVerified ? "Identity Verified" : "Verify Identity",
-      icon: isVerified ? ShieldCheck : Shield,
+      label: isVendorProfileVerified === profile?._id ? "Identity Verified" : "Verify Identity",
+      icon: isVendorProfileVerified === profile?._id ? ShieldCheck : Shield,
       action: () => {
-        if (!isVerified) {
+        if (isVendorProfileVerified !== profile?._id) {
           onVerifyIdentity?.();
           onClose();
         }
       },
-      verified: isVerified,
+      verified: isVendorProfileVerified === profile?._id,
     },
-    ...(isVerified
+    ...(isVendorProfileVerified === profile?._id
       ? [
-        {
-          id: "updateProfile",
-          label: "Update Profile",
-          icon: Edit3,
-          action: () => {
-            setShowUpdateProfileDrawer(true);
-            onClose();
+          {
+            id: "updateProfile",
+            label: "Update Profile",
+            icon: Edit3,
+            action: () => {
+              setShowUpdateProfileDrawer(true);
+              onClose();
+            },
           },
-        },
-      ]
+        ]
       : []),
     {
       id: "notify",
@@ -7474,12 +7517,13 @@ const MoreOptionsDrawer = ({
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={option.action}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer ${option.danger
-                      ? "text-red-500 active:bg-red-50 dark:active:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      : option.verified
-                        ? "text-green-600 dark:text-green-400 active:bg-green-50 dark:active:bg-green-900/20 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-default"
-                        : "text-gray-900 dark:text-white active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      }`}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer ${
+                      option.danger
+                        ? "text-red-500 active:bg-red-50 dark:active:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        : option.verified
+                          ? "text-green-600 dark:text-green-400 active:bg-green-50 dark:active:bg-green-900/20 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-default"
+                          : "text-gray-900 dark:text-white active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
                   >
                     <option.icon size={22} />
                     <span className="font-medium">{option.label}</span>
@@ -8266,10 +8310,11 @@ const PostOptionsDrawer = ({ isOpen, onClose, post, onDelete, onShare, onEdit, o
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={option.action}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer ${option.danger
-                      ? "text-red-500 active:bg-red-50 dark:active:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      : "text-gray-900 dark:text-white active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      }`}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer ${
+                      option.danger
+                        ? "text-red-500 active:bg-red-50 dark:active:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        : "text-gray-900 dark:text-white active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
                   >
                     <option.icon size={22} />
                     <span className="font-medium">{option.label}</span>
@@ -8533,10 +8578,11 @@ const ReelOptionsDrawer = ({ isOpen, onClose, reel, onDelete, onShare, onEdit })
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={option.action}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer ${option.danger
-                      ? "text-red-500 active:bg-red-50 dark:active:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      : "text-gray-900 dark:text-white active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      }`}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer ${
+                      option.danger
+                        ? "text-red-500 active:bg-red-50 dark:active:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        : "text-gray-900 dark:text-white active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
                   >
                     <option.icon size={22} />
                     <span className="font-medium">{option.label}</span>
@@ -8766,7 +8812,8 @@ const RightSidebar = ({
   setShowUpdateProfileDrawer,
   setShowUploadModal,
   setShowMoreOptions,
-  isVerified,
+  isVendorProfileVerified,
+  profile,
 }) => {
   const { user, isSignedIn } = useUser();
   const [similarProfiles, setSimilarProfiles] = useState([]);
@@ -8785,11 +8832,11 @@ const RightSidebar = ({
   ];
 
   useEffect(() => {
-    if (isSignedIn && isVerified) {
+    if (isSignedIn && isVendorProfileVerified === profile?._id) {
       QUICK_SETTINGS.push({ id: 2, label: "Update Profile", icon: Pencil, action: "update" });
       QUICK_SETTINGS.push({ id: 3, label: "Upload Media", icon: Upload, action: "upload" });
     }
-  }, [isSignedIn, isVerified]);
+  }, [isSignedIn, isVendorProfileVerified, profile?._id]);
 
   useEffect(() => {
     if (vendorProfileId) {
@@ -8847,10 +8894,10 @@ const RightSidebar = ({
 
   const handleSimilarprofileClick = (profile) => {
     if (profile?.vendorId) {
-          router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
-        } else {
-          router.push(`/vendor/${profile.category}/profile/${profile.username}`);
-        }
+      router.push(`/vendor/${profile.category}/${profile.vendorId}/profile`);
+    } else {
+      router.push(`/vendor/${profile.category}/profile/${profile.username}`);
+    }
   };
 
   const handleQuickSettingClick = (action) => {
@@ -8941,10 +8988,7 @@ const RightSidebar = ({
                   </div>
 
                   {/* Info */}
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => handleSimilarprofileClick(profile)}
-                  >
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleSimilarprofileClick(profile)}>
                     <div className="flex items-center gap-1.5">
                       <h4 className="font-semibold text-[13px] text-slate-900 dark:text-white truncate">
                         {profile.vendorName}
@@ -9110,7 +9154,6 @@ const RightSidebar = ({
   );
 };
 
-
 const HighlightStoryViewer = ({
   highlight,
   highlights,
@@ -9121,7 +9164,8 @@ const HighlightStoryViewer = ({
   vendorUsername,
   categoryColor,
   onMediaClick,
-  isVerified,
+  isVendorProfileVerified,
+  profile,
   onEdit,
   onDelete,
 }) => {
@@ -9193,10 +9237,10 @@ const HighlightStoryViewer = ({
 
   const formattedDate = currentHighlight.eventDate
     ? new Date(currentHighlight.eventDate).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : null;
 
   return (
@@ -9273,7 +9317,7 @@ const HighlightStoryViewer = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isVerified && (
+              {isVendorProfileVerified === profile?._id && (
                 <>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -9992,8 +10036,9 @@ const HighlightMediaFullscreen = ({ media, onClose }) => {
                 e.stopPropagation();
                 navigateTo(idx, idx > currentIndex ? 1 : -1);
               }}
-              className={`rounded-full transition-all duration-300 ${idx === currentIndex ? "w-7 h-2.5 bg-white" : "w-2.5 h-2.5 bg-white/40 hover:bg-white/60"
-                }`}
+              className={`rounded-full transition-all duration-300 ${
+                idx === currentIndex ? "w-7 h-2.5 bg-white" : "w-2.5 h-2.5 bg-white/40 hover:bg-white/60"
+              }`}
             />
           ))}
         </div>
@@ -10112,8 +10157,9 @@ const HighlightMediaFullscreen = ({ media, onClose }) => {
                 e.stopPropagation();
                 navigateTo(idx, idx > currentIndex ? 1 : -1);
               }}
-              className={`rounded-full transition-all duration-300 ${idx === currentIndex ? "w-2.5 h-7 bg-white" : "w-2.5 h-2.5 bg-white/40 hover:bg-white/60"
-                }`}
+              className={`rounded-full transition-all duration-300 ${
+                idx === currentIndex ? "w-2.5 h-7 bg-white" : "w-2.5 h-2.5 bg-white/40 hover:bg-white/60"
+              }`}
             />
           ))}
         </div>
@@ -10148,10 +10194,11 @@ const VideoThumbnailCard = ({ videoUrl, thumbnailUrl, caption, duration, onClick
         />
       ) : (
         <div
-          className={`w-full h-full flex items-center justify-center ${isTestimonial
-            ? "bg-gradient-to-br from-purple-900/80 to-pink-900/80"
-            : "bg-gradient-to-br from-slate-800 to-slate-700"
-            }`}
+          className={`w-full h-full flex items-center justify-center ${
+            isTestimonial
+              ? "bg-gradient-to-br from-purple-900/80 to-pink-900/80"
+              : "bg-gradient-to-br from-slate-800 to-slate-700"
+          }`}
         >
           {isTestimonial ? (
             <MessageCircle size={32} className="text-white/30" />
@@ -10749,10 +10796,11 @@ const AddHighlightModal = ({
             <button
               key={s.id}
               onClick={() => setActiveSection(s.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-[13px] font-bold whitespace-nowrap transition-all border-b-2 ${activeSection === s.id
-                ? "border-slate-900 dark:border-white text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800/30"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/20"
-                }`}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-[13px] font-bold whitespace-nowrap transition-all border-b-2 ${
+                activeSection === s.id
+                  ? "border-slate-900 dark:border-white text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800/30"
+                  : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/20"
+              }`}
             >
               <s.icon size={14} />
               {s.label}
@@ -10819,8 +10867,8 @@ const AddHighlightModal = ({
                       style={
                         hlCategory === cat
                           ? {
-                            background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                          }
+                              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                            }
                           : {}
                       }
                     >
@@ -11095,9 +11143,7 @@ const AddHighlightModal = ({
                         value={t.personName || ""}
                         onChange={(e) =>
                           setExistingTestimonials((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, personName: e.target.value } : item
-                            )
+                            prev.map((item, i) => (i === idx ? { ...item, personName: e.target.value } : item)),
                           )
                         }
                         placeholder="Person's name"
@@ -11349,7 +11395,7 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
   const [loadingMeets, setLoadingMeets] = useState(false);
   const [existingMeets, setExistingMeets] = useState([]);
   const [isLiveActive, setIsLiveActive] = useState(false);
-  
+
   const router = useRouter();
   const { user } = useUser();
 
@@ -11360,39 +11406,39 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
   });
 
   // ✅ Single source of truth — change days/hours here only
-const LIVE_SCHEDULE = {
-  activeDays: [1, 2, 3, 4, 5, 6], // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  startHour: 10, // 10 AM (24hr)
-  endHour: 22,   // 10 PM (24hr)
-};
-
-useEffect(() => {
-  const checkLiveStatus = () => {
-    const now = new Date();
-
-    // Always evaluate against IST regardless of user's timezone
-    const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-    const istDate = new Date(istString);
-
-    const day = istDate.getDay();    // 0 (Sun) – 6 (Sat)
-    const hour = istDate.getHours(); // 0 – 23
-
-    const isDayActive = LIVE_SCHEDULE.activeDays.includes(day);
-    const isHourActive = hour >= LIVE_SCHEDULE.startHour && hour < LIVE_SCHEDULE.endHour;
-
-    setIsLiveActive(isDayActive && isHourActive);
+  const LIVE_SCHEDULE = {
+    activeDays: [1, 2, 3, 4, 5, 6], // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    startHour: 10, // 10 AM (24hr)
+    endHour: 22, // 10 PM (24hr)
   };
 
-  checkLiveStatus();
-  const interval = setInterval(checkLiveStatus, 60_000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    const checkLiveStatus = () => {
+      const now = new Date();
 
- const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      // Always evaluate against IST regardless of user's timezone
+      const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+      const istDate = new Date(istString);
+
+      const day = istDate.getDay(); // 0 (Sun) – 6 (Sat)
+      const hour = istDate.getHours(); // 0 – 23
+
+      const isDayActive = LIVE_SCHEDULE.activeDays.includes(day);
+      const isHourActive = hour >= LIVE_SCHEDULE.startHour && hour < LIVE_SCHEDULE.endHour;
+
+      setIsLiveActive(isDayActive && isHourActive);
+    };
+
+    checkLiveStatus();
+    const interval = setInterval(checkLiveStatus, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const firstDay = DAY_NAMES[LIVE_SCHEDULE.activeDays[0]];
-  const lastDay  = DAY_NAMES[LIVE_SCHEDULE.activeDays.at(-1)];
+  const lastDay = DAY_NAMES[LIVE_SCHEDULE.activeDays.at(-1)];
 
-  const fmt = (h) => h === 12 ? "12 PM" : h === 0 ? "12 AM" : h > 12 ? `${h - 12} PM` : `${h} AM`;
+  const fmt = (h) => (h === 12 ? "12 PM" : h === 0 ? "12 AM" : h > 12 ? `${h - 12} PM` : `${h} AM`);
 
   const label = `${firstDay}-${lastDay} • ${fmt(LIVE_SCHEDULE.startHour)} - ${fmt(LIVE_SCHEDULE.endHour)}`;
 
@@ -11403,54 +11449,54 @@ useEffect(() => {
     window.open(`https://meet.google.com/uon-sbuw-equ`, "_blank");
   };
 
-   const fetchScheduledMeets = async () => {
-      if (!user || !user?.id) return;
-      setLoadingMeets(true);
-      try {
-        const res = await fetch("/api/user/schedule-meet?userId=" + user.id);
-  
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success) {
-            setExistingMeets(data.data || []);
-          }
+  const fetchScheduledMeets = async () => {
+    if (!user || !user?.id) return;
+    setLoadingMeets(true);
+    try {
+      const res = await fetch("/api/user/schedule-meet?userId=" + user.id);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setExistingMeets(data.data || []);
         }
-      } catch (error) {
-        console.error("Failed to fetch meets:", error);
-      } finally {
-        setLoadingMeets(false);
       }
-    };
-  
-    useEffect(() => {
-      if (isOpen && user?.id) {
-        fetchScheduledMeets();
-      }
-    }, [isOpen, user?.id]);
-  
-    const handleScheduleOptionClick = () => {
-      if (!user || !user?.id) {
-        onClose();
-        requireSignIn("Please sign in to schedule your meeting");
-        return;
-      }
-  
-      // Instantly switch view based on pre-fetched data
-      if (existingMeets.length > 0) {
-        setView("meetsList");
-      } else {
-        setView("schedule");
-      }
-    };
+    } catch (error) {
+      console.error("Failed to fetch meets:", error);
+    } finally {
+      setLoadingMeets(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      fetchScheduledMeets();
+    }
+  }, [isOpen, user?.id]);
+
+  const handleScheduleOptionClick = () => {
+    if (!user || !user?.id) {
+      onClose();
+      requireSignIn("Please sign in to schedule your meeting");
+      return;
+    }
+
+    // Instantly switch view based on pre-fetched data
+    if (existingMeets.length > 0) {
+      setView("meetsList");
+    } else {
+      setView("schedule");
+    }
+  };
 
   // --- Submit New Meet ---
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!user || !user?.id) {
       setLoading(false);
-      onClose(); 
-      requireSignIn("Please sign in to schedule your meeting"); 
+      onClose();
+      requireSignIn("Please sign in to schedule your meeting");
       return;
     }
 
@@ -11458,7 +11504,7 @@ useEffect(() => {
     try {
       const res = await fetch("/api/user/schedule-meet", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -11480,30 +11526,30 @@ useEffect(() => {
 
       if (res.status === 401 || res.status === 403 || res.redirected) {
         setLoading(false);
-        onClose(); 
-        requireSignIn("Please sign in to schedule your meeting"); 
+        onClose();
+        requireSignIn("Please sign in to schedule your meeting");
         return;
       }
 
       const contentType = res.headers.get("content-type");
       let data;
-      
+
       if (contentType && contentType.includes("application/json")) {
         data = await res.json();
       } else {
         setLoading(false);
-        onClose(); 
-        requireSignIn("Please sign in to schedule your meeting"); 
+        onClose();
+        requireSignIn("Please sign in to schedule your meeting");
         return;
       }
-      
+
       if (!data.success && data.error === "Unauthorized") {
         setLoading(false);
-        onClose(); 
-        requireSignIn("Please sign in to schedule your meeting"); 
+        onClose();
+        requireSignIn("Please sign in to schedule your meeting");
         return;
       }
-    
+
       if (data.success) {
         showUIConfirmation("Meeting scheduled successfully!", "success");
         await fetchScheduledMeets();
@@ -11524,8 +11570,8 @@ useEffect(() => {
 
   // Helper for formatting date
   const formatDateTime = (dateString) => {
-    const options = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+    const options = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
+    return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
   return (
@@ -11549,7 +11595,6 @@ useEffect(() => {
       >
         <div className="flex-1 overflow-y-auto p-6 lg:p-8">
           <AnimatePresence mode="wait">
-            
             {/* VIEW 1: OPTIONS */}
             {view === "options" && (
               <motion.div
@@ -11564,14 +11609,17 @@ useEffect(() => {
                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Meet Vendor</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Connect with {vendor?.name}</p>
                   </div>
-                  <button onClick={onClose} className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors">
+                  <button
+                    onClick={onClose}
+                    className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors"
+                  >
                     <X size={20} />
                   </button>
                 </div>
 
                 <div className="grid gap-4 mt-6">
                   <button
-                    onClick={handleJoinLive} 
+                    onClick={handleJoinLive}
                     disabled={!isLiveActive}
                     className="w-full flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50 hover:shadow-md hover:scale-[1.02] transition-all text-left group"
                   >
@@ -11581,20 +11629,24 @@ useEffect(() => {
                     <div>
                       <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         Join Live Meet
-                      {isLiveActive && (
-                         <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
-                        </span>
-                       )}
+                        {isLiveActive && (
+                          <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+                          </span>
+                        )}
                       </h4>
-                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">Talk instantly with our category expert</p>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">
+                        Talk instantly with our category expert
+                      </p>
                       {/* ADDED SAT-SUN INFO */}
-                       <p className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5 ${
-      isLiveActive ? "text-blue-600/80 dark:text-blue-400/80" : "text-red-500 dark:text-red-400"
-    }`}>
-      <Clock size={10} />
-      {isLiveActive ? label : `Currently Offline (${label})`}
-    </p>
+                      <p
+                        className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5 ${
+                          isLiveActive ? "text-blue-600/80 dark:text-blue-400/80" : "text-red-500 dark:text-red-400"
+                        }`}
+                      >
+                        <Clock size={10} />
+                        {isLiveActive ? label : `Currently Offline (${label})`}
+                      </p>
                     </div>
                   </button>
 
@@ -11604,18 +11656,24 @@ useEffect(() => {
                     className="w-full flex items-center gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:shadow-md hover:scale-[1.02] transition-all text-left relative"
                   >
                     <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 shadow-sm border border-slate-200 dark:border-slate-600">
-                      {loadingMeets ? <Loader2 size={20} className="animate-spin text-slate-400" /> : <Calendar size={20} className="text-slate-600 dark:text-slate-400" />}
+                      {loadingMeets ? (
+                        <Loader2 size={20} className="animate-spin text-slate-400" />
+                      ) : (
+                        <Calendar size={20} className="text-slate-600 dark:text-slate-400" />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 dark:text-white">Schedule Meeting</h4>
-                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">Pick a time that works best for you</p>
+                      <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">
+                        Pick a time that works best for you
+                      </p>
                     </div>
                   </button>
                 </div>
               </motion.div>
             )}
 
-           {/* VIEW 2: EXISTING MEETS LIST */}
+            {/* VIEW 2: EXISTING MEETS LIST */}
             {view === "meetsList" && (
               <motion.div
                 key="meetsList"
@@ -11625,12 +11683,17 @@ useEffect(() => {
                 className="space-y-6"
               >
                 <div className="flex items-center gap-4 mb-6">
-                  <button onClick={() => setView("options")} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  <button
+                    onClick={() => setView("options")}
+                    className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  >
                     <ArrowLeft size={18} />
                   </button>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Your Scheduled Meets</h3>
-                    <p className="text-[12px] text-slate-500 font-medium mt-0.5">{existingMeets.length}/5 Active Schedules</p>
+                    <p className="text-[12px] text-slate-500 font-medium mt-0.5">
+                      {existingMeets.length}/5 Active Schedules
+                    </p>
                   </div>
                 </div>
 
@@ -11639,10 +11702,12 @@ useEffect(() => {
                     const profile = meet.profileId; // Extracted populated profile data
 
                     return (
-                      <div key={meet._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col gap-4">
-                        
+                      <div
+                        key={meet._id}
+                        className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col gap-4"
+                      >
                         {/* Vendor Info Section (Clickable for Redirect) */}
-                        <div 
+                        <div
                           onClick={() => {
                             if (!profile) return;
                             onClose(); // Close drawer before navigating
@@ -11655,9 +11720,12 @@ useEffect(() => {
                           className="flex items-center gap-3 cursor-pointer group"
                         >
                           <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shrink-0">
-                            <img 
-                              src={profile?.vendorAvatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"} 
-                              alt={profile?.username} 
+                            <img
+                              src={
+                                profile?.vendorAvatar ||
+                                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
+                              }
+                              alt={profile?.username}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                             />
                           </div>
@@ -11678,9 +11746,13 @@ useEffect(() => {
                               <span className="font-bold text-[14px] text-slate-900 dark:text-white">
                                 {meet.eventType === "Others" ? meet.otherEventType : meet.eventType}
                               </span>
-                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                                meet.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                              }`}>
+                              <span
+                                className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                  meet.status === "pending"
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                }`}
+                              >
                                 {meet.status}
                               </span>
                             </div>
@@ -11690,7 +11762,6 @@ useEffect(() => {
                             </div>
                           </div>
                         </div>
-                        
                       </div>
                     );
                   })}
@@ -11702,26 +11773,29 @@ useEffect(() => {
                     <AlertCircle size={18} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                     <div>
                       <h5 className="text-sm font-bold text-red-800 dark:text-red-300">Schedule Limit Reached</h5>
-                      <p className="text-[12px] text-red-600 dark:text-red-400 mt-1">You have reached the maximum limit of 5 active scheduled meetings. Please attend or cancel existing ones to create new schedules.</p>
+                      <p className="text-[12px] text-red-600 dark:text-red-400 mt-1">
+                        You have reached the maximum limit of 5 active scheduled meetings. Please attend or cancel
+                        existing ones to create new schedules.
+                      </p>
                     </div>
                   </div>
                 ) : (
-                   <div className="mt-4 sm:mt-6 flex flex-col items-center gap-[4px]">
-                  <button
-                  onClick={() => setView("schedule")}
-                  className="w-full mt-4 sm:mt-6 py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl font-bold text-[13px] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-                >
-                  <Calendar size={16} />
-                  Create Another Schedule
-                </button>
-                  <Link 
-                  href={`/user/profile?section=scheduled-meets`}
-                  className="w-full mt-4 sm:mt-6 py-4 border-2 bg-gray-200 dark:bg-gray-800 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl font-bold text-[13px] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-                >
-                  <Calendar size={16} />
-                  Manage Schedules
-                </Link>
-                </div>
+                  <div className="mt-4 sm:mt-6 flex flex-col items-center gap-[4px]">
+                    <button
+                      onClick={() => setView("schedule")}
+                      className="w-full mt-4 sm:mt-6 py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl font-bold text-[13px] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      <Calendar size={16} />
+                      Create Another Schedule
+                    </button>
+                    <Link
+                      href={`/user/profile?section=scheduled-meets`}
+                      className="w-full mt-4 sm:mt-6 py-4 border-2 bg-gray-200 dark:bg-gray-800 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl font-bold text-[13px] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      <Calendar size={16} />
+                      Manage Schedules
+                    </Link>
+                  </div>
                 )}
               </motion.div>
             )}
@@ -11735,8 +11809,8 @@ useEffect(() => {
                 exit={{ opacity: 0, x: 20 }}
               >
                 <div className="flex items-center gap-4 mb-8">
-                  <button 
-                    onClick={() => existingMeets.length > 0 ? setView("meetsList") : setView("options")} 
+                  <button
+                    onClick={() => (existingMeets.length > 0 ? setView("meetsList") : setView("options"))}
                     className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     <ArrowLeft size={18} />
@@ -11746,7 +11820,9 @@ useEffect(() => {
 
                 <form onSubmit={handleScheduleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Select Date & Time</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      Select Date & Time
+                    </label>
                     <div className="relative">
                       <input
                         type="datetime-local"
@@ -11771,7 +11847,10 @@ useEffect(() => {
                         <option value="Birthday">Birthday</option>
                         <option value="Others">Others</option>
                       </select>
-                      <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <ChevronDown
+                        size={18}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                      />
                     </div>
                   </div>
 
@@ -11783,7 +11862,9 @@ useEffect(() => {
                         exit={{ height: 0, opacity: 0 }}
                         className="space-y-2 overflow-hidden"
                       >
-                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Specify Event</label>
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          Specify Event
+                        </label>
                         <input
                           type="text"
                           required
@@ -11813,8 +11894,15 @@ useEffect(() => {
   );
 };
 
-const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initialReviews = [], vendorId: initialVendorId }) => {
+const VendorProfileNewPageWrapper = ({
+  initialProfile,
+  initialVendor = {},
+  initialReviews = [],
+  vendorId: initialVendorId,
+}) => {
   const { id: routeId, category, username } = useParams();
+  const { cartItems, addToCart, removeFromCart, getCartCount } = useCartStore();
+  const { isVendorProfileVerified, setIsVendorProfileVerified } = useAppValuesStore();
   const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
   const id = routeId || initialVendorId || initialVendor?._id || initialProfile?.vendorId;
   const router = useRouter();
@@ -11833,11 +11921,11 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
       address: {
         ...baseVendor.address,
         city: baseVendor.address?.city || baseProfile.location?.city,
-        state: baseVendor.address?.state || baseProfile.location?.state || baseProfile.location?.country
+        state: baseVendor.address?.state || baseProfile.location?.state || baseProfile.location?.country,
       },
       username: baseVendor.username || baseProfile.username,
       isPremium: baseVendor.isPremium || baseProfile.isPremium,
-      isVerified: baseVendor.isVerified || baseProfile.isVerified
+      isVerified: baseVendor.isVerified || baseProfile.isVerified,
     };
   });
   const [profile, setProfile] = useState(initialProfile || {});
@@ -11853,13 +11941,14 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+  const [upsertVendorModal, setUpsertVendorModal] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [coverImageLoaded, setCoverImageLoaded] = useState(false);
   const [cardBounce, setCardBounce] = useState(false);
   const [isScrolledHeader, setIsScrolledHeader] = useState(false);
   const [videoThumbnails, setVideoThumbnails] = useState({});
   const [isCoverExpanded, setIsCoverExpanded] = useState(false);
+  const [hasClosedCommissionBanner, setHasClosedCommissionBanner] = useState(false);
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(true);
   const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
 
@@ -11882,7 +11971,7 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   const [showBookingDrawer, setShowBookingDrawer] = useState(false);
   const [showReviewsDrawer, setShowReviewsDrawer] = useState(false);
   const [showContactDrawer, setShowContactDrawer] = useState(false);
-  
+
   const [showMeetDrawer, setShowMeetDrawer] = useState(false);
   const [isLiveActive, setIsLiveActive] = useState(false);
 
@@ -11954,34 +12043,34 @@ const VendorProfileNewPageWrapper = ({ initialProfile, initialVendor = {}, initi
   const onboardingHandledRef = useRef(false);
   const stickyTabsRef = useRef(null);
 
-   // ✅ Single source of truth — change days/hours here only
-const LIVE_SCHEDULE = {
-  activeDays: [1, 2, 3, 4, 5, 6], // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  startHour: 10, // 10 AM (24hr)
-  endHour: 22,   // 10 PM (24hr)
-};
-
-useEffect(() => {
-  const checkLiveStatus = () => {
-    const now = new Date();
-
-    // Always evaluate against IST regardless of user's timezone
-    const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-    const istDate = new Date(istString);
-
-    const day = istDate.getDay();    // 0 (Sun) – 6 (Sat)
-    const hour = istDate.getHours(); // 0 – 23
-
-    const isDayActive = LIVE_SCHEDULE.activeDays.includes(day);
-    const isHourActive = hour >= LIVE_SCHEDULE.startHour && hour < LIVE_SCHEDULE.endHour;
-
-    setIsLiveActive(isDayActive && isHourActive);
+  // ✅ Single source of truth — change days/hours here only
+  const LIVE_SCHEDULE = {
+    activeDays: [1, 2, 3, 4, 5, 6], // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    startHour: 10, // 10 AM (24hr)
+    endHour: 22, // 10 PM (24hr)
   };
 
-  checkLiveStatus();
-  const interval = setInterval(checkLiveStatus, 60_000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    const checkLiveStatus = () => {
+      const now = new Date();
+
+      // Always evaluate against IST regardless of user's timezone
+      const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+      const istDate = new Date(istString);
+
+      const day = istDate.getDay(); // 0 (Sun) – 6 (Sat)
+      const hour = istDate.getHours(); // 0 – 23
+
+      const isDayActive = LIVE_SCHEDULE.activeDays.includes(day);
+      const isHourActive = hour >= LIVE_SCHEDULE.startHour && hour < LIVE_SCHEDULE.endHour;
+
+      setIsLiveActive(isDayActive && isHourActive);
+    };
+
+    checkLiveStatus();
+    const interval = setInterval(checkLiveStatus, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -12173,7 +12262,10 @@ useEffect(() => {
     return colorMap[category] || colorMap.default;
   }, []);
 
-  const categoryColor = useMemo(() => getCategoryColor(profile?.category || vendor?.category), [profile?.category, vendor?.category, getCategoryColor]);
+  const categoryColor = useMemo(
+    () => getCategoryColor(profile?.category || vendor?.category),
+    [profile?.category, vendor?.category, getCategoryColor],
+  );
 
   const cardBounceVariants = {
     initial: { y: 0 },
@@ -12363,7 +12455,7 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (!isSignedIn && !isVerified) {
+    if (!isSignedIn && isVendorProfileVerified !== profile?._id) {
       return;
     }
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -12412,39 +12504,39 @@ useEffect(() => {
     }
   }, [showSignInPrompt]);
 
-   useEffect(() => {
-     if (!posts.length) return;
- 
-     let cancelled = false;
- 
-     const generate = async () => {
-       const targetVideos = posts.filter((p) => p.mediaType === "video" && !p.thumbnailUrl && !videoThumbnails[p._id]);
- 
-       for (const post of targetVideos) {
-         if (cancelled) break;
-         try {
-           const thumb = await generateVideoThumbnail(post.mediaUrl);
-           if (!cancelled) {
-             setVideoThumbnails((prev) => ({
-               ...prev,
-               [post._id]: thumb || "FALLBACK",
-             }));
-           }
-         } catch (error) {
-           console.warn(`Thumb failed for ${post._id}, using video fallback.`);
-           if (!cancelled) {
-             setVideoThumbnails((prev) => ({ ...prev, [post._id]: "FALLBACK" }));
-           }
-         }
-       }
-     };
- 
-     const timer = setTimeout(generate, 300);
-     return () => {
-       cancelled = true;
-       clearTimeout(timer);
-     };
-   }, [posts]);
+  useEffect(() => {
+    if (!posts.length) return;
+
+    let cancelled = false;
+
+    const generate = async () => {
+      const targetVideos = posts.filter((p) => p.mediaType === "video" && !p.thumbnailUrl && !videoThumbnails[p._id]);
+
+      for (const post of targetVideos) {
+        if (cancelled) break;
+        try {
+          const thumb = await generateVideoThumbnail(post.mediaUrl);
+          if (!cancelled) {
+            setVideoThumbnails((prev) => ({
+              ...prev,
+              [post._id]: thumb || "FALLBACK",
+            }));
+          }
+        } catch (error) {
+          console.warn(`Thumb failed for ${post._id}, using video fallback.`);
+          if (!cancelled) {
+            setVideoThumbnails((prev) => ({ ...prev, [post._id]: "FALLBACK" }));
+          }
+        }
+      }
+    };
+
+    const timer = setTimeout(generate, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [posts]);
 
   // Add cleanup for video refs when component unmounts or posts change
   useEffect(() => {
@@ -12493,7 +12585,7 @@ useEffect(() => {
       router.push(backUrl);
     } else if (id && category) {
       router.push(`/vendor/${category}/${id}`);
-    }  else {
+    } else {
       router.back();
     }
   }, [router, canGoBack, backUrl]);
@@ -12721,7 +12813,9 @@ useEffect(() => {
   const handleDeletePost = useCallback(
     async (postId) => {
       try {
-        const response = await fetch(`/api/vendor/profile/posts?postId=${postId}&id=${initialProfile._id}`, { method: "DELETE" });
+        const response = await fetch(`/api/vendor/profile/posts?postId=${postId}&id=${initialProfile._id}`, {
+          method: "DELETE",
+        });
         const result = await response.json();
         if (!result.success) throw new Error(result.error || "Delete failed");
         setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -12773,7 +12867,9 @@ useEffect(() => {
   const handleDeleteReel = useCallback(
     async (reelId) => {
       try {
-        const response = await fetch(`/api/vendor/profile/reels?reelId=${reelId}&id=${initialProfile._id}`, { method: "DELETE" });
+        const response = await fetch(`/api/vendor/profile/reels?reelId=${reelId}&id=${initialProfile._id}`, {
+          method: "DELETE",
+        });
         const result = await response.json();
         if (!result.success) throw new Error(result.error || "Delete failed");
         setReels((prev) => prev.filter((r) => r.id !== reelId));
@@ -12980,9 +13076,34 @@ useEffect(() => {
     [initialProfile._id, showUIConfirmation],
   );
 
-
   const handleTrustRef = useRef(handleTrust);
   const handleLikeRef = useRef(handleLike);
+
+  const handleSelectPackage = (packageId) => {
+    const pkg = profile?.packages?.find((p) => p._id === packageId);
+    const cartItem = {
+      _id: profile._id,
+      name: profile.username,
+      category: profile.category,
+      price: pkg.price,
+      image: profile.vendorAvatar,
+      quantity: 1,
+      address: profile.location.address,
+      rating: profile.trust,
+      reviews: 0,
+      tags: ["vendor-profile", "package :", pkg.name, `${pkg.savingsPercentage}% Off`],
+      isVerified: true,
+      originalPrice: pkg.originalPrice,
+      priceUnit: "Rs",
+      location: profile.location.city,
+    };
+    if (selectedPackage === packageId) {
+      setSelectedPackage(null);
+    } else {
+      setSelectedPackage(packageId);
+    }
+    addToCart(cartItem);
+  };
 
   // Keep refs updated
   useEffect(() => {
@@ -12992,6 +13113,10 @@ useEffect(() => {
   useEffect(() => {
     handleLikeRef.current = handleLike;
   }, [handleLike]);
+
+  const handleUpsertVendor = (vendor) => {
+    window.location.reload();
+  };
 
   const stats = useMemo(
     () => [
@@ -13249,6 +13374,44 @@ useEffect(() => {
               Sign In
             </motion.button>
           </SignInButton>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  const PackageSelectedPrompt = ({ onClose, router, selectedPackage }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 50, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="fixed bottom-32 left-4 right-4 z-[60] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+          <CheckCircle size={24} className="text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">Selected : 1</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">You have selected a package : </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <X size={18} />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              router.push("/user/checkout");
+            }}
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25"
+          >
+            Proceed
+          </motion.button>
         </div>
       </div>
     </motion.div>
@@ -13691,7 +13854,11 @@ useEffect(() => {
                 </div>
                 <div>
                   {id ? (
-                    <ReviewSection vendorId={id} vendorName={vendor?.name || profile?.vendorName} onReviewUpdate={setReviews} />
+                    <ReviewSection
+                      vendorId={id}
+                      vendorName={vendor?.name || profile?.vendorName}
+                      onReviewUpdate={setReviews}
+                    />
                   ) : (
                     <ReviewsEmptyState />
                   )}
@@ -13702,7 +13869,63 @@ useEffect(() => {
         );
 
       case "services":
-        if (!vendor?.username) {
+        if (!vendor?.packages) {
+          if (profile?.packages) {
+            return (
+              <div className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900 px-4 py-6 pt-[10px]">
+                <div className="space-y-5">
+                  {profile.packages?.length > 0 ? (
+                    profile.packages.map((pkg, i) => (
+                      <motion.div
+                        key={pkg._id || i}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <PackageCard
+                          pkg={pkg}
+                          isSelected={selectedPackage === (pkg.id || pkg._id)}
+                          onSelect={() => handleSelectPackage(pkg.id || pkg._id)}
+                        />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+                      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 flex items-center justify-center mx-auto mb-5 shadow-inner">
+                        <Gift size={36} className="text-slate-400 dark:text-slate-500" />
+                      </div>
+                      <p className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                        No packages listed yet
+                      </p>
+                      <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                        Contact the vendor directly for customized pricing and package options
+                      </p>
+                    </div>
+                  )}
+                  {vendor.paymentMethods?.length > 0 && (
+                    <motion.div
+                      variants={fadeInUp}
+                      className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200/60 dark:border-slate-800/60"
+                    >
+                      <div className="flex items-center gap-3.5 mb-5">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shadow-inner">
+                          <HandCoins size={20} className="text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-[15px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                            Payment Options
+                          </h3>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                            {vendor.paymentMethods.length} secure methods
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            );
+          }
           return (
             <div className="flex items-center justify-center px-6 py-16">
               <div className="w-full max-w-md text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-8">
@@ -14248,7 +14471,7 @@ useEffect(() => {
                             <PackageCard
                               pkg={pkg}
                               isSelected={selectedPackage === (pkg.id || pkg._id)}
-                              onSelect={setSelectedPackage}
+                              onSelect={() => handleSelectPackage(pkg.id || pkg._id)}
                             />
                           </motion.div>
                         ))
@@ -14717,10 +14940,11 @@ useEffect(() => {
 
       {/* ============ FIXED HEADER ============ */}
       <div
-        className={`fixed top-[82px] max-w-[800px] mx-auto left-0 right-0 z-[40] transition-all duration-500 ease-out rounded-xl ${isScrolledHeader
-          ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-slate-200/50 dark:border-slate-800/50"
-          : "bg-transparent"
-          }`}
+        className={`fixed top-[82px] max-w-[800px] mx-auto left-0 right-0 z-[40] transition-all duration-500 ease-out rounded-xl ${
+          isScrolledHeader
+            ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-slate-200/50 dark:border-slate-800/50"
+            : "bg-transparent"
+        }`}
       >
         <div className="px-4 lg:px-6">
           {/* Row 1: Navigation Controls */}
@@ -14735,15 +14959,17 @@ useEffect(() => {
               whileTap={{ scale: 0.92 }}
               whileHover={{ scale: 1.05 }}
               onClick={handleBack}
-              className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${isScrolledHeader
-                ? "border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
-                : "border-white/10 shadow-black/20 bg-black/20 backdrop-blur-sm"
-                }`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
+                isScrolledHeader
+                  ? "border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
+                  : "border-white/10 shadow-black/20 bg-black/20 backdrop-blur-sm"
+              }`}
             >
               <ArrowLeft
                 size={20}
-                className={`transition-colors duration-500 ease-out ${isScrolledHeader ? "text-slate-700 dark:text-slate-200" : "text-white"
-                  }`}
+                className={`transition-colors duration-500 ease-out ${
+                  isScrolledHeader ? "text-slate-700 dark:text-slate-200" : "text-white"
+                }`}
               />
             </motion.button>
 
@@ -14767,7 +14993,9 @@ useEffect(() => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="text-sm font-bold truncate text-slate-900 dark:text-white">{profile?.vendorBusinessName || profile?.vendorName || vendor?.name}</span>
+                <span className="text-sm font-bold truncate text-slate-900 dark:text-white">
+                  {profile?.vendorBusinessName || profile?.vendorName || vendor?.name}
+                </span>
                 {(profile?.isVerified || vendor?.isVerified) && (
                   <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
                     <Check size={10} className="text-white" strokeWidth={3} />
@@ -14787,30 +15015,34 @@ useEffect(() => {
                 whileTap={{ scale: 0.92 }}
                 whileHover={{ scale: 1.05 }}
                 onClick={handleShare}
-                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${isScrolledHeader
-                  ? "border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
-                  : "border-white/10 shadow-black/20 bg-black/20 backdrop-blur-sm"
-                  }`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
+                  isScrolledHeader
+                    ? "border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
+                    : "border-white/10 shadow-black/20 bg-black/20 backdrop-blur-sm"
+                }`}
               >
                 <Share2
                   size={18}
-                  className={`transition-colors duration-500 ease-out ${isScrolledHeader ? "text-slate-700 dark:text-slate-200" : "text-white"
-                    }`}
+                  className={`transition-colors duration-500 ease-out ${
+                    isScrolledHeader ? "text-slate-700 dark:text-slate-200" : "text-white"
+                  }`}
                 />
               </motion.button>
               <motion.button
                 whileTap={{ scale: 0.92 }}
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setShowMoreOptions(true)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${isScrolledHeader
-                  ? "border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
-                  : "border-white/10 shadow-black/20 bg-black/20 backdrop-blur-sm"
-                  }`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center border shadow-lg transition-all duration-500 ease-out ${
+                  isScrolledHeader
+                    ? "border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-800"
+                    : "border-white/10 shadow-black/20 bg-black/20 backdrop-blur-sm"
+                }`}
               >
                 <MoreVertical
                   size={18}
-                  className={`transition-colors duration-500 ease-out ${isScrolledHeader ? "text-slate-700 dark:text-slate-200" : "text-white"
-                    }`}
+                  className={`transition-colors duration-500 ease-out ${
+                    isScrolledHeader ? "text-slate-700 dark:text-slate-200" : "text-white"
+                  }`}
                 />
               </motion.button>
             </motion.div>
@@ -15011,34 +15243,34 @@ useEffect(() => {
                     transition={{ delay: 0.3, duration: 0.4 }}
                     className="flex items-center gap-2 mb-4"
                   >
-                   {/* Meet Button */}
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => {
-                      if (!isSignedIn) {
-                        requireSignIn("Please sign in to schedule a meet");
-                        return;
-                      }
-                      setShowMeetDrawer(true);
-                    }}
-                    className="px-5 py-2.5 rounded-full font-semibold text-[13px] text-white flex items-center gap-2 transition-all duration-300 cursor-pointer overflow-hidden relative"
-                    style={{
-                      background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
-                      boxShadow: `0 4px 16px -4px rgba(${categoryColor.rgb}, 0.4)`,
-                    }}
-                  >
-                    <Video size={16} />
-                    <span>Meet</span>
-                    
-                    {/* Conditionally render the Live badge */}
-                    {isLiveActive && (
-                      <span className="flex items-center gap-1 text-[9px] uppercase tracking-widest text-white/90 font-bold ml-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        Live
-                      </span>
-                    )}
-                  </motion.button>
+                    {/* Meet Button */}
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => {
+                        if (!isSignedIn) {
+                          requireSignIn("Please sign in to schedule a meet");
+                          return;
+                        }
+                        setShowMeetDrawer(true);
+                      }}
+                      className="px-5 py-2.5 rounded-full font-semibold text-[13px] text-white flex items-center gap-2 transition-all duration-300 cursor-pointer overflow-hidden relative"
+                      style={{
+                        background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                        boxShadow: `0 4px 16px -4px rgba(${categoryColor.rgb}, 0.4)`,
+                      }}
+                    >
+                      <Video size={16} />
+                      <span>Meet</span>
+
+                      {/* Conditionally render the Live badge */}
+                      {isLiveActive && (
+                        <span className="flex items-center gap-1 text-[9px] uppercase tracking-widest text-white/90 font-bold ml-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          Live
+                        </span>
+                      )}
+                    </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       whileHover={{ scale: 1.02 }}
@@ -15099,7 +15331,8 @@ useEffect(() => {
                       <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 text-[13px] text-slate-500 dark:text-slate-400">
                         <span className="flex items-center gap-1.5">
                           <MapPin size={14} />
-                          {profile?.location?.city || vendor?.address?.city || "Mumbai"}, {profile?.location?.state || profile?.location?.country || vendor?.address?.state || "India"}
+                          {profile?.location?.city || vendor?.address?.city || "Mumbai"},{" "}
+                          {profile?.location?.state || profile?.location?.country || vendor?.address?.state || "India"}
                         </span>
                         <span
                           className="flex items-center gap-1.5 hover:text-blue-600 hover:underline cursor-pointer"
@@ -15345,6 +15578,147 @@ useEffect(() => {
               </div>
             </motion.section>
 
+            {/* Commission Banner - Only for Profile Owners */}
+            {isVendorProfileVerified === profile?._id && !hasClosedCommissionBanner && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ delay: 0.7, duration: 0.5, ease: smoothEase }}
+                className="mt-4 relative overflow-hidden rounded-2xl border-2 border-dashed p-4"
+                style={{
+                  background: `linear-gradient(135deg, rgba(${categoryColor.rgb}, 0.08) 0%, rgba(${categoryColor.rgb}, 0.03) 100%)`,
+                  borderColor: `rgba(${categoryColor.rgb}, 0.3)`,
+                }}
+              >
+                {/* Close Button */}
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setHasClosedCommissionBanner(true);
+                  }}
+                  className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 shadow-sm cursor-pointer z-30"
+                >
+                  <X size={14} className="text-gray-600 dark:text-gray-400" />
+                </motion.button>
+
+                {/* Decorative Elements */}
+                <div
+                  className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20"
+                  style={{
+                    background: `radial-gradient(circle, ${categoryColor.primary} 0%, transparent 70%)`,
+                  }}
+                />
+                <div
+                  className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-3xl opacity-15"
+                  style={{
+                    background: `radial-gradient(circle, ${categoryColor.secondary} 0%, transparent 70%)`,
+                  }}
+                />
+
+                <div className="relative z-10">
+                  {/* Icon & Badge */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <motion.div
+                      animate={{
+                        rotate: [0, -5, 5, -5, 0],
+                        scale: [1, 1.05, 1],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatDelay: 3,
+                      }}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                      }}
+                    >
+                      <DollarSign size={20} className="text-white" />
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.8, type: "spring", stiffness: 200, damping: 10 }}
+                      className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      style={{
+                        background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                        color: "white",
+                      }}
+                    >
+                      Owner Benefit
+                    </motion.div>
+                  </div>
+
+                  {/* Main Content */}
+                  <h3 className="text-[15px] font-bold text-gray-900 dark:text-white mb-1.5">
+                    Earn 10% Commission on Every Booking! 🎉
+                  </h3>
+                  <p className="text-[12px] text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                    Get{" "}
+                    <span className="font-bold" style={{ color: categoryColor.primary }}>
+                      10% commission
+                    </span>{" "}
+                    on all bookings and orders made through the PlanWAB platform. Start earning more today!
+                  </p>
+
+                  {/* Feature Points */}
+                  <div className="flex flex-col gap-1.5 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `rgba(${categoryColor.rgb}, 0.15)` }}
+                      >
+                        <CheckCircle size={12} style={{ color: categoryColor.primary }} />
+                      </div>
+                      <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                        Automatic commission on platform bookings
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `rgba(${categoryColor.rgb}, 0.15)` }}
+                      >
+                        <CheckCircle size={12} style={{ color: categoryColor.primary }} />
+                      </div>
+                      <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                        Monthly payouts directly to your account
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `rgba(${categoryColor.rgb}, 0.15)` }}
+                      >
+                        <CheckCircle size={12} style={{ color: categoryColor.primary }} />
+                      </div>
+                      <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                        Track your earnings in real-time
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  {/* <motion.button
+                                    whileTap={{ scale: 0.97 }}
+                                    className="w-full py-2.5 rounded-xl font-bold text-[12px] text-white flex items-center justify-center gap-2 transition-all duration-300"
+                                    style={{
+                                      background: `linear-gradient(135deg, ${categoryColor.primary} 0%, ${categoryColor.secondary} 100%)`,
+                                      boxShadow: `0 4px 12px -2px rgba(${categoryColor.rgb}, 0.3)`,
+                                    }}
+                                  >
+                                    <TrendingUp size={14} />
+                                    <span>View Commission Details</span>
+                                    <ChevronRight size={14} />
+                                  </motion.button> */}
+                </div>
+              </motion.div>
+            )}
+
             {/* ============ HIGHLIGHTS SECTION ============ */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -15360,10 +15734,11 @@ useEffect(() => {
                       whileTap={{ scale: 0.9 }}
                       onClick={handleHighlightPrev}
                       disabled={currentHighlightIndex === 0}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${currentHighlightIndex === 0
-                        ? "border-slate-200 dark:border-slate-700 opacity-40 cursor-not-allowed"
-                        : "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                        }`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${
+                        currentHighlightIndex === 0
+                          ? "border-slate-200 dark:border-slate-700 opacity-40 cursor-not-allowed"
+                          : "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      }`}
                     >
                       <ChevronLeft size={16} className="text-slate-600 dark:text-slate-400" />
                     </motion.button>
@@ -15371,10 +15746,11 @@ useEffect(() => {
                       whileTap={{ scale: 0.9 }}
                       onClick={handleHighlightNext}
                       disabled={currentHighlightIndex >= highlights.length}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${currentHighlightIndex >= highlights.length
-                        ? "border-slate-200 dark:border-slate-700 opacity-40 cursor-not-allowed"
-                        : "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                        }`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${
+                        currentHighlightIndex >= highlights.length
+                          ? "border-slate-200 dark:border-slate-700 opacity-40 cursor-not-allowed"
+                          : "border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      }`}
                     >
                       <ChevronRight size={16} className="text-slate-600 dark:text-slate-400" />
                     </motion.button>
@@ -15417,7 +15793,7 @@ useEffect(() => {
                         </motion.button>
                       ))}
 
-                      {isVerified && (
+                      {isVendorProfileVerified === profile?._id && (
                         <motion.button
                           initial={{ opacity: 0, y: 15, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -15448,7 +15824,7 @@ useEffect(() => {
                         </motion.button>
                       )}
 
-                      {highlights.length === 0 && !isVerified && (
+                      {highlights.length === 0 && isVendorProfileVerified !== profile?._id && (
                         <div className="w-full h-full flex flex-col items-center justify-center py-4 text-center">
                           <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                             <Sparkles size={12} className="text-gray-400" />
@@ -15536,7 +15912,8 @@ useEffect(() => {
               setShowUploadModal={setShowUploadModal}
               setShowMoreOptions={setShowMoreOptions}
               setShowQRModal={setShowQRModal}
-              isVerified={isVerified}
+              isVendorProfileVerified={isVendorProfileVerified}
+              profile={profile}
             />
           </div>
         </div>
@@ -15550,7 +15927,7 @@ useEffect(() => {
         className="fixed bottom-7 right-4 lg:right-6 xl:right-8 flex flex-col gap-3 z-[45]"
       >
         {/* Edit Profile Button */}
-        {isVerified && (
+        {isVendorProfileVerified === profile?._id && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -15575,8 +15952,34 @@ useEffect(() => {
           </motion.button>
         )}
 
+        {/* Edit Services Button */}
+        {isVendorProfileVerified === profile?._id && activeTab === "services" && (
+          <motion.button
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
+            onClick={() => {
+              if (!isSignedIn) {
+                requireSignIn("Please sign in to edit services");
+                return;
+              }
+              setUpsertVendorModal(true);
+            }}
+            className="w-12 h-12 lg:w-14 lg:h-14 rounded-full shadow-xl flex items-center justify-center cursor-pointer"
+            style={{
+              background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+              boxShadow: `0 8px 24px -4px rgba(${categoryColor.rgb}, 0.5)`,
+            }}
+            title="Edit Services"
+          >
+            <SettingsIcon size={21} className="text-white" />
+          </motion.button>
+        )}
+
         {/* Upload Content Button */}
-        {isVerified && (
+        {isVendorProfileVerified === profile?._id && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -15632,7 +16035,8 @@ useEffect(() => {
             vendorUsername={profile?.username}
             categoryColor={categoryColor}
             onMediaClick={(media) => setHighlightMediaViewer(media)}
-            isVerified={isVerified}
+            isVendorProfileVerified={isVendorProfileVerified}
+            profile={profile}
             onEdit={(hl) => {
               setSelectedHighlight(null);
               setEditingHighlight(hl);
@@ -15690,15 +16094,15 @@ useEffect(() => {
             vendorId={initialProfile._id}
             vendorUsername={profile?.username || vendor?.username}
             allInteractions={postsInteractionsData}
-            isVerified={isVerified}
+            isVendorProfileVerified={isVendorProfileVerified}
             profileId={profile?._id}
             onInteractionUpdate={(postId, updates) => {
-              setPostsInteractionsData(prev => ({
+              setPostsInteractionsData((prev) => ({
                 ...prev,
                 [postId]: {
                   ...(prev[postId] || {}),
-                  ...updates
-                }
+                  ...updates,
+                },
               }));
             }}
           />
@@ -15801,7 +16205,8 @@ useEffect(() => {
             onCopyLink={handleCopyLink}
             setShowUpdateProfileDrawer={setShowUpdateProfileDrawer}
             onVerifyIdentity={handleVerifyIdentity}
-            isVerified={isVerified}
+            isVendorProfileVerified={isVendorProfileVerified}
+            profile={profile}
           />
         )}
       </AnimatePresence>
@@ -15833,6 +16238,16 @@ useEffect(() => {
       </AnimatePresence>
 
       <AnimatePresence>
+        {selectedPackage && (
+          <PackageSelectedPrompt
+            onClose={() => setSelectedPackage(null)}
+            selectedPackage={selectedPackage}
+            router={router}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showVerifyModal && (
           <PasswordVerificationModal
             isOpen={showVerifyModal}
@@ -15840,24 +16255,24 @@ useEffect(() => {
               setShowVerifyModal(false);
               updateURLParams({ upload: null });
             }}
-            onSuccess={() => setIsVerified(true)}
+            onSuccess={() => setIsVendorProfileVerified(profile?._id)}
             vendorId={initialProfile._id}
             vendorName={vendor?.name}
           />
         )}
       </AnimatePresence>
 
-       <AnimatePresence>
-              {showMeetDrawer && (
-                <MeetDrawer
-                  isOpen={showMeetDrawer}
-                  onClose={() => setShowMeetDrawer(false)}
-                  vendor={initialProfile._id}
-                  showUIConfirmation={showUIConfirmation}
-                  requireSignIn={requireSignIn}
-                />
-              )}
-            </AnimatePresence>
+      <AnimatePresence>
+        {showMeetDrawer && (
+          <MeetDrawer
+            isOpen={showMeetDrawer}
+            onClose={() => setShowMeetDrawer(false)}
+            vendor={initialProfile._id}
+            showUIConfirmation={showUIConfirmation}
+            requireSignIn={requireSignIn}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showUpdateProfileDrawer && (
@@ -15871,6 +16286,17 @@ useEffect(() => {
               setShowUpdateProfileDrawer(false);
               updateURLParams({ update: null });
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {upsertVendorModal && (
+          <EditNewVendorModal
+            onSuccess={handleUpsertVendor}
+            onClose={() => setUpsertVendorModal(false)}
+            vendor={vendor}
+            profile={profile}
           />
         )}
       </AnimatePresence>
@@ -16011,16 +16437,16 @@ useEffect(() => {
 
       {/* Global Styles */}
       <style jsx global>{`
-          .bio-content p {
-            margin-bottom: 0.5rem;
-          }
-          .bio-content p:last-child {
-            margin-bottom: 0;
-          }
-          * {
-            -webkit-tap-highlight-color: transparent;
-          }
-        `}</style>
+        .bio-content p {
+          margin-bottom: 0.5rem;
+        }
+        .bio-content p:last-child {
+          margin-bottom: 0;
+        }
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
+      `}</style>
     </div>
   );
 };
