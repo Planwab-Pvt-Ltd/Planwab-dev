@@ -161,6 +161,8 @@ import { useVideoThumbnail, generateVideoThumbnail } from "../../../lib/video-th
 import { useNavigationState } from "../../../hooks/useNavigationState";
 import Link from "next/link";
 import EditVendorModal from "../../shared/EditVendorModal";
+import { useCartStore } from "../../../GlobalState/CartDataStore";
+import { useAppValuesStore } from "../../../GlobalState/AppValuesStore";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -7203,7 +7205,8 @@ const MoreOptionsDrawer = ({
   onCopyLink,
   setShowUpdateProfileDrawer,
   onVerifyIdentity, // Add this new prop
-  isVerified,
+  isVendorProfileVerified,
+  profile,
 }) => {
   const [showReportConfirm, setShowReportConfirm] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -7234,17 +7237,17 @@ const MoreOptionsDrawer = ({
     },
     {
       id: "verify",
-      label: isVerified ? "Identity Verified" : "Verify Identity",
-      icon: isVerified ? ShieldCheck : Shield,
+      label: isVendorProfileVerified === profile?._id ? "Identity Verified" : "Verify Identity",
+      icon: isVendorProfileVerified === profile?._id ? ShieldCheck : Shield,
       action: () => {
-        if (!isVerified) {
+        if (isVendorProfileVerified !== profile?._id) {
           onVerifyIdentity?.();
           onClose();
         }
       },
-      verified: isVerified,
+      verified: isVendorProfileVerified === profile?._id,
     },
-    ...(isVerified
+    ...(isVendorProfileVerified === profile?._id
       ? [
           {
             id: "updateProfile",
@@ -8615,7 +8618,8 @@ const HighlightStoryViewer = ({
   vendorUsername,
   categoryColor,
   onMediaClick,
-  isVerified,
+  isVendorProfileVerified,
+  profile,
   onEdit,
   onDelete,
 }) => {
@@ -8733,7 +8737,7 @@ const HighlightStoryViewer = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isVerified && (
+            {isVendorProfileVerified === profile?._id && (
               <>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
@@ -10799,36 +10803,31 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
   if (!isOpen) return null;
 
   const handleJoinLive = () => {
-  const now = new Date();
+    const now = new Date();
 
-  // Get local day (0 = Sunday, 6 = Saturday)
-  const day = now.getDay();
+    // Get local day (0 = Sunday, 6 = Saturday)
+    const day = now.getDay();
 
-  // Get current time in minutes for easy comparison
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    // Get current time in minutes for easy comparison
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-  // Schedule: Mon–Sat, 9:00 AM – 8:00 PM
-  const START = 9 * 60;  // 9:00 AM
-  const END = 20 * 60;   // 8:00 PM
+    // Schedule: Mon–Sat, 9:00 AM – 8:00 PM
+    const START = 9 * 60; // 9:00 AM
+    const END = 20 * 60; // 8:00 PM
 
-  const isWorkingDay = day >= 1 && day <= 6;
-  const isWithinTime = currentMinutes >= START && currentMinutes <= END;
+    const isWorkingDay = day >= 1 && day <= 6;
+    const isWithinTime = currentMinutes >= START && currentMinutes <= END;
 
-  if (!isWorkingDay || !isWithinTime) {
+    if (!isWorkingDay || !isWithinTime) {
+      onClose();
+      showUIConfirmation("Live meetings are available Mon–Sat, 9 AM – 8 PM", "error", AlertCircle);
+      return;
+    }
+
+    // ✅ Allowed → proceed
     onClose();
-    showUIConfirmation(
-      "Live meetings are available Mon–Sat, 9 AM – 8 PM",
-      "error",
-      AlertCircle
-    );
-    return;
-  }
-
-  // ✅ Allowed → proceed
-  onClose();
-  window.open(`https://meet.google.com/uon-sbuw-equ`, "_blank");
-};
-
+    window.open(`https://meet.google.com/uon-sbuw-equ`, "_blank");
+  };
 
   const fetchScheduledMeets = async () => {
     if (!user || !user?.id) return;
@@ -11002,7 +11001,7 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
               </div>
 
               <div className="grid gap-3.5 sm:gap-4 mt-2">
-               <button
+                <button
                   onClick={handleJoinLive}
                   className={`w-full flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/50 transition-all text-left group opacity-60 cursor-not-allowed grayscale-[40%]`}
                 >
@@ -11012,21 +11011,23 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       Join Live Meet
-                       <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
-                        </span>
+                      <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+                      </span>
                     </h4>
-                    <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">Talk instantly with our category expert</p>
-                    
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 mb-1">
+                      Talk instantly with our category expert
+                    </p>
+
                     {/* Conditionally style and change the info text based on active status */}
-                  <p className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5 ${
-  isLiveActive
-    ? "text-blue-600/80 dark:text-blue-400/80"
-    : "text-red-500 dark:text-red-400"
-}`}>
-  <Clock size={10} />
-   {`Availablility: Mon-Sat, (9 AM - 8 PM)`}
-</p>
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 mt-1.5 ${
+                        isLiveActive ? "text-blue-600/80 dark:text-blue-400/80" : "text-red-500 dark:text-red-400"
+                      }`}
+                    >
+                      <Clock size={10} />
+                      {`Availablility: Mon-Sat, (9 AM - 8 PM)`}
+                    </p>
                   </div>
                 </button>
 
@@ -11296,6 +11297,8 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const { id, category } = useParams();
   const router = useRouter();
   const { backUrl, canGoBack, getHrefWithState } = useNavigationState();
+  const { cartItems, addToCart, removeFromCart, getCartCount } = useCartStore();
+  const { isVendorProfileVerified, setIsVendorProfileVerified } = useAppValuesStore();
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -11310,7 +11313,6 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [openOnboardingDrawer, setOpenOnboardingDrawer] = useState(false);
   const [showUpdateProfileDrawer, setShowUpdateProfileDrawer] = useState(false);
   const [upsertVendorModal, setUpsertVendorModal] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [coverImageLoaded, setCoverImageLoaded] = useState(false);
   const [cardBounce, setCardBounce] = useState(false);
@@ -11350,6 +11352,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [expandedFaq, setExpandedFaq] = useState(null);
+  const [hasClosedCommissionBanner, setHasClosedCommissionBanner] = useState(false);
 
   const [selectedHighlight, setSelectedHighlight] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -11810,7 +11813,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   }, []);
 
   useEffect(() => {
-    if (!isSignedIn && !isVerified) {
+    if (!isSignedIn && isVendorProfileVerified !== profile?._id) {
       return;
     }
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -12397,6 +12400,32 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   const handleTrustRef = useRef(handleTrust);
   const handleLikeRef = useRef(handleLike);
 
+  const handleSelectPackage = (packageId) => {
+    const pkg = vendor?.packages?.find((p) => p._id === packageId);
+    const cartItem = {
+      _id: profile._id,
+      name: profile.username,
+      category: profile.category,
+      price: pkg.price,
+      image: profile.vendorAvatar,
+      quantity: 1,
+      address: profile.location.address,
+      rating: profile.trust,
+      reviews: 0,
+      tags: ["vendor-profile", "package :", pkg.name, `${pkg.savingsPercentage}% Off`],
+      isVerified: true,
+      originalPrice: pkg.originalPrice,
+      priceUnit: "Rs",
+      location: profile.location.city,
+    };
+    if (selectedPackage === packageId) {
+      setSelectedPackage(null);
+    } else {
+      setSelectedPackage(packageId);
+    }
+    addToCart(cartItem);
+  };
+
   // Keep refs updated
   useEffect(() => {
     handleTrustRef.current = handleTrust;
@@ -12407,7 +12436,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
   }, [handleLike]);
 
   const handleUpsertVendor = (vendor) => {
-     window.location.reload();
+    window.location.reload();
   };
 
   const stats = useMemo(
@@ -12666,6 +12695,44 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
               Sign In
             </motion.button>
           </SignInButton>
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  const PackageSelectedPrompt = ({ onClose, router, selectedPackage }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 50, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="fixed bottom-32 left-4 right-4 z-[60] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+          <CheckCircle size={24} className="text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">Selected : 1</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">You have selected a package : </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <X size={18} />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              router.push("/user/checkout");
+            }}
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/25"
+          >
+            Proceed
+          </motion.button>
         </div>
       </div>
     </motion.div>
@@ -13586,7 +13653,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                             <PackageCard
                               pkg={pkg}
                               isSelected={selectedPackage === (pkg.id || pkg._id)}
-                              onSelect={setSelectedPackage}
+                              onSelect={() => handleSelectPackage(pkg.id || pkg._id)}
                             />
                           </motion.div>
                         ))
@@ -14753,7 +14820,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                             </motion.button>
                           ))}
 
-                          {isVerified && (
+                          {isVendorProfileVerified === profile?._id && (
                             <motion.button
                               initial={{ opacity: 0, y: 15, scale: 0.9 }}
                               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -14784,7 +14851,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                             </motion.button>
                           )}
 
-                          {highlights.length === 0 && !isVerified && (
+                          {highlights.length === 0 && isVendorProfileVerified !== profile?._id && (
                             <div className="w-full h-full flex flex-col items-center justify-center py-4 text-center">
                               <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                                 <Sparkles size={12} className="text-gray-400" />
@@ -14799,6 +14866,147 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                   </div>
                 </motion.section>
               </motion.div>
+
+              {/* Commission Banner - Only for Profile Owners */}
+              {isVendorProfileVerified === profile?._id && !hasClosedCommissionBanner && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                  transition={{ delay: 0.7, duration: 0.5, ease: smoothEase }}
+                  className="mt-4 relative overflow-hidden rounded-2xl border-2 border-dashed p-4"
+                  style={{
+                    background: `linear-gradient(135deg, rgba(${categoryColor.rgb}, 0.08) 0%, rgba(${categoryColor.rgb}, 0.03) 100%)`,
+                    borderColor: `rgba(${categoryColor.rgb}, 0.3)`,
+                  }}
+                >
+                  {/* Close Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setHasClosedCommissionBanner(true);
+                    }}
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 shadow-sm z-50"
+                  >
+                    <X size={14} className="text-gray-600 dark:text-gray-400" />
+                  </motion.button>
+
+                  {/* Decorative Elements */}
+                  <div
+                    className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20"
+                    style={{
+                      background: `radial-gradient(circle, ${categoryColor.primary} 0%, transparent 70%)`,
+                    }}
+                  />
+                  <div
+                    className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-3xl opacity-15"
+                    style={{
+                      background: `radial-gradient(circle, ${categoryColor.secondary} 0%, transparent 70%)`,
+                    }}
+                  />
+
+                  <div className="relative z-10">
+                    {/* Icon & Badge */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <motion.div
+                        animate={{
+                          rotate: [0, -5, 5, -5, 0],
+                          scale: [1, 1.05, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 3,
+                        }}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{
+                          background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                        }}
+                      >
+                        <DollarSign size={20} className="text-white" />
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.8, type: "spring", stiffness: 200, damping: 10 }}
+                        className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                        style={{
+                          background: `linear-gradient(135deg, ${categoryColor.primary}, ${categoryColor.secondary})`,
+                          color: "white",
+                        }}
+                      >
+                        Owner Benefit
+                      </motion.div>
+                    </div>
+
+                    {/* Main Content */}
+                    <h3 className="text-[15px] font-bold text-gray-900 dark:text-white mb-1.5">
+                      Earn 10% Commission on Every Booking! 🎉
+                    </h3>
+                    <p className="text-[12px] text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                      Get{" "}
+                      <span className="font-bold" style={{ color: categoryColor.primary }}>
+                        10% commission
+                      </span>{" "}
+                      on all bookings and orders made through the PlanWAB platform. Start earning more today!
+                    </p>
+
+                    {/* Feature Points */}
+                    <div className="flex flex-col gap-1.5 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `rgba(${categoryColor.rgb}, 0.15)` }}
+                        >
+                          <CheckCircle size={12} style={{ color: categoryColor.primary }} />
+                        </div>
+                        <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                          Automatic commission on platform bookings
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `rgba(${categoryColor.rgb}, 0.15)` }}
+                        >
+                          <CheckCircle size={12} style={{ color: categoryColor.primary }} />
+                        </div>
+                        <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                          Monthly payouts directly to your account
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `rgba(${categoryColor.rgb}, 0.15)` }}
+                        >
+                          <CheckCircle size={12} style={{ color: categoryColor.primary }} />
+                        </div>
+                        <span className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                          Track your earnings in real-time
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* CTA Button */}
+                    {/* <motion.button
+        whileTap={{ scale: 0.97 }}
+        className="w-full py-2.5 rounded-xl font-bold text-[12px] text-white flex items-center justify-center gap-2 transition-all duration-300"
+        style={{
+          background: `linear-gradient(135deg, ${categoryColor.primary} 0%, ${categoryColor.secondary} 100%)`,
+          boxShadow: `0 4px 12px -2px rgba(${categoryColor.rgb}, 0.3)`,
+        }}
+      >
+        <TrendingUp size={14} />
+        <span>View Commission Details</span>
+        <ChevronRight size={14} />
+      </motion.button> */}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Action Buttons */}
               <motion.div
@@ -14990,7 +15198,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
         )}
 
         {/* Edit Profile Button */}
-        {isVerified && (
+        {isVendorProfileVerified === profile?._id && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -15016,7 +15224,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
         )}
 
         {/* Edit Services Button */}
-        {isVerified && activeTab === "services" && (
+        {isVendorProfileVerified === profile?._id && activeTab === "services" && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -15042,7 +15250,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
         )}
 
         {/* Upload Content Button */}
-        {isVerified && (
+        {isVendorProfileVerified === profile?._id && (
           <motion.button
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -15098,7 +15306,8 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             vendorUsername={profile?.username}
             categoryColor={categoryColor}
             onMediaClick={(media) => setHighlightMediaViewer(media)}
-            isVerified={isVerified}
+            isVendorProfileVerified={isVendorProfileVerified}
+            profile={profile}
             onEdit={(hl) => {
               setSelectedHighlight(null);
               setEditingHighlight(hl);
@@ -15262,7 +15471,8 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             onCopyLink={handleCopyLink}
             setShowUpdateProfileDrawer={setShowUpdateProfileDrawer}
             onVerifyIdentity={handleVerifyIdentity}
-            isVerified={isVerified}
+            isVendorProfileVerified={isVendorProfileVerified}
+            profile={profile}
           />
         )}
       </AnimatePresence>
@@ -15294,6 +15504,16 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       </AnimatePresence>
 
       <AnimatePresence>
+        {selectedPackage && (
+          <PackageSelectedPrompt
+            onClose={() => setSelectedPackage(null)}
+            selectedPackage={selectedPackage}
+            router={router}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showVerifyModal && (
           <PasswordVerificationModal
             isOpen={showVerifyModal}
@@ -15301,7 +15521,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
               setShowVerifyModal(false);
               updateURLParams({ upload: null });
             }}
-            onSuccess={() => setIsVerified(true)}
+            onSuccess={() => setIsVendorProfileVerified(profile?._id)}
             vendorId={id}
             vendorName={vendor?.name}
           />
@@ -15326,7 +15546,12 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
       <AnimatePresence>
         {upsertVendorModal && (
-          <EditVendorModal onSuccess={handleUpsertVendor} onClose={() => setUpsertVendorModal(false)} vendor={vendor} profile={profile} />
+          <EditVendorModal
+            onSuccess={handleUpsertVendor}
+            onClose={() => setUpsertVendorModal(false)}
+            vendor={vendor}
+            profile={profile}
+          />
         )}
       </AnimatePresence>
 

@@ -224,13 +224,22 @@ const CartItemCard = memo(({ item, onRemove, colorPrimary }) => {
             <div>
               <h3 className="font-bold text-gray-900 text-sm md:text-base truncate">{item.name}</h3>
               <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                <Calendar size={10} /> {formatDate(item.date)}
+                <Calendar size={10} /> {item.date ? formatDate(item.date): "-"} 
               </p>
             </div>
             <button onClick={() => onRemove(item.id || item._id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors">
               <Trash2 size={16} />
             </button>
           </div>
+          {item?.tags.includes("package :") && (
+            <div className="mt-2 flex gap-2 flex-wrap">
+              {item.tags.map((tag, i) => (
+                <span key={i} className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                  {tag}
+                </span>
+              ))}
+              </div>
+          )}
           <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
             <span className="text-lg md:text-xl font-bold" style={{ color: colorPrimary }}>
               ₹{formatPrice(itemTotal)}

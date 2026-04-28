@@ -684,35 +684,41 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
   };
 
   const sections = [
-    {
-      id: "basic",
-      label: "Basic Info",
-      icon: Building,
-      required: ["name", "email", "phoneNo"],
-      description: "Business identity & contact details",
-    },
-    {
-      id: "location",
-      label: "Location",
-      icon: MapPin,
-      required: ["address.city"],
-      description: "Physical address & map integration",
-    },
-    { id: "media", label: "Media", icon: ImageIcon, required: [], description: "Photos, videos & descriptions" },
-    {
-      id: "stats",
-      label: "Stats & Hours",
-      icon: BarChart3,
-      required: [],
-      description: "Performance metrics & operating hours",
-    },
-    {
-      id: "pricing",
-      label: "Pricing",
-      icon: DollarSign,
-      required: ["basePrice"],
-      description: "Pricing information & payment methods",
-    },
+  {
+    id: "basic",
+    label: "Basic Info",
+    icon: Building,
+    required: [],
+    description: "Business identity & contact details",
+  },
+  {
+    id: "location",
+    label: "Location",
+    icon: MapPin,
+    required: [],
+    description: "Physical address & map integration",
+  },
+  {
+    id: "media",
+    label: "Media",
+    icon: ImageIcon,
+    required: [],
+    description: "Photos, videos & descriptions",
+  },
+  {
+    id: "stats",
+    label: "Stats & Hours",
+    icon: BarChart3,
+    required: [],
+    description: "Performance metrics & operating hours",
+  },
+  {
+    id: "pricing",
+    label: "Pricing",
+    icon: DollarSign,
+    required: [],
+    description: "Pricing information & payment methods",
+  },
     {
       id: "category",
       label: "Category Details",
@@ -1018,34 +1024,6 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
     });
   }, []);
 
-  const validateForm = useCallback(() => {
-    const newErrors = {};
-
-    if (!formData.name?.trim()) newErrors.name = "Business name is required";
-
-    if (!formData.email?.trim()) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Please enter a valid email address";
-
-    if (!formData.phoneNo?.trim()) {
-      newErrors.phoneNo = "Phone number is required";
-    } else if (!/^[\d\s+\-()]{10,}$/.test(formData.phoneNo)) {
-      newErrors.phoneNo = "Enter a valid phone (min 10 digits)";
-    }
-
-    if (!formData.address?.city?.trim()) newErrors["address.city"] = "City is required";
-
-    if (!formData.basePrice) newErrors.basePrice = "Base price is required";
-    else if (isNaN(formData.basePrice) || Number(formData.basePrice) <= 0)
-      newErrors.basePrice = "Please enter a valid price";
-
-    if (existingImages.length === 0 && uploadedFiles.length === 0) {
-      newErrors.images = "Please have at least one image";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, existingImages.length, uploadedFiles.length]);
-
   const getErrorsForSection = useCallback(
     (sectionId) => {
       const sectionErrorMap = {
@@ -1087,15 +1065,6 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
   };
 
  const handleSubmit = useCallback(async () => {
-  if (!validateForm()) {
-    const errorSections = sections.filter((s) => getErrorsForSection(s.id).length > 0);
-    if (errorSections.length > 0) {
-      setActiveSection(errorSections[0].id);
-    }
-    addToast("Please fix all validation errors before submitting", "error");
-    scrollToFormTop();
-    return;
-  }
 
   if (!user?.id) {
     addToast("You must be signed in to submit", "error");
@@ -1113,40 +1082,21 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
 
     const allImages = [...existingImages, ...newImageUrls];
 
-    // Create profileData object from vendorProfile
-    const profileData = formData.vendorProfile ? {
-      category: formData.category,
-      vendorBusinessName: formData.name,
-      username: formData.username,
-      email: formData.email,
-      phoneNo: formData.phoneNo,
-      location: {
-        address: formData.address?.street,
-        city: formData.address?.city,
-        state: formData.address?.state,
-        zipCode: formData.address?.postalCode,
-        country: formData.address?.country || "India",
-        coordinates: {
-          lat: formData.address?.location?.coordinates?.[1] || 0,
-          lng: formData.address?.location?.coordinates?.[0] || 0,
-        },
-      },
-    } : null;
-
     const payload = {
       id: vendor._id,
+      password: "EDit@PlanWAB@9896",
       ...formData,
       images: allImages,
       defaultImage: allImages[0] || "",
-      profileData,
+      editedBy: user.id,
     };
 
     delete payload._id;
     delete payload.__v;
     delete payload.createdAt;
 
-    const response = await fetch("/api/vendor/upsert", {
-      method: "POST",
+    const response = await fetch("/api/vendor", {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -1170,7 +1120,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
   } finally {
     setIsSubmitting(false);
   }
-}, [validateForm, getErrorsForSection, addToast, scrollToFormTop, user, uploadedFiles, existingImages, formData, vendor._id, onSuccess, onClose]);
+}, [getErrorsForSection, addToast, scrollToFormTop, user, uploadedFiles, existingImages, formData, vendor._id, onSuccess, onClose]);
 
   const navigateSection = useCallback(
     (direction) => {
@@ -1194,13 +1144,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
 
   const currentSectionIndex = sections.findIndex((s) => s.id === activeSection);
   const overallProgress = Math.round(Object.values(sectionProgress).reduce((a, b) => a + b, 0) / sections.length);
-  const requiredFieldsComplete =
-    formData.name &&
-    formData.email &&
-    formData.phoneNo &&
-    formData.address?.city &&
-    formData.basePrice &&
-    (existingImages.length > 0 || uploadedFiles.length > 0);
+  const requiredFieldsComplete = true; // Always allow saving
 
   if (!vendor || !formData.name) {
     return (
@@ -1529,7 +1473,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!requiredFieldsComplete}
+                disabled={isSubmitting}
                 className="px-3 sm:px-5 py-1.5 sm:py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs sm:text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1.5 shadow-lg transition-all whitespace-nowrap"
               >
                 <Save size={14} />
@@ -2251,7 +2195,6 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
       title="Business Identity"
       icon={Building}
       description="Core business information"
-      badge="Required"
       tip="These details will be displayed publicly on your vendor profile. Make sure they're accurate and professional."
     >
       <div className="grid grid-cols-1 gap-3 sm:gap-4">
@@ -2260,7 +2203,6 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
           value={data.name || ""}
           onChange={(e) => onChange("name", e.target.value)}
           onBlur={() => onBlur?.("name")}
-          required
           error={errors.name}
           placeholder="e.g., Royal Palace Banquets"
         />
@@ -2281,7 +2223,6 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
           type="email"
           value={data.email || ""}
           onChange={(e) => onChange("email", e.target.value)}
-          required
           error={errors.email}
           placeholder="contact@business.com"
           icon={Mail}
@@ -2292,7 +2233,6 @@ const BasicInfoSection = ({ data, onChange, onListChange, errors, options, onBlu
             label="Phone"
             value={data.phoneNo || ""}
             onChange={(e) => onChange("phoneNo", e.target.value)}
-            required
             error={errors.phoneNo}
             placeholder="+91 9876543210"
             icon={Phone}
@@ -2390,7 +2330,6 @@ const LocationSection = ({ data, onChange, onListChange, errors, options, addToa
     <Section
       title="Address Details"
       icon={MapPin}
-      badge="Required"
       tip="Accurate location helps customers find you easily."
     >
       <div className="grid grid-cols-1 gap-3 sm:gap-4">
@@ -2406,7 +2345,6 @@ const LocationSection = ({ data, onChange, onListChange, errors, options, addToa
             options={options.cities}
             value={data.address?.city || ""}
             onChange={(val) => onChange("address", val, true, "city")}
-            required
             error={errors["address.city"]}
             allowCustom
           />
@@ -2923,7 +2861,6 @@ const PricingSection = ({ data, onChange, onListChange, errors, options, addToas
     <Section
       title="Pricing Details"
       icon={DollarSign}
-      badge="Required"
       tip="Clear pricing helps customers make informed decisions."
     >
       <div className="grid grid-cols-1 gap-3 sm:gap-4">
@@ -2933,7 +2870,6 @@ const PricingSection = ({ data, onChange, onListChange, errors, options, addToas
           min="0"
           value={data.basePrice || ""}
           onChange={(e) => onChange("basePrice", e.target.value)}
-          required
           error={errors.basePrice}
           placeholder="50000"
           prefix="₹"
@@ -4339,7 +4275,6 @@ const CategorySpecificFields = ({
               value={data.serviceType || ""}
               onChange={(e) => onChange("serviceType", e.target.value)}
               placeholder="e.g., Event Decoration"
-              required
             />
             <DynamicList
               title="Custom Fields"
