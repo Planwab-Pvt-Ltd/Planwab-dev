@@ -142,7 +142,6 @@ import {
   InfoIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import ReviewSection from "../ReviewSection";
 import VendorProfileOnboarding from "../VendorProfileCreate";
 import DOMPurify from "dompurify";
 import { SignInButton, useUser } from "@clerk/clerk-react";
@@ -155,6 +154,7 @@ import { useNavigationState } from "../../../hooks/useNavigationState";
 import EditNewVendorModal from "../../shared/EditNewVendorModal";
 import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useAppValuesStore } from "../../../GlobalState/AppValuesStore";
+import ReviewSectionNew from "../ReviewSectionNew";
 
 const SWIPE_THRESHOLD = 60;
 const VELOCITY_THRESHOLD = 400;
@@ -4624,7 +4624,7 @@ const PortfolioViewer = ({ portfolio, onClose, onBookService }) => {
   );
 };
 
-const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, reelsCount, vendorId }) => {
+const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, reelsCount, vendorId, vendor }) => {
   const [uploadType, setUploadType] = useState(null);
   const [caption, setCaption] = useState("");
   const [title, setTitle] = useState("");
@@ -5724,7 +5724,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                         <p className="text-xs text-gray-500">JPG, PNG, WebP • Max 50MB</p>
                       </div>
                       {thumbnailPreview && (
-                        <button
+                        <div
                           onClick={(e) => {
                             e.stopPropagation();
                             setThumbnailFile(null);
@@ -5733,7 +5733,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                           className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                         >
                           <X size={16} />
-                        </button>
+                        </div>
                       )}
                     </motion.button>
                   </div>
@@ -12163,7 +12163,7 @@ const VendorProfileNewPageWrapper = ({
       const response = await fetch(`/api/vendor/profile/interactions?id=${initialProfile._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "trust", value: newTrustState, userId: user.id }),
+        body: JSON.stringify({ action: "trust", value: newTrustState, userId: user.id, username: profile?.username }),
       });
       const result = await response.json();
 
@@ -12212,7 +12212,7 @@ const VendorProfileNewPageWrapper = ({
       const response = await fetch(`/api/vendor/profile/interactions?id=${initialProfile._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "like", value: newLikeState, userId: user.id }),
+        body: JSON.stringify({ action: "like", value: newLikeState, userId: user.id, username: profile?.username }),
       });
       const result = await response.json();
 
@@ -13386,19 +13386,15 @@ const VendorProfileNewPageWrapper = ({
                     </motion.div>
                   ))}
                 </div>
-                <div>
-                  {vendor?.username ? (
-                    <ReviewSection
-                      vendorId={id}
+              </>
+            )}
+              <div>
+                   <ReviewSectionNew
+                      username={profile?.username}
                       vendorName={vendor?.name || profile?.vendorBusinessName || profile?.vendorName}
                       onReviewUpdate={setReviews}
                     />
-                  ) : (
-                    <ReviewsEmptyState />
-                  )}
                 </div>
-              </>
-            )}
           </div>
         );
 
@@ -15777,6 +15773,7 @@ const VendorProfileNewPageWrapper = ({
             postsCount={posts.length}
             reelsCount={reels.length}
             vendorId={initialProfile?._id}
+            vendor={initialProfile}
           />
         )}
       </AnimatePresence>

@@ -5,10 +5,8 @@ import mongoose from "mongoose";
 const ReviewSchema = new mongoose.Schema(
   {
     vendorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
+      type: String,
       required: [true, "Vendor ID is required"],
-      index: true,
     },
     clerkUserId: {
       type: String,

@@ -13,46 +13,31 @@ export async function POST(request, context) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json(
-        { success: false, error: "Vendor ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Vendor ID is required" }, { status: 400 });
     }
 
     let body;
     try {
       body = await request.json();
     } catch (e) {
-      return NextResponse.json(
-        { success: false, error: "Invalid JSON body" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { action, value, userId } = body;
+    const { action, value, userId, username } = body;
 
     if (!action || value === undefined) {
-      return NextResponse.json(
-        { success: false, error: "Action and value are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Action and value are required" }, { status: 400 });
     }
 
     // Require userId (Clerk user ID) for all interactions
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
     }
 
-    const profile = await VendorProfile.findOne({ _id: id });
+    const profile = await VendorProfile.findOne({ username: username });
 
     if (!profile) {
-      return NextResponse.json(
-        { success: false, error: "Profile not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Profile not found" }, { status: 404 });
     }
 
     // Initialize arrays if they don't exist
@@ -62,50 +47,57 @@ export async function POST(request, context) {
     switch (action) {
       case "trust": {
         const alreadyTrusted = profile.trustedBy.includes(userId);
-        let newTrust = profile.trust || 0;
+        const currentTrust = profile.trust || 0;
 
         if (value && !alreadyTrusted) {
-          // Adding trust
-          newTrust = Math.max(0, newTrust + 10);
-          profile.trustedBy.push(userId);
-        } else if (!value && alreadyTrusted) {
-          // Removing trust
-          newTrust = Math.max(0, newTrust - 10);
-          const index = profile.trustedBy.indexOf(userId);
-          if (index > -1) profile.trustedBy.splice(index, 1);
-        } else if (value && alreadyTrusted) {
-          // Already trusted, return current value
-          return NextResponse.json({
-            success: true,
-            data: {
-              trust: Math.max(0, profile.trust || 0),
-              action: "trust",
-              changed: "none",
-              message: "Already trusted"
+          const newTrust = Math.max(0, currentTrust + 10);
+
+          await VendorProfile.updateOne(
+            { _id: profile._id },
+            {
+              $set: { trust: newTrust },
+              $addToSet: { trustedBy: userId },
             },
-          });
-        } else if (!value && !alreadyTrusted) {
-          // Not trusted, can't remove
+          );
+
           return NextResponse.json({
             success: true,
             data: {
-              trust: Math.max(0, profile.trust || 0),
+              trust: newTrust,
               action: "trust",
-              changed: "none",
-              message: "Not previously trusted"
+              changed: "added",
             },
           });
         }
 
-        profile.trust = newTrust;
-        await profile.save();
+        if (!value && alreadyTrusted) {
+          const newTrust = Math.max(0, currentTrust - 10);
+
+          await VendorProfile.updateOne(
+            { _id: profile._id },
+            {
+              $set: { trust: newTrust },
+              $pull: { trustedBy: userId },
+            },
+          );
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              trust: newTrust,
+              action: "trust",
+              changed: "removed",
+            },
+          });
+        }
 
         return NextResponse.json({
           success: true,
           data: {
-            trust: Math.max(0, profile.trust),
+            trust: Math.max(0, currentTrust),
             action: "trust",
-            changed: value ? "added" : "removed",
+            changed: "none",
+            message: value ? "Already trusted" : "Not previously trusted",
           },
         });
       }
@@ -114,60 +106,58 @@ export async function POST(request, context) {
         const alreadyLiked = profile.likes.includes(userId);
 
         if (value && !alreadyLiked) {
-          // Adding like
-          profile.likes.push(userId);
-        } else if (!value && alreadyLiked) {
-          // Removing like
-          const index = profile.likes.indexOf(userId);
-          if (index > -1) profile.likes.splice(index, 1);
-        } else if (value && alreadyLiked) {
-          // Already liked
-          return NextResponse.json({
-            success: true,
-            data: {
-              likesCount: Math.max(0, profile.likes.length),
-              action: "like",
-              changed: "none",
-              message: "Already liked"
+          await VendorProfile.updateOne(
+            { _id: profile._id },
+            {
+              $addToSet: { likes: userId },
             },
-          });
-        } else if (!value && !alreadyLiked) {
-          // Not liked, can't remove
+          );
+
           return NextResponse.json({
             success: true,
             data: {
-              likesCount: Math.max(0, profile.likes.length),
+              likesCount: profile.likes.length + 1,
               action: "like",
-              changed: "none",
-              message: "Not previously liked"
+              changed: "added",
             },
           });
         }
 
-        await profile.save();
+        if (!value && alreadyLiked) {
+          await VendorProfile.updateOne(
+            { _id: profile._id },
+            {
+              $pull: { likes: userId },
+            },
+          );
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              likesCount: Math.max(0, profile.likes.length - 1),
+              action: "like",
+              changed: "removed",
+            },
+          });
+        }
 
         return NextResponse.json({
           success: true,
           data: {
-            likesCount: Math.max(0, profile.likes.length),
+            likesCount: profile.likes.length,
             action: "like",
-            changed: value ? "added" : "removed",
+            changed: "none",
+            message: value ? "Already liked" : "Not previously liked",
           },
         });
       }
 
       default:
-        return NextResponse.json(
-          { success: false, error: "Invalid action. Use 'trust' or 'like'" },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, error: "Invalid action. Use 'trust' or 'like'" }, { status: 400 });
     }
   } catch (error) {
     console.error("Interactions API error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message || "Server error" }, { status: 500 });
   }
 }
 
@@ -177,31 +167,23 @@ export async function GET(request, context) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");    
+    const id = searchParams.get("id");
     const userId = searchParams.get("userId");
 
     if (!id) {
-      return NextResponse.json(
-        { success: false, error: "Vendor ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Vendor ID is required" }, { status: 400 });
     }
 
-    const profile = await VendorProfile.findOne({ _id: id })
-      .select("trust likes trustedBy")
-      .lean();
+    const profile = await VendorProfile.findOne({ _id: id }).select("trust likes trustedBy").lean();
 
     if (!profile) {
-      return NextResponse.json(
-        { success: false, error: "Profile not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Profile not found" }, { status: 404 });
     }
 
     // Check if specific user has interacted
     let userHasLiked = false;
     let userHasTrusted = false;
-    
+
     if (userId) {
       userHasLiked = profile.likes?.includes(userId) || false;
       userHasTrusted = profile.trustedBy?.includes(userId) || false;
@@ -219,9 +201,6 @@ export async function GET(request, context) {
     });
   } catch (error) {
     console.error("GET interactions error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -157,26 +157,48 @@ import { useCartStore } from "../../../GlobalState/CartDataStore";
 import { useAppValuesStore } from "../../../GlobalState/AppValuesStore";
 
 const POST_CONFIGS = {
-  1: {
-    title: "Work Details",
-    icon: Briefcase,
-    color: "from-blue-500 to-cyan-500",
-  },
-  2: {
-    title: "All Service Breakdown",
-    icon: Package,
-    color: "from-purple-500 to-pink-500",
-  },
-  3: {
-    title: "Pricing and Packages",
-    icon: DollarSign,
-    color: "from-green-500 to-emerald-500",
-  },
-  4: {
-    title: "Trust & Real Events",
-    icon: Shield,
-    color: "from-amber-500 to-orange-500",
-  },
+   1: {
+      title: "Work Details",
+      icon: Briefcase,
+      color: "from-blue-500 to-cyan-500",
+      fields: [
+        { key: "caption", label: "Caption", type: "textarea", required: true },
+        { key: "googleRating", label: "Google Rating", type: "number", min: 0, max: 5, step: 0.1, required: true },
+        { key: "teamSize", label: "Team Size", type: "number", min: 1, required: true },
+        { key: "servicesDone", label: "Services Completed", type: "number", min: 0, required: true },
+        { key: "yearsOfExperience", label: "Years of Experience", type: "number", min: 0, required: true },
+        { key: "location", label: "Location", type: "text", required: true },
+      ],
+    },
+    2: {
+      title: "All Service Breakdown",
+      icon: Package,
+      color: "from-purple-500 to-pink-500",
+      fields: [
+        { key: "caption", label: "Caption", type: "textarea", required: true },
+        { key: "eventIncludes", label: "Event Includes (Categories)", type: "array", required: true },
+        { key: "subCategories", label: "Sub Categories", type: "array", required: false },
+      ],
+    },
+    3: {
+      title: "Pricing and Packages",
+      icon: DollarSign,
+      color: "from-green-500 to-emerald-500",
+      fields: [
+        { key: "basePriceMin", label: "Base Price (Min)", type: "number", min: 0, required: true },
+        { key: "basePriceMax", label: "Base Price (Max)", type: "number", min: 0, required: true },
+        { key: "packages", label: "Packages", type: "packages", required: false },
+      ],
+    },
+    4: {
+      title: "Trust & Real Events",
+      icon: Shield,
+      color: "from-amber-500 to-orange-500",
+      fields: [
+        { key: "usp", label: "Unique Selling Points", type: "array", required: true },
+        { key: "callToAction", label: "Call to Action (3 items)", type: "cta", maxItems: 3, required: true },
+      ],
+    },
 };
 import UpdateProfileDrawer from "../UpdateProfileDrawer";
 import SmartMedia from "@/components/mobile/SmartMediaLoader";
@@ -4463,6 +4485,7 @@ const UploadModal = ({
   postsCount,
   reelsCount,
   vendorId: uploadVendorId,
+  vendor,
 }) => {
   const [uploadType, setUploadType] = useState(null);
   const [caption, setCaption] = useState("");
@@ -5590,7 +5613,7 @@ const UploadModal = ({
                             <p className="text-xs text-gray-500">JPG, PNG, WebP • Max 50MB</p>
                           </div>
                           {thumbnailPreview && (
-                            <button
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setThumbnailFile(null);
@@ -5599,7 +5622,7 @@ const UploadModal = ({
                               className="p-2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                             >
                               <X size={16} />
-                            </button>
+                            </div>
                           )}
                         </motion.button>
                       </div>
@@ -13462,7 +13485,7 @@ const VendorProfileNewPageWrapper = ({
     switch (activeTab) {
       case "posts":
         return (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 pt-4">
             {profileLoading ? (
               <PostsLoadingSkeleton />
             ) : posts.length === 0 ? (
@@ -13777,7 +13800,7 @@ const VendorProfileNewPageWrapper = ({
 
       case "reels":
         return (
-          <div className="min-h-[50vh]">
+          <div className="min-h-[50vh] py-4">
             {profileLoading ? (
               <ReelsLoadingSkeleton />
             ) : reels.length === 0 ? (
@@ -13809,7 +13832,7 @@ const VendorProfileNewPageWrapper = ({
 
       case "portfolio":
         return (
-          <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-4 py-4">
             {profileLoading && (
               <div className="p-4">
                 <div className="grid grid-cols-3 gap-[3px] gap-y-[6px]">
@@ -13853,15 +13876,11 @@ const VendorProfileNewPageWrapper = ({
                   ))}
                 </div>
                 <div>
-                  {id ? (
-                    <ReviewSection
+                   <ReviewSection
                       vendorId={id}
                       vendorName={vendor?.name || profile?.vendorName}
                       onReviewUpdate={setReviews}
                     />
-                  ) : (
-                    <ReviewsEmptyState />
-                  )}
                 </div>
               </>
             )}
@@ -16154,6 +16173,7 @@ const VendorProfileNewPageWrapper = ({
             postsCount={posts.length}
             reelsCount={reels.length}
             vendorId={initialProfile._id}
+            vendor={initialProfile}
           />
         )}
       </AnimatePresence>
