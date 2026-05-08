@@ -35,8 +35,6 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-
-
 ```
 Planwab-dev
 ├─ .dockerignore
@@ -427,6 +425,8 @@ Planwab-dev
 │  │  │  │  │  │     └─ route.js
 │  │  │  │  │  └─ route.js
 │  │  │  │  ├─ route.js
+│  │  │  │  ├─ upsert
+│  │  │  │  │  └─ route.js
 │  │  │  │  └─ [id]
 │  │  │  │     ├─ profile
 │  │  │  │     │  ├─ highlights
@@ -724,7 +724,9 @@ Planwab-dev
 │  │  ├─ providers
 │  │  │  └─ ReactQueryProvider.jsx
 │  │  └─ shared
-│  │     └─ ClientModalWrapper.jsx
+│  │     ├─ ClientModalWrapper.jsx
+│  │     ├─ EditNewVendorModal.jsx
+│  │     └─ EditVendorModal.jsx
 │  ├─ contexts
 │  │  └─ ThemeContext.js
 │  ├─ database

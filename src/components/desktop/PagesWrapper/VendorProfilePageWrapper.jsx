@@ -5653,7 +5653,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                             <p className="text-xs text-gray-500">JPG, PNG, WebP • Max 50MB</p>
                           </div>
                           {thumbnailPreview && (
-                            <button
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setThumbnailFile(null);
@@ -5662,7 +5662,7 @@ const UploadModal = ({ isOpen, onClose, onUploadPost, onUploadReel, postsCount, 
                               className="p-2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                             >
                               <X size={16} />
-                            </button>
+                            </div>
                           )}
                         </motion.button>
                       </div>
