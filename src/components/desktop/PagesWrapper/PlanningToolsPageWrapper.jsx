@@ -2453,7 +2453,7 @@ const VendorBrowserModal = memo(({ isOpen, onClose, event, onUpdate, theme }) =>
   const VendorCard = useCallback(
     ({ vendor, index }) => {
       const isFavorite = favorites.includes(vendor._id);
-      const vendorImage = vendor.images?.[0] || vendor.profileImage || "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400";
+      const vendorImage = vendor.imagesNew?.[0] || vendor.profileImage || "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400";
 
       return (
         <motion.div
@@ -2510,7 +2510,7 @@ const VendorBrowserModal = memo(({ isOpen, onClose, event, onUpdate, theme }) =>
 
   const VendorDetail = useCallback(
     ({ vendor }) => {
-      const vendorImage = vendor.images?.[0] || vendor.profileImage || "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600";
+      const vendorImage = vendor.imagesNew?.[0] || vendor.profileImage || "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600";
       const isFavorite = favorites.includes(vendor._id);
 
       return (

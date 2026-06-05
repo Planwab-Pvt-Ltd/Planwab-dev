@@ -128,7 +128,7 @@ export default function AllVendors() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-10 w-10">
-                                                    <Image className="h-10 w-10 rounded-full object-cover" src={vendor.defaultImage || vendor.images?.[0] || 'https://placehold.co/40x40/cccccc/FFFFFF?text=V'} alt={vendor.name} width={40} height={40} />
+                                                    <Image className="h-10 w-10 rounded-full object-cover" src={vendor.defaultImageNew || vendor.images?.[0] || 'https://placehold.co/40x40/cccccc/FFFFFF?text=V'} alt={vendor.name} width={40} height={40} />
                                                 </div>
                                                 <div className="ml-4">
                                                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{vendor.name}</div>

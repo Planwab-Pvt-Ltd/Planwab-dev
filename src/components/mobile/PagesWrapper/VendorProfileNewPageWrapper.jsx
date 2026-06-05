@@ -11292,7 +11292,7 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shrink-0">
                           <img
                             src={
-                              profile?.vendorAvatar ||
+                              profile?.vendorAvatarNew ||
                               "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
                             }
                             alt={profile?.username}
@@ -12525,7 +12525,7 @@ const VendorProfileNewPageWrapper = ({
     setShowImageModal(true);
   }, []);
 
-  const images = useMemo(() => vendor?.images || [], [vendor]);
+  const images = useMemo(() => vendor?.imagesNew || [], [vendor]);
 
   useEffect(() => {
     if (images.length === 0) return;
@@ -12618,7 +12618,7 @@ const VendorProfileNewPageWrapper = ({
       name: profile.username,
       category: profile.category,
       price: pkg.price,
-      image: profile.vendorAvatar,
+      image: profile.vendorAvatarNew,
       quantity: 1,
       address: profile.location.address,
       rating: profile.trust,
@@ -14457,7 +14457,7 @@ const VendorProfileNewPageWrapper = ({
 
   const vendorProfile = Array.isArray(vendor?.vendorProfile) ? vendor.vendorProfile[0] : vendor?.vendorProfile;
   const vendorImage =
-    profile?.vendorAvatar ||
+    profile?.vendorAvatarNew ||
     vendorProfile?.profilePicture ||
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop";
 
@@ -14777,17 +14777,17 @@ const VendorProfileNewPageWrapper = ({
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                   />
                 </div>
-              ) : profile?.vendorCoverImage ? (
+              ) : profile?.vendorCoverImageNew ? (
                 <SmartMedia
-                  src={profile.vendorCoverImage}
+                  src={profile.vendorCoverImageNew}
                   type="image"
                   className="w-full h-full object-cover"
                   loaderImage="/GlowLoadingGif.gif"
                   onLoad={() => setCoverImageLoaded(true)}
                 />
-              ) : vendor?.images?.[0] ? (
+              ) : vendor?.imagesNew?.[0] ? (
                 <SmartMedia
-                  src={vendor.images[4] || vendor.images[0]}
+                  src={vendor.imagesNew[4] || vendor.imagesNew[0]}
                   type="image"
                   className="w-full h-full object-cover"
                   loaderImage="/GlowLoadingGif.gif"
@@ -14865,7 +14865,7 @@ const VendorProfileNewPageWrapper = ({
                     >
                       <SmartMedia
                         src={
-                          profile?.vendorAvatar ||
+                          profile?.vendorAvatarNew ||
                           (Array.isArray(vendor?.vendorProfile)
                             ? vendor.vendorProfile[0]?.profilePicture
                             : vendor?.vendorProfile?.profilePicture) ||
@@ -15633,7 +15633,7 @@ const VendorProfileNewPageWrapper = ({
             isOpen={showProfilePicture}
             onClose={() => setShowProfilePicture(false)}
             image={
-              profile?.vendorAvatar ||
+              profile?.vendorAvatarNew ||
               (Array.isArray(vendor?.vendorProfile)
                 ? vendor.vendorProfile[0]?.profilePicture
                 : vendor?.vendorProfile?.profilePicture) ||
@@ -15703,7 +15703,7 @@ const VendorProfileNewPageWrapper = ({
             onClose={() => setSelectedPost(null)}
             vendorName={vendor?.name || profile?.vendorBusinessName || profile?.vendorName}
             vendorImage={
-              profile?.vendorAvatar ||
+              profile?.vendorAvatarNew ||
               (Array.isArray(vendor?.vendorProfile)
                 ? vendor.vendorProfile[0]?.profilePicture
                 : vendor?.vendorProfile?.profilePicture) ||
@@ -15736,7 +15736,7 @@ const VendorProfileNewPageWrapper = ({
             onClose={() => setSelectedReelIndex(null)}
             vendorName={vendor?.name}
             vendorImage={
-              profile?.vendorAvatar ||
+              profile?.vendorAvatarNew ||
               (Array.isArray(vendor?.vendorProfile)
                 ? vendor.vendorProfile[0]?.profilePicture
                 : vendor?.vendorProfile?.profilePicture) ||

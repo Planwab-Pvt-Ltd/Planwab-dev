@@ -287,7 +287,7 @@ export default function BirthdayPlannerWrapper() {
                             name: vendor.name,
                             location: vendor.address?.city || vendor.location || 'Location Unavailable',
                             isPaid: price >= 60000,
-                            images: vendor.images?.length > 0 ? vendor.images : (vendor.defaultImage ? [vendor.defaultImage] : ['/placeholder.jpg']),
+                            images: vendor.images?.length > 0 ? vendor.images : (vendor.defaultImageNew ? [vendor.defaultImageNew] : ['/placeholder.jpg']),
                             price: price > 0 ? price : null
                         };
 

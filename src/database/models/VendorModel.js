@@ -240,7 +240,7 @@ const VendorBaseSchema = new Schema(
     // --- Content & Media ---
     description: { type: String, maxlength: 5000 },
     shortDescription: { type: String, maxlength: 200 },
-    defaultImage: { type: String },
+    defaultImageNew: { type: String },
     images: { type: [String], default: [] },
     gallery: { type: [ImageSchema], default: [] },
     videoUrl: { type: String },

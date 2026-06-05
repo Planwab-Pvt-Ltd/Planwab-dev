@@ -396,7 +396,7 @@ export async function GET(request) {
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 })
       .select(
-        "name username category rating reviewCount basePrice address.city images defaultImage isVerified isFeatured"
+        "name username category rating reviewCount basePrice address.city images defaultImageNew isVerified isFeatured"
       );
 
     const total = await (categoryModelMap[category] || VenueVendor).countDocuments(query);

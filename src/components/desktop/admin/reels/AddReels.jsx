@@ -3646,9 +3646,9 @@ const VendorSelectSection = ({ data, onChange, onListChange, addToast, setHasUse
                     exit={{ scale: 0.8, opacity: 0 }}
                     className="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700 rounded-xl"
                   >
-                    {vendor?.vendorAvatar && (
+                    {vendor?.vendorAvatarNew && (
                       <img
-                        src={vendor.vendorAvatar || vendor.vendorCoverImage}
+                        src={vendor.vendorAvatarNew || vendor.vendorCoverImageNew}
                         alt=""
                         className="w-6 h-6 rounded-full object-cover"
                       />
@@ -3788,9 +3788,9 @@ const VendorSelectSection = ({ data, onChange, onListChange, addToast, setHasUse
                       <div className="flex items-start gap-3 pr-8">
                         {/* Avatar */}
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/40 dark:to-pink-900/40 flex-shrink-0 overflow-hidden">
-                          {vendor.vendorAvatar ? (
+                          {vendor.vendorAvatarNew ? (
                             <img
-                              src={vendor.vendorAvatar}
+                              src={vendor.vendorAvatarNew}
                               alt={vendor.vendorBusinessName || ""}
                               className="w-full h-full object-cover"
                             />

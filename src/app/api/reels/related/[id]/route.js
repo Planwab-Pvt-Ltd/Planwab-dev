@@ -80,7 +80,7 @@ export async function GET(request, { params }) {
         vendorProfiles = await mongoose.model("VendorProfile").find({
           _id: { $in: objectIds }
         }).select(
-          "vendorBusinessName vendorName username bio vendorAvatar vendorCoverImage category trust location likes trustedBy highlights posts reels createdAt"
+          "vendorBusinessName vendorName username bio vendorAvatarNew vendorCoverImageNew category trust location likes trustedBy highlights posts reels createdAt"
         ).lean();
         
         // Clean up arrays to counts as requested by frontend

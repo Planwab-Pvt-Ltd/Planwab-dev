@@ -310,7 +310,7 @@ export default function AddVendor() {
         ...formData,
         activeCategory: activeCategory,
         images: imageUrls,
-        defaultImage: imageUrls[0],
+        defaultImageNew: imageUrls[0],
       };
 
       const response = await fetch("/api/vendor/add", {

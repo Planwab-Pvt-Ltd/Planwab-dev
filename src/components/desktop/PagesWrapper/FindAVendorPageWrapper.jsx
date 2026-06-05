@@ -268,7 +268,7 @@ const VendorCard = memo(({ vendor, user }) => {
       className="flex-shrink-0 w-64 bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl dark:hover:shadow-indigo-900/20 transition-all duration-500 group cursor-pointer snap-start"
     >
       <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-800">
-        <SmartMedia src={vendor?.defaultImage || vendor.images?.[0]} type="image" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+        <SmartMedia src={vendor?.defaultImageNew || vendor.imagesNew?.[0]} type="image" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
         <motion.button
           whileHover={{ scale: likingLoading || statusLoading ? 1 : 1.1 }}
           whileTap={{ scale: likingLoading || statusLoading ? 1 : 0.9 }}

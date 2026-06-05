@@ -16,7 +16,7 @@ export async function POST(req) {
     const vendors = await Vendor.find({
       _id: { $in: ids },
     })
-      .select("name category images rating address perDayPrice defaultImage")
+      .select("name category images rating address perDayPrice defaultImageNew")
       .lean();
 
     return NextResponse.json(vendors);

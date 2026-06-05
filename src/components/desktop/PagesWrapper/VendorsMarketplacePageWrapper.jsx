@@ -2166,12 +2166,12 @@ const SubcategoryChips = memo(({ selectedCategory, selectedSubcategory, onSubcat
 SubcategoryChips.displayName = "SubcategoryChips";
 
 const ImageCarousel = memo(
-  ({ images, vendorName, vendor, isLiked, onFavorite, tags, isLiking, rating, viewMode, addToRecentlyViewed }) => {
+  ({ imagesNew, vendorName, vendor, isLiked, onFavorite, tags, isLiking, rating, viewMode, addToRecentlyViewed }) => {
     const [[page, direction], setPage] = useState([0, 0]);
     const [showHeart, setShowHeart] = useState(false);
 
-    const imageIndex = ((page % images.length) + images.length) % images.length;
-    const hasMultipleImages = images.length > 1;
+    const imageIndex = ((page % imagesNew.length) + imagesNew.length) % imagesNew.length;
+    const hasMultipleImages = imagesNew.length > 1;
     const isListView = viewMode === "list";
 
     const paginate = useCallback(
@@ -2218,7 +2218,7 @@ const ImageCarousel = memo(
             }}
           >
             <SmartMedia
-              src={images[imageIndex]}
+              src={imagesNew[imageIndex]}
               alt={vendorName}
               type="image"
               className="w-full h-full select-none"
@@ -2279,7 +2279,7 @@ const ImageCarousel = memo(
 
           {hasMultipleImages && (
             <div className="flex gap-1.5">
-              {images.slice(0, 5).map((_, idx) => (
+              {imagesNew.slice(0, 5).map((_, idx) => (
                 <motion.div
                   key={idx}
                   animate={{
@@ -2289,7 +2289,7 @@ const ImageCarousel = memo(
                   className="h-1.5 bg-white rounded-full shadow-sm"
                 />
               ))}
-              {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
+              {imagesNew.length > 5 && <span className="text-white text-[10px] ml-1">+{imagesNew.length - 5}</span>}
             </div>
           )}
         </div>
@@ -2421,11 +2421,11 @@ const VendorCard = memo(
       }
     }, [user, vendor._id, isLiked, likingLoading]);
 
-    const images = useMemo(() => {
-      const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
-      const validImages = imgs.length > 0 ? imgs : vendor.defaultImage ? [vendor.defaultImage] : ["/placeholder.jpg"];
+    const imagesNew = useMemo(() => {
+      const imgs = vendor.normalizedImages || (vendor.imagesNew || []).filter(Boolean);
+      const validImages = imgs.length > 0 ? imgs : vendor.defaultImageNew ? [vendor.defaultImageNew] : ["/placeholder.jpg"];
       return validImages.slice(0, 5);
-    }, [vendor.normalizedImages, vendor.images, vendor.defaultImage]);
+    }, [vendor.normalizedImages, vendor.imagesNew, vendor.defaultImageNew]);
 
     const price = useMemo(() => getVendorPrice(vendor), [vendor]);
     const originalPrice = vendor.originalPrice || null;
@@ -2445,13 +2445,13 @@ const VendorCard = memo(
           name: vendor.name,
           category: vendor.category,
           price: price,
-          image: images[0],
+          image: imagesNew[0],
           quantity: 1,
           address: vendor.address,
         });
         onShowToast("Added to cart!", "success");
       }
-    }, [inCart, vendor, price, images, addToCart, removeFromCart, onShowToast]);
+    }, [inCart, vendor, price, imagesNew, addToCart, removeFromCart, onShowToast]);
 
     const handleCompareToggle = useCallback(() => {
       onCompare(vendor);
@@ -2529,7 +2529,7 @@ const VendorCard = memo(
           )}
 
           <ImageCarousel
-            images={images}
+            imagesNew={imagesNew}
             vendorName={vendor.name}
             vendor={vendor}
             isLiked={isLiked}
@@ -2545,7 +2545,7 @@ const VendorCard = memo(
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2.5 mb-1">
-                  {(vendor.defaultImage || vendor.images?.[0]) && (
+                  {(vendor.defaultImageNew || vendor.imagesNew?.[0]) && (
                     <div
                       className="relative group"
                       onMouseEnter={() => setShowProfileTooltip(true)}
@@ -2586,7 +2586,7 @@ const VendorCard = memo(
                           </div>
                         )}
                         <Image
-                          src={vendor.defaultImage || vendor.images[0]}
+                          src={vendor.defaultImageNew || vendor.imagesNew[0]}
                           alt=""
                           width={40}
                           height={40}
@@ -2743,7 +2743,7 @@ const VendorCard = memo(
         )}
 
         <ImageCarousel
-          images={images}
+          imagesNew={imagesNew}
           vendorName={vendor.name}
           vendor={vendor}
           isLiked={isLiked}
@@ -2893,7 +2893,7 @@ const CompareBar = memo(({ count, vendors, onClear, onView }) => {
                 className="w-12 h-12 rounded-full border-2 border-gray-900 overflow-hidden bg-gray-700 shadow-lg"
               >
                 <img
-                  src={v.images?.[0] || v.defaultImage || "/placeholder.jpg"}
+                  src={v.imagesNew?.[0] || v.defaultImageNew || "/placeholder.jpg"}
                   alt={v.name}
                   className="w-full h-full object-cover"
                 />
@@ -3062,7 +3062,7 @@ const CompareModalOld = memo(({ isOpen, onClose, vendors }) => {
                       )}
                       <div className="w-full h-32 rounded-xl overflow-hidden mb-3 bg-gray-200">
                         <Image
-                          src={v.normalizedImages?.[0] || v.images?.[0] || v.defaultImage || "/placeholder.jpg"}
+                          src={v.normalizedImages?.[0] || v.imagesNew?.[0] || v.defaultImageNew || "/placeholder.jpg"}
                           alt={v.name}
                           width={400}
                           height={200}
@@ -4031,7 +4031,7 @@ const RecentlyViewed = () => {
               {/* Vendor Card Content */}
               <div className="aspect-video overflow-hidden">
                 <img
-                  src={vendor.images?.[0] || "/placeholder.jpg"}
+                  src={vendor.imagesNew?.[0] || "/placeholder.jpg"}
                   alt={vendor.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   onError={(e) => {
@@ -4279,9 +4279,9 @@ const TopProfilesCarousel = memo(
                   {vendor.trust}
                 </div>
                 <div className="w-[110px] h-[110px] rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-md group-hover:shadow-xl transition-shadow duration-300">
-                  {vendor.vendorAvatar ? (
+                  {vendor.vendorAvatarNew ? (
                     <img
-                      src={vendor.vendorAvatar}
+                      src={vendor.vendorAvatarNew}
                       alt={vendor.vendorBusinessName}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       loading="lazy"
@@ -4471,8 +4471,8 @@ export default function DesktopVendorMarketplace() {
           rating: vendor.rating,
           reviewCount: vendor.reviewCount,
           location: vendor.location,
-          // Normalize images
-          images: vendor.normalizedImages || vendor.images || [vendor.defaultImage || "/placeholder.jpg"],
+          // Normalize imagesNew
+          imagesNew: vendor.normalizedImages || vendor.imagesNew || [vendor.defaultImageNew || "/placeholder.jpg"],
           // Add timestamp
           viewedAt: new Date().toISOString(),
         };
@@ -5113,7 +5113,7 @@ export default function DesktopVendorMarketplace() {
       _id: vendor._id,
       name: vendor.name,
       category: vendor.category,
-      image: vendor.normalizedImages?.[0] || vendor.images?.[0] || vendor.defaultImage || "/placeholder.jpg",
+      image: vendor.normalizedImages?.[0] || vendor.imagesNew?.[0] || vendor.defaultImageNew || "/placeholder.jpg",
       rating: vendor.rating || 0,
       price: getVendorPrice(vendor),
       city: vendor.address?.city || "",
@@ -5387,13 +5387,13 @@ export default function DesktopVendorMarketplace() {
                           // Add all to cart
                           compareList.forEach((v) => {
                             const price = getVendorPrice(v);
-                            const images = v.normalizedImages || v.images || [v.defaultImage];
+                            const imagesNew = v.normalizedImages || v.imagesNew || [v.defaultImageNew];
                             addToCart({
                               _id: v._id,
                               name: v.name,
                               category: v.category,
                               price: price,
-                              image: images[0],
+                              image: imagesNew[0],
                               quantity: 1,
                               address: v.address,
                             });
@@ -5742,8 +5742,8 @@ export default function DesktopVendorMarketplace() {
                                     <img
                                       src={
                                         vendor.normalizedImages?.[0] ||
-                                        vendor.images?.[0] ||
-                                        vendor.defaultImage ||
+                                        vendor.imagesNew?.[0] ||
+                                        vendor.defaultImageNew ||
                                         "/placeholder.jpg"
                                       }
                                       alt={vendor.name}
@@ -5898,7 +5898,7 @@ export default function DesktopVendorMarketplace() {
                                   className="w-8 h-8 rounded-lg overflow-hidden border border-white/50 bg-white/10"
                                 >
                                   <img
-                                    src={vendor.normalizedImages?.[0] || vendor.images?.[0] || "/placeholder.jpg"}
+                                    src={vendor.normalizedImages?.[0] || vendor.imagesNew?.[0] || "/placeholder.jpg"}
                                     alt={vendor.name}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {

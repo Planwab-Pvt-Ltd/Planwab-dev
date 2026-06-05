@@ -92,8 +92,8 @@ export async function POST(request) {
       location,
       category,
       password,
-      vendorAvatar,
-      vendorCoverImage,
+      vendorAvatarNew,
+      vendorCoverImageNew,
       bio, 
       createdBy,
     } = body;
@@ -104,7 +104,7 @@ export async function POST(request) {
       !vendorName ||
       !category ||
       !password ||
-      !vendorAvatar ||
+      !vendorAvatarNew ||
       !bio ||
       !createdBy
     ) {
@@ -122,8 +122,8 @@ export async function POST(request) {
     const profile = await VendorProfile.create({
       vendorBusinessName,
       vendorName,
-      vendorAvatar,
-      vendorCoverImage,
+      vendorAvatarNew,
+      vendorCoverImageNew,
       bio,
       location,
       category,
@@ -174,8 +174,8 @@ export async function PUT(request, { params }) {
       vendorName,
       category,
       bio,
-      vendorAvatar,
-      vendorCoverImage,
+      vendorAvatarNew,
+      vendorCoverImageNew,
       location,
       newPassword,
     } = body;
@@ -197,8 +197,8 @@ export async function PUT(request, { params }) {
       vendorName: vendorName || existingProfile.vendorName,
       category: category || existingProfile.category,
       bio: bio ? bio : existingProfile.bio,
-      vendorAvatar: vendorAvatar || existingProfile.vendorAvatar,
-      vendorCoverImage: vendorCoverImage ? vendorCoverImage : existingProfile.vendorCoverImage,
+      vendorAvatarNew: vendorAvatarNew || existingProfile.vendorAvatarNew,
+      vendorCoverImageNew: vendorCoverImageNew ? vendorCoverImageNew : existingProfile.vendorCoverImageNew,
       location: location || existingProfile.location,
       updatedAt: new Date(),
     };

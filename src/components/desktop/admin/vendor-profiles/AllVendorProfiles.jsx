@@ -217,9 +217,9 @@ const ProfileTableRow = ({ profile, onView }) => {
             <td className="px-4 py-4">
                 <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
-                        {profile.vendorAvatar ? (
+                        {profile.vendorAvatarNew ? (
                             <img
-                                src={(profile.vendorAvatar.startsWith('http') || profile.vendorAvatar.startsWith('/')) ? profile.vendorAvatar : `/${profile.vendorAvatar}`}
+                                src={(profile.vendorAvatarNew.startsWith('http') || profile.vendorAvatarNew.startsWith('/')) ? profile.vendorAvatarNew : `/${profile.vendorAvatarNew}`}
                                 alt={profile.vendorName}
                                 className="h-10 w-10 rounded-full object-cover"
                             />
@@ -304,9 +304,9 @@ const ProfileCard = ({ profile, onView }) => {
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center overflow-hidden">
                     <div className="h-12 w-12 flex-shrink-0">
-                        {profile.vendorAvatar ? (
+                        {profile.vendorAvatarNew ? (
                             <img
-                                src={(profile.vendorAvatar.startsWith('http') || profile.vendorAvatar.startsWith('/')) ? profile.vendorAvatar : `/${profile.vendorAvatar}`}
+                                src={(profile.vendorAvatarNew.startsWith('http') || profile.vendorAvatarNew.startsWith('/')) ? profile.vendorAvatarNew : `/${profile.vendorAvatarNew}`}
                                 alt={profile.vendorName}
                                 className="h-12 w-12 rounded-full object-cover"
                             />

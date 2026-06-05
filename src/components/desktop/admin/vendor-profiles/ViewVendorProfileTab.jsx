@@ -165,10 +165,10 @@ function ViewVendorProfileContent({ profile, onBack }) {
                     {/* HEADER SECTION */}
                     {/* ================================================================ */}
                     <div className={`relative h-48 md:h-56 bg-gradient-to-r ${gradientColor} overflow-hidden`}>
-                        {profile.vendorCoverImage && (
+                        {profile.vendorCoverImageNew && (
                             <div
                                 className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-50"
-                                style={{ backgroundImage: `url(${profile.vendorCoverImage.startsWith('http') || profile.vendorCoverImage.startsWith('/') ? profile.vendorCoverImage : '/' + profile.vendorCoverImage})` }}
+                                style={{ backgroundImage: `url(${profile.vendorCoverImageNew.startsWith('http') || profile.vendorCoverImageNew.startsWith('/') ? profile.vendorCoverImageNew : '/' + profile.vendorCoverImageNew})` }}
                             />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -177,9 +177,9 @@ function ViewVendorProfileContent({ profile, onBack }) {
                             <div className="flex flex-col lg:flex-row lg:items-end gap-6">
                                 <div className="flex items-end gap-4 min-w-0 flex-1">
                                     <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 shadow-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                        {profile.vendorAvatar ? (
+                                        {profile.vendorAvatarNew ? (
                                             <img
-                                                src={(profile.vendorAvatar.startsWith('http') || profile.vendorAvatar.startsWith('/')) ? profile.vendorAvatar : `/${profile.vendorAvatar}`}
+                                                src={(profile.vendorAvatarNew.startsWith('http') || profile.vendorAvatarNew.startsWith('/')) ? profile.vendorAvatarNew : `/${profile.vendorAvatarNew}`}
                                                 alt={profile.vendorBusinessName}
                                                 className="w-full h-full object-cover"
                                             />

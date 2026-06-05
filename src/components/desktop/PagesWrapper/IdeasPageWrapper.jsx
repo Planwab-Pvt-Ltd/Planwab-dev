@@ -1941,7 +1941,7 @@ export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, o
             <div className="flex items-center gap-3 cursor-pointer" onClick={handleSeeProfile}>
               <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-rose-200/60 bg-stone-200 shrink-0">
                 <SmartMedia
-                  src={vendorProfile?.vendorAvatar || currentReel.thumbnail}
+                  src={vendorProfile?.vendorAvatarNew || currentReel.thumbnail}
                   alt=""
                   className="w-full h-full object-cover"
                 />
@@ -2078,8 +2078,8 @@ export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, o
                       onClick={() => navigateToVendorProfile(v._id)}
                       className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-stone-50/70 dark:bg-stone-900 hover:bg-rose-50/50 border border-stone-100/60 dark:border-stone-800 transition-colors text-left"
                     >
-                      {v.vendorAvatar ? (
-                        <SmartMedia src={v.vendorAvatar} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                      {v.vendorAvatarNew ? (
+                        <SmartMedia src={v.vendorAvatarNew} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
                       ) : (
                         <div className="w-9 h-9 rounded-lg bg-stone-200 dark:bg-stone-800 flex items-center justify-center shrink-0">
                           <Building2 size={13} className="text-stone-400" />
@@ -2197,8 +2197,8 @@ export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, o
                           className="flex items-center gap-3 p-3.5 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-100 dark:border-stone-800 cursor-pointer hover:border-rose-200 transition-colors"
                         >
                           <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-800 shrink-0">
-                            {profile.vendorAvatar ? (
-                              <SmartMedia src={profile.vendorAvatar} alt="" className="w-full h-full object-cover" />
+                            {profile.vendorAvatarNew ? (
+                              <SmartMedia src={profile.vendorAvatarNew} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-stone-400">
                                 <Building2 size={16} />

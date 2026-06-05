@@ -45,7 +45,7 @@ export async function GET(req) {
           { vendorId: { $in: savedIds } }
         ],
       })
-        .select("vendorAvatar username vendorId _id category vendorBusinessName")
+        .select("vendorAvatarNew username vendorId _id category vendorBusinessName")
         .lean();
 
       // 4. Create quick-lookup dictionaries

@@ -1663,9 +1663,9 @@ useEffect(() => {
                   {index + 1}
                 </div>
                 <div className="w-11 h-11 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                  {vendor?.vendorAvatar ? (
+                  {vendor?.vendorAvatarNew ? (
                     <img
-                      src={vendor.vendorAvatar}
+                      src={vendor.vendorAvatarNew}
                       alt={vendor.vendorBusinessName}
                       className="w-full h-full object-cover"
                     />
@@ -2200,9 +2200,9 @@ useEffect(() => {
                 className="flex items-center gap-2.5 p-2.5 bg-gray-50 dark:bg-gray-900/40 rounded-xl"
               >
                 <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                  {vendor?.vendorAvatar ? (
+                  {vendor?.vendorAvatarNew ? (
                     <img
-                      src={vendor.vendorAvatar}
+                      src={vendor.vendorAvatarNew}
                       alt={vendor.vendorBusinessName}
                       className="w-full h-full object-cover"
                     />

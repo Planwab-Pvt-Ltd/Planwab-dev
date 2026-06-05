@@ -131,7 +131,7 @@ export default function DeleteVendorModal({ vendor, onClose, onConfirm }) {
           {/* Vendor Info Card */}
           <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mb-6">
             <Image
-              src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-vendor.jpg"}
+              src={vendor.defaultImageNew || vendor.images?.[0] || "/placeholder-vendor.jpg"}
               alt={vendor.name}
               width={48}
               height={48}

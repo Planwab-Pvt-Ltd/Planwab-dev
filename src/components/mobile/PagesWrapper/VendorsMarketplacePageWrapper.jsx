@@ -1255,9 +1255,9 @@ const VendorProfilesCarousel = memo(({ colorPrimary, colorSecondary,selectedCate
 
                         {/* Profile Image */}
                         <div className="w-[100px] h-[100px] rounded-full overflow-hidden border-3 border-gray-200 shadow-md group-hover:shadow-xl transition-shadow duration-300">
-                          {vendor.vendorAvatar ? (
+                          {vendor.vendorAvatarNew ? (
                             <img
-                              src={vendor.vendorAvatar}
+                              src={vendor.vendorAvatarNew}
                               alt={vendor.vendorBusinessName}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               loading="lazy"
@@ -1559,7 +1559,7 @@ const CardSkeleton = memo(({ viewMode }) => {
 CardSkeleton.displayName = "CardSkeleton";
 
 const ImageCarousel = memo(
-  ({ images, vendorName, isGrid, isFavorite, onFavorite, tags, isLiking, colorPrimary, rating }) => {
+  ({ imagesNew, vendorName, isGrid, isFavorite, onFavorite, tags, isLiking, colorPrimary, rating }) => {
     const [[page, direction], setPage] = useState([0, 0]);
     const [hasInteracted, setHasInteracted] = useState(false);
     const [loadedImages, setLoadedImages] = useState(new Set());
@@ -1567,14 +1567,14 @@ const ImageCarousel = memo(
     const imageRefs = useRef(new Map());
     const haptic = useHapticFeedback();
 
-    const imageIndex = ((page % images.length) + images.length) % images.length;
-    const hasMultipleImages = images.length > 1;
+    const imageIndex = ((page % imagesNew.length) + imagesNew.length) % imagesNew.length;
+    const hasMultipleImages = imagesNew.length > 1;
 
     useEffect(() => {
       const preloadLinks = [];
       const imageObjects = []; // 🔥 ADD: Track image objects
 
-      images.forEach((src, index) => {
+      imagesNew.forEach((src, index) => {
         const img = new window.Image();
         img.decoding = "async";
         imageObjects.push(img); // 🔥 Track for cleanup
@@ -1618,7 +1618,7 @@ const ImageCarousel = memo(
         });
         imageRefs.current.clear();
       };
-    }, [images]);
+    }, [imagesNew]);
 
     const paginate = useCallback(
       (newDirection) => {
@@ -1671,7 +1671,7 @@ const ImageCarousel = memo(
     return (
       <div className={`relative bg-gray-100 overflow-hidden ${isGrid ? "h-32" : "h-48"}`} onClick={handleDoubleTap}>
         <div className="hidden" aria-hidden="true">
-          {images.map((src) => (
+          {imagesNew.map((src) => (
             <img
               key={src}
               src={src}
@@ -1707,7 +1707,7 @@ const ImageCarousel = memo(
             }}
           >
             <SmartMedia
-              src={images[imageIndex]}
+              src={imagesNew[imageIndex]}
               alt={vendorName}
               type="image"
               className="w-full h-full select-none touch-pan-y"
@@ -1719,7 +1719,7 @@ const ImageCarousel = memo(
               priority={imageIndex === 0}
               quality={85}
               sizes={isGrid ? "(max-width: 768px) 50vw, 33vw" : "(max-width: 768px) 100vw, 50vw"}
-              useSkeleton={!hasInteracted && !loadedImages.has(images[imageIndex])}
+              useSkeleton={!hasInteracted && !loadedImages.has(imagesNew[imageIndex])}
               unoptimized={false}
             />
           </motion.div>
@@ -1787,7 +1787,7 @@ const ImageCarousel = memo(
 
           {hasMultipleImages && !isGrid && (
             <div className="flex gap-1">
-              {images.slice(0, 5).map((_, idx) => (
+              {imagesNew.slice(0, 5).map((_, idx) => (
                 <motion.div
                   key={idx}
                   animate={{
@@ -1798,7 +1798,7 @@ const ImageCarousel = memo(
                   className="h-1.5 bg-white rounded-full shadow-sm"
                 />
               ))}
-              {images.length > 5 && <span className="text-white text-[10px] ml-1">+{images.length - 5}</span>}
+              {imagesNew.length > 5 && <span className="text-white text-[10px] ml-1">+{imagesNew.length - 5}</span>}
             </div>
           )}
         </div>
@@ -1946,10 +1946,10 @@ const VendorCard = memo(
     const inCart = isInCart(vendor._id);
 
     const displayImages = useMemo(() => {
-      const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
-      const validImages = imgs.length > 0 ? imgs : vendor.defaultImage ? [vendor.defaultImage] : ["/placeholder.jpg"];
+      const imgs = vendor.normalizedImages || (vendor.imagesNew || []).filter(Boolean);
+      const validImages = imgs.length > 0 ? imgs : vendor.defaultImageNew ? [vendor.defaultImageNew] : ["/placeholder.jpg"];
       return validImages.slice(0, 5);
-    }, [vendor.images, vendor.defaultImage, vendor.normalizedImages]);
+    }, [vendor.imagesNew, vendor.defaultImageNew, vendor.normalizedImages]);
 
     const price = useMemo(() => getVendorPrice(vendor), [vendor]);
     const displayPrice = useMemo(() => formatPrice(price), [price]);
@@ -2073,7 +2073,7 @@ const VendorCard = memo(
         )}
 
         <ImageCarousel
-          images={displayImages}
+          imagesNew={displayImages}
           vendorName={vendor.name}
           isGrid={isGrid}
           isFavorite={isLiked}
@@ -2087,7 +2087,7 @@ const VendorCard = memo(
         <Link href={`/vendor/${vendor?.category}/${vendor?._id}`} className={`block ${isGrid ? "p-3" : "p-4"}`}>
           <div className="flex justify-between items-center mb-1.5">
             {/* Profile Photo Section - Only in List View and when profile picture exists */}
-            {!isGrid && (vendor?.defaultImage || vendor?.images?.[0]) && (
+            {!isGrid && (vendor?.defaultImageNew || vendor?.imagesNew?.[0]) && (
               <div
                 onClick={(e) => {
                   e.preventDefault();
@@ -2099,7 +2099,7 @@ const VendorCard = memo(
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-green-500 to-green-800 shadow-sm">
                     <Image
-                      src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
+                      src={vendor?.defaultImageNew || vendor?.imagesNew?.[0] || "/placeholder-profile.jpg"}
                       alt={`${vendor.name} Profile Picture`}
                       width={500}
                       height={500}
@@ -2924,7 +2924,7 @@ const CompareBar = memo(({ count, vendors, onClear, onView, colorPrimary }) => {
                     className="w-11 h-11 rounded-full border-2 border-gray-900 overflow-hidden bg-gray-700 shadow-lg"
                   >
                     <img
-                      src={v.images?.[0] || v.defaultImage || "/placeholder.jpg"}
+                      src={v.imagesNew?.[0] || v.defaultImageNew || "/placeholder.jpg"}
                       alt={v.name}
                       className="w-full h-full object-cover"
                     />
@@ -3121,7 +3121,7 @@ const CompareModalOld = memo(({ isOpen, onClose, vendors, colorPrimary }) => {
                             } rounded-lg overflow-hidden mb-2 bg-gray-100`}
                           >
                             <img
-                              src={v.images?.[0] || v.defaultImage || "/placeholder.jpg"}
+                              src={v.imagesNew?.[0] || v.defaultImageNew || "/placeholder.jpg"}
                               alt={v.name}
                               className="w-full h-full object-cover"
                             />

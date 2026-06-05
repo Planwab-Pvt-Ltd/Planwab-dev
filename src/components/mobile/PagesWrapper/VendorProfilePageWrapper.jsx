@@ -11103,7 +11103,7 @@ const MeetDrawer = ({ isOpen, onClose, vendor, showUIConfirmation, requireSignIn
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shrink-0">
                           <img
                             src={
-                              profile?.vendorAvatar ||
+                              profile?.vendorAvatarNew ||
                               "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
                             }
                             alt={profile?.username}
@@ -12293,7 +12293,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
     setShowImageModal(true);
   }, []);
 
-  const images = useMemo(() => vendor?.images || [], [vendor]);
+  const images = useMemo(() => vendor?.imagesNew || [], [vendor]);
 
   useEffect(() => {
     if (images.length === 0) return;
@@ -12407,7 +12407,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
       name: profile.username,
       category: profile.category,
       price: pkg.price,
-      image: profile.vendorAvatar,
+      image: profile.vendorAvatarNew,
       quantity: 1,
       address: profile.location.address,
       rating: profile.trust,
@@ -12949,7 +12949,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
               </>
             )}
             <div className="space-y-5 mx-4 relative isolate">
-              {vendor?.images?.length > 0 ? (
+              {vendor?.imagesNew?.length > 0 ? (
                 <>
                   {/* HEADER CONTAINER */}
                   <div className="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors overflow-hidden group">
@@ -12962,7 +12962,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                         <div>
                           <h3 className="text-[14px] font-bold text-slate-800 dark:text-slate-100">Photo Gallery</h3>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {vendor?.images?.length} photos available
+                            {vendor?.imagesNew?.length} photos available
                           </p>
                         </div>
                       </div>
@@ -13006,7 +13006,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                         className="overflow-hidden"
                       >
                         <div className="grid grid-cols-2 gap-3 pt-4 pb-2">
-                          {vendor?.images.map((img, idx) => (
+                          {vendor?.imagesNew.map((img, idx) => (
                             <motion.div
                               key={`gallery-img-${idx}`}
                               initial={{ opacity: 0, y: 10 }}
@@ -14110,7 +14110,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
 
   const vendorProfile = Array.isArray(vendor?.vendorProfile) ? vendor.vendorProfile[0] : vendor?.vendorProfile;
   const vendorImage =
-    profile?.vendorAvatar ||
+    profile?.vendorAvatarNew ||
     vendorProfile?.profilePicture ||
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop";
 
@@ -14430,17 +14430,17 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                   />
                 </div>
-              ) : profile?.vendorCoverImage ? (
+              ) : profile?.vendorCoverImageNew ? (
                 <SmartMedia
-                  src={profile.vendorCoverImage}
+                  src={profile.vendorCoverImageNew}
                   type="image"
                   className="w-full h-full object-cover"
                   loaderImage="/GlowLoadingGif.gif"
                   onLoad={() => setCoverImageLoaded(true)}
                 />
-              ) : vendor?.images?.[0] ? (
+              ) : vendor?.imagesNew?.[0] ? (
                 <SmartMedia
-                  src={vendor.images[4] || vendor.images[0]}
+                  src={vendor.imagesNew[4] || vendor.imagesNew[0]}
                   type="image"
                   className="w-full h-full object-cover"
                   loaderImage="/GlowLoadingGif.gif"
@@ -14518,7 +14518,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
                     >
                       <SmartMedia
                         src={
-                          profile?.vendorAvatar ||
+                          profile?.vendorAvatarNew ||
                           (Array.isArray(vendor?.vendorProfile)
                             ? vendor.vendorProfile[0]?.profilePicture
                             : vendor?.vendorProfile?.profilePicture) ||
@@ -15283,7 +15283,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             isOpen={showProfilePicture}
             onClose={() => setShowProfilePicture(false)}
             image={
-              profile?.vendorAvatar ||
+              profile?.vendorAvatarNew ||
               (Array.isArray(vendor?.vendorProfile)
                 ? vendor.vendorProfile[0]?.profilePicture
                 : vendor?.vendorProfile?.profilePicture) ||
@@ -15353,7 +15353,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             onClose={() => setSelectedPost(null)}
             vendorName={vendor?.name}
             vendorImage={
-              profile?.vendorAvatar ||
+              profile?.vendorAvatarNew ||
               (Array.isArray(vendor?.vendorProfile)
                 ? vendor.vendorProfile[0]?.profilePicture
                 : vendor?.vendorProfile?.profilePicture) ||
@@ -15377,7 +15377,7 @@ const VendorProfilePageWrapper = ({ initialReviews, initialProfile, initialVendo
             onClose={() => setSelectedReelIndex(null)}
             vendorName={vendor?.name}
             vendorImage={
-              profile?.vendorAvatar ||
+              profile?.vendorAvatarNew ||
               (Array.isArray(vendor?.vendorProfile)
                 ? vendor.vendorProfile[0]?.profilePicture
                 : vendor?.vendorProfile?.profilePicture) ||

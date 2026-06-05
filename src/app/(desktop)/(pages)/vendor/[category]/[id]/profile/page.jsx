@@ -17,7 +17,7 @@ export async function generateMetadata({ params }) {
       : `Book ${vendor.name} for your event.`,
     openGraph: {
       title: `${vendor.name} - PlanWAB`,
-      images: vendor.vendorAvatar ? [{ url: vendor.vendorAvatar }] : [],
+      images: vendor.vendorAvatarNew ? [{ url: vendor.vendorAvatarNew }] : [],
     },
   };
 }

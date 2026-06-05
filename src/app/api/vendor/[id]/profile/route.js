@@ -89,8 +89,8 @@ export async function POST(request) {
       location,
       category,
       password,
-      vendorAvatar,
-      vendorCoverImage,
+      vendorAvatarNew,
+      vendorCoverImageNew,
       bio,
     } = body;
 
@@ -101,7 +101,7 @@ export async function POST(request) {
       !vendorName ||
       !category ||
       !password ||
-      !vendorAvatar ||
+      !vendorAvatarNew ||
       !bio
     ) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
@@ -118,8 +118,8 @@ export async function POST(request) {
       vendorId,
       vendorBusinessName,
       vendorName,
-      vendorAvatar,
-      vendorCoverImage,
+      vendorAvatarNew,
+      vendorCoverImageNew,
       bio,
       location,
       category,
@@ -166,8 +166,8 @@ export async function PUT(request, { params }) {
       vendorName,
       category,
       bio,
-      vendorAvatar,
-      vendorCoverImage,
+      vendorAvatarNew,
+      vendorCoverImageNew,
       location,
       newPassword,
     } = body;
@@ -189,8 +189,8 @@ export async function PUT(request, { params }) {
       vendorName: vendorName || existingProfile.vendorName,
       category: category || existingProfile.category,
       bio: bio !== undefined ? bio : existingProfile.bio,
-      vendorAvatar: vendorAvatar || existingProfile.vendorAvatar,
-      vendorCoverImage: vendorCoverImage !== undefined ? vendorCoverImage : existingProfile.vendorCoverImage,
+      vendorAvatarNew: vendorAvatarNew || existingProfile.vendorAvatarNew,
+      vendorCoverImageNew: vendorCoverImageNew !== undefined ? vendorCoverImageNew : existingProfile.vendorCoverImageNew,
       location: location || existingProfile.location,
       updatedAt: new Date(),
     };

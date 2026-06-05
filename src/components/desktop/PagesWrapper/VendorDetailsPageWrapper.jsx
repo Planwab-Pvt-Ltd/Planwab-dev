@@ -762,10 +762,10 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   );
 };
 
-const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
-  if (!images || images.length === 0) return null;
-  const thumbnails = images.slice(0, 6);
-  const remainingCount = images.length - 6;
+const PortfolioAlbumSection = memo(({ imagesNew, onImageClick, vendorName }) => {
+  if (!imagesNew || imagesNew.length === 0) return null;
+  const thumbnails = imagesNew.slice(0, 6);
+  const remainingCount = imagesNew.length - 6;
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800">
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
@@ -776,7 +776,7 @@ const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white">Portfolio</h3>
-              <p className="text-xs text-gray-500">{images.length} photos</p>
+              <p className="text-xs text-gray-500">{imagesNew.length} photos</p>
             </div>
           </div>
           <button
@@ -1588,34 +1588,34 @@ const VendorDetailsPageWrapper = ({
     }
   };
 
-  const images = useMemo(() => vendor?.images || [], [vendor]);
+  const imagesNew = useMemo(() => vendor?.imagesNew || [], [vendor]);
 
   const goToImage = useCallback(
     (index, direction = null) => {
-      if (images.length <= 1) return;
+      if (imagesNew.length <= 1) return;
       setSlideDirection(direction !== null ? direction : index > currentImageIndex ? 1 : -1);
       setCurrentImageIndex(index);
     },
-    [images.length, currentImageIndex],
+    [imagesNew.length, currentImageIndex],
   );
 
   const nextImage = useCallback(() => {
-    if (images.length <= 1) return;
-    goToImage((currentImageIndex + 1) % images.length, 1);
-  }, [currentImageIndex, images.length, goToImage]);
+    if (imagesNew.length <= 1) return;
+    goToImage((currentImageIndex + 1) % imagesNew.length, 1);
+  }, [currentImageIndex, imagesNew.length, goToImage]);
   const prevImage = useCallback(() => {
-    if (images.length <= 1) return;
-    goToImage((currentImageIndex - 1 + images.length) % images.length, -1);
-  }, [currentImageIndex, images.length, goToImage]);
+    if (imagesNew.length <= 1) return;
+    goToImage((currentImageIndex - 1 + imagesNew.length) % imagesNew.length, -1);
+  }, [currentImageIndex, imagesNew.length, goToImage]);
 
   useEffect(() => {
     if (autoplayTimerRef.current) {
       clearTimeout(autoplayTimerRef.current);
       autoplayTimerRef.current = null;
     }
-    if (isPaused || images.length <= 1) return;
+    if (isPaused || imagesNew.length <= 1) return;
     autoplayTimerRef.current = setTimeout(() => {
-      if (!isPaused && images.length > 1) nextImage();
+      if (!isPaused && imagesNew.length > 1) nextImage();
     }, AUTOPLAY_DELAY);
     return () => {
       if (autoplayTimerRef.current) {
@@ -1623,7 +1623,7 @@ const VendorDetailsPageWrapper = ({
         autoplayTimerRef.current = null;
       }
     };
-  }, [currentImageIndex, isPaused, images.length, nextImage]);
+  }, [currentImageIndex, isPaused, imagesNew.length, nextImage]);
 
   useEffect(() => {
     if (isPaused) {
@@ -1646,12 +1646,12 @@ const VendorDetailsPageWrapper = ({
     (e) => {
       if (!isDragging.current) return;
       const diff = dragStartX.current - (e.changedTouches?.[0]?.clientX || 0);
-      if (Math.abs(diff) > 50 && images.length > 1) {
+      if (Math.abs(diff) > 50 && imagesNew.length > 1) {
         diff > 0 ? nextImage() : prevImage();
       }
       isDragging.current = false;
     },
-    [nextImage, prevImage, images.length],
+    [nextImage, prevImage, imagesNew.length],
   );
 
   useEffect(() => {
@@ -1724,14 +1724,14 @@ const VendorDetailsPageWrapper = ({
         case "ArrowLeft":
           e.preventDefault();
           if (showImageModal) {
-            setModalImageIndex((p) => (p - 1 + images.length) % images.length);
+            setModalImageIndex((p) => (p - 1 + imagesNew.length) % imagesNew.length);
             setSlideDirection(-1);
           } else prevImage();
           break;
         case "ArrowRight":
           e.preventDefault();
           if (showImageModal) {
-            setModalImageIndex((p) => (p + 1) % images.length);
+            setModalImageIndex((p) => (p + 1) % imagesNew.length);
             setSlideDirection(1);
           } else nextImage();
           break;
@@ -1807,7 +1807,7 @@ const VendorDetailsPageWrapper = ({
                 name: vendor.name,
                 category: vendor.category,
                 price: vendor.perDayPrice?.min || vendor.basePrice || 0,
-                image: vendor.defaultImage || vendor.images?.[0] || "",
+                image: vendor.defaultImageNew || vendor.imagesNew?.[0] || "",
                 quantity: 1,
                 address: vendor.address,
                 rating: vendor.rating || 0,
@@ -1829,7 +1829,7 @@ const VendorDetailsPageWrapper = ({
     showImageModal,
     showShareModal,
     showKeyboardShortcuts,
-    images.length,
+    imagesNew.length,
     vendor,
     isInCart,
     removeFromCart,
@@ -1861,7 +1861,7 @@ const VendorDetailsPageWrapper = ({
         id: "gallery",
         label: "Gallery",
         icon: Camera,
-        show: images.length > 0,
+        show: imagesNew.length > 0,
       },
       {
         id: "packages",
@@ -1891,7 +1891,7 @@ const VendorDetailsPageWrapper = ({
       { id: "location", label: "Location", icon: MapPin },
     ];
     return tabs.filter((tab) => tab.show !== false);
-  }, [vendor, images]);
+  }, [vendor, imagesNew]);
 
   const highlights = useMemo(
     () => [
@@ -2121,7 +2121,7 @@ const VendorDetailsPageWrapper = ({
                     }}
                     className="absolute inset-0"
                   >
-                    <img src={images[currentImageIndex]} alt={vendor.name} className="w-full h-full object-cover" />
+                    <img src={imagesNew[currentImageIndex]} alt={vendor.name} className="w-full h-full object-cover" />
                   </motion.div>
                 </AnimatePresence>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -2150,7 +2150,7 @@ const VendorDetailsPageWrapper = ({
                   </motion.button>
                 </div>
                 {/* Nav arrows */}
-                {images.length > 1 && (
+                {imagesNew.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
@@ -2168,7 +2168,7 @@ const VendorDetailsPageWrapper = ({
                 )}
                 {/* Progress dots */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                  {images.map((_, idx) => (
+                  {imagesNew.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => goToImage(idx)}
@@ -2188,7 +2188,7 @@ const VendorDetailsPageWrapper = ({
                   onClick={() => openImageModal(0)}
                   className="absolute bottom-6 right-6 bg-black/40 backdrop-blur-md px-4 py-2 rounded-xl text-white font-medium hover:bg-black/60 transition-all flex items-center gap-2 text-sm z-10"
                 >
-                  <ImageIcon size={16} /> {images.length} Photos
+                  <ImageIcon size={16} /> {imagesNew.length} Photos
                 </button>
               </div>
             </div>
@@ -3484,7 +3484,7 @@ const VendorDetailsPageWrapper = ({
                         </div>
                       </div>
                       <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 gap-6" : "space-y-4"}>
-                        {vendor.images?.map((image, idx) => (
+                        {vendor.imagesNew?.map((image, idx) => (
                           <motion.div
                             key={idx}
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -4454,7 +4454,7 @@ const VendorDetailsPageWrapper = ({
                           <Link href={url}>
                             <div className="relative h-40 overflow-hidden">
                               <img
-                                src={item.images?.[0] || item.defaultImage}
+                                src={item.imagesNew?.[0] || item.defaultImageNew}
                                 alt={item.name}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 loading="lazy"
@@ -4572,7 +4572,7 @@ const VendorDetailsPageWrapper = ({
                             className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative"
                           >
                             <img
-                              src={item.images?.[0] || item.defaultImage}
+                              src={item.imagesNew?.[0] || item.defaultImageNew}
                               alt={item.name}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               loading="lazy"
@@ -4933,7 +4933,7 @@ const VendorDetailsPageWrapper = ({
                   <Link href={vendorProfileUrl || `/vendor/${vendor.category}/${vendor._id}/profile`} className="relative group shrink-0">
                     <div className="w-20 h-20 rounded-2xl overflow-hidden ring-3 ring-blue-500 dark:ring-purple-500 shadow-lg group-hover:ring-blue-600 transition-all">
                       <img
-                        src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-profile.jpg"}
+                        src={vendor.defaultImageNew || vendor.imagesNew?.[0] || "/placeholder-profile.jpg"}
                         alt={vendor.name}
                         className="w-full h-full object-cover"
                       />
@@ -5029,7 +5029,7 @@ const VendorDetailsPageWrapper = ({
                           name: vendor.name,
                           category: vendor.category,
                           price: vendor.perDayPrice?.min || vendor.basePrice || 0,
-                          image: vendor.defaultImage || vendor.images?.[0] || "",
+                          image: vendor.defaultImageNew || vendor.imagesNew?.[0] || "",
                           quantity: 1,
                           address: vendor.address,
                           rating: vendor.rating || 0,
@@ -5254,7 +5254,7 @@ const VendorDetailsPageWrapper = ({
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-white/30 group-hover:ring-white/60 transition-all shrink-0">
                       <img
-                        src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-profile.jpg"}
+                        src={vendor.defaultImageNew || vendor.imagesNew?.[0] || "/placeholder-profile.jpg"}
                         alt={vendor.name}
                         className="w-full h-full object-cover"
                       />
@@ -5384,7 +5384,7 @@ const VendorDetailsPageWrapper = ({
           >
             <div className="flex justify-between items-center p-4 z-20">
               <span className="text-white font-mono text-sm bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                {modalImageIndex + 1} / {images.length}
+                {modalImageIndex + 1} / {imagesNew.length}
               </span>
               <div className="flex gap-2">
                 <button
@@ -5410,7 +5410,7 @@ const VendorDetailsPageWrapper = ({
             <div className="flex-1 relative flex items-center justify-center overflow-hidden">
               <button
                 onClick={() => {
-                  setModalImageIndex((p) => (p - 1 + images.length) % images.length);
+                  setModalImageIndex((p) => (p - 1 + imagesNew.length) % imagesNew.length);
                   setSlideDirection(-1);
                 }}
                 className="absolute left-4 p-3 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition-colors z-10"
@@ -5432,7 +5432,7 @@ const VendorDetailsPageWrapper = ({
                   className="absolute w-full h-full flex items-center justify-center p-4"
                 >
                   <img
-                    src={images[modalImageIndex]}
+                    src={imagesNew[modalImageIndex]}
                     alt="Full view"
                     className="max-w-full max-h-full object-contain transition-transform duration-200"
                     style={{ transform: `scale(${imageZoom})` }}
@@ -5442,7 +5442,7 @@ const VendorDetailsPageWrapper = ({
               </AnimatePresence>
               <button
                 onClick={() => {
-                  setModalImageIndex((p) => (p + 1) % images.length);
+                  setModalImageIndex((p) => (p + 1) % imagesNew.length);
                   setSlideDirection(1);
                 }}
                 className="absolute right-4 p-3 bg-white/10 backdrop-blur-sm rounded-full text-white hover:bg-white/20 transition-colors z-10"
@@ -5451,7 +5451,7 @@ const VendorDetailsPageWrapper = ({
               </button>
             </div>
             <div className="h-20 flex items-center justify-center gap-2 overflow-x-auto px-4 pb-4 no-scrollbar">
-              {images.map((img, i) => (
+              {imagesNew.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => {
