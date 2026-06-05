@@ -56,7 +56,7 @@ const CarouselCard = memo(({ item, index, onAddToCart, isInCart, user, theme }) 
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const itemId = item._id || item.id;
-  const image = item.defaultImage || item.image || item.images?.[0];
+  const image = item.defaultImageNew || item.image || item.imagesNew?.[0];
   const inCart = isInCart(itemId);
 
   const [isLiked, setIsLiked] = useState(false);

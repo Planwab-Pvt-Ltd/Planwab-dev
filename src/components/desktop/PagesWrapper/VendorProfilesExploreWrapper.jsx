@@ -114,8 +114,8 @@ const isValidImageUrl = (url) => {
 };
 
 const getProfileImage = (profile, fallbackIndex = 0) => {
-  if (isValidImageUrl(profile.vendorCoverImage)) return profile.vendorCoverImage;
-  if (isValidImageUrl(profile.vendorAvatar)) return profile.vendorAvatar;
+  if (isValidImageUrl(profile.vendorCoverImageNew)) return profile.vendorCoverImageNew;
+  if (isValidImageUrl(profile.vendorAvatarNew)) return profile.vendorAvatarNew;
   if (isValidImageUrl(profile.highlights?.[0]?.coverImage)) return profile.highlights[0].coverImage;
   if (isValidImageUrl(profile.posts?.[0]?.mediaUrl)) return profile.posts[0].mediaUrl;
   if (isValidImageUrl(profile.reels?.[0]?.thumbnail)) return profile.reels[0].thumbnail;
@@ -123,7 +123,7 @@ const getProfileImage = (profile, fallbackIndex = 0) => {
 };
 
 const getAvatarImage = (profile, fallbackIndex = 0) => {
-  if (isValidImageUrl(profile.vendorAvatar)) return profile.vendorAvatar;
+  if (isValidImageUrl(profile.vendorAvatarNew)) return profile.vendorAvatarNew;
   return getProfileImage(profile, fallbackIndex);
 };
 
@@ -387,8 +387,8 @@ ProfileCardSkeleton.displayName = "ProfileCardSkeleton";
 const ProfileCard = memo(({ profile, fallbackIndex, apiCategory }) => {
   const router = useRouter();
 
-  const coverSrc = profile.vendorCoverImage || getProfileImage(profile, fallbackIndex);
-  const avatarSrc = profile.vendorAvatarImage || profile.vendorAvatar || getAvatarImage(profile, fallbackIndex);
+  const coverSrc = profile.vendorCoverImageNew || getProfileImage(profile, fallbackIndex);
+  const avatarSrc = profile.vendorAvatarImage || profile.vendorAvatarNew || getAvatarImage(profile, fallbackIndex);
   const displayName = profile.vendorBusinessName || profile.vendorName || "Vendor";
   const locationText = [profile.location?.city, profile.location?.state].filter(Boolean).join(", ");
   

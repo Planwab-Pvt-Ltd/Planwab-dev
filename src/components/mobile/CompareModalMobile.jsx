@@ -94,7 +94,7 @@ const parsePercentage = (str) => {
 };
 
 const getVendorImage = (vendor, index = 0) => {
-  return vendor?.images?.[index] || vendor?.defaultImage || vendor?.gallery?.[index]?.url || "/placeholder.jpg";
+  return vendor?.images?.[index] || vendor?.defaultImageNew || vendor?.gallery?.[index]?.url || "/placeholder.jpg";
 };
 
 const getCategoryIcon = (category) => {

@@ -1395,7 +1395,7 @@ export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, o
             onClick={handleSeeProfile}
           >
             <SmartMedia
-              src={vendorProfile?.vendorAvatar || currentReel.thumbnail}
+              src={vendorProfile?.vendorAvatarNew || currentReel.thumbnail}
               alt=""
               className="w-full h-full object-cover"
             />
@@ -1483,8 +1483,8 @@ export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, o
                           }}
                           className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1.5 shrink-0 cursor-pointer active:bg-white/10 transition-colors"
                         >
-                          {v.vendorAvatar && (
-                            <SmartMedia src={v.vendorAvatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                          {v.vendorAvatarNew && (
+                            <SmartMedia src={v.vendorAvatarNew} alt="" className="w-5 h-5 rounded-full object-cover" />
                           )}
                           <div>
                             <p className="text-white text-[9px] font-semibold truncate max-w-[80px]">
@@ -1629,8 +1629,8 @@ export const ReelsViewerModal = ({ reels: initialReels, initialIndex, onClose, o
                           className="flex items-center gap-3 p-3.5 bg-gray-50 dark:bg-gray-800/60 rounded-2xl border border-gray-100 dark:border-gray-700/50 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 transition-colors"
                         >
                           <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 shrink-0">
-                            {profile.vendorAvatar ? (
-                              <SmartMedia src={profile.vendorAvatar} alt="" className="w-full h-full object-cover" />
+                            {profile.vendorAvatarNew ? (
+                              <SmartMedia src={profile.vendorAvatarNew} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-400">
                                 <Building2 size={20} />

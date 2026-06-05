@@ -1087,7 +1087,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
       password: "EDit@PlanWAB@9896",
       ...formData,
       images: allImages,
-      defaultImage: allImages[0] || "",
+      defaultImageNew: allImages[0] || "",
       editedBy: user.id,
     };
 
@@ -1183,7 +1183,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl overflow-hidden border-2 border-white/30 bg-white/20 flex-shrink-0">
                 <img
-                  src={formData.defaultImage || existingImages[0] || "/placeholder-vendor.jpg"}
+                  src={formData.defaultImageNew || existingImages[0] || "/placeholder-vendor.jpg"}
                   alt={formData.name}
                   className="w-full h-full object-cover"
                 />

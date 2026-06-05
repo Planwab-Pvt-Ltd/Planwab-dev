@@ -832,7 +832,7 @@ const VendorTableRow = ({ vendor, isSelected, onToggleSelect, onView, onEdit, on
           <div className="relative flex-shrink-0">
             <Image
               className="h-10 w-10 rounded-lg object-cover ring-2 ring-gray-100 dark:ring-gray-700"
-              src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-vendor.jpg"}
+              src={vendor.defaultImageNew || vendor.images?.[0] || "/placeholder-vendor.jpg"}
               alt={vendor.name}
               width={40}
               height={40}
@@ -972,7 +972,7 @@ const VendorCard = ({ vendor, onView, onEdit, onDelete }) => {
     >
       <div className="relative h-36">
         <Image
-          src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-vendor.jpg"}
+          src={vendor.defaultImageNew || vendor.images?.[0] || "/placeholder-vendor.jpg"}
           alt={vendor.name}
           fill
           className="object-cover"

@@ -486,12 +486,12 @@ const QuickStatCard = memo(({ icon: Icon, label, value, subtext, color = "blue",
 ));
 QuickStatCard.displayName = "QuickStatCard";
 
-const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
-  if (!images || images.length === 0) return null;
+const PortfolioAlbumSection = memo(({ imagesNew, onImageClick, vendorName }) => {
+  if (!imagesNew || imagesNew.length === 0) return null;
 
-  const coverImage = images[0];
-  const thumbnails = images.slice(1, 7);
-  const remainingCount = images.length - 7;
+  const coverImage = imagesNew[0];
+  const thumbnails = imagesNew.slice(1, 7);
+  const remainingCount = imagesNew.length - 7;
 
   return (
     <motion.div
@@ -506,7 +506,7 @@ const PortfolioAlbumSection = memo(({ images, onImageClick, vendorName }) => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-white">Portfolio</h3>
-              <p className="text-[10px] text-gray-500">{images.length} photos</p>
+              <p className="text-[10px] text-gray-500">{imagesNew.length} photos</p>
             </div>
           </div>
           <motion.button
@@ -764,7 +764,7 @@ const VendorCard = memo(({ item, type = "horizontal" }) => {
         >
           <div className="h-28 relative">
             <SmartMedia
-              src={item.images?.[0] || item.defaultImage}
+              src={item.imagesNew?.[0] || item.defaultImageNew}
               type="image"
               className="w-full h-full object-cover"
               style={{ objectPosition: "center center" }}
@@ -801,7 +801,7 @@ const VendorCard = memo(({ item, type = "horizontal" }) => {
       >
         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
           <SmartMedia
-            src={item.images?.[0] || item.defaultImage}
+            src={item.imagesNew?.[0] || item.defaultImageNew}
             type="image"
             className="w-full h-full object-cover"
             loaderImage="/GlowLoadingGif.gif"
@@ -909,7 +909,7 @@ PackageCard.displayName = "PackageCard";
 const CartItemCard = memo(({ item, onRemove }) => {
   const haptic = useHapticFeedback();
   const price = item.price || item.basePrice || item.perDayPrice?.min || 0;
-  const img = item.image || item.defaultImage || item.images?.[0];
+  const img = item.image || item.defaultImageNew || item.imagesNew?.[0];
   return (
     <motion.div
       layout
@@ -2228,7 +2228,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
     addToCart({
       ...vendor,
       price: vendor.perDayPrice?.min || vendor.basePrice || 0,
-      image: vendor.images?.[0] || vendor.defaultImage || "",
+      image: vendor.imagesNew?.[0] || vendor.defaultImageNew || "",
       quantity: 1,
     });
   }, [vendor, isInCart, addToCart]);
@@ -2269,12 +2269,12 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
     };
   }, [showHeaderTabs]);
 
-  const images = useMemo(() => vendor?.images || [], [vendor]);
+  const imagesNew = useMemo(() => vendor?.imagesNew || [], [vendor]);
 
   useEffect(() => {
-    if (images.length === 0) return;
+    if (imagesNew.length === 0) return;
     const preloadLinks = [];
-    images.forEach((src, index) => {
+    imagesNew.forEach((src, index) => {
       const img = new window.Image();
       img.decoding = "async";
       img.src = src;
@@ -2290,7 +2290,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
     return () => {
       preloadLinks.forEach((link) => link.remove());
     };
-  }, [images]);
+  }, [imagesNew]);
 
   const TAB_CONFIG = useMemo(() => {
     const tabs = [
@@ -2307,7 +2307,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
         icon: Award,
         show: vendor?.amenities?.length > 0 || vendor?.facilities?.length > 0 || vendor?.awards?.length > 0,
       },
-      { id: "gallery", label: "Gallery", icon: Camera, show: images.length > 0 },
+      { id: "gallery", label: "Gallery", icon: Camera, show: imagesNew.length > 0 },
       { id: "packages", label: "Packages", icon: Gift, show: vendor?.packages?.length > 0 },
       { id: "reviews", label: "Reviews", icon: MessageCircle },
       {
@@ -2321,7 +2321,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
       { id: "location", label: "Location", icon: MapPin },
     ];
     return tabs.filter((tab) => tab.show !== false);
-  }, [vendor, images]);
+  }, [vendor, imagesNew]);
 
   const highlights = useMemo(
     () => [
@@ -2359,22 +2359,22 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
 
   const goToImage = useCallback(
     (index, direction = null) => {
-      if (images.length <= 1) return;
+      if (imagesNew.length <= 1) return;
       const newDirection = direction !== null ? direction : index > currentImageIndex ? 1 : -1;
       setSlideDirection(newDirection);
       setCurrentImageIndex(index);
     },
-    [images.length, currentImageIndex],
+    [imagesNew.length, currentImageIndex],
   );
 
   const nextImage = useCallback(() => {
-    if (images.length <= 1) return;
-    goToImage((currentImageIndex + 1) % images.length, 1);
-  }, [currentImageIndex, images.length, goToImage]);
+    if (imagesNew.length <= 1) return;
+    goToImage((currentImageIndex + 1) % imagesNew.length, 1);
+  }, [currentImageIndex, imagesNew.length, goToImage]);
   const prevImage = useCallback(() => {
-    if (images.length <= 1) return;
-    goToImage((currentImageIndex - 1 + images.length) % images.length, -1);
-  }, [currentImageIndex, images.length, goToImage]);
+    if (imagesNew.length <= 1) return;
+    goToImage((currentImageIndex - 1 + imagesNew.length) % imagesNew.length, -1);
+  }, [currentImageIndex, imagesNew.length, goToImage]);
 
   useEffect(() => {
     // Clear any existing timer
@@ -2384,12 +2384,12 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
     }
 
     // Don't autoplay if paused or only one image
-    if (isPaused || images.length <= 1) return;
+    if (isPaused || imagesNew.length <= 1) return;
 
     // Set new timer
     autoplayTimerRef.current = setTimeout(() => {
       // Double-check conditions before advancing
-      if (!isPaused && images.length > 1) {
+      if (!isPaused && imagesNew.length > 1) {
         nextImage();
       }
     }, AUTOPLAY_DELAY);
@@ -2401,7 +2401,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
         autoplayTimerRef.current = null;
       }
     };
-  }, [currentImageIndex, isPaused, images.length, nextImage]);
+  }, [currentImageIndex, isPaused, imagesNew.length, nextImage]);
 
   const togglePlayPause = useCallback((e) => {
     e.stopPropagation();
@@ -2432,7 +2432,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
       const diff = dragStartX.current - e.changedTouches[0].clientX;
       const threshold = 50;
 
-      if (Math.abs(diff) > threshold && images.length > 1) {
+      if (Math.abs(diff) > threshold && imagesNew.length > 1) {
         if (diff > 0) {
           nextImage();
         } else {
@@ -2443,7 +2443,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
       isDragging.current = false;
       dragStartX.current = 0;
     },
-    [nextImage, prevImage, images.length],
+    [nextImage, prevImage, imagesNew.length],
   );
 
   const scrollContainer = useCallback((ref, direction) => {
@@ -2812,7 +2812,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
       >
         <div className="relative w-full h-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none -z-10">
-            {images.map((img, i) => (
+            {imagesNew.map((img, i) => (
               <img key={i} src={img} alt="" loading="eager" decoding="async" />
             ))}
           </div>
@@ -2831,7 +2831,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
               className="absolute inset-0 bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-black"
             >
               <SmartMedia
-                src={images[currentImageIndex]}
+                src={imagesNew[currentImageIndex]}
                 type="image"
                 priority={currentImageIndex === 0}
                 sizes="100vw"
@@ -2884,7 +2884,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
           </div>
 
           {/* Navigation Arrows */}
-          {images.length > 1 && (
+          {imagesNew.length > 1 && (
             <>
               <motion.button
                 whileTap={{ scale: 0.85 }}
@@ -2904,9 +2904,9 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
           )}
 
           {/* Progress Indicator */}
-          {images.length > 1 && (
+          {imagesNew.length > 1 && (
             <ProgressIndicator
-              total={images.length}
+              total={imagesNew.length}
               currentIndex={currentImageIndex}
               duration={AUTOPLAY_DELAY}
               isPaused={isPaused}
@@ -2924,7 +2924,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
             className="absolute bottom-45 right-3 px-3 py-1.5 bg-black/50 backdrop-blur-xl rounded-full text-white text-[10px] font-bold flex items-center gap-1.5 border border-white/20 z-20 shadow-xl"
           >
             <ImageIcon size={12} />
-            {images.length} Photos
+            {imagesNew.length} Photos
           </motion.button>
         </div>
       </motion.div>
@@ -2944,7 +2944,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
               <div className="relative">
                 <div className="w-16 h-16 rounded-full p-[3px] bg-gradient-to-tr from-green-500 to-green-800 shadow-md">
                   <Image
-                    src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
+                    src={vendor?.defaultImageNew || vendor?.imagesNew?.[0] || "/placeholder-profile.jpg"}
                     alt={`${vendor.name} Profile Picture`}
                     width={500}
                     height={500}
@@ -3490,8 +3490,8 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                   )}
 
                   {/* 10. Portfolio Album Section */}
-                  {images.length > 0 && (
-                    <PortfolioAlbumSection images={images} onImageClick={openImageModal} vendorName={vendor.name} />
+                  {imagesNew.length > 0 && (
+                    <PortfolioAlbumSection imagesNew={imagesNew} onImageClick={openImageModal} vendorName={vendor.name} />
                   )}
 
                   {/* 11. Social Links */}
@@ -3512,7 +3512,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                           <div className="relative flex-shrink-0">
                             <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
                               <SmartMedia
-                                src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
+                                src={vendor?.defaultImageNew || vendor?.imagesNew?.[0] || "/placeholder-profile.jpg"}
                                 type="image"
                                 alt={`${vendor.name} Profile Picture`}
                                 className="w-full h-full object-cover"
@@ -3663,7 +3663,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
               {/* GALLERY TAB */}
               {activeTab === "gallery" && (
                 <div className="space-y-5">
-                  {images.length > 0 ? (
+                  {imagesNew.length > 0 ? (
                     <>
                       {/* Image Count Header */}
                       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
@@ -3677,7 +3677,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                                 Photo Gallery
                               </h3>
                               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                {images.length} photos available
+                                {imagesNew.length} photos available
                               </p>
                             </div>
                           </div>
@@ -3686,7 +3686,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
 
                       {/* Image Grid */}
                       <div className="grid grid-cols-2 gap-3">
-                        {images.map((img, idx) => (
+                        {imagesNew.map((img, idx) => (
                           <motion.div
                             key={idx}
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -3733,10 +3733,10 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                         <ImageIcon size={36} className="text-slate-400 dark:text-slate-500" />
                       </div>
                       <p className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-2">
-                        No images available
+                        No imagesNew available
                       </p>
                       <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
-                        The vendor hasn't uploaded any gallery images yet
+                        The vendor hasn't uploaded any gallery imagesNew yet
                       </p>
                     </div>
                   )}
@@ -4318,8 +4318,8 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
         )}
 
         {/* 9. Portfolio Album Section */}
-        {images.length > 0 && activeTab !== "overview" && activeTab !== "gallery" && (
-          <PortfolioAlbumSection images={images} onImageClick={openImageModal} vendorName={vendor.name} />
+        {imagesNew.length > 0 && activeTab !== "overview" && activeTab !== "gallery" && (
+          <PortfolioAlbumSection imagesNew={imagesNew} onImageClick={openImageModal} vendorName={vendor.name} />
         )}
 
         {/* Vendor Profile Link */}
@@ -4338,7 +4338,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                   <div className="relative flex-shrink-0">
                     <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 transition-all duration-300">
                       <SmartMedia
-                        src={vendor?.defaultImage || vendor?.images?.[0] || "/placeholder-profile.jpg"}
+                        src={vendor?.defaultImageNew || vendor?.imagesNew?.[0] || "/placeholder-profile.jpg"}
                         type="image"
                         alt={`${vendor.name} Profile Picture`}
                         className="w-full h-full object-cover"
@@ -4486,7 +4486,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
           >
             <div className="flex justify-between items-center p-3 z-20">
               <span className="text-white font-mono text-[11px] bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                {modalImageIndex + 1} / {images.length}
+                {modalImageIndex + 1} / {imagesNew.length}
               </span>
               <div className="flex gap-2">
                 <motion.button
@@ -4529,10 +4529,10 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                     const diff = dragStartX.current - e.changedTouches[0].clientX;
                     if (Math.abs(diff) > 50) {
                       if (diff > 0) {
-                        setModalImageIndex((i) => (i + 1) % images.length);
+                        setModalImageIndex((i) => (i + 1) % imagesNew.length);
                         setSlideDirection(1);
                       } else {
-                        setModalImageIndex((i) => (i - 1 + images.length) % images.length);
+                        setModalImageIndex((i) => (i - 1 + imagesNew.length) % imagesNew.length);
                         setSlideDirection(-1);
                       }
                     }
@@ -4540,7 +4540,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
                   }}
                 >
                   <img
-                    src={images[modalImageIndex]}
+                    src={imagesNew[modalImageIndex]}
                     alt="Full view"
                     className="max-w-full max-h-full object-contain transition-transform duration-200"
                     style={{ transform: `scale(${imageZoom})` }}
@@ -4550,7 +4550,7 @@ const VendorDetailsPageWrapper = ({ initialVendor, initialSimilar, initialRecomm
               </AnimatePresence>
             </div>
             <div className="h-20 flex items-center justify-center gap-2 overflow-x-auto px-3 pb-4 no-scrollbar">
-              {images.map((img, i) => (
+              {imagesNew.map((img, i) => (
                 <motion.button
                   key={i}
                   whileTap={{ scale: 0.9 }}

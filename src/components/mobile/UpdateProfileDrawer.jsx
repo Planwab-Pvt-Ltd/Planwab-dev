@@ -88,8 +88,8 @@ const UpdateProfileDrawer = ({ vendor, profile, id, profileId, onProfileUpdated,
         vendorName: profile.vendorName || vendor?.name || "",
         category: profile.category || vendor?.category || "",
         bio: profile.bio || "",
-        profilePicture: profile.vendorAvatar || "",
-        coverImage: profile.vendorCoverImage || "",
+        profilePicture: profile.vendorAvatarNew || "",
+        coverImage: profile.vendorCoverImageNew || "",
         location: {
           address: profile.location?.address || "",
           city: profile.location?.city || "",
@@ -101,10 +101,10 @@ const UpdateProfileDrawer = ({ vendor, profile, id, profileId, onProfileUpdated,
         newPassword: "",
         confirmNewPassword: "",
       });
-      setProfilePicture(profile.vendorAvatar || null);
-      setProfilePicturePreview(profile.vendorAvatar || null);
-      setCoverImage(profile.vendorCoverImage || null);
-      setCoverImagePreview(profile.vendorCoverImage || null);
+      setProfilePicture(profile.vendorAvatarNew || null);
+      setProfilePicturePreview(profile.vendorAvatarNew || null);
+      setCoverImage(profile.vendorCoverImageNew || null);
+      setCoverImagePreview(profile.vendorCoverImageNew || null);
       setError("");
       setSuccess(false);
       setShowPasswordSection(false);
@@ -178,7 +178,7 @@ const UpdateProfileDrawer = ({ vendor, profile, id, profileId, onProfileUpdated,
       setFormData((prev) => ({ ...prev, profilePicture: url }));
     } catch (err) {
       setError("Failed to upload profile picture. Please try again.");
-      setProfilePicturePreview(profile?.vendorAvatar || null);
+      setProfilePicturePreview(profile?.vendorAvatarNew || null);
     } finally {
       setUploadingProfile(false);
     }
@@ -214,7 +214,7 @@ const UpdateProfileDrawer = ({ vendor, profile, id, profileId, onProfileUpdated,
       setFormData((prev) => ({ ...prev, coverImage: url }));
     } catch (err) {
       setError("Failed to upload cover image. Please try again.");
-      setCoverImagePreview(profile?.vendorCoverImage || null);
+      setCoverImagePreview(profile?.vendorCoverImageNew || null);
     } finally {
       setUploadingCover(false);
     }
@@ -271,8 +271,8 @@ const UpdateProfileDrawer = ({ vendor, profile, id, profileId, onProfileUpdated,
         vendorName: formData.vendorName,
         category: formData.category,
         bio: formData.bio || "",
-        vendorAvatar: profilePicture,
-        vendorCoverImage: coverImage || "",
+        vendorAvatarNew: profilePicture,
+        vendorCoverImageNew: coverImage || "",
         location: formData.location,
       };
       if(id){

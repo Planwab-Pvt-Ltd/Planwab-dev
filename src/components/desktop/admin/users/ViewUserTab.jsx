@@ -103,9 +103,9 @@ const useToast = () => {
 // ============================================================================
 const VProfileCard = memo(({ profile }) => {
   const name = profile.vendorBusinessName || profile.username || "Vendor";
-  const img = profile.vendorAvatar;
+  const img = profile.vendorAvatarNew;
   const cat = profile.category || "";
-  const cover = profile.vendorCoverImage;
+  const cover = profile.vendorCoverImageNew;
   const city = profile.location?.city || "";
   const postsCount = profile.postsCount ?? 0;
   const reelsCount = profile.reelsCount ?? 0;

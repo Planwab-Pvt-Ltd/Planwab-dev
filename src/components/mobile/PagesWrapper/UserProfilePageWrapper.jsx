@@ -114,7 +114,7 @@ const MediaRenderer = ({ src, alt, className, ...props }) => {
 };
 
 const VendorCard = memo(({ vendor }) => {
-  const img = vendor.defaultImage || vendor.images?.[0] || "/placeholder.jpg";
+  const img = vendor.defaultImageNew || vendor.images?.[0] || "/placeholder.jpg";
   const city = vendor.address?.city || "";
   const cat = vendor.category || "";
   const reviewCount = vendor.reviews || vendor.reviewCount || 0;
@@ -272,7 +272,7 @@ const ReelCardVP = memo(({ reel }) => {
   const views = reel.views ?? reel.viewCount ?? 0;
   const title = reel.title || reel.caption || "";
   const vendor = reel.vendorName || reel.vendorBusinessName || "";
-  const avatar = reel.vendorAvatar || "";
+  const avatar = reel.vendorAvatarNew || "";
   const url = reel.vendorId
     ? `/vendor/${reel.category}/${reel.vendorId}/profile?tab=reels&reel=${reel.reelIndex}`
     : `/vendor/${reel.category}/profile/${reel.username}?tab=reels&reel=${reel.reelIndex}`;
@@ -339,9 +339,9 @@ ReelCardVP.displayName = "ReelCardVP";
 
 const VProfileCard = memo(({ profile }) => {
   const name = profile.vendorBusinessName || profile.username || "Vendor";
-  const img = profile.vendorAvatar;
+  const img = profile.vendorAvatarNew;
   const cat = profile.category || "";
-  const coverImg = profile.vendorCoverImage;
+  const coverImg = profile.vendorCoverImageNew;
   const city = profile.location?.city || "";
   const postsCount = profile.postsCount ?? 0;
   const reelsCount = profile.reelsCount ?? 0;
@@ -417,7 +417,7 @@ const PostCard = memo(({ post }) => {
   const caption = post.content?.caption || post.description || "";
   const likes = post.likesCount ?? post.likes?.length ?? 0;
   const vendor = post.vendorName || "";
-  const avatar = post.vendorAvatar || "";
+  const avatar = post.vendorAvatarNew || "";
   const location = post.content?.location || post.location || "";
   const url = post.vendorId
     ? `/vendor/${post.category}/${post.vendorId}/profile?tab=posts&post=${post._id}`
@@ -1605,15 +1605,15 @@ export default function UserProfilePageWrapper() {
                         <div
                           className="h-20 rounded-xl relative mb-10"
                           style={{
-                            background: profile.vendorCoverImage
-                              ? `url(${profile.vendorCoverImage}) center/cover`
+                            background: profile.vendorCoverImageNew
+                              ? `url(${profile.vendorCoverImageNew}) center/cover`
                               : "linear-gradient(135deg,#ede9fe,#fce7f3,#e0e7ff)",
                           }}
                         >
                           <div className="absolute inset-0 bg-black/10 rounded-xl" />
                           <div className="absolute -bottom-6 left-3 p-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
                             <SmartMedia
-                              src={profile.vendorAvatar || "/placeholder.jpg"}
+                              src={profile.vendorAvatarNew || "/placeholder.jpg"}
                               alt={profile.vendorBusinessName || profile.username}
                               width={48}
                               height={48}
@@ -1779,7 +1779,7 @@ export default function UserProfilePageWrapper() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
                               <SmartMedia
-                                src={profile?.vendorAvatar || "/placeholder.jpg"}
+                                src={profile?.vendorAvatarNew || "/placeholder.jpg"}
                                 alt={vendorName}
                                 width={40}
                                 height={40}

@@ -264,7 +264,7 @@ const VendorCard = memo(({ vendor }) => {
         name: vendor.name || "Unknown Vendor",
         category: vendor.category || "Vendor",
         price: vendor.perDayPrice?.min || (typeof vendor.basePrice === "number" ? vendor.basePrice : 0),
-        image: vendor.defaultImage || vendor?.images?.[0] || "",
+        image: vendor.defaultImageNew || vendor?.images?.[0] || "",
         quantity: 1,
         address: vendor.address || "",
         rating: vendor.rating || 0,
@@ -303,7 +303,7 @@ const VendorCard = memo(({ vendor }) => {
     >
       <div className="relative h-28 bg-gray-100 overflow-hidden">
         <SmartMedia
-          src={vendor?.defaultImage || vendor.images[0] || vendor.images?.[1] || ""}
+          src={vendor?.defaultImageNew || vendor.images[0] || vendor.images?.[1] || ""}
           type="image"
           className="w-full h-full object-cover object-center"
           loading="lazy"

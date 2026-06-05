@@ -1355,7 +1355,7 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
         password,
         ...formData,
         images: allImages,
-        defaultImage: allImages[0] || "",
+        defaultImageNew: allImages[0] || "",
         editedBy: user.id,
       };
 
@@ -1464,7 +1464,7 @@ function EditVendorContent({ vendor, onBack, onSuccess }) {
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 border-white/30 bg-white/20 flex-shrink-0">
                   <img
-                    src={formData.defaultImage || existingImages[0] || "/placeholder-vendor.jpg"}
+                    src={formData.defaultImageNew || existingImages[0] || "/placeholder-vendor.jpg"}
                     alt={formData.name}
                     className="w-full h-full object-cover"
                   />

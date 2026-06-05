@@ -153,7 +153,7 @@ const getVendorPrice = (vendor) => {
 const getVendorImage = (vendor) => {
   const imgs = vendor.normalizedImages || (vendor.images || []).filter(Boolean);
   if (imgs.length > 0) return imgs[0];
-  if (vendor.defaultImage) return vendor.defaultImage;
+  if (vendor.defaultImageNew) return vendor.defaultImageNew;
   return "/placeholder.jpg";
 };
 

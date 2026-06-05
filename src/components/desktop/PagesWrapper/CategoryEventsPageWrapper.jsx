@@ -87,7 +87,7 @@ export default function CategoryEventsPageWrapper() {
           id: v._id,
           name: v.name,
           location: v.address?.city || v.location?.city || "",
-          image: v.defaultImage || v.images?.[0] || "",
+          image: v.defaultImageNew || v.imagesNew?.[0] || "",
           tag: v.subcategory || v.category || "",
           onViewDetails: () => {
             if (v.category && v._id) {

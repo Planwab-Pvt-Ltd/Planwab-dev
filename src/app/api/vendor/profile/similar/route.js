@@ -134,7 +134,7 @@ export async function GET(request) {
       _id: { $ne: vendorProfileId },
       category: { $regex: new RegExp(`^${sourceProfile.category}$`, "i") }
     })
-      .select("vendorId vendorBusinessName vendorName username vendorAvatar category location trust trustedBy posts reels bio")
+      .select("vendorId vendorBusinessName vendorName username vendorAvatarNew category location trust trustedBy posts reels bio")
       .limit(20)
       .lean();
 
@@ -143,7 +143,7 @@ export async function GET(request) {
       _id: { $ne: vendorProfileId },
       category: { $not: { $regex: new RegExp(`^${sourceProfile.category}$`, "i") } }
     })
-      .select("vendorId vendorBusinessName vendorName username vendorAvatar category location trust trustedBy posts reels bio")
+      .select("vendorId vendorBusinessName vendorName username vendorAvatarNew category location trust trustedBy posts reels bio")
       .limit(10)
       .lean();
 
@@ -164,7 +164,7 @@ export async function GET(request) {
       vendorBusinessName: profile.vendorBusinessName,
       vendorName: profile.vendorName,
       username: profile.username,
-      vendorAvatar: profile.vendorAvatar,
+      vendorAvatarNew: profile.vendorAvatarNew,
       category: profile.category,
       location: profile.location,
       trust: profile.trust,

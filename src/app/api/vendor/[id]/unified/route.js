@@ -385,8 +385,8 @@ export async function GET(request, { params }) {
       // PROFILE-SPECIFIC DATA
       // ==========================================
       vendorProfile: profile || null,
-      vendorAvatar: profile?.vendorAvatar || vendor.vendorAvatar || vendor.profileImage || vendor.avatar || null,
-      vendorCoverImage: profile?.vendorCoverImage || vendor.vendorCoverImage || vendor.coverImage || null,
+      vendorAvatarNew: profile?.vendorAvatarNew || vendor.vendorAvatarNew || vendor.profileImage || vendor.avatar || null,
+      vendorCoverImageNew: profile?.vendorCoverImageNew || vendor.vendorCoverImageNew || vendor.coverImage || null,
       vendorBusinessName: profile?.vendorBusinessName || vendor.businessName || vendor.name || "",
       vendorName: profile?.vendorName || vendor.name || "",
       

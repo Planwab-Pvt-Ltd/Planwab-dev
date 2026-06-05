@@ -407,7 +407,7 @@ export default function BirthdayPlannerWrapper() {
                             isPaid: price >= 60000,
                             images: vendor.images?.length > 0
                                 ? vendor.images
-                                : (vendor.defaultImage ? [vendor.defaultImage] : ['/placeholder.jpg']),
+                                : (vendor.defaultImageNew ? [vendor.defaultImageNew] : ['/placeholder.jpg']),
                             price: price > 0 ? price : null,
                             createdAt: vendor.createdAt 
                         };

@@ -192,7 +192,7 @@ export default function ViewVendorModal({ vendor, onClose }) {
               {/* Image Gallery */}
               <div className="w-32 h-32 flex-shrink-0">
                 <Image
-                  src={images[activeImageIndex] || vendor.defaultImage || "/placeholder-vendor.jpg"}
+                  src={images[activeImageIndex] || vendor.defaultImageNew || "/placeholder-vendor.jpg"}
                   alt={vendor.name}
                   width={128}
                   height={128}

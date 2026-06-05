@@ -295,8 +295,8 @@ const cleanVendorData = (data) => {
   }
 
   // Default image
-  if (Array.isArray(cleaned.images) && cleaned.images.length > 0 && !cleaned.defaultImage) {
-    cleaned.defaultImage = cleaned.images[0];
+  if (Array.isArray(cleaned.images) && cleaned.images.length > 0 && !cleaned.defaultImageNew) {
+    cleaned.defaultImageNew = cleaned.images[0];
   }
 
   return cleaned;

@@ -2268,9 +2268,9 @@ const EditSimilarVendorsSection = ({
                     className="w-full px-4 py-3 text-left hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                   >
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                      {vendor.vendorAvatar ? (
+                      {vendor.vendorAvatarNew ? (
                         <img
-                          src={vendor.vendorAvatar}
+                          src={vendor.vendorAvatarNew}
                           alt={vendor.vendorBusinessName}
                           className="w-full h-full object-cover"
                         />
@@ -2385,9 +2385,9 @@ const EditSimilarVendorsSection = ({
                         {index + 1}
                       </div>
                       <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                        {vendor?.vendorAvatar ? (
+                        {vendor?.vendorAvatarNew ? (
                           <img
-                            src={vendor.vendorAvatar}
+                            src={vendor.vendorAvatarNew}
                             alt={vendor.vendorBusinessName}
                             className="w-full h-full object-cover"
                           />

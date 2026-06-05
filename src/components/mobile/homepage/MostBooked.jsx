@@ -118,7 +118,7 @@ const ServiceCard = memo(({ service, themeTextClass, theme }) => {
         name: service.name,
         category: service.category,
         price: service.perDayPrice?.min || (typeof service.basePrice === "number" ? service.basePrice : 0),
-        image: service.defaultImage || service.images?.[0] || "",
+        image: service.defaultImageNew || service.images?.[0] || "",
         quantity: 1,
         address: service.address,
         rating: service.rating,
@@ -163,7 +163,7 @@ const ServiceCard = memo(({ service, themeTextClass, theme }) => {
     >
       <div className="w-[90px] h-[130px] flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden relative">
         <SmartMedia
-          src={service.defaultImage || service.images?.[0] || ""}
+          src={service.defaultImageNew || service.images?.[0] || ""}
           type="image"
           className="w-full h-full object-cover"
           loaderImage="/GlowLoadingGif.gif"

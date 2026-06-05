@@ -148,7 +148,7 @@ const MobileStyleVendorCard = memo(({ vendor, buttonColor }) => {
 
   const getImageUrl = () => {
     return vendor.image || 
-           vendor.defaultImage || 
+           vendor.defaultImageNew || 
            (vendor.images && vendor.images.length > 0 ? vendor.images[0] : null) ||
            "https://images.unsplash.com/photo-1494790108755-2616b332c913?w=800&q=80";
   };

@@ -1196,7 +1196,7 @@ function EditVendorModalContent({ vendor, profile, onClose, onSuccess }) {
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl overflow-hidden border-2 border-white/30 bg-white/20 flex-shrink-0">
                 <img
-                  src={profile.vendorAvatar || existingImages[0] || "/placeholder-vendor.jpg"}
+                  src={profile.vendorAvatarNew || existingImages[0] || "/placeholder-vendor.jpg"}
                   alt={formData.name}
                   className="w-full h-full object-cover"
                 />

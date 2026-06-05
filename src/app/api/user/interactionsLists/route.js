@@ -43,7 +43,7 @@ export async function GET(req) {
       // 1. Vendors from user.likedVendors + user.watchlist
       allVendorIds.length > 0
         ? Vendor.find({ _id: { $in: allVendorIds } })
-            .select("name defaultImage rating address category perDayPrice slug shortDescription reviews bookings yearsExperience isVerified isFeatured tags category basePrice")
+            .select("name defaultImageNew rating address category perDayPrice slug shortDescription reviews bookings yearsExperience isVerified isFeatured tags category basePrice")
             .lean()
             .catch(() => [])
         : Promise.resolve([]),
@@ -58,14 +58,14 @@ export async function GET(req) {
 
       // 3. VendorProfiles liked by user
       VendorProfile.find({ likes: userId })
-        .select("vendorBusinessName username category vendorCoverImage vendorAvatar trust vendorId location likesCount trustCount postsCount reelsCount")
+        .select("vendorBusinessName username category vendorCoverImageNew vendorAvatarNew trust vendorId location likesCount trustCount postsCount reelsCount")
         .limit(30)
         .lean()
         .catch(() => []),
 
       // 4. VendorProfiles trusted by user
       VendorProfile.find({ trustedBy: userId })
-        .select("vendorBusinessName username category vendorCoverImage vendorAvatar trust vendorId location likesCount trustCount postsCount reelsCount")
+        .select("vendorBusinessName username category vendorCoverImageNew vendorAvatarNew trust vendorId location likesCount trustCount postsCount reelsCount")
         .limit(30)
         .lean()
         .catch(() => []),
@@ -116,7 +116,7 @@ export async function GET(req) {
       likesCount: { $size: { $ifNull: ["$reelsWithIndex.likes", []] } },
       savedCount: { $size: { $ifNull: ["$reelsWithIndex.savedBy", []] } },
       vendorName: "$vendorBusinessName",
-      vendorAvatar: "$vendorAvatar",
+      vendorAvatarNew: "$vendorAvatarNew",
       vendorProfileId: "$_id",
       username: "$username",
       createdAt: "$reelsWithIndex.createdAt",
@@ -175,7 +175,7 @@ export async function GET(req) {
       likesCount: { $size: { $ifNull: ["$reelsWithIndex.likes", []] } },
       savedCount: { $size: { $ifNull: ["$reelsWithIndex.savedBy", []] } },
       vendorName: "$vendorBusinessName",
-      vendorAvatar: "$vendorAvatar",
+      vendorAvatarNew: "$vendorAvatarNew",
       vendorProfileId: "$_id",
       username: "$username",
       createdAt: "$reelsWithIndex.createdAt",
@@ -207,7 +207,7 @@ export async function GET(req) {
             savedCount: { $size: { $ifNull: ["$posts.savedBy", []] } },
             reviewsCount: { $size: { $ifNull: ["$posts.reviews", []] } },
             vendorName: "$vendorBusinessName",
-            vendorAvatar: "$vendorAvatar",
+            vendorAvatarNew: "$vendorAvatarNew",
             vendorProfileId: "$_id",
             username: "$username",
             createdAt: "$posts.createdAt",
@@ -237,7 +237,7 @@ export async function GET(req) {
             savedCount: { $size: { $ifNull: ["$posts.savedBy", []] } },
             reviewsCount: { $size: { $ifNull: ["$posts.reviews", []] } },
             vendorName: "$vendorBusinessName",
-            vendorAvatar: "$vendorAvatar",
+            vendorAvatarNew: "$vendorAvatarNew",
             vendorProfileId: "$_id",
             username: "$username",
             createdAt: "$posts.createdAt",

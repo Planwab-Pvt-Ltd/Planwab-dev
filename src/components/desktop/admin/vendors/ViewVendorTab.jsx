@@ -354,9 +354,9 @@ function ViewVendorContent({ vendor, onBack, onEdit, onDelete }) {
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
 
             {/* Cover Image */}
-            {(vendor.defaultImage || vendor.images?.[0]) && (
+            {(vendor.defaultImageNew || vendor.images?.[0]) && (
               <Image
-                src={vendor.images[1] || vendor.defaultImage}
+                src={vendor.images[1] || vendor.defaultImageNew}
                 alt={vendor.name}
                 fill
                 className="object-cover opacity-30"
@@ -373,7 +373,7 @@ function ViewVendorContent({ vendor, onBack, onEdit, onDelete }) {
                 {/* Profile Picture */}
                 <div className="relative w-20 h-20 md:w-28 md:h-28 rounded-2xl overflow-hidden border-4 border-white dark:border-gray-800 shadow-2xl bg-white flex-shrink-0 group">
                   <Image
-                    src={vendor.defaultImage || vendor.images?.[0] || "/placeholder-vendor.jpg"}
+                    src={vendor.defaultImageNew || vendor.images?.[0] || "/placeholder-vendor.jpg"}
                     alt={vendor.name}
                     width={112}
                     height={112}
@@ -945,8 +945,8 @@ const OverviewSection = ({ vendor, formatPrice, formatDate, copyToClipboard, cop
 
 const MediaSection = ({ vendor, onImageClick }) => {
   const allImages = [...(vendor.images || [])];
-  if (vendor.defaultImage && !allImages.includes(vendor.defaultImage)) {
-    allImages.unshift(vendor.defaultImage);
+  if (vendor.defaultImageNew && !allImages.includes(vendor.defaultImageNew)) {
+    allImages.unshift(vendor.defaultImageNew);
   }
 
   const { addToast } = useToast();

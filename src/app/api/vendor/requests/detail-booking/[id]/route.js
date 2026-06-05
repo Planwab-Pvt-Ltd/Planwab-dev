@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
     }
 
     const bookingRequest = await DetailsBookingRequest.findById(id)
-      .populate("vendorId", "name category address phoneNo images defaultImage")
+      .populate("vendorId", "name category address phoneNo images defaultImageNew")
       .populate("userId", "name email")
       .lean();
 
@@ -96,7 +96,7 @@ export async function PATCH(request, { params }) {
       updateData,
       { new: true, runValidators: true }
     )
-      .populate("vendorId", "name category address phoneNo images defaultImage")
+      .populate("vendorId", "name category address phoneNo images defaultImageNew")
       .populate("userId", "name email");
 
     if (!bookingRequest) {

@@ -142,11 +142,11 @@ const vendorProfileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    vendorAvatar: {
+    vendorAvatarNew: {
       type: String,
       default: "",
     },
-    vendorCoverImage: {
+    vendorCoverImageNew: {
       type: String,
       default: "",
     },
